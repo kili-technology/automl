@@ -1,0 +1,11 @@
+click
+datasets
+kili
+nltk
+numpy
+requests
+sklearn
+tensorflow
+termcolor
+tqdm
+transformers
