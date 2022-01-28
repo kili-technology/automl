@@ -3,20 +3,23 @@ from typing import Dict, List, Mapping, Optional, Sequence, Tuple, Type, Union
 
 import click
 from kili.client import Kili
+from tabulate import tabulate
 
 from utils.constants import ContentInput, HOME, InputType, MLTask, \
     ModelFramework, ModelName, ModelRepository
-from utils.helpers import get_assets, get_project, set_default
+from utils.helpers import get_assets, get_project, kili_print, set_default
 from utils.huggingface.train import huggingface_train_ner, huggingface_train_text_classification_single
 
 
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["WANDB_DISABLED"] = "true"
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+os.environ['WANDB_DISABLED'] = 'true'
 
 
 def train_ner(
         api_key, assets, job, job_name, 
         model_framework, model_name, model_repository, project_id):
+    '''
+    '''
     model_repository = set_default(model_repository, ModelRepository.HuggingFace, 
         'model_repository', [ModelRepository.HuggingFace])
     path = os.path.join(HOME, project_id, job_name, model_repository)
@@ -25,13 +28,15 @@ def train_ner(
             'model_framework', [ModelFramework.PyTorch, ModelFramework.Tensorflow])
         model_name = set_default(model_name, ModelName.BertBaseMultilingualCased, 
             'model_name', [ModelName.BertBaseMultilingualCased])
-        huggingface_train_ner(
+        return huggingface_train_ner(
             api_key, assets, job, job_name, model_framework, model_name, path)
 
 
 def train_text_classification_single(
         api_key, assets, job, job_name, 
-        model_framework, model_name, model_repository, project_id):
+        model_framework, model_name, model_repository, project_id) -> float:
+    '''
+    '''
     model_repository = set_default(model_repository, ModelRepository.HuggingFace, 
         'model_repository', [ModelRepository.HuggingFace])
     path = os.path.join(HOME, project_id, job_name, model_repository)
@@ -40,7 +45,7 @@ def train_text_classification_single(
             'model_framework', [ModelFramework.PyTorch, ModelFramework.Tensorflow])
         model_name = set_default(model_name, ModelName.BertBaseMultilingualCased, 
             'model_name', [ModelName.BertBaseMultilingualCased])
-        huggingface_train_text_classification_single(
+        return huggingface_train_text_classification_single(
             api_key, assets, job, job_name, model_framework, model_name, path)
 
 
@@ -53,27 +58,34 @@ def train_text_classification_single(
 @click.option('--model-repository', default=None, help='Model repository (eg. huggingface)')
 @click.option('--project-id', default=None, help='Kili project ID')
 def main(api_key: str, model_framework: str, model_name: str, model_repository: str, project_id: str):
+    '''
+    '''
     kili = Kili(api_key=api_key)
     input_type, jobs = get_project(kili, project_id)
     assets = get_assets(kili, project_id)
+    training_losses = []
     for job_name, job in jobs.items():
         content_input = job.get('content', {}).get('input')
         ml_task = job.get('mlTask')
         tools = job.get('tools')
+        training_loss = None
         if content_input == ContentInput.Radio \
                 and input_type == InputType.Text \
                 and ml_task == MLTask.Classification:
-            train_text_classification_single(
+            training_loss = train_text_classification_single(
                 api_key, assets, job, job_name, 
                 model_framework, model_name, model_repository, project_id)
-        if content_input == ContentInput.Radio \
+        elif content_input == ContentInput.Radio \
                 and input_type == InputType.Text \
                 and ml_task == MLTask.NamedEntitiesRecognition:
-            train_ner(
+            training_loss = train_ner(
                 api_key, assets, job, job_name, 
                 model_framework, model_name, model_repository, project_id)
-            
-    
+        else:
+            kili_print('not implemented yet')
+        training_losses.append([job_name, training_loss])   
+    kili_print()
+    print(tabulate(training_losses, headers=['job_name', 'training_loss']))
 
 
 

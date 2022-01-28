@@ -6,6 +6,7 @@ HOME = os.path.join(os.getenv('HOME'), '.cache', 'kili', 'automl')
 
 @dataclass
 class ContentInput:
+    Checkbox = 'checkbox'
     Radio = 'radio'
 
 @dataclass

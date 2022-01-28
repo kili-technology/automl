@@ -5,6 +5,7 @@ nltk
 numpy
 requests
 sklearn
+tabulate
 tensorflow
 termcolor
 tqdm

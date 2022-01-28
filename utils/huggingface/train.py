@@ -19,13 +19,14 @@ from utils.helpers import ensure_dir, kili_print
 
 def huggingface_train_ner(
         api_key:str, assets:List[Dict], job: Dict, job_name:str,
-        model_framework:str, model_name:str, path:str):
+        model_framework:str, model_name:str, path:str) -> float:
     '''
     Sources:
      - https://huggingface.co/transformers/v2.4.0/examples.html#named-entity-recognition
      - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py
      - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1
     '''
+    kili_print(job_name)
     path_dataset = os.path.join(path, 'dataset', 'data.json')
     kili_print(f'Downloading data to {path_dataset}')
     if os.path.exists(path_dataset):
@@ -121,17 +122,19 @@ def huggingface_train_ner(
         tokenizer=tokenizer,
         train_dataset=train_dataset,
     )
-    trainer.train()
+    output = trainer.train()
     kili_print(f'Saving model to {path_model}')
     trainer.save_model(ensure_dir(path_model))
+    return output.training_loss
 
 
 def huggingface_train_text_classification_single(
         api_key:str, assets:List[Dict], job: Dict, job_name:str,
-        model_framework:str, model_name:str, path:str):
+        model_framework:str, model_name:str, path:str) -> float:
     '''
     Source: https://huggingface.co/docs/transformers/training
     '''
+    kili_print(job_name)
     path_dataset = os.path.join(path, 'dataset', 'data.json')
     kili_print(f'Downloading data to {path_dataset}')
     if os.path.exists(path_dataset):
@@ -175,9 +178,10 @@ def huggingface_train_text_classification_single(
         args=training_args,
         train_dataset=train_dataset,
     )
-    trainer.train()
+    output = trainer.train()
     kili_print(f'Saving model to {path_model}')
     trainer.save_model(ensure_dir(path_model))
+    return output.training_loss
 
 
 
