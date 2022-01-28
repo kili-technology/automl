@@ -3,12 +3,12 @@
 AutoML is a lightweight library to create ML models in a data-centric AI way:
 
 1. Label on [Kili](https://www.kili-technology.com)
-2. **Train** a model with AutoML and evaluate its performance with on line of code
-3. **Push** predictions to [Kili](https://www.kili-technology.com) to accelerate the labeling
+2. **Train** a model with AutoML and evaluate its performance in one line of code
+3. **Push** predictions to [Kili](https://www.kili-technology.com) to accelerate the labeling in one line of code
 
 Iterate.
 
-Once you are satisfied with the performance, **serve** the model and monitor the performance keeping human in the loop.
+Once you are satisfied with the performance, in one line of code, **serve** the model and monitor the performance keeping human in the loop with [Kili](https://www.kili-technology.com).
 
 ## Installation
 
