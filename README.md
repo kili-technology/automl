@@ -32,7 +32,7 @@ python train.py \
 
 Retrieve the annotated data from the project and specialize the best model among the following ones on each task:
 
-- Hugging Face
+- Hugging Face (text classification and NER)
 - spaCy (coming soon)
 - YOLOv5 (coming soon)
 - Simple Transformers (coming soon)
