@@ -41,6 +41,8 @@ Retrieve the annotated data from the project and specialize the best model among
 
 Compute model loss to infer when you can stop labeling.
 
+![Train a model](images/train.png)
+
 ### Push predictions to Kili (coming soon)
 
 ```bash
@@ -51,6 +53,8 @@ python predict.py \
 
 Use trained models to push pre-annotations onto unlabeled assets. Typically speeds up labeling by 10% with each iteration.
 
+![Predict a model](images/predict.png)
+
 ### Serve a model (coming soon)
 
 ```bash
@@ -60,6 +64,8 @@ python serve.py \
 ```
 
 Serve trained models while pushing assets and predictions to [Kili](https://www.kili-technology.com) for continuous labeling. Allows to monitor the model drift.
+
+![Serve a model](images/serve.png)
 
 ## Disclaimer
 
