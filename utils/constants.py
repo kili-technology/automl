@@ -22,12 +22,13 @@ class ModelFramework:
 @dataclass
 class ModelName:
     BertBaseMultilingualCased = 'bert-base-multilingual-cased'
+    YoloV5 = 'ultralytics/yolov5'
     
 
 @dataclass
 class ModelRepository:
     HuggingFace = 'huggingface'
-    Yolo = 'yolo'
+    Ultralytics = 'ultralytics'
 
 @dataclass
 class MLTask:

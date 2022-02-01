@@ -183,5 +183,3 @@ def huggingface_train_text_classification_single(
     trainer.save_model(ensure_dir(path_model))
     return output.training_loss
 
-
-

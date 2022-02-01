@@ -21,6 +21,7 @@ def get_assets(kili, project_id):
             skip=skip, 
             disable_tqdm=True,
             fields=[
+                'id',
                 'content',
                 'labels.createdAt',
                 'labels.jsonResponse', 

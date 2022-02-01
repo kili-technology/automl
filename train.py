@@ -6,13 +6,31 @@ from kili.client import Kili
 from tabulate import tabulate
 
 from utils.constants import ContentInput, HOME, InputType, MLTask, \
-    ModelFramework, ModelName, ModelRepository
+    ModelFramework, ModelName, ModelRepository, Tool
 from utils.helpers import get_assets, get_project, kili_print, set_default
-from utils.huggingface.train import huggingface_train_ner, huggingface_train_text_classification_single
-
+from utils.huggingface.train import huggingface_train_ner, \
+    huggingface_train_text_classification_single
+from utils.ultralytics.train import ultralytics_train_yolov5
 
 os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 os.environ['WANDB_DISABLED'] = 'true'
+
+
+def train_image_bounding_box(
+        api_key, assets, job, job_name, 
+        model_framework, model_name, model_repository, project_id):
+    '''
+    '''
+    model_repository = set_default(model_repository, ModelRepository.PyTorchHub, 
+        'model_repository', [ModelRepository.PyTorchHub])
+    path = os.path.join(HOME, project_id, job_name, model_repository)
+    if model_repository == ModelRepository.PyTorchHub:
+        model_framework = set_default(model_framework, ModelFramework.PyTorch, 
+            'model_framework', [ModelFramework.PyTorch])
+        model_name = set_default(model_name, ModelName.YoloV5, 
+            'model_name', [ModelName.YoloV5])
+        return ultralytics_train_yolov5(
+            api_key, assets, job, job_name, model_framework, model_name, path)
 
 
 def train_ner(
@@ -79,6 +97,13 @@ def main(api_key: str, model_framework: str, model_name: str, model_repository: 
                 and input_type == InputType.Text \
                 and ml_task == MLTask.NamedEntitiesRecognition:
             training_loss = train_ner(
+                api_key, assets, job, job_name, 
+                model_framework, model_name, model_repository, project_id)
+        elif content_input == ContentInput.Radio \
+                and input_type == InputType.Image \
+                and ml_task == MLTask.ObjectDetection \
+                and Tool.Rectangle in tools:
+            training_loss = train_image_bounding_box(
                 api_key, assets, job, job_name, 
                 model_framework, model_name, model_repository, project_id)
         else:
