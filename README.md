@@ -5,6 +5,7 @@ AutoML is a lightweight library to create ML models in a data-centric AI way:
 1. Label on [Kili](https://www.kili-technology.com)
 2. **Train** a model with AutoML and evaluate its performance in one line of code
 3. **Push** predictions to [Kili](https://www.kili-technology.com) to accelerate the labeling in one line of code
+4. **Prioritize** labeling on [Kili](https://www.kili-technology.com) to label the data the will improve your model the most first
 
 Iterate.
 
@@ -54,6 +55,28 @@ python predict.py \
 Use trained models to push pre-annotations onto unlabeled assets. Typically speeds up labeling by 10% with each iteration.
 
 ![Predict a model](./images/predict.png)
+
+### Prioritize labeling on Kili (coming soon)
+
+Where is the model confident or confused today?
+
+```bash
+python prioritize.py \
+    --api-key $KILI_API_KEY \
+    --project-id $KILI_PROJECT_ID
+    --sampling uncertainty
+    --method least-confidence-sampling
+```
+
+How can we sample the optimal unlabeled data points for human review?
+
+```bash
+python prioritize.py \
+    --api-key $KILI_API_KEY \
+    --project-id $KILI_PROJECT_ID
+    --sampling diversity
+    --method model-based-outlier
+```
 
 ### Serve a model (coming soon)
 
