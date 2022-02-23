@@ -16,8 +16,23 @@ Once you are satisfied with the performance, in one line of code, **serve** the 
 ```bash
 git clone https://github.com/kili-technology/automl.git
 cd automl
+git submodule update --init
+```
+
+If you are using `pip`:
+```bash
 pip install -r requirements.txt
 ```
+if you are using `conda`:
+```bash
+conda install --file requirements.txt
+```
+
+then install the submodule requirements:
+```bash
+pip install -r utils/ultralytics/yolov5/requirements.txt
+```
+
 
 ## Usage
 

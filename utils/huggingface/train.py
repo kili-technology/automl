@@ -1,20 +1,19 @@
 from datetime import datetime
 import json
 import os
-from pyexpat import features
 from typing import Dict, List
 
 import datasets
-from nltk import sent_tokenize
-from nltk.tokenize import TreebankWordTokenizer
+
 import requests
-from transformers import AutoConfig, AutoModelForSequenceClassification, AutoModelForTokenClassification, \
+from transformers import AutoModelForSequenceClassification, AutoModelForTokenClassification, \
     AutoTokenizer, DataCollatorForTokenClassification, \
     TFAutoModelForSequenceClassification, TFAutoModelForTokenClassification, \
     Trainer, TrainingArguments
 
 from utils.constants import ModelFramework
 from utils.helpers import ensure_dir, kili_print
+from utils.huggingface.converters import kili_assets_to_hf_ner_dataset
 
 
 def huggingface_train_ner(
@@ -26,54 +25,20 @@ def huggingface_train_ner(
      - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py
      - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1
     '''
-    kili_print(job_name)
+    kili_print(f"Job Name: {job_name}")
+    kili_print(f"Base model: {model_name}")
     path_dataset = os.path.join(path, 'dataset', 'data.json')
-    kili_print(f'Downloading data to {path_dataset}')
-    if os.path.exists(path_dataset):
-        os.remove(path_dataset)
-    job_categories = list(job['content']['categories'].keys())
-    label_list = ['O'] + ['B-' + jc for \
-            jc in job_categories] + ['I-' + jc for jc in job_categories]
-    labels_to_ids = {
-        label: i for i, label in enumerate(label_list)
-        }
-    with open(ensure_dir(path_dataset), 'w') as handler:
-        for asset in assets:
-            response = requests.get(asset['content'], headers={
-                'Authorization': f'X-API-Key: {api_key}',
-            })
-            text = response.text
-            annotations = asset['labels'][0]['jsonResponse'][job_name]['annotations']
-            sentences = sent_tokenize(text)
-            offset = 0
-            for sentence_tokens in TreebankWordTokenizer().span_tokenize_sents(sentences):
-                tokens = []
-                ner_tags = []
-                for start_without_offset, end_without_offset in sentence_tokens:
-                    start, end = start_without_offset + offset, end_without_offset + offset
-                    token_annotations = [a for a in annotations \
-                        if a['beginOffset'] <= start and a['endOffset'] >= end]
-                    if len(token_annotations) > 0:
-                        category = token_annotations[0]['categories'][0]['name']
-                        label = 'B-' + category if token_annotations[0]['beginOffset'] == start \
-                            else 'I-' + category
-                    else:
-                        label = 'O'
-                    tokens.append(text[start:end])
-                    ner_tags.append(labels_to_ids[label])
-                handler.write(json.dumps({
-                    'tokens': tokens,
-                    'ner_tags': ner_tags,
-                }) + '\n')
-                offset = offset + sentence_tokens[-1][1] + 1
-    raw_datasets = datasets.load_dataset('json', 
-        data_files=path_dataset, 
+
+    label_list = kili_assets_to_hf_ner_dataset(api_key, job, job_name, path_dataset, assets)
+
+    raw_datasets = datasets.load_dataset('json',
+        data_files=path_dataset,
         features=datasets.features.features.Features(
             {
                 'ner_tags': datasets.Sequence(feature=datasets.ClassLabel(names=label_list)),
                 'tokens': datasets.Sequence(feature=datasets.Value(dtype='string'))
             }))
-    
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     label_all_tokens = True
 
@@ -101,18 +66,18 @@ def huggingface_train_ner(
             labels.append(label_ids)
         tokenized_inputs["labels"] = labels
         return tokenized_inputs
-    
+
     tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
     train_dataset = tokenized_datasets['train']
-    path_model = os.path.join(path, 'model', model_framework, 
+    path_model = os.path.join(path, 'model', model_framework,
         datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     if model_framework == ModelFramework.PyTorch:
         model = AutoModelForTokenClassification.from_pretrained(
-            model_name, num_labels=len(label_list)) 
+            model_name, num_labels=len(label_list), id2label=dict(enumerate(label_list)))
     if model_framework == ModelFramework.Tensorflow:
         model = TFAutoModelForTokenClassification.from_pretrained(
-            model_name, num_labels=len(label_list), from_pt=True)
+            model_name, num_labels=len(label_list), from_pt=True, id2label=dict(enumerate(label_list)))
     training_args = TrainingArguments(os.path.join(path_model, 'training_args'))
     data_collator = DataCollatorForTokenClassification(tokenizer)
     trainer = Trainer(
@@ -150,7 +115,7 @@ def huggingface_train_text_classification_single(
                 'text': response.text,
                 'label': job_categories.index(label_category),
                 }) + '\n')
-    raw_datasets = datasets.load_dataset('json', 
+    raw_datasets = datasets.load_dataset('json',
         data_files=path_dataset,
         features=datasets.features.features.Features(
             {
@@ -164,11 +129,11 @@ def huggingface_train_text_classification_single(
 
     tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
     train_dataset = tokenized_datasets['train']
-    path_model = os.path.join(path, 'model', model_framework, 
+    path_model = os.path.join(path, 'model', model_framework,
         datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     if model_framework == ModelFramework.PyTorch:
         model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, num_labels=len(job_categories)) 
+            model_name, num_labels=len(job_categories))
     if model_framework == ModelFramework.Tensorflow:
         model = TFAutoModelForSequenceClassification.from_pretrained(
             model_name, num_labels=len(job_categories), from_pt=True)

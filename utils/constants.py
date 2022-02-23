@@ -22,8 +22,8 @@ class ModelFramework:
 @dataclass
 class ModelName:
     BertBaseMultilingualCased = 'bert-base-multilingual-cased'
+    DistilbertBaseCased = 'distilbert-base-cased'
     YoloV5 = 'ultralytics/yolov5'
-    
 
 @dataclass
 class ModelRepository:

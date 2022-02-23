@@ -1,10 +1,10 @@
 click
 datasets
 kili
-nltk
+nltk>=3.3
 numpy
 requests
-sklearn
+scikit-learn
 tabulate
 tensorflow
 termcolor
