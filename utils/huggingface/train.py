@@ -12,7 +12,7 @@ from transformers import AutoModelForSequenceClassification, AutoModelForTokenCl
     Trainer, TrainingArguments
 
 from utils.constants import ModelFramework
-from utils.helpers import ensure_dir, kili_print
+from utils.helpers import ensure_dir, kili_print, categories_from_job
 from utils.huggingface.converters import kili_assets_to_hf_ner_dataset
 
 
@@ -104,7 +104,7 @@ def huggingface_train_text_classification_single(
     kili_print(f'Downloading data to {path_dataset}')
     if os.path.exists(path_dataset):
         os.remove(path_dataset)
-    job_categories = list(job['content']['categories'].keys())
+    job_categories = categories_from_job(job)
     with open(ensure_dir(path_dataset), 'w') as handler:
         for asset in assets:
             response = requests.get(asset['content'], headers={

@@ -1,6 +1,7 @@
 click
 datasets
 kili
+jinja2
 nltk>=3.3
 numpy
 requests
