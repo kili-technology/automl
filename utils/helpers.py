@@ -10,27 +10,28 @@ def ensure_dir(file_path):
     return file_path
 
 
-def get_assets(kili, project_id):
+def get_assets(kili, project_id, label_types):
     total = kili.count_assets(project_id=project_id)
     first = 100
     assets = []
     for skip in tqdm(range(0, total, first)):
         assets += kili.assets(
-            project_id=project_id, 
-            first=first, 
-            skip=skip, 
+            project_id=project_id,
+            first=first,
+            skip=skip,
             disable_tqdm=True,
             fields=[
                 'id',
+                'externalId',
                 'content',
                 'labels.createdAt',
-                'labels.jsonResponse', 
+                'labels.jsonResponse',
                 'labels.labelType'])
     assets = [{
         **a,
         'labels': [
             l for l in sorted(a['labels'], key=lambda l: l['createdAt']) \
-                if l['labelType'] in ['DEFAULT', 'REVIEW']
+                if l['labelType'] in label_types
                 ][-1:],
                 } for a in assets]
     assets = [a for a in assets if len(a['labels']) > 0]
