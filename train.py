@@ -1,4 +1,5 @@
 import os
+import json
 
 import click
 from kili.client import Kili
@@ -14,7 +15,14 @@ from utils.constants import (
     ModelRepository,
     Tool,
 )
-from utils.helpers import get_assets, get_project, kili_print, set_default
+from utils.helpers import (
+    get_assets,
+    get_project,
+    kili_print,
+    set_default,
+    build_model_repository_path,
+    parse_label_types,
+)
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["WANDB_DISABLED"] = "true"
@@ -22,24 +30,26 @@ os.environ["WANDB_DISABLED"] = "true"
 
 def train_image_bounding_box(
     api_key,
-    assets,
     job,
     job_name,
+    max_assets,
+    args_dict,
     model_framework,
     model_name,
     model_repository,
     project_id,
+    label_types,
 ):
     from utils.ultralytics.train import ultralytics_train_yolov5
 
     model_repository = set_default(
         model_repository,
-        ModelRepository.PyTorchHub,
+        ModelRepository.Ultralytics,
         "model_repository",
-        [ModelRepository.PyTorchHub],
+        [ModelRepository.Ultralytics],
     )
-    path = os.path.join(HOME, project_id, job_name, model_repository)
-    if model_repository == ModelRepository.PyTorchHub:
+    path = build_model_repository_path(HOME, project_id, job_name, model_repository)
+    if model_repository == ModelRepository.Ultralytics:
         model_framework = set_default(
             model_framework,
             ModelFramework.PyTorch,
@@ -50,7 +60,14 @@ def train_image_bounding_box(
             model_name, ModelName.YoloV5, "model_name", [ModelName.YoloV5]
         )
         return ultralytics_train_yolov5(
-            api_key, assets, job, job_name, model_framework, model_name, path
+            api_key,
+            path,
+            job,
+            max_assets,
+            args_dict,
+            project_id,
+            model_framework,
+            label_types,
         )
 
 
@@ -74,7 +91,7 @@ def train_ner(
         "model_repository",
         [ModelRepository.HuggingFace],
     )
-    path = os.path.join(HOME, project_id, job_name, model_repository)
+    path = build_model_repository_path(HOME, project_id, job_name, model_repository)
     if model_repository == ModelRepository.HuggingFace:
         model_framework = set_default(
             model_framework,
@@ -94,6 +111,8 @@ def train_ner(
         return huggingface_train_ner(
             api_key, assets, job, job_name, model_framework, model_name, path
         )
+    else:
+        return None
 
 
 def train_text_classification_single(
@@ -118,7 +137,7 @@ def train_text_classification_single(
         "model_repository",
         [ModelRepository.HuggingFace],
     )
-    path = os.path.join(HOME, project_id, job_name, model_repository)
+    path = build_model_repository_path(HOME, project_id, job_name, model_repository)
     if model_repository == ModelRepository.HuggingFace:
         model_framework = set_default(
             model_framework,
@@ -152,6 +171,18 @@ def train_text_classification_single(
     default=None,
     help="Comma separated list Kili specific label types to select (among DEFAULT, REVIEW, PREDICTION)",
 )
+@click.option(
+    "--max-assets",
+    default=None,
+    type=int,
+    help="Maximum number of assets to consider",
+)
+@click.option(
+    "--json-args",
+    default=None,
+    type=str,
+    help="Specific parameters to pass to the trainer (for example Yolov5 train, Hugging Face transformers, ...",
+)
 def main(
     api_key: str,
     model_framework: str,
@@ -159,13 +190,13 @@ def main(
     model_repository: str,
     project_id: str,
     label_types: str,
+    max_assets: int,
+    json_args: str,
 ):
     """ """
     kili = Kili(api_key=api_key)
     input_type, jobs = get_project(kili, project_id)
-    assets = get_assets(
-        kili, project_id, label_types.split(",") if label_types else None
-    )
+
     training_losses = []
     for job_name, job in jobs.items():
         content_input = job.get("content", {}).get("input")
@@ -177,6 +208,8 @@ def main(
             and input_type == InputType.Text
             and ml_task == MLTask.Classification
         ):
+            assets = get_assets(kili, project_id, parse_label_types(label_types))
+            assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = train_text_classification_single(
                 api_key,
                 assets,
@@ -192,6 +225,8 @@ def main(
             and input_type == InputType.Text
             and ml_task == MLTask.NamedEntitiesRecognition
         ):
+            assets = get_assets(kili, project_id, parse_label_types(label_types))
+            assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = train_ner(
                 api_key,
                 assets,
@@ -210,13 +245,15 @@ def main(
         ):
             training_loss = train_image_bounding_box(
                 api_key,
-                assets,
                 job,
                 job_name,
+                max_assets,
+                json.loads(json_args) if json_args is not None else {},
                 model_framework,
                 model_name,
                 model_repository,
                 project_id,
+                parse_label_types(label_types),
             )
         else:
             kili_print("not implemented yet")
