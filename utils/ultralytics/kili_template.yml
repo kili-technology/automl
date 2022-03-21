@@ -82,9 +82,16 @@ download: |
       os.makedirs(path_split, exist_ok=True)
       for asset in tqdm(assets_split):
           tic = time.time()
-          img_data = requests.get(asset['content'], headers={
-                  'Authorization': 'X-API-Key: {{ kili_api_key }}',
-              }).content
+          n_try = 0
+          while n_try < 20:
+              try:
+                  img_data = requests.get(asset['content'], headers={
+                    'Authorization': 'X-API-Key: {{ kili_api_key }}',
+                  }).content
+                  break
+              except Exception:
+                  time.sleep(1)
+                  n_try += 1
           with open(os.path.join(path_split, asset['id'] + '.jpg'), 'wb') as handler:
               handler.write(img_data)
           toc = time.time() - tic
