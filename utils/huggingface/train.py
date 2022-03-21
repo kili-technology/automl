@@ -18,7 +18,7 @@ from utils.huggingface.converters import kili_assets_to_hf_ner_dataset
 
 def huggingface_train_ner(
         api_key:str, assets:List[Dict], job: Dict, job_name:str,
-        model_framework:str, model_name:str, path:str) -> float:
+        model_framework:str, model_name:str, path:str, clear_dataset_cache: bool) -> float:
     '''
     Sources:
      - https://huggingface.co/transformers/v2.4.0/examples.html#named-entity-recognition
@@ -29,7 +29,7 @@ def huggingface_train_ner(
     kili_print(f"Base model: {model_name}")
     path_dataset = os.path.join(path, 'dataset', 'data.json')
 
-    label_list = kili_assets_to_hf_ner_dataset(api_key, job, job_name, path_dataset, assets)
+    label_list = kili_assets_to_hf_ner_dataset(api_key, job, job_name, path_dataset, assets, clear_dataset_cache)
 
     raw_datasets = datasets.load_dataset('json',
         data_files=path_dataset,
@@ -95,26 +95,27 @@ def huggingface_train_ner(
 
 def huggingface_train_text_classification_single(
         api_key:str, assets:List[Dict], job: Dict, job_name:str,
-        model_framework:str, model_name:str, path:str) -> float:
+        model_framework:str, model_name:str, path:str, clear_dataset_cache: bool) -> float:
     '''
     Source: https://huggingface.co/docs/transformers/training
     '''
     kili_print(job_name)
     path_dataset = os.path.join(path, 'dataset', 'data.json')
     kili_print(f'Downloading data to {path_dataset}')
-    if os.path.exists(path_dataset):
+    if os.path.exists(path_dataset) and clear_dataset_cache:
         os.remove(path_dataset)
-    job_categories = categories_from_job(job)
-    with open(ensure_dir(path_dataset), 'w') as handler:
-        for asset in assets:
-            response = requests.get(asset['content'], headers={
-                'Authorization': f'X-API-Key: {api_key}',
-            })
-            label_category = asset['labels'][0]['jsonResponse'][job_name]['categories'][0]['name']
-            handler.write(json.dumps({
-                'text': response.text,
-                'label': job_categories.index(label_category),
-                }) + '\n')
+    if not os.path.exists(path_dataset):
+        job_categories = categories_from_job(job)
+        with open(ensure_dir(path_dataset), 'w') as handler:
+            for asset in assets:
+                response = requests.get(asset['content'], headers={
+                    'Authorization': f'X-API-Key: {api_key}',
+                })
+                label_category = asset['labels'][0]['jsonResponse'][job_name]['categories'][0]['name']
+                handler.write(json.dumps({
+                    'text': response.text,
+                    'label': job_categories.index(label_category),
+                    }) + '\n')
     raw_datasets = datasets.load_dataset('json',
         data_files=path_dataset,
         features=datasets.features.features.Features(

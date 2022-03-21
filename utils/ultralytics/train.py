@@ -22,7 +22,8 @@ def ultralytics_train_yolov5(
     json_args: Dict,
     project_id: str,
     model_framework: str,
-    label_types: List[str]
+    label_types: List[str],
+    clear_dataset_cache: bool = False,
 ) -> float:
     yolov5_path = "utils/ultralytics/yolov5"
 
