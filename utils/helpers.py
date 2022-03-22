@@ -4,10 +4,13 @@ from glob import glob
 from numpy import void
 
 from termcolor import colored
+from joblib import Memory
+
 from tqdm import tqdm
 
 from utils.constants import HOME
 
+memory = Memory(".cachedir")
 
 def categories_from_job(job: Dict):
     return list(job["content"]["categories"].keys())
@@ -20,6 +23,7 @@ def ensure_dir(file_path: str):
     return file_path
 
 
+@memory.cache
 def get_assets(kili, project_id: str, label_types: List[str], max_assets: Optional[int] = None) -> List[Dict]:
     total = kili.count_assets(project_id=project_id)
     total = total if max_assets is None else min(total, max_assets)
