@@ -1,15 +1,10 @@
 import os
 from typing import Union, List, Dict, Tuple
-from io import BytesIO
 import shutil
 from glob import glob
-
-from PIL import Image
-import requests
-from tqdm.auto import tqdm
 import yaml
 
-from utils.helpers import kili_print, build_inference_path
+from utils.helpers import download_project_images, kili_print, build_inference_path
 from utils.constants import HOME, ModelFramework, ModelRepository
 
 
@@ -17,7 +12,7 @@ def ultralytics_predict_object_detection(
     api_key: str,
     assets: Union[List[Dict], List[str]],
     project_id: str,
-    model_framework: str,
+    model_framework: ModelFramework,
     model_path: str,
     job_name: str,
     verbose: int = 0,
@@ -45,54 +40,37 @@ def ultralytics_predict_object_detection(
         shutil.rmtree(inference_path)
     os.makedirs(inference_path)
 
-    kili_print("Downloading project images...")
-    filenames = []
-    for asset in tqdm(assets):
-        img_data = requests.get(
-            asset["content"],
-            headers={
-                "Authorization": f"X-API-Key: {api_key}",
-            },
-        ).content
-
-        d = Image.open(BytesIO(img_data))
-        fmt = d.format
-        filename = os.path.join(inference_path, asset["id"] + "." + fmt.lower())
-
-        with open(filename, "w") as fp:
-            d.save(fp, fmt)
-
-        filenames.append((asset["id"], asset["externalId"], filename))
+    downloaded_images = download_project_images(api_key, assets, inference_path)
 
     kili_print("Starting Ultralytics' YoloV5 inference...")
     cmd = (
         f'python detect.py '
-        + f'--weights "{model_weights}" '
-        + f'--save-txt --save-conf --nosave --exist-ok '
-        + f'--source "{inference_path}" --project "{inference_path}"'
+        f'--weights "{model_weights}" '
+        f'--save-txt --save-conf --nosave --exist-ok '
+        f'--source "{inference_path}" --project "{inference_path}"'
     )
     os.system("cd utils/ultralytics/yolov5 && " + cmd)
 
     inference_files = glob(os.path.join(inference_path, "exp", "labels", "*.txt"))
     inference_files_by_id = {
-        get_id_from_path(pf, fmt.lower()): pf for pf in inference_files
+        get_id_from_path(pf): pf for pf in inference_files
     }
 
     predictions = []
-    for filename in filenames:
-        if filename[0] in inference_files_by_id:
+    for image in downloaded_images:
+        if image.id in inference_files_by_id:
             kili_predictions = yolov5_to_kili_json(
-                inference_files_by_id[filename[0]], kili_data_dict["names"]
+                inference_files_by_id[image.id], kili_data_dict["names"]
             )
             if verbose >= 1:
-                print(f"Asset {filename[1]}: {kili_predictions}")
+                print(f"Asset {image.externalId}: {kili_predictions}")
             predictions.append(
-                (filename[1], {job_name: {"annotations": kili_predictions}})
+                (image.externalId, {job_name: {"annotations": kili_predictions}})
             )
     return predictions
 
 
-def get_id_from_path(path_yolov5_inference: str, fmt: str) -> str:
+def get_id_from_path(path_yolov5_inference: str) -> str:
     return os.path.split(path_yolov5_inference)[-1].split(".")[0]
 
 

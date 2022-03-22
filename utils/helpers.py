@@ -1,12 +1,17 @@
 import os
 from typing import List, Optional, Dict, Tuple
 from glob import glob
+from io import BytesIO
 from numpy import void
+from dataclasses import dataclass
 
 from termcolor import colored
 from joblib import Memory
 
 from tqdm import tqdm
+from PIL import Image
+import requests
+from tqdm.auto import tqdm
 
 from utils.constants import HOME
 
@@ -23,7 +28,8 @@ def ensure_dir(file_path: str):
     return file_path
 
 
-@memory.cache
+
+@memory.cache()
 def get_assets(kili, project_id: str, label_types: List[str], max_assets: Optional[int] = None) -> List[Dict]:
     total = kili.count_assets(project_id=project_id)
     total = total if max_assets is None else min(total, max_assets)
@@ -122,3 +128,32 @@ def get_last_trained_model_path(job_name: str, project_id: str, model_path: str,
         if model_path is None:
             raise Exception("No trained model found for job {job}. Exiting ...")
     return model_path
+
+
+@dataclass
+class DownloadedImages:
+    id: str
+    externalId: str
+    filename : str
+
+
+def download_project_images(api_key, assets, inference_path) -> list[DownloadedImages]:
+    kili_print("Downloading project images...")
+    downloaded_images = []
+    for asset in tqdm(assets):
+        img_data = requests.get(
+            asset["content"],
+            headers={
+                "Authorization": f"X-API-Key: {api_key}",
+            },
+        ).content
+
+        image = Image.open(BytesIO(img_data))
+        format = str(image.format or "")
+        filename = os.path.join(inference_path, asset["id"] + "." + format.lower())
+
+        with open(filename, "w") as fp:
+            image.save(fp, format)
+
+        downloaded_images.append(DownloadedImages(id=asset["id"], externalId=asset["externalId"], filename=filename))
+    return downloaded_images
