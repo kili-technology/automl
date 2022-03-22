@@ -11,7 +11,12 @@ from utils.helpers import ensure_dir, kili_print
 
 
 def kili_assets_to_hf_ner_dataset(
-    api_key: str, job: Dict, job_name: str, path_dataset: str, assets: List[Dict], clear_dataset_cache: bool
+    api_key: str,
+    job: Dict,
+    job_name: str,
+    path_dataset: str,
+    assets: List[Dict],
+    clear_dataset_cache: bool,
 ):
 
     if clear_dataset_cache and os.path.exists(path_dataset):
@@ -32,55 +37,57 @@ def kili_assets_to_hf_ner_dataset(
     if not os.path.exists(path_dataset):
         with open(ensure_dir(path_dataset), "w") as handler:
             for asset in tqdm(assets):
-                response = requests.get(
-                    asset["content"],
-                    headers={
-                        "Authorization": f"X-API-Key: {api_key}",
-                    },
-                )
-                text = response.text
-                annotations = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
-                sentences = sent_tokenize(text)
-                offset = 0
-                for sentence_tokens in TreebankWordTokenizer().span_tokenize_sents(
-                    sentences
-                ):
-                    tokens = []
-                    ner_tags = []
-                    for start_without_offset, end_without_offset in sentence_tokens:
-                        start, end = (
-                            start_without_offset + offset,
-                            end_without_offset + offset,
-                        )
-                        token_annotations = [
-                            a
-                            for a in annotations
-                            if a["beginOffset"] <= start
-                            and a["beginOffset"] + len(a["content"]) >= end
-                        ]
-                        if len(token_annotations) > 0:
-                            category = token_annotations[0]["categories"][0]["name"]
-                            label = (
-                                "B-" + category
-                                if token_annotations[0]["beginOffset"] == start
-                                else "I-" + category
-                            )
-                        else:
-                            label = "O"
-                        tokens.append(text[start:end])
-                        ner_tags.append(labels_to_ids[label])
-                    handler.write(
-                        json.dumps(
-                            {
-                                "tokens": tokens,
-                                "ner_tags": ner_tags,
-                            }
-                        )
-                        + "\n"
-                    )
-                    offset = offset + sentence_tokens[-1][1] + 1
+                write_asset(api_key, job_name, labels_to_ids, handler, asset)
 
     return label_list
+
+
+def write_asset(api_key, job_name, labels_to_ids, handler, asset):
+    response = requests.get(
+        asset["content"],
+        headers={
+            "Authorization": f"X-API-Key: {api_key}",
+        },
+    )
+    text = response.text
+    annotations = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
+    sentences = sent_tokenize(text)
+    offset = 0
+    for sentence_tokens in TreebankWordTokenizer().span_tokenize_sents(sentences):
+        tokens = []
+        ner_tags = []
+        for start_without_offset, end_without_offset in sentence_tokens:
+            start, end = (
+                start_without_offset + offset,
+                end_without_offset + offset,
+            )
+            token_annotations = [
+                a
+                for a in annotations
+                if a["beginOffset"] <= start
+                and a["beginOffset"] + len(a["content"]) >= end
+            ]
+            if len(token_annotations) > 0:
+                category = token_annotations[0]["categories"][0]["name"]
+                label = (
+                    "B-" + category
+                    if token_annotations[0]["beginOffset"] == start
+                    else "I-" + category
+                )
+            else:
+                label = "O"
+            tokens.append(text[start:end])
+            ner_tags.append(labels_to_ids[label])
+        handler.write(
+            json.dumps(
+                {
+                    "tokens": tokens,
+                    "ner_tags": ner_tags,
+                }
+            )
+            + "\n"
+        )
+        offset = offset + sentence_tokens[-1][1] + 1
 
 
 def predicted_tokens_to_kili_annotations(
@@ -131,7 +138,9 @@ def predicted_tokens_to_kili_annotations(
                 len(kili_annotations)
                 and ann["categories"][0]["name"]
                 == kili_annotations[-1]["categories"][0]["name"]
-                and (ann["beginOffset"] == kili_annotations[-1]["endOffset"] or is_i_tag)
+                and (
+                    ann["beginOffset"] == kili_annotations[-1]["endOffset"] or is_i_tag
+                )
             ):
                 # merge with previous if same category and contiguous offset and onset:
                 kili_annotations[-1]["endOffset"] = ann["endOffset"]
