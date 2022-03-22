@@ -10,6 +10,7 @@ from joblib import Memory
 
 from tqdm import tqdm
 from PIL import Image
+from PIL.Image import Image as PILImage
 import requests
 from tqdm.auto import tqdm
 
@@ -135,9 +136,10 @@ class DownloadedImages:
     id: str
     externalId: str
     filename : str
+    image: PILImage
 
 
-def download_project_images(api_key, assets, inference_path) -> list[DownloadedImages]:
+def download_project_images(api_key, assets, inference_path: Optional[str]= None) -> list[DownloadedImages]:
     kili_print("Downloading project images...")
     downloaded_images = []
     for asset in tqdm(assets):
@@ -150,10 +152,13 @@ def download_project_images(api_key, assets, inference_path) -> list[DownloadedI
 
         image = Image.open(BytesIO(img_data))
         format = str(image.format or "")
-        filename = os.path.join(inference_path, asset["id"] + "." + format.lower())
 
-        with open(filename, "w") as fp:
-            image.save(fp, format)
+        filename = ""
+        if inference_path:
+            filename = os.path.join(inference_path, asset["id"] + "." + format.lower())
 
-        downloaded_images.append(DownloadedImages(id=asset["id"], externalId=asset["externalId"], filename=filename))
+            with open(filename, "w") as fp:
+                image.save(fp, format)
+
+        downloaded_images.append(DownloadedImages(id=asset["id"], externalId=asset["externalId"], filename=filename or "", image=image))
     return downloaded_images

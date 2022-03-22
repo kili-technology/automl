@@ -1,9 +1,9 @@
 from email.policy import default
 import os
-from  pprint import pprint
 
 import click
 from PIL.Image import open, Image
+import torch
 import numpy as np
 
 from kili.client import Kili
@@ -11,14 +11,13 @@ from utils.constants import (
     InputType,
 )
 from utils.helpers import (
+    download_project_images,
     get_assets,
     get_project,
     kili_print,
     parse_label_types,
 )
 
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["WANDB_DISABLED"] = "true"
 
 
 def embeddings_images(
@@ -26,7 +25,7 @@ def embeddings_images(
 ) -> np.ndarray:
     """Get the embeddings of the images using a generic model trained on ImageNet."""
     from img2vec_pytorch import Img2Vec
-    img2vec = Img2Vec(cuda=True)
+    img2vec = Img2Vec(cuda=torch.cuda.is_available())
     vectors = img2vec.get_vec(images)
     return vectors
 
@@ -69,16 +68,18 @@ def main(
     """ """
     kili = Kili(api_key=api_key)
     input_type, jobs = get_project(kili, project_id)
-    pprint("Input type: ",input_type)
-    pprint("jobs:", jobs)
+    print("Input type: ",input_type)
+    print("jobs:", jobs)
 
     assets = get_assets(kili, project_id, parse_label_types(label_types), max_assets)
 
     if input_type == InputType.Image:
-        print(assets)
-        im = open("images/predict.png")
-        images = [im]
-        embeddings = embeddings_images(images)
+        
+        downloaded_images = download_project_images(api_key, assets)
+
+        pil_images = [image.image for image in downloaded_images]
+        
+        embeddings = embeddings_images(pil_images)
         kili_print("Embeddings successfully computed with shape ", embeddings.shape)
 
         random_sampling = 1 - diversity_sampling
