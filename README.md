@@ -100,9 +100,3 @@ Serve trained models while pushing assets and predictions to [Kili](https://www.
 AutoML is a utility library that trains and serves models. It is your responsibility to determine whether the model performance is high enough or not.
 
 Don't hesitate to contribute!
-
-
-
-export PROJECT_ID="cl0wihlop3rwc0mtj9np28ti2"
-export KILI_API_KEY="93d8d3fa-ed06-410c-b295-9a9310e88fb0"
-
