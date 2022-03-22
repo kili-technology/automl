@@ -15,7 +15,8 @@ env = Environment(
     loader=FileSystemLoader(os.path.abspath("utils/ultralytics")),
     autoescape=select_autoescape(),
 )
-
+class AutoMLYoloException(Exception):
+    pass
 
 def ultralytics_train_yolov5(
     api_key: str,
@@ -59,13 +60,9 @@ def ultralytics_train_yolov5(
     args_from_json = reduce(
         lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in json_args.items())
     )
-    print(args_from_json)
     kili_print("Starting Ultralytics' YoloV5 ...")
     try:
         args = [
-            "cd",
-            f'"{yolov5_path}"',
-            "&&",
             "python",
             "train.py",
             "--data",
@@ -74,13 +71,13 @@ def ultralytics_train_yolov5(
             f'"{output_path}"',
             *args_from_json,
         ]
-        print(args)
         subprocess.run(
             args,
             check=True,
+            cwd=f'{yolov5_path}',
         )
-    except subprocess.CalledProcessError:
-        kili_print("YoloV5 training crashed")
+    except subprocess.CalledProcessError as e:
+        raise AutoMLYoloException("YoloV5 training crashed.")
 
     shutil.copy(config_data_path, output_path)
     df_result = pd.read_csv(os.path.join(output_path, "exp", "results.csv"))
