@@ -45,13 +45,6 @@ def huggingface_predict_ner(
         offset = 0
         predictions_asset = []
 
-        # sum_len_sentences = sum(len(sentence) for sentence in sent_tokenize(response.text))
-        # num_sentences = len(list(sent_tokenize(response.text)))
-        # len_text = len(response.text)
-        # print(f"sum sentences:{sum_len_sentences}")
-        # print(f"len_text:{len_text}")
-        # print(f"num_sentences:{num_sentences}")
-        # return 0
         text = response.text
         for sentence in sent_tokenize(text):
             offset_inc = text[offset:].find(sentence)
