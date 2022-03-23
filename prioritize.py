@@ -7,6 +7,9 @@ import torch
 import numpy as np
 from img2vec_pytorch import Img2Vec
 from kili.client import Kili
+from sklearn.pipeline import Pipeline
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans  #
 
 
 from utils.constants import (
@@ -34,11 +37,6 @@ class Prioritizer:
 
         returns a list of priority.
         """
-        import numpy as np
-        from sklearn.pipeline import Pipeline
-        from sklearn.decomposition import PCA
-        from sklearn.cluster import KMeans  #
-
         embeddings = self.embeddings
 
         pipe = Pipeline(
@@ -77,16 +75,37 @@ class Prioritizer:
         return np.random.permutation(len(self.embeddings)).tolist()
 
     @staticmethod
-    def get_combine_priorities(priorities_a: List[int], priorities_b: List[int], proba_a: float = 0.5):
+    def combine_priorities(
+        priorities_a: List[int], priorities_b: List[int], proba_a: float = 0.5
+    ):
         """Combine two priority lists
-        
+
         Sample from the first list with proba coef_a
         """
         assert len(priorities_a) == len(priorities_b)
-        priorities = []
+
+        queue_a = np.argsort(np.array(priorities_a)).tolist()
+        queue_b = np.argsort(np.array(priorities_b)).tolist()
+
+        queue: List[int] = []
         for i in range(len(priorities_a)):
-            priorities.append(priorities_a[i] + priorities_b[i])
+
+            if np.random.random() < proba_a:
+                Prioritizer.pop_queues(queue_a, queue_b, queue)
+            else:
+                Prioritizer.pop_queues(queue_b, queue_a, queue)
+
+        # convert the queue to priorities
+        priorities = np.arange(len(queue))[queue].tolist()
+
         return priorities
+
+    @staticmethod
+    def pop_queues(queue_a, queue_b, queue):
+        """ """
+        idx = queue_a.pop(0)
+        queue.append(idx)
+        queue_b.pop(queue_b.index(idx))
 
     def get_priorities(self, diversity_sampling: float) -> List[int]:
         """diversity_sampling is a float between 0 and 1"""
@@ -101,8 +120,10 @@ class Prioritizer:
         diversity_sampling_priorities = self.get_priorities_diversity_sampling()
         random_sampling_priorities = self.get_random_sampling_priorities()
 
-        priorities = self.get_combine_priorities(
-            diversity_sampling_priorities, random_sampling_priorities
+        priorities = self.combine_priorities(
+            priorities_a=diversity_sampling_priorities,
+            priorities_b=random_sampling_priorities,
+            proba_a=diversity_sampling,
         )
 
         return priorities
