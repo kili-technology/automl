@@ -30,7 +30,24 @@ def ensure_dir(file_path: str):
     return file_path
 
 
-@memory.cache()
+@memory.cache
+def get_asset_memoized(kili, project_id, first, skip):
+    return kili.assets(
+        project_id=project_id,
+        first=first,
+        skip=skip,
+        disable_tqdm=True,
+        fields=[
+            "id",
+            "externalId",
+            "content",
+            "labels.createdAt",
+            "labels.jsonResponse",
+            "labels.labelType",
+        ],
+    )
+
+
 def get_assets(
     kili,
     project_id: str,
@@ -44,20 +61,7 @@ def get_assets(
     first = min(100, total)
     assets = []
     for skip in tqdm(range(0, total, first)):
-        assets += kili.assets(
-            project_id=project_id,
-            first=first,
-            skip=skip,
-            disable_tqdm=True,
-            fields=[
-                "id",
-                "externalId",
-                "content",
-                "labels.createdAt",
-                "labels.jsonResponse",
-                "labels.labelType",
-            ],
-        )
+        assets += get_asset_memoized(kili, project_id, first, skip)
     assets = [
         {
             **a,
@@ -150,20 +154,26 @@ class DownloadedImages:
     image: PILImage
 
 
+@memory.cache()
+def download_image(api_key, asset_content):
+    img_data = requests.get(
+        asset_content,
+        headers={
+            "Authorization": f"X-API-Key: {api_key}",
+        },
+    ).content
+
+    image = Image.open(BytesIO(img_data))
+    return image
+
+
 def download_project_images(
     api_key, assets, inference_path: Optional[str] = None
 ) -> list[DownloadedImages]:
     kili_print("Downloading project images...")
     downloaded_images = []
     for asset in tqdm(assets):
-        img_data = requests.get(
-            asset["content"],
-            headers={
-                "Authorization": f"X-API-Key: {api_key}",
-            },
-        ).content
-
-        image = Image.open(BytesIO(img_data))
+        image = download_image(api_key, asset["content"])
         format = str(image.format or "")
 
         filename = ""
