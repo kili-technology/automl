@@ -51,9 +51,10 @@ def get_asset_memoized(kili, project_id, first, skip):
 def get_assets(
     kili,
     project_id: str,
-    label_types: List[str],
+    label_types: List[str] = ["DEFAULT", "REVIEW"],
     max_assets: Optional[int] = None,
-    only_labeled=False,
+    get_labeled: bool = True,
+    get_unlabeled: bool = True,
 ) -> List[Dict]:
     total = kili.count_assets(project_id=project_id)
     total = total if max_assets is None else min(total, max_assets)
@@ -73,8 +74,12 @@ def get_assets(
         }
         for a in assets
     ]
-    if only_labeled:
+    if not get_labeled and not get_unlabeled:
+        raise ValueError("no label types selected")
+    if not get_labeled:
         assets = [a for a in assets if len(a["labels"]) > 0]
+    if not get_unlabeled:
+        assets = [a for a in assets if len(a["labels"]) == 0]
     return assets
 
 
@@ -89,7 +94,7 @@ def get_project(kili, project_id: str) -> Tuple[str, Dict]:
     return input_type, jobs
 
 
-def kili_print(*args, **kwargs) -> void:
+def kili_print(*args, **kwargs) -> None:
     print(colored("kili:", "yellow", attrs=["bold"]), *args, **kwargs)
 
 
@@ -168,8 +173,10 @@ def download_image(api_key, asset_content):
 
 
 def download_project_images(
-    api_key, assets, inference_path: Optional[str] = None
-) -> list[DownloadedImages]:
+    api_key,
+    assets,
+    inference_path: Optional[str] = None,
+) -> List[DownloadedImages]:
     kili_print("Downloading project images...")
     downloaded_images = []
     for asset in tqdm(assets):

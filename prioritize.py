@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 import click
 from PIL.Image import Image as PILImage
@@ -22,7 +23,7 @@ from utils.helpers import (
 
 
 def embeddings_images(
-    images: list[PILImage],
+    images: List[PILImage],
 ) -> np.ndarray:
     """Get the embeddings of the images using a generic model trained on ImageNet."""
     img2vec = Img2Vec(cuda=torch.cuda.is_available())
@@ -31,13 +32,13 @@ def embeddings_images(
 
 
 def embeddings_ner(
-    texts: list[str],
+    texts: List[str],
 ):
     raise NotImplementedError
 
 
 def embedding_text(
-    texts: list[str],
+    texts: List[str],
 ):
     raise NotImplementedError
 

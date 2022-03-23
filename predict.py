@@ -137,7 +137,8 @@ def main(
         project_id,
         label_types.split(","),
         max_assets=max_assets,
-        only_labeled=True,
+        get_labeled=True,
+        get_unlabeled=True,
     )
 
     for job_name, job in jobs.items():
