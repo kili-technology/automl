@@ -4,9 +4,11 @@ kili
 jinja2
 nltk>=3.3
 numpy
+pandas
 requests
 scikit-learn
 tabulate
+tarfile
 tensorflow
 termcolor
 tqdm
