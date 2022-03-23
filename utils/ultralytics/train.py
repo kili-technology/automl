@@ -68,7 +68,7 @@ def ultralytics_train_yolov5(
             "--data",
             "kili.yaml",
             "--project",
-            f'"{output_path}"',
+            f'{output_path}',
             *args_from_json,
         ]
         subprocess.run(
