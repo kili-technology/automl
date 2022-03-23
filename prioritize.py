@@ -1,10 +1,12 @@
-from email.policy import default
+from lib2to3.pgen2 import literals
 import os
 
 import click
-from PIL.Image import open, Image
+from PIL.Image import Image as PILImage
 import torch
 import numpy as np
+
+from img2vec_pytorch import Img2Vec
 
 from kili.client import Kili
 from utils.constants import (
@@ -21,10 +23,9 @@ from utils.helpers import (
 
 
 def embeddings_images(
-    images : list[Image],
+    images : list[PILImage],
 ) -> np.ndarray:
     """Get the embeddings of the images using a generic model trained on ImageNet."""
-    from img2vec_pytorch import Img2Vec
     img2vec = Img2Vec(cuda=torch.cuda.is_available())
     vectors = img2vec.get_vec(images)
     return vectors
@@ -42,8 +43,8 @@ def embedding_text(
     raise NotImplementedError
 
 @click.command()
-@click.option("--api-key", default=os.environ["KILI_API_KEY"], help="Kili API Key")
-@click.option("--project-id", default=os.environ["PROJECT_ID"], help="Kili project ID")
+@click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
+@click.option("--project-id", default=os.environ.get("PROJECT_ID"), help="Kili project ID")
 @click.option(
     "--label-types",
     default=None,
@@ -68,8 +69,8 @@ def main(
     """ """
     kili = Kili(api_key=api_key)
     input_type, jobs = get_project(kili, project_id)
-    print("Input type: ",input_type)
-    print("jobs:", jobs)
+    kili_print("Input type: ",input_type)
+    kili_print("jobs:", jobs)
 
     assets = get_assets(kili, project_id, parse_label_types(label_types), max_assets)
 
