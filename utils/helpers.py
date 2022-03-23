@@ -20,7 +20,9 @@ def ensure_dir(file_path: str):
     return file_path
 
 
-def get_assets(kili, project_id: str, label_types: List[str], max_assets: Optional[int] = None) -> List[Dict]:
+def get_assets(
+    kili, project_id: str, label_types: List[str], max_assets: Optional[int] = None
+) -> List[Dict]:
     total = kili.count_assets(project_id=project_id)
     total = total if max_assets is None else min(total, max_assets)
 
@@ -77,9 +79,7 @@ def build_model_repository_path(
     return os.path.join(root_dir, project_id, job_name, model_repository)
 
 
-def build_dataset_path(
-    root_dir: str, project_id: str, job_name: str
-) -> str:
+def build_dataset_path(root_dir: str, project_id: str, job_name: str) -> str:
     return os.path.join(root_dir, project_id, job_name, "dataset")
 
 
@@ -100,7 +100,13 @@ def set_default(x: str, x_default: str, x_name: str, x_range: List[str]) -> str:
     return x
 
 
-def get_last_trained_model_path(job_name: str, project_id: str, model_path: str, project_path_wildcard: List[str], weights_filename: str) -> str:
+def get_last_trained_model_path(
+    job_name: str,
+    project_id: str,
+    model_path: str,
+    project_path_wildcard: List[str],
+    weights_filename: str,
+) -> str:
     if model_path is None:
         path_project_models = os.path.join(
             HOME, project_id, job_name, *project_path_wildcard

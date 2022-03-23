@@ -39,7 +39,7 @@ def train_image_bounding_box(
     model_repository,
     project_id,
     label_types,
-    clear_dataset_cache
+    clear_dataset_cache,
 ):
     from utils.ultralytics.train import ultralytics_train_yolov5
 
@@ -69,7 +69,7 @@ def train_image_bounding_box(
             project_id,
             model_framework,
             label_types,
-            clear_dataset_cache
+            clear_dataset_cache,
         )
 
 
@@ -82,7 +82,7 @@ def train_ner(
     model_name,
     model_repository,
     project_id,
-    clear_dataset_cache
+    clear_dataset_cache,
 ):
     from utils.huggingface.train import huggingface_train_ner
     import nltk
@@ -112,7 +112,14 @@ def train_ner(
             ],
         )
         return huggingface_train_ner(
-            api_key, assets, job, job_name, model_framework, model_name, path, clear_dataset_cache
+            api_key,
+            assets,
+            job,
+            job_name,
+            model_framework,
+            model_name,
+            path,
+            clear_dataset_cache,
         )
     else:
         return None
@@ -127,7 +134,7 @@ def train_text_classification_single(
     model_name,
     model_repository,
     project_id,
-    clear_dataset_cache
+    clear_dataset_cache,
 ) -> float:
     """ """
     import nltk
@@ -156,7 +163,14 @@ def train_text_classification_single(
             [ModelName.BertBaseMultilingualCased],
         )
         return huggingface_train_text_classification_single(
-            api_key, assets, job, job_name, model_framework, model_name, path, clear_dataset_cache
+            api_key,
+            assets,
+            job,
+            job_name,
+            model_framework,
+            model_name,
+            path,
+            clear_dataset_cache,
         )
 
 
@@ -202,7 +216,7 @@ def main(
     label_types: str,
     max_assets: int,
     json_args: str,
-    clear_dataset_cache: bool
+    clear_dataset_cache: bool,
 ):
     """ """
     kili = Kili(api_key=api_key)
@@ -230,7 +244,7 @@ def main(
                 model_name,
                 model_repository,
                 project_id,
-                clear_dataset_cache
+                clear_dataset_cache,
             )
         elif (
             content_input == ContentInput.Radio
@@ -248,7 +262,7 @@ def main(
                 model_name,
                 model_repository,
                 project_id,
-                clear_dataset_cache
+                clear_dataset_cache,
             )
         elif (
             content_input == ContentInput.Radio
@@ -267,7 +281,7 @@ def main(
                 model_repository,
                 project_id,
                 parse_label_types(label_types),
-                clear_dataset_cache
+                clear_dataset_cache,
             )
         else:
             kili_print("not implemented yet")

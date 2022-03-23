@@ -15,8 +15,11 @@ env = Environment(
     loader=FileSystemLoader(os.path.abspath("utils/ultralytics")),
     autoescape=select_autoescape(),
 )
+
+
 class AutoMLYoloException(Exception):
     pass
+
 
 def ultralytics_train_yolov5(
     api_key: str,
@@ -68,13 +71,13 @@ def ultralytics_train_yolov5(
             "--data",
             "kili.yaml",
             "--project",
-            f'{output_path}',
+            f"{output_path}",
             *args_from_json,
         ]
         subprocess.run(
             args,
             check=True,
-            cwd=f'{yolov5_path}',
+            cwd=f"{yolov5_path}",
         )
     except subprocess.CalledProcessError as e:
         raise AutoMLYoloException("YoloV5 training crashed.")
