@@ -66,9 +66,9 @@ def ultralytics_predict_object_detection(
 
     kili_print("Starting Ultralytics' YoloV5 inference...")
     cmd = (
-        f'python detect.py '
+        f"python detect.py "
         + f'--weights "{model_weights}" '
-        + f'--save-txt --save-conf --nosave --exist-ok '
+        + f"--save-txt --save-conf --nosave --exist-ok "
         + f'--source "{inference_path}" --project "{inference_path}"'
     )
     os.system("cd utils/ultralytics/yolov5 && " + cmd)
@@ -96,7 +96,9 @@ def get_id_from_path(path_yolov5_inference: str, fmt: str) -> str:
     return os.path.split(path_yolov5_inference)[-1].split(".")[0]
 
 
-def yolov5_to_kili_json(path_yolov5_inference: str, ind_to_categories: List[str]) -> Dict:
+def yolov5_to_kili_json(
+    path_yolov5_inference: str, ind_to_categories: List[str]
+) -> Dict:
 
     annotations = []
     with open(path_yolov5_inference, "r") as f:

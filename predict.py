@@ -28,7 +28,9 @@ def predict_ner(
     model_path: Optional[str],
     verbose: int,
 ):
-    model_path_res = get_last_trained_model_path(job_name, project_id, model_path, ["*", "model", "*", "*"], "pytorch_model.bin")
+    model_path_res = get_last_trained_model_path(
+        job_name, project_id, model_path, ["*", "model", "*", "*"], "pytorch_model.bin"
+    )
     split_path = os.path.normpath(model_path_res).split(os.path.sep)
     if split_path[-4] == ModelRepository.HuggingFace:
         model_repository = ModelRepository.HuggingFace
@@ -58,7 +60,13 @@ def predict_object_detection(
 ):
     from utils.ultralytics.predict import ultralytics_predict_object_detection
 
-    model_path_res = get_last_trained_model_path(job_name, project_id, model_path, ["*", "model", "*", "*", "exp", "weights"], "best.pt")
+    model_path_res = get_last_trained_model_path(
+        job_name,
+        project_id,
+        model_path,
+        ["*", "model", "*", "*", "exp", "weights"],
+        "best.pt",
+    )
     split_path = os.path.normpath(model_path_res).split(os.path.sep)
     if split_path[-6] == ModelRepository.Ultralytics:
         model_repository = ModelRepository.Ultralytics
@@ -71,7 +79,15 @@ def predict_object_detection(
     else:
         raise ValueError(f"Unknown model framework: {model_framework}")
     if model_repository == ModelRepository.Ultralytics:
-        return ultralytics_predict_object_detection(api_key, assets, project_id, model_framework, model_path_res, job_name, verbose)
+        return ultralytics_predict_object_detection(
+            api_key,
+            assets,
+            project_id,
+            model_framework,
+            model_path_res,
+            job_name,
+            verbose,
+        )
 
 
 @click.command()
@@ -111,12 +127,12 @@ def main(
     dry_run: bool,
     from_model: Optional[str],
     verbose: bool,
-    max_assets: Optional[int]
+    max_assets: Optional[int],
 ):
 
     kili = Kili(api_key=api_key)
     input_type, jobs = get_project(kili, project_id)
-    assets = get_assets(kili, project_id, label_types.split(","), max_assets = max_assets)
+    assets = get_assets(kili, project_id, label_types.split(","), max_assets=max_assets)
 
     for job_name, job in jobs.items():
         content_input = job.get("content", {}).get("input")
@@ -160,7 +176,6 @@ def main(
 
         else:
             kili_print("not implemented yet")
-
 
 
 if __name__ == "__main__":
