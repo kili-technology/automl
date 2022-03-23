@@ -208,7 +208,9 @@ def main(
             and input_type == InputType.Text
             and ml_task == MLTask.Classification
         ):
-            assets = get_assets(kili, project_id, parse_label_types(label_types))
+            assets = get_assets(
+                kili, project_id, parse_label_types(label_types), only_labeled=True
+            )
             assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = train_text_classification_single(
                 api_key,
@@ -225,7 +227,9 @@ def main(
             and input_type == InputType.Text
             and ml_task == MLTask.NamedEntitiesRecognition
         ):
-            assets = get_assets(kili, project_id, parse_label_types(label_types))
+            assets = get_assets(
+                kili, project_id, parse_label_types(label_types), only_labeled=True
+            )
             assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = train_ner(
                 api_key,

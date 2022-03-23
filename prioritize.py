@@ -1,4 +1,3 @@
-from lib2to3.pgen2 import literals
 import os
 
 import click

@@ -18,6 +18,7 @@ from utils.constants import HOME
 
 memory = Memory(".cachedir")
 
+
 def categories_from_job(job: Dict):
     return list(job["content"]["categories"].keys())
 
@@ -29,9 +30,14 @@ def ensure_dir(file_path: str):
     return file_path
 
 
-
 @memory.cache()
-def get_assets(kili, project_id: str, label_types: List[str], max_assets: Optional[int] = None) -> List[Dict]:
+def get_assets(
+    kili,
+    project_id: str,
+    label_types: List[str],
+    max_assets: Optional[int] = None,
+    only_labeled=False,
+) -> List[Dict]:
     total = kili.count_assets(project_id=project_id)
     total = total if max_assets is None else min(total, max_assets)
 
@@ -63,7 +69,8 @@ def get_assets(kili, project_id: str, label_types: List[str], max_assets: Option
         }
         for a in assets
     ]
-    assets = [a for a in assets if len(a["labels"]) > 0]
+    if only_labeled:
+        assets = [a for a in assets if len(a["labels"]) > 0]
     return assets
 
 
@@ -88,9 +95,7 @@ def build_model_repository_path(
     return os.path.join(root_dir, project_id, job_name, model_repository)
 
 
-def build_dataset_path(
-    root_dir: str, project_id: str, job_name: str
-) -> str:
+def build_dataset_path(root_dir: str, project_id: str, job_name: str) -> str:
     return os.path.join(root_dir, project_id, job_name, "dataset")
 
 
@@ -111,7 +116,13 @@ def set_default(x: str, x_default: str, x_name: str, x_range: List[str]) -> str:
     return x
 
 
-def get_last_trained_model_path(job_name: str, project_id: str, model_path: str, project_path_wildcard: List[str], weights_filename: str) -> str:
+def get_last_trained_model_path(
+    job_name: str,
+    project_id: str,
+    model_path: str,
+    project_path_wildcard: List[str],
+    weights_filename: str,
+) -> str:
     if model_path is None:
         path_project_models = os.path.join(
             HOME, project_id, job_name, *project_path_wildcard
@@ -135,11 +146,13 @@ def get_last_trained_model_path(job_name: str, project_id: str, model_path: str,
 class DownloadedImages:
     id: str
     externalId: str
-    filename : str
+    filename: str
     image: PILImage
 
 
-def download_project_images(api_key, assets, inference_path: Optional[str]= None) -> list[DownloadedImages]:
+def download_project_images(
+    api_key, assets, inference_path: Optional[str] = None
+) -> list[DownloadedImages]:
     kili_print("Downloading project images...")
     downloaded_images = []
     for asset in tqdm(assets):
@@ -160,5 +173,12 @@ def download_project_images(api_key, assets, inference_path: Optional[str]= None
             with open(filename, "w") as fp:
                 image.save(fp, format)
 
-        downloaded_images.append(DownloadedImages(id=asset["id"], externalId=asset["externalId"], filename=filename or "", image=image))
+        downloaded_images.append(
+            DownloadedImages(
+                id=asset["id"],
+                externalId=asset["externalId"],
+                filename=filename or "",
+                image=image,
+            )
+        )
     return downloaded_images
