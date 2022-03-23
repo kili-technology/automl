@@ -192,3 +192,7 @@ def download_project_images(
             )
         )
     return downloaded_images
+
+
+def clear_joblib_cache():
+    memory.cache.clear()
