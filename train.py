@@ -175,7 +175,7 @@ def train_text_classification_single(
 
 
 @click.command()
-@click.option("--api-key", default=os.environ["KILI_API_KEY"], help="Kili API Key")
+@click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
 @click.option(
     "--model-framework", default=None, help="Model framework (eg. pytorch, tensorflow)"
 )

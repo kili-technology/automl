@@ -91,7 +91,7 @@ def predict_object_detection(
 
 
 @click.command()
-@click.option("--api-key", default=os.environ["KILI_API_KEY"], help="Kili API Key")
+@click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
 @click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--label-types",
@@ -132,14 +132,7 @@ def main(
 
     kili = Kili(api_key=api_key)
     input_type, jobs = get_project(kili, project_id)
-    assets = get_assets(
-        kili,
-        project_id,
-        label_types.split(","),
-        max_assets=max_assets,
-        get_labeled=True,
-        get_unlabeled=True,
-    )
+    assets = get_assets(kili, project_id, label_types.split(","), max_assets=max_assets)
 
     for job_name, job in jobs.items():
         content_input = job.get("content", {}).get("input")
