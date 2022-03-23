@@ -75,7 +75,7 @@ def predict_object_detection(
 
 
 @click.command()
-@click.option("--api-key", default=os.environ["KILI_API_KEY"], help="Kili API Key")
+@click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
 @click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--label-types",
