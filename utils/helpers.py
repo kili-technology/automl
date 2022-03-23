@@ -1,13 +1,12 @@
 import os
-from typing import List, Optional, Dict, Tuple
-from glob import glob
 from io import BytesIO
-from numpy import void
+import shutil
+from typing import List, Optional, Dict, Tuple
 from dataclasses import dataclass
 
+from glob import glob
 from termcolor import colored
 from joblib import Memory
-
 from tqdm import tqdm
 from PIL import Image
 from PIL.Image import Image as PILImage
@@ -16,7 +15,32 @@ from tqdm.auto import tqdm
 
 from utils.constants import HOME
 
-memory = Memory(".cachedir")
+
+def kili_project_memoizer(
+    sub_dir: str,
+):
+    """Decorator factory for memoizing a function that takes a project id as input."""
+
+    def decorator(some_function):
+        def wrapper(*args, **kwargs):
+            project_id = kwargs.get("project_id")
+            if not project_id:
+                raise ValueError("project_id not specified in a keyword argument")
+            cache_path = os.path.join(HOME, project_id, sub_dir)
+            memory = Memory(cache_path)
+            return memory.cache(some_function)(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def kili_memoizer(some_function):
+    def wrapper(*args, **kwargs):
+        memory = Memory(HOME)
+        return memory.cache(some_function)(*args, **kwargs)
+
+    return wrapper
 
 
 def categories_from_job(job: Dict):
@@ -30,8 +54,8 @@ def ensure_dir(file_path: str):
     return file_path
 
 
-@memory.cache
-def get_asset_memoized(kili, project_id, first, skip):
+@kili_project_memoizer(sub_dir="get_asset_memoized")
+def get_asset_memoized(*, kili, project_id, first, skip):
     return kili.assets(
         project_id=project_id,
         first=first,
@@ -62,7 +86,9 @@ def get_assets(
     first = min(100, total)
     assets = []
     for skip in tqdm(range(0, total, first)):
-        assets += get_asset_memoized(kili, project_id, first, skip)
+        assets += get_asset_memoized(
+            kili=kili, project_id=project_id, first=first, skip=skip
+        )
     assets = [
         {
             **a,
@@ -159,7 +185,7 @@ class DownloadedImages:
     image: PILImage
 
 
-@memory.cache()
+@kili_memoizer
 def download_image(api_key, asset_content):
     img_data = requests.get(
         asset_content,
@@ -201,5 +227,6 @@ def download_project_images(
     return downloaded_images
 
 
-def clear_joblib_cache():
-    memory.cache.clear()
+def clear_automl_cache():
+    if os.path.exists(HOME):
+        shutil.rmtree(path)

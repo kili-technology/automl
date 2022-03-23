@@ -5,15 +5,15 @@ import click
 from PIL.Image import Image as PILImage
 import torch
 import numpy as np
-
 from img2vec_pytorch import Img2Vec
-
 from kili.client import Kili
+
+
 from utils.constants import (
     InputType,
 )
 from utils.helpers import (
-    clear_joblib_cache,
+    clear_automl_cache,
     download_project_images,
     get_assets,
     get_project,
@@ -92,7 +92,7 @@ def main(
     kili_print("jobs: ", jobs)
 
     if clear_dataset_cache:
-        clear_joblib_cache()
+        clear_automl_cache()
 
     assets = get_assets(kili, project_id, parse_label_types(label_types), max_assets)
 
