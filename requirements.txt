@@ -11,4 +11,3 @@ tensorflow
 termcolor
 tqdm
 transformers
-img2vec-pytorch==1.0.1
