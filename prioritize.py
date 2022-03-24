@@ -30,12 +30,14 @@ class Prioritizer:
         assert len(embeddings) > 0 and len(embeddings[0]) > 0
         self.embeddings = embeddings
 
-    def get_priorities_diversity_sampling(self) -> List[int]:
-        """Implement diversity sampling
+    def _get_priorities_diversity_sampling(self) -> List[int]:
+        """Implement diversity sampling.
 
-        Cluster-based sampling
+        We cluster the embeddings and then we create a priority list for each cluster.
+        Then we combine the priority lists.
 
-        returns a list of priority.
+        Returns:
+            List[int]: list of priorities.
         """
         embeddings = self.embeddings
 
@@ -66,11 +68,8 @@ class Prioritizer:
 
         return priorities.tolist()
 
-    def get_random_sampling_priorities(self):
-        """Implement random sampling
-
-        returns a list of priority.
-        """
+    def _get_random_sampling_priorities(self):
+        """Implement random sampling"""
         assert len(self.embeddings) > 0
         return np.random.permutation(len(self.embeddings)).tolist()
 
@@ -78,9 +77,15 @@ class Prioritizer:
     def combine_priorities(
         priorities_a: List[int], priorities_b: List[int], proba_a: float = 0.5
     ):
-        """Combine two priority lists
+        """Combine two priority lists.
 
-        Sample from the first list with proba coef_a
+        Args:
+            priorities_a (List[int]): first priority list
+            priorities_b (List[int]): second priority list
+            proba_a (float, optional): probability of taking the first priority list. Defaults to 0.5.
+
+        Returns:
+            List[int]: combined priority list
         """
         assert len(priorities_a) == len(priorities_b)
 
@@ -117,8 +122,8 @@ class Prioritizer:
             f"and {random_sampling*100}% of Random Sampling"
         )
 
-        diversity_sampling_priorities = self.get_priorities_diversity_sampling()
-        random_sampling_priorities = self.get_random_sampling_priorities()
+        diversity_sampling_priorities = self._get_priorities_diversity_sampling()
+        random_sampling_priorities = self._get_random_sampling_priorities()
 
         priorities = self.combine_priorities(
             priorities_a=diversity_sampling_priorities,
@@ -206,7 +211,7 @@ def main(
         project_id,
         parse_label_types(label_types),
         max_assets,
-        get_labeled=False,
+        labeling_statuses=["UNLABELED"],
     )
 
     if input_type == InputType.Image:
@@ -224,7 +229,6 @@ def main(
     asset_ids = [asset["id"] for asset in unlabeled_assets]
     prioritizer = Prioritizer(embeddings)
     priorities = prioritizer.get_priorities(diversity_sampling=diversity_sampling)
-    print(priorities)
     kili.update_properties_in_assets(asset_ids=asset_ids, priorities=priorities)
 
 

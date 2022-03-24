@@ -1,9 +1,12 @@
 import os
+import random
 from io import BytesIO
 import shutil
 from typing import List, Optional, Dict, Tuple
 from dataclasses import dataclass
 
+import torch
+import numpy as np
 from glob import glob
 from termcolor import colored
 from joblib import Memory
@@ -14,6 +17,17 @@ import requests
 from tqdm.auto import tqdm
 
 from utils.constants import HOME
+
+
+def set_all_seeds(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+
+
+set_all_seeds(42)
 
 
 def kili_project_memoizer(
@@ -72,13 +86,24 @@ def get_asset_memoized(*, kili, project_id, first, skip):
     )
 
 
+def asset_is_kept(
+    asset, labeling_statuses: List[str] = ["LABELED", "UNLABELED"]
+) -> bool:
+    labeled = len(asset["labels"]) > 0
+    unlabeled = len(asset["labels"]) == 0
+    if "LABELED" in labeling_statuses:
+        return labeled
+    if "UNLABELED" in labeling_statuses:
+        return unlabeled
+    return False
+
+
 def get_assets(
     kili,
     project_id: str,
     label_types: List[str] = ["DEFAULT", "REVIEW"],
     max_assets: Optional[int] = None,
-    get_labeled: bool = True,
-    get_unlabeled: bool = True,
+    labeling_statuses: List[str] = ["LABELED", "UNLABELED"],
 ) -> List[Dict]:
     total = kili.count_assets(project_id=project_id)
     total = total if max_assets is None else min(total, max_assets)
@@ -100,12 +125,10 @@ def get_assets(
         }
         for a in assets
     ]
-    if not get_labeled and not get_unlabeled:
-        raise ValueError("no label types selected")
-    if not get_labeled:
-        assets = [a for a in assets if len(a["labels"]) > 0]
-    if not get_unlabeled:
-        assets = [a for a in assets if len(a["labels"]) == 0]
+    if not labeling_statuses:
+        raise ValueError("labeling_statuses must be a non-empty list.")
+    assets = [a for a in assets if asset_is_kept(a, labeling_statuses)]
+    return assets
     return assets
 
 
@@ -229,4 +252,4 @@ def download_project_images(
 
 def clear_automl_cache():
     if os.path.exists(HOME):
-        shutil.rmtree(path)
+        shutil.rmtree(HOME)

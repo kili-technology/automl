@@ -237,7 +237,7 @@ def main(
                 kili,
                 project_id,
                 parse_label_types(label_types),
-                get_unlabeled=False,
+                labeling_statuses=["LABELED"],
             )
             assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = train_text_classification_single(
@@ -260,7 +260,7 @@ def main(
                 kili,
                 project_id,
                 parse_label_types(label_types),
-                get_unlabeled=False,
+                labeling_statuses=["LABELED"],
             )
             assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = train_ner(
