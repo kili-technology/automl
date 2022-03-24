@@ -1,12 +1,46 @@
 import os
+from io import BytesIO
+import shutil
 from typing import List, Optional, Dict, Tuple
-from glob import glob
-from numpy import void
+from dataclasses import dataclass
 
+from glob import glob
 from termcolor import colored
+from joblib import Memory
 from tqdm import tqdm
+from PIL import Image
+from PIL.Image import Image as PILImage
+import requests
+from tqdm.auto import tqdm
 
 from utils.constants import HOME
+
+
+def kili_project_memoizer(
+    sub_dir: str,
+):
+    """Decorator factory for memoizing a function that takes a project id as input."""
+
+    def decorator(some_function):
+        def wrapper(*args, **kwargs):
+            project_id = kwargs.get("project_id")
+            if not project_id:
+                raise ValueError("project_id not specified in a keyword argument")
+            cache_path = os.path.join(HOME, project_id, sub_dir)
+            memory = Memory(cache_path)
+            return memory.cache(some_function)(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def kili_memoizer(some_function):
+    def wrapper(*args, **kwargs):
+        memory = Memory(HOME)
+        return memory.cache(some_function)(*args, **kwargs)
+
+    return wrapper
 
 
 def categories_from_job(job: Dict):
@@ -20,8 +54,31 @@ def ensure_dir(file_path: str):
     return file_path
 
 
+@kili_project_memoizer(sub_dir="get_asset_memoized")
+def get_asset_memoized(*, kili, project_id, first, skip):
+    return kili.assets(
+        project_id=project_id,
+        first=first,
+        skip=skip,
+        disable_tqdm=True,
+        fields=[
+            "id",
+            "externalId",
+            "content",
+            "labels.createdAt",
+            "labels.jsonResponse",
+            "labels.labelType",
+        ],
+    )
+
+
 def get_assets(
-    kili, project_id: str, label_types: List[str], max_assets: Optional[int] = None
+    kili,
+    project_id: str,
+    label_types: List[str] = ["DEFAULT", "REVIEW"],
+    max_assets: Optional[int] = None,
+    get_labeled: bool = True,
+    get_unlabeled: bool = True,
 ) -> List[Dict]:
     total = kili.count_assets(project_id=project_id)
     total = total if max_assets is None else min(total, max_assets)
@@ -29,19 +86,8 @@ def get_assets(
     first = min(100, total)
     assets = []
     for skip in tqdm(range(0, total, first)):
-        assets += kili.assets(
-            project_id=project_id,
-            first=first,
-            skip=skip,
-            disable_tqdm=True,
-            fields=[
-                "id",
-                "externalId",
-                "content",
-                "labels.createdAt",
-                "labels.jsonResponse",
-                "labels.labelType",
-            ],
+        assets += get_asset_memoized(
+            kili=kili, project_id=project_id, first=first, skip=skip
         )
     assets = [
         {
@@ -54,7 +100,12 @@ def get_assets(
         }
         for a in assets
     ]
-    assets = [a for a in assets if len(a["labels"]) > 0]
+    if not get_labeled and not get_unlabeled:
+        raise ValueError("no label types selected")
+    if not get_labeled:
+        assets = [a for a in assets if len(a["labels"]) > 0]
+    if not get_unlabeled:
+        assets = [a for a in assets if len(a["labels"]) == 0]
     return assets
 
 
@@ -69,7 +120,7 @@ def get_project(kili, project_id: str) -> Tuple[str, Dict]:
     return input_type, jobs
 
 
-def kili_print(*args, **kwargs) -> void:
+def kili_print(*args, **kwargs) -> None:
     print(colored("kili:", "yellow", attrs=["bold"]), *args, **kwargs)
 
 
@@ -124,3 +175,58 @@ def get_last_trained_model_path(
         if model_path is None:
             raise Exception("No trained model found for job {job}. Exiting ...")
     return model_path
+
+
+@dataclass
+class DownloadedImages:
+    id: str
+    externalId: str
+    filename: str
+    image: PILImage
+
+
+@kili_memoizer
+def download_image(api_key, asset_content):
+    img_data = requests.get(
+        asset_content,
+        headers={
+            "Authorization": f"X-API-Key: {api_key}",
+        },
+    ).content
+
+    image = Image.open(BytesIO(img_data))
+    return image
+
+
+def download_project_images(
+    api_key,
+    assets,
+    inference_path: Optional[str] = None,
+) -> List[DownloadedImages]:
+    kili_print("Downloading project images...")
+    downloaded_images = []
+    for asset in tqdm(assets):
+        image = download_image(api_key, asset["content"])
+        format = str(image.format or "")
+
+        filename = ""
+        if inference_path:
+            filename = os.path.join(inference_path, asset["id"] + "." + format.lower())
+
+            with open(filename, "w") as fp:
+                image.save(fp, format)
+
+        downloaded_images.append(
+            DownloadedImages(
+                id=asset["id"],
+                externalId=asset["externalId"],
+                filename=filename or "",
+                image=image,
+            )
+        )
+    return downloaded_images
+
+
+def clear_automl_cache():
+    if os.path.exists(HOME):
+        shutil.rmtree(path)
