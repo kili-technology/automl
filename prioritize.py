@@ -224,16 +224,22 @@ def main(
         mnist_images_df = mnist.data
         mnist_labels = mnist.target
 
+        #  takes a random sample of the images
+        mask = np.random.choice(mnist_images_df.shape[0], 1000)
+        mnist_images_df = mnist_images_df[mask]
+        mnist_labels = mnist_labels[mask]
+
         # delete 9/10th of the images with an 8 label
-        mnist_images_df = mnist_images_df[mnist_labels != 8]
-        mnist_labels = mnist_labels[mnist_labels != 8]
+        idx_8 = np.where(mnist_labels == 8)[0]
+        almost_all_idx_8 = np.random.choice(
+            idx_8, size=int(len(idx_8) / 10), replace=False
+        )
+        mnist_images_df = mnist_images_df[almost_all_idx_8]
+        mnist_labels = mnist_labels[almost_all_idx_8]
 
         from PIL import Image
 
-        mnist_images_np = mnist_images_df.to_numpy().reshape(
-            (-1, 28, 28, 1)
-        )
-
+        mnist_images_np = mnist_images_df.to_numpy().reshape((-1, 28, 28, 1))
 
         pil_images = [Image.fromarray(image) for image in mnist_images_np]
 
