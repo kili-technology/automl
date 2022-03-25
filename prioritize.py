@@ -42,7 +42,7 @@ class Prioritizer:
         embeddings = self.embeddings
 
         pipe = Pipeline(
-            [("pca", PCA(n_components=10)), ("kmeans", KMeans(n_clusters=5))]
+            [("pca", PCA(n_components=10)), ("kmeans", KMeans(n_clusters=10))]
         )
 
         X_clusters = pipe.fit_transform(embeddings)[:, 0]
