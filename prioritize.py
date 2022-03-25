@@ -206,30 +206,50 @@ def main(
     if clear_dataset_cache:
         clear_automl_cache()
 
-    unlabeled_assets = get_assets(
-        kili,
-        project_id,
-        parse_label_types(label_types),
-        max_assets,
-        labeling_statuses=["UNLABELED"],
-    )
+    # unlabeled_assets = get_assets(
+    #     kili,
+    #     project_id,
+    #     parse_label_types(label_types),
+    #     max_assets,
+    #     labeling_statuses=["UNLABELED"],
+    # )
 
     if input_type == InputType.Image:
+        from sklearn.datasets import fetch_openml
 
-        downloaded_images = download_project_images(api_key, unlabeled_assets)
+        # downloaded_images = download_project_images(api_key, unlabeled_assets)
+        # pil_images = [image.image for image in downloaded_images]
+        mnist = fetch_openml("mnist_784", cache=True)
+        mnist_images_numpy = mnist.data
+        mnist_labels = mnist.target
 
-        pil_images = [image.image for image in downloaded_images]
+        # delete 9/10th of the images with an 8 label
+        mnist_images_numpy = mnist_images_numpy[mnist_labels != 8]
+        mnist_labels = mnist_labels[mnist_labels != 8]
+
+        from PIL import Image
+
+        pil_images = [
+            Image.fromarray(np.uint8(mat * 255), "L") for mat in mnist_images_numpy
+        ]
 
         embeddings = embeddings_images(pil_images)
         kili_print("Embeddings successfully computed with shape ", embeddings.shape)
+        prioritizer = Prioritizer(embeddings)
+        priorities = prioritizer.get_priorities(diversity_sampling=diversity_sampling)
+
+        # print histogramm of the labelsof the assets in the priority queue
+        labels_prior = [mnist_labels[i] for i in priorities]
+        histogram = np.histogram(labels_prior, bins=10)
+        print(histogram)
 
     else:
         raise NotImplementedError
 
-    asset_ids = [asset["id"] for asset in unlabeled_assets]
-    prioritizer = Prioritizer(embeddings)
-    priorities = prioritizer.get_priorities(diversity_sampling=diversity_sampling)
-    kili.update_properties_in_assets(asset_ids=asset_ids, priorities=priorities)
+    # asset_ids = [asset["id"] for asset in unlabeled_assets]
+    # prioritizer = Prioritizer(embeddings)
+    # priorities = prioritizer.get_priorities(diversity_sampling=diversity_sampling)
+    # kili.update_properties_in_assets(asset_ids=asset_ids, priorities=priorities)
 
 
 if __name__ == "__main__":
