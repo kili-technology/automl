@@ -138,6 +138,7 @@ def embeddings_images(
     images: List[PILImage],
 ) -> np.ndarray:
     """Get the embeddings of the images using a generic model trained on ImageNet."""
+    kili_print("Getting embeddings of images")
     img2vec = Img2Vec(cuda=torch.cuda.is_available())
     vectors = img2vec.get_vec(images)
     return vectors
@@ -200,8 +201,8 @@ def main(
     """
     kili = Kili(api_key=api_key)
     input_type, jobs = get_project(kili, project_id)
-    kili_print("Input type: ", input_type)
-    kili_print("jobs: ", jobs)
+    # kili_print("Input type: ", input_type)
+    # kili_print("jobs: ", jobs)
 
     if clear_dataset_cache:
         clear_automl_cache()
@@ -220,18 +221,21 @@ def main(
         # downloaded_images = download_project_images(api_key, unlabeled_assets)
         # pil_images = [image.image for image in downloaded_images]
         mnist = fetch_openml("mnist_784", cache=True)
-        mnist_images_numpy = mnist.data
+        mnist_images_df = mnist.data
         mnist_labels = mnist.target
 
         # delete 9/10th of the images with an 8 label
-        mnist_images_numpy = mnist_images_numpy[mnist_labels != 8]
+        mnist_images_df = mnist_images_df[mnist_labels != 8]
         mnist_labels = mnist_labels[mnist_labels != 8]
 
         from PIL import Image
 
-        pil_images = [
-            Image.fromarray(np.uint8(mat * 255), "L") for mat in mnist_images_numpy
-        ]
+        mnist_images_np = mnist_images_df.to_numpy().reshape(
+            (-1, 28, 28, 1)
+        )
+
+
+        pil_images = [Image.fromarray(image) for image in mnist_images_np]
 
         embeddings = embeddings_images(pil_images)
         kili_print("Embeddings successfully computed with shape ", embeddings.shape)
