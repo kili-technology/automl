@@ -230,10 +230,14 @@ def main(
         mnist_labels = mnist_labels.loc[mask]
 
         # # delete 9/10th of the images with an 8 label
-        idx_8 = mnist_labels.index[mnist_labels == '8']
-        almost_all_idx_8 = np.random.choice(idx_8,size=int(len(idx_8)*0.9), replace=False)
+        idx_8 = mnist_labels.index[mnist_labels == "8"]
+        almost_all_idx_8 = np.random.choice(
+            idx_8, size=int(len(idx_8) * 0.9), replace=False
+        )
 
-        almost_not_8 = np.array([i for i in mnist_images_df.index if i not in almost_all_idx_8])
+        almost_not_8 = np.array(
+            [i for i in mnist_images_df.index if i not in almost_all_idx_8]
+        )
         mnist_images_df = mnist_images_df.loc[almost_not_8]
         mnist_labels = mnist_labels.loc[almost_not_8]
 
@@ -241,20 +245,22 @@ def main(
 
         mnist_images_np = mnist_images_df.to_numpy().reshape((-1, 28, 28))
         mnist_images_np_color = np.stack(
-                    [mnist_images_np, mnist_images_np, mnist_images_np], 
-                    axis=3
-                )
+            [mnist_images_np, mnist_images_np, mnist_images_np], axis=3
+        )
 
-        pil_images = [Image.fromarray((image * 255).astype(np.uint8)) for image in mnist_images_np_color]
+        pil_images = [
+            Image.fromarray((image * 255).astype(np.uint8))
+            for image in mnist_images_np_color
+        ]
 
         embeddings = embeddings_images(pil_images)
         kili_print("Embeddings successfully computed with shape ", embeddings.shape)
         prioritizer = Prioritizer(embeddings)
         priorities = prioritizer.get_priorities(diversity_sampling=diversity_sampling)
 
-        # print histogramm of the labelsof the assets in the priority queue
-        labels_prior = [mnist_labels[i] for i in priorities]
-        histogram = np.histogram(labels_prior, bins=10)
+        # print histogramm of the labels of the assets in the priority queue
+        labels_priorities = [mnist_labels[i] for i in priorities[:100]]
+        histogram = np.histogram(labels_priorities, bins=10)
         print(histogram)
 
     else:
