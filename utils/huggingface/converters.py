@@ -24,11 +24,7 @@ def kili_assets_to_hf_ner_dataset(
         os.remove(path_dataset)
 
     job_categories = list(job["content"]["categories"].keys())
-    label_list = (
-        ["O"]
-        + ["B-" + jc for jc in job_categories]
-        + ["I-" + jc for jc in job_categories]
-    )
+    label_list = ["O"] + ["B-" + jc for jc in job_categories] + ["I-" + jc for jc in job_categories]
 
     labels_to_ids = {label: i for i, label in enumerate(label_list)}
 
@@ -64,8 +60,7 @@ def write_asset(api_key, job_name, labels_to_ids, handler, asset):
             token_annotations = [
                 a
                 for a in annotations
-                if a["beginOffset"] <= start
-                and a["beginOffset"] + len(a["content"]) >= end
+                if a["beginOffset"] <= start and a["beginOffset"] + len(a["content"]) >= end
             ]
             if len(token_annotations) > 0:
                 category = token_annotations[0]["categories"][0]["name"]
@@ -136,11 +131,8 @@ def predicted_tokens_to_kili_annotations(
 
             if (
                 len(kili_annotations)
-                and ann["categories"][0]["name"]
-                == kili_annotations[-1]["categories"][0]["name"]
-                and (
-                    ann["beginOffset"] == kili_annotations[-1]["endOffset"] or is_i_tag
-                )
+                and ann["categories"][0]["name"] == kili_annotations[-1]["categories"][0]["name"]
+                and (ann["beginOffset"] == kili_annotations[-1]["endOffset"] or is_i_tag)
             ):
                 # merge with previous if same category and contiguous offset and onset:
                 kili_annotations[-1]["endOffset"] = ann["endOffset"]

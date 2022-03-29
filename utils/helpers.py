@@ -14,7 +14,6 @@ from tqdm import tqdm
 from PIL import Image
 from PIL.Image import Image as PILImage
 import requests
-from tqdm.auto import tqdm
 
 from utils.constants import HOME
 
@@ -86,9 +85,7 @@ def get_asset_memoized(*, kili, project_id, first, skip):
     )
 
 
-def asset_is_kept(
-    asset, labeling_statuses: List[str] = ["LABELED", "UNLABELED"]
-) -> bool:
+def asset_is_kept(asset, labeling_statuses: List[str] = ["LABELED", "UNLABELED"]) -> bool:
     labeled = len(asset["labels"]) > 0
     unlabeled = len(asset["labels"]) == 0
     if "LABELED" in labeling_statuses:
@@ -111,16 +108,14 @@ def get_assets(
     first = min(100, total)
     assets = []
     for skip in tqdm(range(0, total, first)):
-        assets += get_asset_memoized(
-            kili=kili, project_id=project_id, first=first, skip=skip
-        )
+        assets += get_asset_memoized(kili=kili, project_id=project_id, first=first, skip=skip)
     assets = [
         {
             **a,
             "labels": [
-                l
-                for l in sorted(a["labels"], key=lambda l: l["createdAt"])
-                if l["labelType"] in label_types
+                line
+                for line in sorted(a["labels"], key=lambda l: l["createdAt"])
+                if line["labelType"] in label_types
             ][-1:],
         }
         for a in assets
@@ -133,9 +128,7 @@ def get_assets(
 
 
 def get_project(kili, project_id: str) -> Tuple[str, Dict]:
-    projects = kili.projects(
-        project_id=project_id, fields=["inputType", "jsonInterface"]
-    )
+    projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface"])
     if len(projects) == 0:
         raise ValueError("no such project")
     input_type = projects[0]["inputType"]
@@ -182,9 +175,7 @@ def get_last_trained_model_path(
     weights_filename: str,
 ) -> str:
     if model_path is None:
-        path_project_models = os.path.join(
-            HOME, project_id, job_name, *project_path_wildcard
-        )
+        path_project_models = os.path.join(HOME, project_id, job_name, *project_path_wildcard)
         paths_project_sorted = sorted(glob(path_project_models), reverse=True)
         model_path = None
         while len(paths_project_sorted):

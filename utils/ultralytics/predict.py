@@ -30,9 +30,7 @@ def ultralytics_predict_object_detection(
     with open(os.path.join(model_path, "..", "..", "kili.yaml")) as f:
         kili_data_dict = yaml.load(f, Loader=yaml.FullLoader)
 
-    inference_path = build_inference_path(
-        HOME, project_id, job_name, ModelRepository.Ultralytics
-    )
+    inference_path = build_inference_path(HOME, project_id, job_name, ModelRepository.Ultralytics)
     model_weights = os.path.join(model_path, filename_weights)
 
     # path needs to be cleaned-up to avoid inferring unnecessary items.
@@ -44,9 +42,9 @@ def ultralytics_predict_object_detection(
 
     kili_print("Starting Ultralytics' YoloV5 inference...")
     cmd = (
-        f"python detect.py "
+        "python detect.py "
         + f'--weights "{model_weights}" '
-        + f"--save-txt --save-conf --nosave --exist-ok "
+        + "--save-txt --save-conf --nosave --exist-ok "
         + f'--source "{inference_path}" --project "{inference_path}"'
     )
     os.system("cd utils/ultralytics/yolov5 && " + cmd)
@@ -62,9 +60,7 @@ def ultralytics_predict_object_detection(
             )
             if verbose >= 1:
                 print(f"Asset {image.externalId}: {kili_predictions}")
-            predictions.append(
-                (image.externalId, {job_name: {"annotations": kili_predictions}})
-            )
+            predictions.append((image.externalId, {job_name: {"annotations": kili_predictions}}))
     return predictions
 
 
@@ -72,14 +68,12 @@ def get_id_from_path(path_yolov5_inference: str) -> str:
     return os.path.split(path_yolov5_inference)[-1].split(".")[0]
 
 
-def yolov5_to_kili_json(
-    path_yolov5_inference: str, ind_to_categories: List[str]
-) -> Dict:
+def yolov5_to_kili_json(path_yolov5_inference: str, ind_to_categories: List[str]) -> Dict:
 
     annotations = []
     with open(path_yolov5_inference, "r") as f:
-        for l in f.readlines():
-            c, x, y, w, h, p = l.split(" ")
+        for line in f.readlines():
+            c, x, y, w, h, p = line.split(" ")
             x, y, w, h = float(x), float(y), float(w), float(h)
             c = int(c)
             p = int(100.0 * float(p))
