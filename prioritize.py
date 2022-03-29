@@ -41,15 +41,11 @@ class Prioritizer:
         """
         embeddings = self.embeddings
 
-        pipe = Pipeline(
-            [("pca", PCA(n_components=10)), ("kmeans", KMeans(n_clusters=5))]
-        )
+        pipe = Pipeline([("pca", PCA(n_components=10)), ("kmeans", KMeans(n_clusters=5))])
 
         X_clusters = pipe.fit_transform(embeddings)[:, 0]
 
-        index_clusters = {
-            i: np.where(X_clusters == i)[0] for i in np.unique(X_clusters)
-        }
+        index_clusters = {i: np.where(X_clusters == i)[0] for i in np.unique(X_clusters)}
         index_clusters_permuted = {
             i: np.random.permutation(index_clusters[i]).tolist() for i in index_clusters
         }
@@ -74,15 +70,13 @@ class Prioritizer:
         return np.random.permutation(len(self.embeddings)).tolist()
 
     @staticmethod
-    def combine_priorities(
-        priorities_a: List[int], priorities_b: List[int], proba_a: float = 0.5
-    ):
+    def combine_priorities(priorities_a: List[int], priorities_b: List[int], proba_a: float = 0.5):
         """Combine two priority lists.
 
         Args:
             priorities_a (List[int]): first priority list
             priorities_b (List[int]): second priority list
-            proba_a (float, optional): probability of taking the first priority list. Defaults to 0.5.
+            proba_a (float, optional): probability of taking the first priority list.
 
         Returns:
             List[int]: combined priority list
@@ -157,13 +151,14 @@ def embedding_text(
 
 @click.command()
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
-@click.option(
-    "--project-id", default=os.environ.get("PROJECT_ID"), help="Kili project ID"
-)
+@click.option("--project-id", default=os.environ.get("PROJECT_ID"), help="Kili project ID")
 @click.option(
     "--label-types",
     default=None,
-    help="Comma separated list Kili specific label types to select (among DEFAULT, REVIEW, PREDICTION)",
+    help=(
+        "Comma separated list Kili specific label types to select "
+        "(among DEFAULT, REVIEW, PREDICTION)"
+    ),
 )
 @click.option(
     "--max-assets",

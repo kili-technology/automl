@@ -1,6 +1,5 @@
 import os
 import subprocess
-from pyexpat import features
 from typing import Dict, List, Optional
 from datetime import datetime
 import shutil
@@ -60,9 +59,7 @@ def ultralytics_train_yolov5(
             )
         )
 
-    args_from_json = reduce(
-        lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in json_args.items())
-    )
+    args_from_json = reduce(lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in json_args.items()))
     kili_print("Starting Ultralytics' YoloV5 ...")
     try:
         args = [
@@ -80,7 +77,7 @@ def ultralytics_train_yolov5(
             cwd=f"{yolov5_path}",
         )
     except subprocess.CalledProcessError as e:
-        raise AutoMLYoloException("YoloV5 training crashed.")
+        raise AutoMLYoloException("YoloV5 training crashed." + str(e))
 
     shutil.copy(config_data_path, output_path)
     df_result = pd.read_csv(os.path.join(output_path, "exp", "results.csv"))

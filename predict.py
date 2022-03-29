@@ -96,7 +96,10 @@ def predict_object_detection(
 @click.option(
     "--label-types",
     default="DEFAULT,REVIEW",
-    help="Comma separated list Kili specific label types to select (among DEFAULT, REVIEW, PREDICTION), defaults to 'DEFAULT,REVIEW'",
+    help=(
+        "Comma separated list Kili specific label types to select (among DEFAULT,"
+        " REVIEW, PREDICTION), defaults to 'DEFAULT,REVIEW'"
+    ),
 )
 @click.option(
     "--dry-run",

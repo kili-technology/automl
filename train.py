@@ -57,9 +57,7 @@ def train_image_bounding_box(
             "model_framework",
             [ModelFramework.PyTorch],
         )
-        model_name = set_default(
-            model_name, ModelName.YoloV5, "model_name", [ModelName.YoloV5]
-        )
+        model_name = set_default(model_name, ModelName.YoloV5, "model_name", [ModelName.YoloV5])
         return ultralytics_train_yolov5(
             api_key,
             path,
@@ -176,18 +174,17 @@ def train_text_classification_single(
 
 @click.command()
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
-@click.option(
-    "--model-framework", default=None, help="Model framework (eg. pytorch, tensorflow)"
-)
+@click.option("--model-framework", default=None, help="Model framework (eg. pytorch, tensorflow)")
 @click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
-@click.option(
-    "--model-repository", default=None, help="Model repository (eg. huggingface)"
-)
+@click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
 @click.option("--project-id", default=None, help="Kili project ID")
 @click.option(
     "--label-types",
     default=None,
-    help="Comma separated list Kili specific label types to select (among DEFAULT, REVIEW, PREDICTION)",
+    help=(
+        "Comma separated list Kili specific label types to select (among DEFAULT,"
+        " REVIEW, PREDICTION)"
+    ),
 )
 @click.option(
     "--max-assets",
@@ -199,7 +196,10 @@ def train_text_classification_single(
     "--json-args",
     default=None,
     type=str,
-    help="Specific parameters to pass to the trainer (for example Yolov5 train, Hugging Face transformers, ...",
+    help=(
+        "Specific parameters to pass to the trainer "
+        "(for example Yolov5 train, Hugging Face transformers, ..."
+    ),
 )
 @click.option(
     "--clear-dataset-cache",

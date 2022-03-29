@@ -35,8 +35,8 @@ def huggingface_train_ner(
     """
     Sources:
      - https://huggingface.co/transformers/v2.4.0/examples.html#named-entity-recognition
-     - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py
-     - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1
+     - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
+     - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
     """
     kili_print(f"Job Name: {job_name}")
     kili_print(f"Base model: {model_name}")
@@ -51,9 +51,7 @@ def huggingface_train_ner(
         data_files=path_dataset,
         features=datasets.features.features.Features(
             {
-                "ner_tags": datasets.Sequence(
-                    feature=datasets.ClassLabel(names=label_list)
-                ),
+                "ner_tags": datasets.Sequence(feature=datasets.ClassLabel(names=label_list)),
                 "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),
             }
         ),
@@ -63,24 +61,24 @@ def huggingface_train_ner(
     label_all_tokens = True
 
     def tokenize_and_align_labels(examples):
-        tokenized_inputs = tokenizer(
-            examples["tokens"], truncation=True, is_split_into_words=True
-        )
+        tokenized_inputs = tokenizer(examples["tokens"], truncation=True, is_split_into_words=True)
 
         labels = []
-        for i, label in enumerate(examples[f"ner_tags"]):
+        for i, label in enumerate(examples["ner_tags"]):
             word_ids = tokenized_inputs.word_ids(batch_index=i)
             previous_word_idx = None
             label_ids = []
             for word_idx in word_ids:
-                # Special tokens have a word id that is None. We set the label to -100 so they are automatically
+                # Special tokens have a word id that is None.
+                # We set the label to -100 so they are automatically
                 # ignored in the loss function.
                 if word_idx is None:
                     label_ids.append(-100)
                 # We set the label for the first token of each word.
                 elif word_idx != previous_word_idx:
                     label_ids.append(label[word_idx])
-                # For the other tokens in a word, we set the label to either the current label or -100, depending on
+                # For the other tokens in a word,
+                # we set the label to either the current label or -100, depending on
                 # the label_all_tokens flag.
                 else:
                     label_ids.append(label[word_idx] if label_all_tokens else -100)
@@ -149,9 +147,9 @@ def huggingface_train_text_classification_single(
                         "Authorization": f"X-API-Key: {api_key}",
                     },
                 )
-                label_category = asset["labels"][0]["jsonResponse"][job_name][
-                    "categories"
-                ][0]["name"]
+                label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0][
+                    "name"
+                ]
                 handler.write(
                     json.dumps(
                         {

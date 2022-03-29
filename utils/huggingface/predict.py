@@ -69,7 +69,8 @@ def huggingface_predict_ner(
 
 
 def compute_sentence_predictions(model_framework, tokenizer, model, sentence, offset):
-    sequence = sentence[: model.config.max_position_embeddings]  # imposed by the model
+    # imposed by the model
+    sequence = sentence[: model.config.max_position_embeddings]
 
     if model_framework == ModelFramework.PyTorch:
         tokens = tokenizer(
@@ -99,6 +100,8 @@ def compute_sentence_predictions(model_framework, tokenizer, model, sentence, of
         [tokenizer.batch_decode([t])[0] for t in tokens["input_ids"][0]],
         model.config.id2label[0],
         offset,
-    )  # by convention we consider that the null category is the first one in the label list, hence model.config.id2label[0]
+    )
+    # by convention we consider that the null category is the first one in the label list,
+    # hence model.config.id2label[0]
 
     return predictions_sentence
