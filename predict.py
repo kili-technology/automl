@@ -28,6 +28,18 @@ def predict_ner(
     model_path: Optional[str],
     verbose: int,
 ):
+    model_path_res, model_repository, model_framework = extract_model_info(
+        job_name, project_id, model_path
+    )
+    if model_repository == ModelRepository.HuggingFace:
+        from utils.huggingface.predict import huggingface_predict_ner
+
+        return huggingface_predict_ner(
+            api_key, assets, model_framework, model_path_res, job_name, verbose=verbose
+        )
+
+
+def extract_model_info(job_name, project_id, model_path):
     model_path_res = get_last_trained_model_path(
         job_name, project_id, model_path, ["*", "model", "*", "*"], "pytorch_model.bin"
     )
@@ -42,10 +54,24 @@ def predict_ner(
         kili_print(f"Model framework: {model_framework}")
     else:
         raise ValueError("Unknown model framework")
-    if model_repository == ModelRepository.HuggingFace:
-        from utils.huggingface.predict import huggingface_predict_ner
+    return model_path_res, model_repository, model_framework
 
-        return huggingface_predict_ner(
+
+def predict_text_classification(
+    api_key: str,
+    assets: List[Dict],
+    job_name: str,
+    project_id: str,
+    model_path: Optional[str],
+    verbose: int,
+):
+    model_path_res, model_repository, model_framework = extract_model_info(
+        job_name, project_id, model_path
+    )
+    if model_repository == ModelRepository.HuggingFace:
+        from utils.huggingface.predict import huggingface_predict_classification
+
+        return huggingface_predict_classification(
             api_key, assets, model_framework, model_path_res, job_name, verbose=verbose
         )
 
@@ -143,6 +169,20 @@ def main(
         tools = job.get("tools")
 
         if (
+            content_input == ContentInput.Radio
+            and input_type == InputType.Text
+            and ml_task == MLTask.Classification
+        ):
+            predict_text_classification(
+                api_key,
+                assets,
+                job_name,
+                project_id,
+                from_model,
+                verbose,
+            )
+
+        elif (
             content_input == ContentInput.Radio
             and input_type == InputType.Text
             and ml_task == MLTask.NamedEntitiesRecognition
