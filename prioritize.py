@@ -131,10 +131,11 @@ class Prioritizer:
 
 def embeddings_images(images: List[PILImage], batch_size=4) -> np.ndarray:
     """Get the embeddings of the images using a generic model trained on ImageNet."""
+    color_images = [im.convert("RGB") for im in images]
     img2vec = Img2Vec(cuda=torch.cuda.is_available(), model="efficientnet_b7")
     vecs = []
-    for img in tqdm(list(chunked(images, batch_size))):
-        _ = np.array(img2vec.get_vec(img))
+    for imgs in tqdm(list(chunked(color_images, batch_size))):
+        _ = np.array(img2vec.get_vec(imgs))
         vecs.append(_)
     return np.concatenate(vecs, axis=0)
 
