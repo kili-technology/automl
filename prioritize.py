@@ -9,8 +9,9 @@ from img2vec_pytorch import Img2Vec
 from kili.client import Kili
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans  #
-
+from sklearn.cluster import KMeans
+from more_itertools import chunked
+from tqdm import tqdm
 
 from utils.constants import (
     InputType,
@@ -128,13 +129,14 @@ class Prioritizer:
         return priorities
 
 
-def embeddings_images(
-    images: List[PILImage],
-) -> np.ndarray:
+def embeddings_images(images: List[PILImage], batch_size=4) -> np.ndarray:
     """Get the embeddings of the images using a generic model trained on ImageNet."""
-    img2vec = Img2Vec(cuda=torch.cuda.is_available())
-    vectors = img2vec.get_vec(images)
-    return vectors
+    img2vec = Img2Vec(cuda=torch.cuda.is_available(), model="efficientnet_b7")
+    vecs = []
+    for img in tqdm(list(chunked(images, batch_size))):
+        _ = np.array(img2vec.get_vec(img))
+        vecs.append(_)
+    return np.concatenate(vecs, axis=0)
 
 
 def embeddings_ner(
