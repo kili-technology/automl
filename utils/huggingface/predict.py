@@ -80,8 +80,11 @@ def huggingface_predict_ner(
 
         if verbose:
             print(sentence)
-            for p in predictions_asset:
-                print(p)
+            if len(predictions_asset):
+                for p in predictions_asset:
+                    print(p)
+            else:
+                print("No prediction")
 
     return predictions
 
