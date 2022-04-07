@@ -182,12 +182,14 @@ def compute_asset_classification(model_framework, tokenizer, model, asset):
             asset,
             return_tensors="pt",
             max_length=model.config.max_position_embeddings,
+            truncate=True,
         )
     else:
         tokens = tokenizer(
             asset,
             return_tensors="tf",
             max_length=model.config.max_position_embeddings,
+            truncate=True,
         )
 
     output = model(**tokens)

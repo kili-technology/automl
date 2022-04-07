@@ -108,6 +108,7 @@ def predicted_tokens_to_kili_annotations(
         if token in [
             "[CLS]",
             "[SEP]",
+            "[UNK]",
         ]:  # special BERT tokens that should ignored at inference time
             continue
         if token.startswith(
