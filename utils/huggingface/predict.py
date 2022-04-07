@@ -98,7 +98,7 @@ def huggingface_predict_classification(
     verbose: int = 0,
 ) -> List[dict]:
     if model_framework == ModelFramework.PyTorch:
-        tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True, truncation=True)
         model = AutoModelForTokenClassification.from_pretrained(model_path)
     elif model_framework == ModelFramework.Tensorflow:
         tokenizer = AutoTokenizer.from_pretrained(model_path)
