@@ -196,7 +196,6 @@ def huggingface_train_text_classification_single(
             from_pt=True,
             id2label=dict(enumerate(job_categories)),
         )
-    print(model)
     training_args = TrainingArguments(os.path.join(path_model, "training_args"))
     trainer = Trainer(
         model=model,
