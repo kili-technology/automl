@@ -50,6 +50,7 @@ def write_asset(api_key, job_name, labels_to_ids, handler, asset):
     if job_name not in asset["labels"][0]["jsonResponse"]:
         asset_id = asset["id"]
         warn(f"${asset_id}: No annotation for job ${job_name}")
+        return
     annotations = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
     sentences = sent_tokenize(text)
     offset = 0
