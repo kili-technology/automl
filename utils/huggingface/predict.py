@@ -124,7 +124,9 @@ def huggingface_predict_classification(
         predictions.append({job_name: {"annotations": predictions_asset}})
 
         if verbose:
-            print(text + " : " + str(predictions_asset["categories"][0]))
+            print("----------")
+            print(text)
+            print(predictions_asset["categories"][0])
 
     return predictions
 
@@ -192,4 +194,4 @@ def compute_asset_classification(model_framework, tokenizer, model, asset):
     probas = probas_all[predicted_id]
     predicted_label = model.config.id2label[predicted_id]
 
-    return {"categories": [{"name": predicted_label, "confidence": int(probas)}]}
+    return {"categories": [{"name": predicted_label, "confidence": int(probas * 100)}]}
