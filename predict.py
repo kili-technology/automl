@@ -150,7 +150,7 @@ def predict_one_job(
 )
 @click.option(
     "--dry-run",
-    default=None,
+    default=False,
     is_flag=True,
     help="Runs the predictions but do not save them into the Kili project",
 )
