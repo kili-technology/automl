@@ -29,6 +29,7 @@ os.environ["WANDB_DISABLED"] = "true"
 
 
 def train_image_bounding_box(
+    *,
     api_key,
     job,
     job_name,
@@ -69,9 +70,12 @@ def train_image_bounding_box(
             label_types,
             clear_dataset_cache,
         )
+    else:
+        raise NotImplementedError
 
 
 def train_ner(
+    *,
     api_key,
     assets,
     job,
@@ -120,7 +124,7 @@ def train_ner(
             clear_dataset_cache,
         )
     else:
-        return None
+        raise NotImplementedError
 
 
 def train_text_classification_single(
@@ -264,15 +268,15 @@ def main(
             )
             assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = train_ner(
-                api_key,
-                assets,
-                job,
-                job_name,
-                model_framework,
-                model_name,
-                model_repository,
-                project_id,
-                clear_dataset_cache,
+                api_key=api_key,
+                assets=assets,
+                job=job,
+                job_name=job_name,
+                model_framework=model_framework,
+                model_name=model_name,
+                model_repository=model_repository,
+                project_id=project_id,
+                clear_dataset_cache=clear_dataset_cache,
             )
         elif (
             content_input == ContentInput.Radio
@@ -280,18 +284,19 @@ def main(
             and ml_task == MLTask.ObjectDetection
             and Tool.Rectangle in tools
         ):
+            # no need to get_assets here because it's done in kili_template.yaml
             training_loss = train_image_bounding_box(
-                api_key,
-                job,
-                job_name,
-                max_assets,
-                json.loads(json_args) if json_args is not None else {},
-                model_framework,
-                model_name,
-                model_repository,
-                project_id,
-                parse_label_types(label_types),
-                clear_dataset_cache,
+                api_key=api_key,
+                job=job,
+                job_name=job_name,
+                max_assets=max_assets,
+                args_dict=json.loads(json_args) if json_args is not None else {},
+                model_framework=model_framework,
+                model_name=model_name,
+                model_repository=model_repository,
+                project_id=project_id,
+                label_types=parse_label_types(label_types),
+                clear_dataset_cache=clear_dataset_cache,
             )
         else:
             kili_print("not implemented yet")

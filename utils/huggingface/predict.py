@@ -3,12 +3,13 @@ import requests
 
 from nltk import sent_tokenize
 import numpy as np
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer  # type: ignore
 from transformers import (
-    AutoModelForTokenClassification,
-    TFAutoModelForTokenClassification,
+    AutoModelForTokenClassification,  # type: ignore
+    TFAutoModelForTokenClassification,  # type: ignore
 )
 from utils.constants import ModelFramework
+from utils.helpers import JobPredictions
 from utils.huggingface.converters import predicted_tokens_to_kili_annotations
 
 
@@ -19,14 +20,14 @@ def huggingface_predict_ner(
     model_path: str,
     job_name: str,
     verbose: int = 0,
-):
+) -> JobPredictions:
 
     if model_framework == ModelFramework.PyTorch:
         tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True)
-        model = AutoModelForTokenClassification.from_pretrained(model_path)
+        model = AutoModelForTokenClassification.from_pretrained(model_path)  # type: ignore
     elif model_framework == ModelFramework.Tensorflow:
         tokenizer = AutoTokenizer.from_pretrained(model_path)
-        model = TFAutoModelForTokenClassification.from_pretrained(model_path)
+        model = TFAutoModelForTokenClassification.from_pretrained(model_path)  # type: ignore
     else:
         raise NotImplementedError(
             f"Predictions with model framework {model_framework} not implemented"
@@ -34,6 +35,7 @@ def huggingface_predict_ner(
 
     predictions = []
 
+    proba_assets = []
     for asset in assets:
         response = requests.get(
             asset["content"],
@@ -46,26 +48,38 @@ def huggingface_predict_ner(
         predictions_asset = []
 
         text = response.text
+
+        probas_asset = []
         for sentence in sent_tokenize(text):
             offset_inc = text[offset:].find(sentence)
             if offset_inc == -1:
                 raise Exception(f"Sentence {sentence} not found in text!")
             offset += offset_inc
 
-            predictions_sentence = compute_sentence_predictions(
+            predictions_sentence, probas = compute_sentence_predictions(
                 model_framework, tokenizer, model, sentence, offset
             )
+            probas_asset.append(min(probas))
 
             predictions_asset.extend(predictions_sentence)
 
         predictions.append({job_name: {"annotations": predictions_asset}})
+        proba_assets.append(min(probas_asset))
 
         if verbose:
-            print(sentence)
             for p in predictions_asset:
                 print(p)
 
-    return predictions
+    # Warning: the granularity of proba_assets is the whole document
+    job_predictions = JobPredictions(
+        job_name=job_name,
+        external_id_array=[a["externalId"] for a in assets],
+        json_response_array=predictions,
+        model_name_array=["Kili AutoML"] * len(assets),
+        predictions_probability=proba_assets,
+    )
+
+    return job_predictions
 
 
 def compute_sentence_predictions(model_framework, tokenizer, model, sentence, offset):
@@ -104,4 +118,4 @@ def compute_sentence_predictions(model_framework, tokenizer, model, sentence, of
     # by convention we consider that the null category is the first one in the label list,
     # hence model.config.id2label[0]
 
-    return predictions_sentence
+    return predictions_sentence, probas

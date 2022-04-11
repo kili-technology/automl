@@ -13,6 +13,7 @@ from utils.constants import (
     Tool,
 )
 from utils.helpers import (
+    JobPredictions,
     get_assets,
     get_project,
     kili_print,
@@ -27,7 +28,7 @@ def predict_ner(
     project_id: str,
     model_path: Optional[str],
     verbose: int,
-):
+) -> JobPredictions:
     model_path_res = get_last_trained_model_path(
         job_name, project_id, model_path, ["*", "model", "*", "*"], "pytorch_model.bin"
     )
@@ -48,6 +49,8 @@ def predict_ner(
         return huggingface_predict_ner(
             api_key, assets, model_framework, model_path_res, job_name, verbose=verbose
         )
+    else:
+        raise NotImplementedError
 
 
 def predict_object_detection(
@@ -57,7 +60,8 @@ def predict_object_detection(
     project_id: str,
     model_path: Optional[str],
     verbose: int,
-):
+    prioritization: bool,
+) -> JobPredictions:
     from utils.ultralytics.predict import ultralytics_predict_object_detection
 
     model_path_res = get_last_trained_model_path(
@@ -68,18 +72,18 @@ def predict_object_detection(
         "best.pt",
     )
     split_path = os.path.normpath(model_path_res).split(os.path.sep)
-    if split_path[-6] == ModelRepository.Ultralytics:
-        model_repository = ModelRepository.Ultralytics
-        kili_print(f"Model base repository: {model_repository}")
-    else:
+    model_repository = split_path[-6]
+    kili_print(f"Model base repository: {model_repository}")
+    if model_repository not in [ModelRepository.Ultralytics]:
         raise ValueError(f"Unknown model base repository: {model_repository}")
-    if split_path[-4] in [ModelFramework.PyTorch, ModelFramework.Tensorflow]:
-        model_framework = split_path[-4]
-        kili_print(f"Model framework: {model_framework}")
-    else:
+
+    model_framework: ModelFramework = split_path[-4]
+    kili_print(f"Model framework: {model_framework}")
+    if model_framework not in [ModelFramework.PyTorch, ModelFramework.Tensorflow]:
         raise ValueError(f"Unknown model framework: {model_framework}")
+
     if model_repository == ModelRepository.Ultralytics:
-        return ultralytics_predict_object_detection(
+        job_predictions = ultralytics_predict_object_detection(
             api_key,
             assets,
             project_id,
@@ -87,7 +91,50 @@ def predict_object_detection(
             model_path_res,
             job_name,
             verbose,
+            prioritization,
         )
+    else:
+        raise NotImplementedError
+
+    return job_predictions
+
+
+def predict_one_job(
+    *,
+    api_key,
+    project_id,
+    from_model,
+    verbose,
+    input_type,
+    assets,
+    job_name,
+    content_input,
+    ml_task,
+    tools,
+    prioritization,
+) -> JobPredictions:
+    if (
+        content_input == ContentInput.Radio
+        and input_type == InputType.Text
+        and ml_task == MLTask.NamedEntitiesRecognition
+    ):
+        job_predictions = predict_ner(
+            api_key, assets, job_name, project_id, from_model, verbose=verbose
+        )
+
+    elif (
+        content_input == ContentInput.Radio
+        and input_type == InputType.Image
+        and ml_task == MLTask.ObjectDetection
+        and Tool.Rectangle in tools
+    ):
+        job_predictions = predict_object_detection(
+            api_key, assets, job_name, project_id, from_model, verbose, prioritization
+        )
+
+    else:
+        raise NotImplementedError
+    return job_predictions
 
 
 @click.command()
@@ -128,7 +175,7 @@ def main(
     project_id: str,
     label_types: str,
     dry_run: bool,
-    from_model: Optional[str],
+    from_model: Optional[ModelFramework],
     verbose: bool,
     max_assets: Optional[int],
 ):
@@ -142,43 +189,27 @@ def main(
         ml_task = job.get("mlTask")
         tools = job.get("tools")
 
-        if (
-            content_input == ContentInput.Radio
-            and input_type == InputType.Text
-            and ml_task == MLTask.NamedEntitiesRecognition
-        ):
-            json_responses = predict_ner(
-                api_key, assets, job_name, project_id, from_model, verbose=verbose
+        job_predictions = predict_one_job(
+            api_key=api_key,
+            project_id=project_id,
+            from_model=from_model,
+            verbose=verbose,
+            input_type=input_type,
+            assets=assets,
+            job_name=job_name,
+            content_input=content_input,
+            ml_task=ml_task,
+            tools=tools,
+            prioritization=False,
+        )
+
+        if not dry_run and job_predictions.external_id_array:
+            kili.create_predictions(
+                project_id,
+                external_id_array=job_predictions.external_id_array,
+                json_response_array=job_predictions.json_response_array,
+                model_name_array=job_predictions.model_name_array,
             )
-
-            if not dry_run:
-                kili.create_predictions(
-                    project_id,
-                    external_id_array=[a["externalId"] for a in assets],
-                    json_response_array=json_responses,
-                    model_name_array=["Kili AutoML"] * len(assets),
-                )
-
-        elif (
-            content_input == ContentInput.Radio
-            and input_type == InputType.Image
-            and ml_task == MLTask.ObjectDetection
-            and Tool.Rectangle in tools
-        ):
-            id_json_list = predict_object_detection(
-                api_key, assets, job_name, project_id, from_model, verbose
-            )
-
-            if not dry_run:
-                kili.create_predictions(
-                    project_id,
-                    external_id_array=[a[0] for a in id_json_list],
-                    json_response_array=[a[1] for a in id_json_list],
-                    model_name_array=["Kili AutoML"] * len(id_json_list),
-                )
-
-        else:
-            kili_print("not implemented yet")
 
 
 if __name__ == "__main__":

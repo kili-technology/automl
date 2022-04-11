@@ -10,3 +10,11 @@ pre-commit run --all-files
 ```
 
 Then, the pre-commit will run automatically when you commit.
+
+
+
+To run the unnitests:
+
+```bash
+pytest
+```

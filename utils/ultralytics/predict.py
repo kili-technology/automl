@@ -1,10 +1,12 @@
 import os
-from typing import Union, List, Dict, Tuple
+from typing import Any, Union, List, Dict, Tuple
 import shutil
 from glob import glob
 import yaml
+from typing_extensions import TypedDict
 
-from utils.helpers import download_project_images, kili_print, build_inference_path
+
+from utils.helpers import JobPredictions, download_project_images, kili_print, build_inference_path
 from utils.constants import HOME, ModelFramework, ModelRepository
 
 
@@ -16,7 +18,8 @@ def ultralytics_predict_object_detection(
     model_path: str,
     job_name: str,
     verbose: int = 0,
-) -> List[Tuple[str, Dict]]:
+    prioritization: bool = False,
+) -> JobPredictions:
 
     if model_framework == ModelFramework.PyTorch:
         filename_weights = "best.pt"
@@ -39,38 +42,84 @@ def ultralytics_predict_object_detection(
     os.makedirs(inference_path)
 
     downloaded_images = download_project_images(api_key, assets, inference_path)
+    # https://github.com/ultralytics/yolov5/blob/master/detect.py
+    # default  --conf-thres=0.25, --iou-thres=0.45
+    prioritizer_args = " --conf-thres=0.01  --iou-thres=0.45 " if prioritization else ""
 
     kili_print("Starting Ultralytics' YoloV5 inference...")
     cmd = (
         "python detect.py "
         + f'--weights "{model_weights}" '
         + "--save-txt --save-conf --nosave --exist-ok "
-        + f'--source "{inference_path}" --project "{inference_path}"'
+        + f'--source "{inference_path}" --project "{inference_path}" '
+        + prioritizer_args
     )
     os.system("cd utils/ultralytics/yolov5 && " + cmd)
 
     inference_files = glob(os.path.join(inference_path, "exp", "labels", "*.txt"))
     inference_files_by_id = {get_id_from_path(pf): pf for pf in inference_files}
 
-    predictions = []
+    kili_print("Converting Ultralytics' YoloV5 inference to Kili JSON format...")
+    id_json_list: List[Tuple[str, Dict]] = []
+
+    proba_list: List[float] = []
     for image in downloaded_images:
         if image.id in inference_files_by_id:
-            kili_predictions = yolov5_to_kili_json(
+            kili_predictions, probabilities = yolov5_to_kili_json(
                 inference_files_by_id[image.id], kili_data_dict["names"]
             )
+            proba_list.append(min(probabilities))
             if verbose >= 1:
                 print(f"Asset {image.externalId}: {kili_predictions}")
-            predictions.append((image.externalId, {job_name: {"annotations": kili_predictions}}))
-    return predictions
+            id_json_list.append((image.externalId, {job_name: {"annotations": kili_predictions}}))
+
+    # TODO: move this check in the prioritizer
+    if len(id_json_list) < len(downloaded_images):
+        kili_print(
+            "WARNING: Not enouth predictions. Missing prediction for"
+            f" {len(downloaded_images) - len(id_json_list)} assets."
+        )
+        if prioritization:
+            # TODO: Automatically tune the threshold
+            # TODO: Do not crash and put 0 probability for missing assets.
+            raise Exception(
+                "Not enough predictions for prioritization. You should either train longer the"
+                " model, or lower the --conf-thres "
+            )
+
+    job_predictions = JobPredictions(
+        job_name=job_name,
+        external_id_array=[a[0] for a in id_json_list],
+        json_response_array=[a[1] for a in id_json_list],
+        model_name_array=["Kili AutoML"] * len(id_json_list),
+        predictions_probability=proba_list,
+    )
+    print("aha", job_predictions.predictions_probability)
+    return job_predictions
 
 
 def get_id_from_path(path_yolov5_inference: str) -> str:
     return os.path.split(path_yolov5_inference)[-1].split(".")[0]
 
 
-def yolov5_to_kili_json(path_yolov5_inference: str, ind_to_categories: List[str]) -> Dict:
+class CategoryNameConfidence(TypedDict):
+    name: str
+    # confidence is a probability between 0 and 100.
+    confidence: int
 
+
+class BBoxAnnotation(TypedDict):
+    boundingPoly: Any
+    categories: List[CategoryNameConfidence]
+    type: str
+
+
+def yolov5_to_kili_json(
+    path_yolov5_inference: str, ind_to_categories: List[str]
+) -> Tuple[List[BBoxAnnotation], List[float]]:
+    """Returns a list of annotations and of probabilities"""
     annotations = []
+    probabilities = []
     with open(path_yolov5_inference, "r") as f:
         for line in f.readlines():
             c, x, y, w, h, p = line.split(" ")
@@ -78,21 +127,27 @@ def yolov5_to_kili_json(path_yolov5_inference: str, ind_to_categories: List[str]
             c = int(c)
             p = int(100.0 * float(p))
 
-            annotations.append(
-                {
-                    "boundingPoly": [
-                        {
-                            "normalizedVertices": [
-                                {"x": x - w / 2, "y": y + h / 2},
-                                {"x": x - w / 2, "y": y - h / 2},
-                                {"x": x + w / 2, "y": y - h / 2},
-                                {"x": x + w / 2, "y": y + h / 2},
-                            ]
-                        }
-                    ],
-                    "categories": [{"name": ind_to_categories[c], "confidence": p}],
-                    "type": "rectangle",
-                }
-            )
+            category: CategoryNameConfidence = {
+                "name": ind_to_categories[c],
+                "confidence": p,
+            }
+            probabilities.append(p)
 
-    return annotations
+            bbox_annotation: BBoxAnnotation = {
+                "boundingPoly": [
+                    {
+                        "normalizedVertices": [
+                            {"x": x - w / 2, "y": y + h / 2},
+                            {"x": x - w / 2, "y": y - h / 2},
+                            {"x": x + w / 2, "y": y - h / 2},
+                            {"x": x + w / 2, "y": y + h / 2},
+                        ]
+                    }
+                ],
+                "categories": [category],
+                "type": "rectangle",
+            }
+
+            annotations.append(bbox_annotation)
+
+    return (annotations, probabilities)
