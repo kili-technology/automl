@@ -88,11 +88,9 @@ def get_asset_memoized(*, kili, project_id, first, skip):
 def asset_is_kept(asset, labeling_statuses: List[str] = ["LABELED", "UNLABELED"]) -> bool:
     labeled = len(asset["labels"]) > 0
     unlabeled = len(asset["labels"]) == 0
-    if "LABELED" in labeling_statuses:
-        return labeled
-    if "UNLABELED" in labeling_statuses:
-        return unlabeled
-    return False
+    return ("LABELED" in labeling_statuses and labeled) or (
+        "UNLABELED" in labeling_statuses and unlabeled
+    )
 
 
 def get_assets(
@@ -102,13 +100,18 @@ def get_assets(
     max_assets: Optional[int] = None,
     labeling_statuses: List[str] = ["LABELED", "UNLABELED"],
 ) -> List[Dict]:
+    if not labeling_statuses:
+        raise ValueError("labeling_statuses must be a non-empty list.")
+
     total = kili.count_assets(project_id=project_id)
     total = total if max_assets is None else min(total, max_assets)
 
     first = min(100, total)
+
     assets = []
     for skip in tqdm(range(0, total, first)):
         assets += get_asset_memoized(kili=kili, project_id=project_id, first=first, skip=skip)
+
     assets = [
         {
             **a,
@@ -120,10 +123,8 @@ def get_assets(
         }
         for a in assets
     ]
-    if not labeling_statuses:
-        raise ValueError("labeling_statuses must be a non-empty list.")
     assets = [a for a in assets if asset_is_kept(a, labeling_statuses)]
-    return assets
+
     return assets
 
 
