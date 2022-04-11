@@ -2,7 +2,7 @@ import os
 import random
 from io import BytesIO
 import shutil
-from typing import List, Optional, Dict, Tuple
+from typing import Any, List, Optional, Dict, Tuple
 from dataclasses import dataclass
 
 import torch
@@ -32,7 +32,7 @@ set_all_seeds(42)
 def kili_project_memoizer(
     sub_dir: str,
 ):
-    """Decorator factory for memoizing a function that takes a project id as input."""
+    """Decorator factory for memoizing a function that takes a project_id as input."""
 
     def decorator(some_function):
         def wrapper(*args, **kwargs):
@@ -65,6 +65,44 @@ def ensure_dir(file_path: str):
     if not os.path.exists(directory):
         os.makedirs(directory)
     return file_path
+
+
+class JobPredictions:
+    def __init__(
+        self,
+        job_name: str,
+        external_id_array: List[str],
+        json_response_array: List[Any],
+        model_name_array: List[str],
+        predictions_probability: List[float],
+    ):
+        self.job_name = job_name
+        self.external_id_array = external_id_array
+        self.json_response_array = json_response_array
+        self.model_name_array = model_name_array
+        self.predictions_probability = predictions_probability
+
+        n_assets = len(external_id_array)
+
+        # assert all lists are compatible
+        same_len = n_assets == len(json_response_array)
+        assert same_len, "external_id_array and json_response_array must have the same length"
+
+        same_len = n_assets == len(model_name_array)
+        assert same_len, "external_id_array and model_name_array must have the same length"
+
+        same_len = n_assets == len(predictions_probability)
+        assert same_len, "external_id_array and predictions_probability must have the same length"
+
+        # assert no duplicates
+        assert (
+            len(set(external_id_array)) == n_assets
+        ), "external_id_array must not contain duplicates"
+
+        kili_print(f"JobPredictions: {n_assets} assets successfully created for job {job_name}.")
+
+    def __repr__(self):
+        return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"
 
 
 @kili_project_memoizer(sub_dir="get_asset_memoized")
