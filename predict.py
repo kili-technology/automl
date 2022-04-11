@@ -173,7 +173,7 @@ def main(
             and input_type == InputType.Text
             and ml_task == MLTask.Classification
         ):
-            predict_text_classification(
+            json_responses = predict_text_classification(
                 api_key,
                 assets,
                 job_name,
@@ -181,6 +181,14 @@ def main(
                 from_model,
                 verbose,
             )
+
+            if not dry_run:
+                kili.create_predictions(
+                    project_id,
+                    external_id_array=[a["externalId"] for a in assets],
+                    json_response_array=json_responses,
+                    model_name_array=["Kili AutoML"] * len(assets),
+                )
 
         elif (
             content_input == ContentInput.Radio
