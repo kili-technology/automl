@@ -181,7 +181,7 @@ def train_text_classification_single(
 @click.option("--model-framework", default=None, help="Model framework (eg. pytorch, tensorflow)")
 @click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
 @click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
-@click.option("--project-id", default=None, help="Kili project ID")
+@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--label-types",
     default=None,
