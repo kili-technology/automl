@@ -124,12 +124,12 @@ def huggingface_predict_classification(
 
         predictions_asset = compute_asset_classification(model_framework, tokenizer, model, text)
 
-        predictions.append({job_name: {"annotations": predictions_asset}})
+        predictions.append({job_name: predictions_asset})
 
         if verbose:
             print("----------")
             print(text)
-            print(predictions_asset["categories"][0])
+            print(predictions_asset)
 
     return predictions
 
