@@ -30,7 +30,11 @@ def predict_ner(
     verbose: int,
 ) -> JobPredictions:
     model_path_res = get_last_trained_model_path(
-        job_name, project_id, model_path, ["*", "model", "*", "*"], "pytorch_model.bin"
+        job_name=job_name,
+        project_id=project_id,
+        model_path=model_path,
+        project_path_wildcard=["*", "model", "*", "*"],
+        weights_filename="pytorch_model.bin",
     )
     split_path = os.path.normpath(model_path_res).split(os.path.sep)
     if split_path[-4] == ModelRepository.HuggingFace:
@@ -64,20 +68,29 @@ def predict_object_detection(
 ) -> JobPredictions:
     from utils.ultralytics.predict import ultralytics_predict_object_detection
 
+    # /Users/raph/.cache/kili/automl/cl0wihlop3rwc0mtj9np28ti2/DETECTION/ultralytics/model/pytorch/2022-04-12_17_04_35/Severstal-steel-defect-detection
     model_path_res = get_last_trained_model_path(
-        job_name,
-        project_id,
-        model_path,
-        ["*", "model", "*", "*", "exp", "weights"],
-        "best.pt",
+        project_id=project_id,
+        job_name=job_name,
+        project_path_wildcard=[
+            "*",  # ultralytics or huggingface
+            "model",
+            "*",  # pytorch or tensorflow
+            "*",  # date and time
+            "*",  # title of the project, but already specified by project_id
+            "exp",
+            "weights",
+        ],
+        weights_filename="best.pt",
+        model_path=model_path,
     )
     split_path = os.path.normpath(model_path_res).split(os.path.sep)
-    model_repository = split_path[-6]
+    model_repository = split_path[-7]
     kili_print(f"Model base repository: {model_repository}")
     if model_repository not in [ModelRepository.Ultralytics]:
         raise ValueError(f"Unknown model base repository: {model_repository}")
 
-    model_framework: ModelFramework = split_path[-4]
+    model_framework: ModelFramework = split_path[-5]  # type: ignore
     kili_print(f"Model framework: {model_framework}")
     if model_framework not in [ModelFramework.PyTorch, ModelFramework.Tensorflow]:
         raise ValueError(f"Unknown model framework: {model_framework}")
@@ -181,7 +194,7 @@ def main(
 ):
 
     kili = Kili(api_key=api_key)
-    input_type, jobs = get_project(kili, project_id)
+    input_type, jobs, _ = get_project(kili, project_id)
     assets = get_assets(kili, project_id, label_types.split(","), max_assets=max_assets)
 
     for job_name, job in jobs.items():
