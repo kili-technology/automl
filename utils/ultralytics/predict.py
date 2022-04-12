@@ -94,7 +94,7 @@ def ultralytics_predict_object_detection(
         model_name_array=["Kili AutoML"] * len(id_json_list),
         predictions_probability=proba_list,
     )
-    print("aha", job_predictions.predictions_probability)
+    print("predictions_probability", job_predictions.predictions_probability)
     return job_predictions
 
 

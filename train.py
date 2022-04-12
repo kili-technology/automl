@@ -25,7 +25,6 @@ from utils.helpers import (
 )
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["WANDB_DISABLED"] = "true"
 
 
 def train_image_bounding_box(
@@ -41,6 +40,7 @@ def train_image_bounding_box(
     project_id,
     label_types,
     clear_dataset_cache,
+    title,
 ):
     from utils.ultralytics.train import ultralytics_train_yolov5
 
@@ -60,15 +60,16 @@ def train_image_bounding_box(
         )
         model_name = set_default(model_name, ModelName.YoloV5, "model_name", [ModelName.YoloV5])
         return ultralytics_train_yolov5(
-            api_key,
-            path,
-            job,
-            max_assets,
-            args_dict,
-            project_id,
-            model_framework,
-            label_types,
-            clear_dataset_cache,
+            api_key=api_key,
+            path=path,
+            job=job,
+            max_assets=max_assets,
+            json_args=args_dict,
+            project_id=project_id,
+            model_framework=model_framework,
+            label_types=label_types,
+            clear_dataset_cache=clear_dataset_cache,
+            title=title,
         )
     else:
         raise NotImplementedError
@@ -174,6 +175,8 @@ def train_text_classification_single(
             path,
             clear_dataset_cache,
         )
+    else:
+        raise NotImplementedError
 
 
 @click.command()
@@ -224,7 +227,7 @@ def main(
 ):
     """ """
     kili = Kili(api_key=api_key)
-    input_type, jobs = get_project(kili, project_id)
+    input_type, jobs, title = get_project(kili, project_id)
 
     training_losses = []
     for job_name, job in jobs.items():
@@ -297,6 +300,7 @@ def main(
                 project_id=project_id,
                 label_types=parse_label_types(label_types),
                 clear_dataset_cache=clear_dataset_cache,
+                title=title,
             )
         else:
             kili_print("not implemented yet")

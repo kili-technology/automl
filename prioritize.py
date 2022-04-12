@@ -244,7 +244,7 @@ class Prioritizer:
                 )
                 return Prioritizer.combine_priorities(
                     priorities_sorted[0],
-                    other_priorities,
+                    other_priorities,  # type: ignore
                     probas_sorted[0],
                 )
 
@@ -274,7 +274,7 @@ class Prioritizer:
         ]
 
         combined_priorities = self.combine_multiple_priorities(
-            priorities,
+            priorities,  # type: ignore
             [
                 diversity_sampling,
                 uncertainty_sampling,
@@ -385,7 +385,7 @@ def main(
         raise ValueError("max_assets should be greater than 10")
 
     kili = Kili(api_key=api_key)
-    input_type, jobs = get_project(kili, project_id)
+    input_type, jobs, _ = get_project(kili, project_id)
     kili_print("Input type: ", input_type)
     kili_print("jobs: ", jobs)
 
