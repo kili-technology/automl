@@ -20,7 +20,25 @@ class AutoMLYoloException(Exception):
     pass
 
 
+def get_output_path_bbox(title: str, path: str, model_framework: str) -> str:
+    """Output folder path for the model."""
+    # wandb splits the output_path according to "/" and uses the title as name of the project.
+    model_output_path = os.path.join(
+        path,
+        "model",
+        model_framework,
+        datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
+        title,  # <-- name of the project in wandb
+    )
+    illegal_caracters = [",", "#", "?", "%", ":"]
+    for char in illegal_caracters:
+        model_output_path = model_output_path.replace(char, "_")
+    kili_print("output_path of the model:", model_output_path)
+    return model_output_path
+
+
 def ultralytics_train_yolov5(
+    *,
     api_key: str,
     path: str,
     job: Dict,
@@ -29,6 +47,7 @@ def ultralytics_train_yolov5(
     project_id: str,
     model_framework: str,
     label_types: List[str],
+    title: str,
     clear_dataset_cache: bool = False,
 ) -> float:
     yolov5_path = os.path.join(os.getcwd(), "utils", "ultralytics", "yolov5")
@@ -37,14 +56,13 @@ def ultralytics_train_yolov5(
     class_names = categories_from_job(job)
     data_path = os.path.join(path, "data")
     config_data_path = os.path.join(yolov5_path, "data", "kili.yaml")
-    output_path = os.path.join(
-        path, "model", model_framework, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    )
+
     if clear_dataset_cache and os.path.exists(data_path) and os.path.isdir(data_path):
         kili_print("Dataset cache for this project is being cleared.")
         shutil.rmtree(data_path)
 
-    os.makedirs(output_path)
+    model_output_path = get_output_path_bbox(title, path, model_framework)
+    os.makedirs(model_output_path, exist_ok=True)
 
     with open(config_data_path, "w") as f:
         f.write(
@@ -68,7 +86,8 @@ def ultralytics_train_yolov5(
             "--data",
             "kili.yaml",
             "--project",
-            f"{output_path}",
+            f"{model_output_path}",
+            "--upload_dataset",  # wandb
             *args_from_json,
         ]
         subprocess.run(
@@ -79,8 +98,8 @@ def ultralytics_train_yolov5(
     except subprocess.CalledProcessError as e:
         raise AutoMLYoloException("YoloV5 training crashed." + str(e))
 
-    shutil.copy(config_data_path, output_path)
-    df_result = pd.read_csv(os.path.join(output_path, "exp", "results.csv"))
+    shutil.copy(config_data_path, model_output_path)
+    df_result = pd.read_csv(os.path.join(model_output_path, "exp", "results.csv"))
 
     # we take the class loss as the main metric
-    return df_result.iloc[-1:][["        val/obj_loss"]].to_numpy()[0][0]
+    return df_result.iloc[-1:][["        val/obj_loss"]].to_numpy()[0][0]  # type: ignore

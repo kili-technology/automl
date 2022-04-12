@@ -23,7 +23,7 @@ def set_all_seeds(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.deterministic = True  # type:ignore
 
 
 set_all_seeds(42)
@@ -162,16 +162,16 @@ def get_assets(
         raise ValueError("labeling_statuses must be a non-empty list.")
     assets = [a for a in assets if asset_is_kept(a, labeling_statuses)]
     return assets
-    return assets
 
 
-def get_project(kili, project_id: str) -> Tuple[str, Dict]:
-    projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface"])
+def get_project(kili, project_id: str) -> Tuple[str, Dict, str]:
+    projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface", "title"])
     if len(projects) == 0:
         raise ValueError("no such project")
     input_type = projects[0]["inputType"]
     jobs = projects[0]["jsonInterface"].get("jobs", {})
-    return input_type, jobs
+    title = projects[0]["title"]
+    return input_type, jobs, title
 
 
 def kili_print(*args, **kwargs) -> None:
@@ -206,14 +206,16 @@ def set_default(x: str, x_default: str, x_name: str, x_range: List[str]) -> str:
 
 
 def get_last_trained_model_path(
-    job_name: str,
+    *,
     project_id: str,
-    model_path: str,
+    job_name: str,
     project_path_wildcard: List[str],
     weights_filename: str,
+    model_path: Optional[str],
 ) -> str:
     if model_path is None:
         path_project_models = os.path.join(HOME, project_id, job_name, *project_path_wildcard)
+        kili_print("searching models in folder:", path_project_models)
         paths_project_sorted = sorted(glob(path_project_models), reverse=True)
         model_path = None
         while len(paths_project_sorted):
@@ -266,7 +268,7 @@ def download_project_images(
             filename = os.path.join(inference_path, asset["id"] + "." + format.lower())
 
             with open(filename, "w") as fp:
-                image.save(fp, format)
+                image.save(fp, format)  # type: ignore
 
         downloaded_images.append(
             DownloadedImages(

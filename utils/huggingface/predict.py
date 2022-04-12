@@ -38,7 +38,7 @@ def huggingface_predict_ner(
     proba_assets = []
     for asset in assets:
         response = requests.get(
-            asset["content"],
+            asset["content"],  # type: ignore
             headers={
                 "Authorization": f"X-API-Key: {api_key}",
             },
@@ -73,7 +73,7 @@ def huggingface_predict_ner(
     # Warning: the granularity of proba_assets is the whole document
     job_predictions = JobPredictions(
         job_name=job_name,
-        external_id_array=[a["externalId"] for a in assets],
+        external_id_array=[a["externalId"] for a in assets],  # type: ignore
         json_response_array=predictions,
         model_name_array=["Kili AutoML"] * len(assets),
         predictions_probability=proba_assets,
