@@ -6,8 +6,14 @@ import yaml
 from typing_extensions import TypedDict
 
 
-from utils.helpers import JobPredictions, download_project_images, kili_print, build_inference_path
-from utils.constants import HOME, ModelFramework, ModelRepository
+from kiliautoml.utils.helpers import (
+    JobPredictions,
+    download_project_images,
+    kili_print,
+    build_inference_path,
+)
+from kiliautoml.utils.constants import HOME, ModelFramework, ModelRepository
+from kiliautoml.utils.ultralytics.constants import YOLOV5_REL_PATH
 
 
 def ultralytics_predict_object_detection(
@@ -54,7 +60,7 @@ def ultralytics_predict_object_detection(
         + f'--source "{inference_path}" --project "{inference_path}" '
         + prioritizer_args
     )
-    os.system("cd utils/ultralytics/yolov5 && " + cmd)
+    os.system("cd " + YOLOV5_REL_PATH + " && " + cmd)
 
     inference_files = glob(os.path.join(inference_path, "exp", "labels", "*.txt"))
     inference_files_by_id = {get_id_from_path(pf): pf for pf in inference_files}

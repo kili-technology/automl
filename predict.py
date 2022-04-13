@@ -3,8 +3,12 @@ from typing import Optional, List, Dict
 
 import click
 from kili.client import Kili
+from kiliautoml.models import (
+    HuggingFaceTextClassificationModel,
+    HuggingFaceNamedEntityRecognitionModel,
+)
 
-from utils.constants import (
+from kiliautoml.utils.constants import (
     ContentInput,
     InputType,
     MLTask,
@@ -12,77 +16,13 @@ from utils.constants import (
     ModelRepository,
     Tool,
 )
-from utils.helpers import (
+from kiliautoml.utils.helpers import (
     JobPredictions,
     get_assets,
     get_project,
     kili_print,
     get_last_trained_model_path,
 )
-
-
-def predict_ner(
-    api_key: str,
-    assets: List[Dict],
-    job_name: str,
-    project_id: str,
-    model_path: Optional[str],
-    verbose: int,
-) -> JobPredictions:
-    model_path_res, model_repository, model_framework = extract_model_info(
-        job_name, project_id, model_path
-    )
-    if model_repository == ModelRepository.HuggingFace:
-        from utils.huggingface.predict_huggingface import huggingface_predict_ner
-
-        return huggingface_predict_ner(
-            api_key, assets, model_framework, model_path_res, job_name, verbose=verbose
-        )
-    else:
-        raise NotImplementedError
-
-
-def extract_model_info(job_name, project_id, model_path):
-    model_path_res = get_last_trained_model_path(
-        job_name=job_name,
-        project_id=project_id,
-        model_path=model_path,
-        project_path_wildcard=["*", "model", "*", "*"],
-        weights_filename="pytorch_model.bin",
-    )
-    split_path = os.path.normpath(model_path_res).split(os.path.sep)
-    if split_path[-4] == ModelRepository.HuggingFace:
-        model_repository = ModelRepository.HuggingFace
-        kili_print(f"Model base repository: {model_repository}")
-    else:
-        raise ValueError("Unknown model base repository")
-    if split_path[-2] in [ModelFramework.PyTorch, ModelFramework.Tensorflow]:
-        model_framework = split_path[-2]
-        kili_print(f"Model framework: {model_framework}")
-    else:
-        raise ValueError("Unknown model framework")
-    return model_path_res, model_repository, model_framework
-
-
-def predict_text_classification(
-    api_key: str,
-    assets: List[Dict],
-    job_name: str,
-    project_id: str,
-    model_path: Optional[str],
-    verbose: int,
-) -> JobPredictions:
-    model_path_res, model_repository, model_framework = extract_model_info(
-        job_name, project_id, model_path
-    )
-    if model_repository == ModelRepository.HuggingFace:
-        from utils.huggingface.predict_huggingface import huggingface_predict_classification
-
-        return huggingface_predict_classification(
-            api_key, assets, model_framework, model_path_res, job_name, verbose=verbose
-        )
-    else:
-        raise NotImplementedError
 
 
 def predict_object_detection(
@@ -94,7 +34,7 @@ def predict_object_detection(
     verbose: int,
     prioritization: bool,
 ) -> JobPredictions:
-    from utils.ultralytics.predict import ultralytics_predict_object_detection
+    from kiliautoml.utils.ultralytics.predict import ultralytics_predict_object_detection
 
     model_path_res = get_last_trained_model_path(
         project_id=project_id,
@@ -142,6 +82,7 @@ def predict_object_detection(
 def predict_one_job(
     *,
     api_key,
+    api_endpoint,
     project_id,
     from_model,
     verbose,
@@ -158,23 +99,23 @@ def predict_one_job(
         and input_type == InputType.Text
         and ml_task == MLTask.Classification
     ):
-        job_predictions = predict_text_classification(
-            api_key,
-            assets,
-            job_name,
-            project_id,
-            from_model,
-            verbose,
+        job_predictions = HuggingFaceTextClassificationModel(
+            project_id, api_key, api_endpoint
+        ).predict(
+            assets=assets,
+            job_name=job_name,
+            model_path=from_model,
+            verbose=verbose,
         )
 
     elif (
         content_input == ContentInput.Radio
         and input_type == InputType.Text
-        and ml_task == MLTask.NamedEntitiesRecognition
+        and ml_task == MLTask.NamedEntityRecognition
     ):
-        job_predictions = predict_ner(
-            api_key, assets, job_name, project_id, from_model, verbose=verbose
-        )
+        job_predictions = HuggingFaceNamedEntityRecognitionModel(
+            project_id, api_key, api_endpoint
+        ).predict(assets=assets, job_name=job_name, model_path=from_model, verbose=verbose)
 
     elif (
         content_input == ContentInput.Radio
@@ -251,6 +192,7 @@ def main(
 
         job_predictions = predict_one_job(
             api_key=api_key,
+            api_endpoint=api_endpoint,
             project_id=project_id,
             from_model=from_model,
             verbose=verbose,

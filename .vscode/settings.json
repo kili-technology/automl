@@ -6,5 +6,6 @@
   "python.testing.unittestEnabled": false,
   "python.testing.pytestEnabled": true,
   "python.testing.cwd": "${workspaceFolder}",
-  "python.linting.pylintEnabled": false
+  "python.linting.pylintEnabled": false,
+  "python.languageServer": "Pylance"
 }

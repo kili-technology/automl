@@ -17,7 +17,7 @@ from PIL import Image
 from PIL.Image import Image as PILImage
 import requests
 
-from utils.constants import HOME
+from kiliautoml.utils.constants import HOME
 
 
 def set_all_seeds(seed):
