@@ -25,9 +25,10 @@ from utils.helpers import (
     download_project_images,
     get_assets,
     get_project,
-    kili_print,
     parse_label_types,
 )
+from utils.active_learning_demo import update_recap_active_learning
+from utils.helpers_functools import kili_print
 
 
 # Priorities
@@ -356,6 +357,12 @@ def embedding_text(
     is_flag=True,
     help="Tells if the dataset cache must be cleared",
 )
+@click.option(
+    "--active-learning-demo",
+    default=False,
+    is_flag=True,
+    help="Used if we want to demonstrate the capabilities of the autoML library.",
+)
 def main(
     api_key: str,
     project_id: str,
@@ -367,6 +374,7 @@ def main(
     from_model: ModelFramework,
     verbose: bool,
     clear_dataset_cache: bool,
+    active_learning_demo: bool,
 ):
     """
     Prioritize assets in a Kili project.
@@ -399,11 +407,11 @@ def main(
     tools = job.get("tools")
 
     unlabeled_assets = get_assets(
-        kili,
-        project_id,
-        parse_label_types(label_types),
-        max_assets,
-        labeling_statuses=["UNLABELED"],
+        kili=kili,
+        project_id=project_id,
+        label_types=parse_label_types(label_types),
+        max_assets=max_assets,
+        labeling_statuses=["LABELED"] if active_learning_demo else ["UNLABELED"],
     )
 
     # TODO: useless if uncertainty_sampling == 0
@@ -436,6 +444,8 @@ def main(
     priorities = prioritizer.get_priorities(
         diversity_sampling=diversity_sampling, uncertainty_sampling=uncertainty_sampling
     )
+    if active_learning_demo:
+        update_recap_active_learning(unlabeled_assets, project_id, priorities)
     if not dry_run:
         kili.update_properties_in_assets(asset_ids=asset_ids, priorities=priorities)
 

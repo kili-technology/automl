@@ -87,7 +87,7 @@ def train_ner(
     project_id,
     clear_dataset_cache,
 ):
-    from utils.huggingface.train import huggingface_train_ner
+    from utils.huggingface.train_huggingface import huggingface_train_ner
     import nltk
 
     nltk.download("punkt")
@@ -143,7 +143,7 @@ def train_text_classification_single(
     import nltk
 
     nltk.download("punkt")
-    from utils.huggingface.train import huggingface_train_text_classification_single
+    from utils.huggingface.train_huggingface import huggingface_train_text_classification_single
 
     model_repository = set_default(
         model_repository,
@@ -235,18 +235,20 @@ def main(
         ml_task = job.get("mlTask")
         tools = job.get("tools")
         training_loss = None
+
+        assets = get_assets(
+            kili=kili,
+            project_id=project_id,
+            label_types=parse_label_types(label_types),
+            max_assets=max_assets,
+            labeling_statuses=["LABELED"],
+        )
+
         if (
             content_input == ContentInput.Radio
             and input_type == InputType.Text
             and ml_task == MLTask.Classification
         ):
-            assets = get_assets(
-                kili,
-                project_id,
-                parse_label_types(label_types),
-                labeling_statuses=["LABELED"],
-            )
-            assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = train_text_classification_single(
                 api_key,
                 assets,
@@ -263,13 +265,6 @@ def main(
             and input_type == InputType.Text
             and ml_task == MLTask.NamedEntitiesRecognition
         ):
-            assets = get_assets(
-                kili,
-                project_id,
-                parse_label_types(label_types),
-                labeling_statuses=["LABELED"],
-            )
-            assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = train_ner(
                 api_key=api_key,
                 assets=assets,
@@ -287,7 +282,6 @@ def main(
             and ml_task == MLTask.ObjectDetection
             and Tool.Rectangle in tools
         ):
-            # no need to get_assets here because it's done in kili_template.yaml
             training_loss = train_image_bounding_box(
                 api_key=api_key,
                 job=job,

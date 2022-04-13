@@ -1,12 +1,13 @@
+# pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 from typing import Dict, List, Union
 import requests
 
 from nltk import sent_tokenize
 import numpy as np
-from transformers import AutoTokenizer  # type: ignore
+from transformers import AutoTokenizer
 from transformers import (
-    AutoModelForTokenClassification,  # type: ignore
-    TFAutoModelForTokenClassification,  # type: ignore
+    AutoModelForTokenClassification,
+    TFAutoModelForTokenClassification,
 )
 from utils.constants import ModelFramework
 from utils.helpers import JobPredictions
@@ -24,10 +25,10 @@ def huggingface_predict_ner(
 
     if model_framework == ModelFramework.PyTorch:
         tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True)
-        model = AutoModelForTokenClassification.from_pretrained(model_path)  # type: ignore
+        model = AutoModelForTokenClassification.from_pretrained(model_path)
     elif model_framework == ModelFramework.Tensorflow:
         tokenizer = AutoTokenizer.from_pretrained(model_path)
-        model = TFAutoModelForTokenClassification.from_pretrained(model_path)  # type: ignore
+        model = TFAutoModelForTokenClassification.from_pretrained(model_path)
     else:
         raise NotImplementedError(
             f"Predictions with model framework {model_framework} not implemented"

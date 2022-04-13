@@ -1,3 +1,4 @@
+# pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 from datetime import datetime
 import json
 import os
@@ -18,7 +19,8 @@ from transformers import (
 )
 
 from utils.constants import ModelFramework
-from utils.helpers import ensure_dir, kili_print, categories_from_job
+from utils.helpers import ensure_dir, categories_from_job
+from utils.helpers_functools import kili_print
 from utils.huggingface.converters import kili_assets_to_hf_ner_dataset
 
 
@@ -89,7 +91,7 @@ def huggingface_train_ner(
 
     tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
-    train_dataset = tokenized_datasets["train"]
+    train_dataset: datasets.Dataset = tokenized_datasets["train"]  # type: ignore
     path_model = os.path.join(
         path, "model", model_framework, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
@@ -97,21 +99,24 @@ def huggingface_train_ner(
         model = AutoModelForTokenClassification.from_pretrained(
             model_name, num_labels=len(label_list), id2label=dict(enumerate(label_list))
         )
-    if model_framework == ModelFramework.Tensorflow:
+    elif model_framework == ModelFramework.Tensorflow:
         model = TFAutoModelForTokenClassification.from_pretrained(
             model_name,
             num_labels=len(label_list),
             from_pt=True,
             id2label=dict(enumerate(label_list)),
         )
+    else:
+        raise NotImplementedError
+
     training_args = TrainingArguments(os.path.join(path_model, "training_args"))
     data_collator = DataCollatorForTokenClassification(tokenizer)
     trainer = Trainer(
         model=model,
         args=training_args,
-        data_collator=data_collator,
+        data_collator=data_collator,  # type: ignore
         tokenizer=tokenizer,
-        train_dataset=train_dataset,
+        train_dataset=train_dataset,  # type: ignore
     )
     output = trainer.train()
     kili_print(f"Saving model to {path_model}")
@@ -137,28 +142,27 @@ def huggingface_train_text_classification_single(
     kili_print(f"Downloading data to {path_dataset}")
     if os.path.exists(path_dataset) and clear_dataset_cache:
         os.remove(path_dataset)
-    if not os.path.exists(path_dataset):
-        job_categories = categories_from_job(job)
-        with open(ensure_dir(path_dataset), "w") as handler:
-            for asset in assets:
-                response = requests.get(
-                    asset["content"],
-                    headers={
-                        "Authorization": f"X-API-Key: {api_key}",
-                    },
+    if os.path.exists(path_dataset):
+        raise FileExistsError(f"Dataset already exists at {path_dataset}")
+    job_categories = categories_from_job(job)
+    with open(ensure_dir(path_dataset), "w") as handler:
+        for asset in assets:
+            response = requests.get(
+                asset["content"],
+                headers={
+                    "Authorization": f"X-API-Key: {api_key}",
+                },
+            )
+            label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]
+            handler.write(
+                json.dumps(
+                    {
+                        "text": response.text,
+                        "label": job_categories.index(label_category),
+                    }
                 )
-                label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0][
-                    "name"
-                ]
-                handler.write(
-                    json.dumps(
-                        {
-                            "text": response.text,
-                            "label": job_categories.index(label_category),
-                        }
-                    )
-                    + "\n"
-                )
+                + "\n"
+            )
     raw_datasets = datasets.load_dataset(
         "json",
         data_files=path_dataset,
@@ -175,7 +179,7 @@ def huggingface_train_text_classification_single(
         return tokenizer(examples["text"], padding="max_length", truncation=True)
 
     tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
-    train_dataset = tokenized_datasets["train"]
+    train_dataset = tokenized_datasets["train"]  # type: ignore
     path_model = os.path.join(
         path, "model", model_framework, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
@@ -183,15 +187,17 @@ def huggingface_train_text_classification_single(
         model = AutoModelForSequenceClassification.from_pretrained(
             model_name, num_labels=len(job_categories)
         )
-    if model_framework == ModelFramework.Tensorflow:
+    elif model_framework == ModelFramework.Tensorflow:
         model = TFAutoModelForSequenceClassification.from_pretrained(
             model_name, num_labels=len(job_categories), from_pt=True
         )
+    else:
+        raise NotImplementedError
     training_args = TrainingArguments(os.path.join(path_model, "training_args"))
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=train_dataset,
+        train_dataset=train_dataset,  # type: ignore
     )
     output = trainer.train()
     kili_print(f"Saving model to {path_model}")

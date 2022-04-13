@@ -6,8 +6,9 @@ import yaml
 from typing_extensions import TypedDict
 
 
-from utils.helpers import JobPredictions, download_project_images, kili_print, build_inference_path
+from utils.helpers import JobPredictions, download_project_images, build_inference_path
 from utils.constants import HOME, ModelFramework, ModelRepository
+from utils.helpers_functools import kili_print
 
 
 def ultralytics_predict_object_detection(
@@ -121,16 +122,16 @@ def yolov5_to_kili_json(
     probabilities = []
     with open(path_yolov5_inference, "r") as f:
         for line in f.readlines():
-            c, x, y, w, h, p = line.split(" ")
-            x, y, w, h = float(x), float(y), float(w), float(h)
-            c = int(c)
-            p = int(100.0 * float(p))
+            c_, x_, y_, w_, h_, p_ = line.split(" ")
+            x, y, w, h = float(x_), float(y_), float(w_), float(h_)
+            c = int(c_)
+            p = int(100.0 * float(p_))
 
             category: CategoryNameConfidence = {
                 "name": ind_to_categories[c],
                 "confidence": p,
             }
-            probabilities.append(p)
+            probabilities.append(float(p))
 
             bbox_annotation: BBoxAnnotation = {
                 "boundingPoly": [

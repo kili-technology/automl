@@ -8,14 +8,15 @@ from dataclasses import dataclass
 import torch
 import numpy as np
 from glob import glob
-from termcolor import colored
 from joblib import Memory
 from tqdm import tqdm
 from PIL import Image
 from PIL.Image import Image as PILImage
 import requests
+from utils.active_learning_demo import select_assets_training_active_learning_cycle
 
 from utils.constants import HOME
+from utils.helpers_functools import kili_print
 
 
 def set_all_seeds(seed):
@@ -106,7 +107,7 @@ class JobPredictions:
 
 
 @kili_project_memoizer(sub_dir="get_asset_memoized")
-def get_asset_memoized(*, kili, project_id, first, skip):
+def _get_asset_memoized(*, kili, project_id, first, skip):
     return kili.assets(
         project_id=project_id,
         first=first,
@@ -134,19 +135,26 @@ def asset_is_kept(asset, labeling_statuses: List[str] = ["LABELED", "UNLABELED"]
 
 
 def get_assets(
+    *,
     kili,
     project_id: str,
     label_types: List[str] = ["DEFAULT", "REVIEW"],
     max_assets: Optional[int] = None,
     labeling_statuses: List[str] = ["LABELED", "UNLABELED"],
+    active_learning_demo: bool = False,
 ) -> List[Dict]:
+    if active_learning_demo:
+        assert labeling_statuses == [
+            "LABELED"
+        ], "active_learning_demo is only supported for LABELED assets."
+        assert max_assets is None, "max_assets must be None for active_learning_demo."
+
     total = kili.count_assets(project_id=project_id)
-    total = total if max_assets is None else min(total, max_assets)
 
     first = min(100, total)
     assets = []
     for skip in tqdm(range(0, total, first)):
-        assets += get_asset_memoized(kili=kili, project_id=project_id, first=first, skip=skip)
+        assets += _get_asset_memoized(kili=kili, project_id=project_id, first=first, skip=skip)
     assets = [
         {
             **a,
@@ -161,6 +169,12 @@ def get_assets(
     if not labeling_statuses:
         raise ValueError("labeling_statuses must be a non-empty list.")
     assets = [a for a in assets if asset_is_kept(a, labeling_statuses)]
+
+    if active_learning_demo:
+        assets = select_assets_training_active_learning_cycle(project_id, assets)
+
+    max_assets = min(max_assets, len(assets)) if max_assets else len(assets)
+    assets = assets[:max_assets]
     return assets
 
 
@@ -172,10 +186,6 @@ def get_project(kili, project_id: str) -> Tuple[str, Dict, str]:
     jobs = projects[0]["jsonInterface"].get("jobs", {})
     title = projects[0]["title"]
     return input_type, jobs, title
-
-
-def kili_print(*args, **kwargs) -> None:
-    print(colored("kili:", "yellow", attrs=["bold"]), *args, **kwargs)
 
 
 def build_model_repository_path(

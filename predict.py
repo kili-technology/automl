@@ -16,9 +16,9 @@ from utils.helpers import (
     JobPredictions,
     get_assets,
     get_project,
-    kili_print,
     get_last_trained_model_path,
 )
+from utils.helpers_functools import kili_print
 
 
 def predict_ner(
@@ -195,7 +195,13 @@ def main(
 
     kili = Kili(api_key=api_key)
     input_type, jobs, _ = get_project(kili, project_id)
-    assets = get_assets(kili, project_id, label_types.split(","), max_assets=max_assets)
+    assets = get_assets(
+        kili=kili,
+        project_id=project_id,
+        active_learning_demo=False,
+        label_types=label_types.split(","),
+        max_assets=max_assets,
+    )
 
     for job_name, job in jobs.items():
         content_input = job.get("content", {}).get("input")

@@ -8,7 +8,8 @@ from functools import reduce
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import pandas as pd
 
-from utils.helpers import categories_from_job, kili_print
+from utils.helpers import categories_from_job
+from utils.helpers_functools import kili_print
 
 env = Environment(
     loader=FileSystemLoader(os.path.abspath("utils/ultralytics")),

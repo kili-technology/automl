@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import os
 
 
-HOME = os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")
+HOME = os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type: ignore
 
 
 @dataclass

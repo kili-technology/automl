@@ -1,6 +1,6 @@
 import click
 
-from utils.helpers import kili_print
+from utils.helpers_functools import kili_print
 
 
 @click.command()
