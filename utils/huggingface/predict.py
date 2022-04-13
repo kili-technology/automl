@@ -5,12 +5,34 @@ from nltk import sent_tokenize
 import numpy as np
 from transformers import AutoTokenizer  # type: ignore
 from transformers import (
+    AutoModelForSequenceClassification,  # type: ignore
     AutoModelForTokenClassification,  # type: ignore
+    TFAutoModelForSequenceClassification,  # type: ignore
     TFAutoModelForTokenClassification,  # type: ignore
 )
 from utils.constants import ModelFramework
 from utils.helpers import JobPredictions
 from utils.huggingface.converters import predicted_tokens_to_kili_annotations
+
+
+def get_tokenizer_and_model(model_framework, model_path, model_type):
+    if model_framework == ModelFramework.PyTorch:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True)
+        if model_type == "ner":
+            model = AutoModelForTokenClassification.from_pretrained(model_path)  # type: ignore
+        elif model_type == "classification":
+            model = AutoModelForSequenceClassification.from_pretrained(model_path)  # type: ignore
+        else:
+            raise ValueError("unknown model type")
+    elif model_framework == ModelFramework.Tensorflow:
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        if model_type == "ner":
+            model = TFAutoModelForTokenClassification.from_pretrained(model_path)  # type: ignore
+        elif model_type == "classfication":
+            model = TFAutoModelForSequenceClassification.from_pretrained(model_path)  # type: ignore
+        else:
+            raise ValueError("unknown model type")
+    return tokenizer, model
 
 
 def huggingface_predict_ner(
@@ -22,16 +44,7 @@ def huggingface_predict_ner(
     verbose: int = 0,
 ) -> JobPredictions:
 
-    if model_framework == ModelFramework.PyTorch:
-        tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True)
-        model = AutoModelForTokenClassification.from_pretrained(model_path)  # type: ignore
-    elif model_framework == ModelFramework.Tensorflow:
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
-        model = TFAutoModelForTokenClassification.from_pretrained(model_path)  # type: ignore
-    else:
-        raise NotImplementedError(
-            f"Predictions with model framework {model_framework} not implemented"
-        )
+    tokenizer, model = get_tokenizer_and_model(model_framework, model_path, "ner")
 
     predictions = []
 
@@ -45,7 +58,7 @@ def huggingface_predict_ner(
         )
 
         offset = 0
-        predictions_asset = []
+        predictions_asset: List[dict] = []
 
         text = response.text
 
@@ -67,8 +80,68 @@ def huggingface_predict_ner(
         proba_assets.append(min(probas_asset))
 
         if verbose:
-            for p in predictions_asset:
-                print(p)
+            print(sentence)
+            if len(predictions_asset):
+                for p in predictions_asset:
+                    print(p)
+            else:
+                print("No prediction")
+
+    # Warning: the granularity of proba_assets is the whole document
+    job_predictions = JobPredictions(
+        job_name=job_name,
+        external_id_array=[a["externalId"] for a in assets],  # type: ignore
+        json_response_array=predictions,
+        model_name_array=["Kili AutoML"] * len(assets),
+        predictions_probability=proba_assets,
+    )
+
+    return job_predictions
+
+
+def huggingface_predict_classification(
+    api_key: str,
+    assets: List[Dict],
+    model_framework: str,
+    model_path: str,
+    job_name: str,
+    verbose: int = 0,
+) -> JobPredictions:
+    if model_framework == ModelFramework.PyTorch:
+        tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True, truncation=True)
+        model = AutoModelForTokenClassification.from_pretrained(model_path)
+    elif model_framework == ModelFramework.Tensorflow:
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        model = TFAutoModelForTokenClassification.from_pretrained(model_path)
+    else:
+        raise NotImplementedError(
+            f"Predictions with model framework {model_framework} not implemented"
+        )
+
+    predictions = []
+    proba_assets = []
+
+    for asset in assets:
+        tokenizer, model = get_tokenizer_and_model(model_framework, model_path, "classification")
+
+        response = requests.get(
+            asset["content"],
+            headers={
+                "Authorization": f"X-API-Key: {api_key}",
+            },
+        )
+
+        text = response.text
+
+        predictions_asset = compute_asset_classification(model_framework, tokenizer, model, text)
+
+        predictions.append({job_name: predictions_asset})
+        proba_assets.append(predictions_asset["categories"][0]["confidence"])
+
+        if verbose:
+            print("----------")
+            print(text)
+            print(predictions_asset)
 
     # Warning: the granularity of proba_assets is the whole document
     job_predictions = JobPredictions(
@@ -119,3 +192,32 @@ def compute_sentence_predictions(model_framework, tokenizer, model, sentence, of
     # hence model.config.id2label[0]
 
     return predictions_sentence, probas
+
+
+def compute_asset_classification(model_framework, tokenizer, model, asset):
+    # imposed by the model
+    asset = asset[: model.config.max_position_embeddings]
+
+    if model_framework == ModelFramework.PyTorch:
+        tokens = tokenizer(
+            asset,
+            return_tensors="pt",
+            max_length=model.config.max_position_embeddings,
+            truncation=True,
+        )
+    else:
+        tokens = tokenizer(
+            asset,
+            return_tensors="tf",
+            max_length=model.config.max_position_embeddings,
+            truncation=True,
+        )
+
+    output = model(**tokens)
+    logits = np.squeeze(output["logits"].detach().numpy())
+    probas_all = np.exp(logits) / np.sum(np.exp(logits))
+    predicted_id = np.argmax(probas_all).tolist()
+    probas = probas_all[predicted_id]
+    predicted_label = model.config.id2label[predicted_id]
+
+    return {"categories": [{"name": predicted_label, "confidence": int(probas * 100)}]}

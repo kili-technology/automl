@@ -1,6 +1,7 @@
 import json
 import os
 from typing import Dict, List
+from warnings import warn
 
 from nltk import sent_tokenize
 from nltk.tokenize import TreebankWordTokenizer
@@ -46,6 +47,12 @@ def write_asset(api_key, job_name, labels_to_ids, handler, asset):
         },
     )
     text = response.text
+    if (
+        job_name not in asset["labels"][0]["jsonResponse"]
+    ):  # always taking the first label (for now)
+        asset_id = asset["id"]
+        warn(f"${asset_id}: No annotation for job ${job_name}")
+        return
     annotations = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
     sentences = sent_tokenize(text)
     offset = 0
@@ -104,6 +111,7 @@ def predicted_tokens_to_kili_annotations(
         if token in [
             "[CLS]",
             "[SEP]",
+            "[UNK]",
         ]:  # special BERT tokens that should ignored at inference time
             continue
         if token.startswith(

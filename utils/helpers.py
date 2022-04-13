@@ -99,7 +99,9 @@ class JobPredictions:
             len(set(external_id_array)) == n_assets
         ), "external_id_array must not contain duplicates"
 
-        kili_print(f"JobPredictions: {n_assets} assets successfully created for job {job_name}.")
+        kili_print(
+            f"JobPredictions: {n_assets} predictions successfully created for job {job_name}."
+        )
 
     def __repr__(self):
         return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"
