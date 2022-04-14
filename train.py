@@ -25,6 +25,7 @@ from utils.helpers import (
 )
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["WANDB_DISABLED"] = "true"
 
 
 def train_image_bounding_box(

@@ -80,6 +80,8 @@ def ultralytics_train_yolov5(
     args_from_json = reduce(lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in json_args.items()))
     kili_print("Starting Ultralytics' YoloV5 ...")
     try:
+        yolo_env = os.environ.copy()
+        yolo_env["WANDB_DISABLED"] = "false"
         args = [
             "python",
             "train.py",
@@ -90,11 +92,7 @@ def ultralytics_train_yolov5(
             "--upload_dataset",  # wandb
             *args_from_json,
         ]
-        subprocess.run(
-            args,
-            check=True,
-            cwd=f"{yolov5_path}",
-        )
+        subprocess.run(args, check=True, cwd=f"{yolov5_path}", env=yolo_env)
     except subprocess.CalledProcessError as e:
         raise AutoMLYoloException("YoloV5 training crashed." + str(e))
 
