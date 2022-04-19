@@ -2,3 +2,4 @@
 .vscode/launch.json
 utils/ultralytics/yolov5
 utils/ultralytics/yolov5/data/kili.yaml
+wandb
