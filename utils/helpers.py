@@ -158,7 +158,7 @@ def get_assets(
             "labels": [
                 line
                 for line in sorted(a["labels"], key=lambda l: l["createdAt"])
-                if line["labelType"] in label_types
+                if (line["labelType"] in label_types and line["jsonResponse"])
             ][-1:],
         }
         for a in assets

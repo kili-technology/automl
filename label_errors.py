@@ -81,7 +81,7 @@ def main(
     """
 
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
-    input_type, jobs = get_project(kili, project_id)
+    input_type, jobs, _ = get_project(kili, project_id)
 
     for job_name, job in jobs.items():
         content_input = job.get("content", {}).get("input")
