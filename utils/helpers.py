@@ -1,6 +1,7 @@
 import os
 import random
 from io import BytesIO
+import json
 import shutil
 from typing import Any, List, Optional, Dict, Tuple
 from dataclasses import dataclass
@@ -289,3 +290,29 @@ def download_project_images(
 def clear_automl_cache():
     if os.path.exists(HOME):
         shutil.rmtree(HOME)
+
+
+def save_errors(found_errors, job_path):
+    found_errors_dict = {"assetIds": found_errors}
+    found_errors_json = json.dumps(found_errors_dict, sort_keys=True, indent=4)
+    if found_errors_json is not None:
+        json_path = os.path.join(job_path, "error_labels.json")
+        with open(json_path, "wb") as output_file:
+            output_file.write(found_errors_json.encode("utf-8"))
+            kili_print("Asset IDs of wrong labels written to: ", json_path)
+
+
+def upload_errors_to_kili(found_errors, kili):
+    kili_print("Updating metadatas for the concerned assets")
+    first = min(100, len(found_errors))
+    for skip in tqdm(range(0, len(found_errors), first)):
+        error_assets = kili.assets(
+            asset_id_in=found_errors[skip : skip + first], fields=["id", "metadata"]
+        )
+        asset_ids = [asset["id"] for asset in error_assets]
+        new_metadatas = [asset["metadata"] for asset in error_assets]
+
+        for meta in new_metadatas:
+            meta["labeling_error"] = True
+
+        kili.update_properties_in_assets(asset_ids=asset_ids, json_metadatas=new_metadatas)

@@ -1,5 +1,4 @@
 import os
-import json
 import requests
 import shutil
 import time
@@ -22,16 +21,45 @@ from utils.helpers import (
     get_project,
     kili_print,
     parse_label_types,
+    save_errors,
     set_default,
+    upload_errors_to_kili,
 )
+
+
+def download_assets(assets, api_key, data_path, job_name):
+    """
+    Download assets that are stored in Kili and save them to folders depending on their
+    label category
+    """
+    for asset in tqdm(assets):
+        tic = time.time()
+        n_try = 0
+        while n_try < 20:
+            try:
+                img_data = requests.get(
+                    asset["content"],
+                    headers={
+                        "Authorization": f"X-API-Key: {api_key}",
+                    },
+                ).content
+                break
+            except Exception:
+                time.sleep(1)
+                n_try += 1
+        img_path = os.path.join(
+            data_path, asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]
+        )
+        os.makedirs(img_path, exist_ok=True)
+        with open(os.path.join(img_path, asset["id"] + ".jpg"), "wb") as handler:
+            handler.write(img_data)
+        toc = time.time() - tic
+        throttling_per_call = 60.0 / 250  # Kili API calls are limited to 250 per minute
+        if toc < throttling_per_call:
+            time.sleep(throttling_per_call - toc)
 
 
 @click.command()
-@click.option(
-    "--api-endpoint",
-    default="https://cloud.kili-technology.com/api/label/v2/graphql",
-    help="Kili Endpoint",
-)
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
 @click.option("--cv-folds", default=4, type=int, help="Number of CV folds to use")
 @click.option(
@@ -54,15 +82,21 @@ from utils.helpers import (
     default=None,
     help="Model name (one of efficientnet_b0, resnet50)",
 )
-@click.option("--project-id", default=None, help="Kili project ID")
+@click.option("--project-id", default=None, required=True, help="Kili project ID")
 @click.option(
     "--training-epochs",
     default=10,
     type=int,
     help="Number of epochs to train each CV fold",
 )
+@click.option(
+    "--upload-errors",
+    default=True,
+    type=bool,
+    help="Upload 'labeling_error: True' metadata to Kili for concerned assets",
+)
+@click.option("--verbose", default=0, type=int, help="Verbose level")
 def main(
-    api_endpoint: str,
     api_key: str,
     cv_folds: int,
     clear_dataset_cache: bool,
@@ -71,16 +105,18 @@ def main(
     model_name: str,
     project_id: str,
     training_epochs: int,
+    upload_errors: bool,
+    verbose: int,
 ):
     """
     Main method for detecting incorrect labeled assets in a Kili project.
     It downloads the assets, trains a classification neural network with CV and then by
     using the Cleanlab library we get the wrong labels. The concerned asset IDs are then
-    stored in a file, but also a metadata (cleanlab_error: true) is uploaded to Kili to
+    stored in a file, but also a metadata (labeling_error: true) is uploaded to Kili to
     easily filter them later in the app.
     """
 
-    kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
+    kili = Kili(api_key=api_key)
     input_type, jobs, _ = get_project(kili, project_id)
 
     for job_name, job in jobs.items():
@@ -108,31 +144,7 @@ def main(
             if len(assets) == 0:
                 raise Exception("No asset in dataset, exiting...")
 
-            for asset in tqdm(assets):
-                tic = time.time()
-                n_try = 0
-                while n_try < 20:
-                    try:
-                        img_data = requests.get(
-                            asset["content"],
-                            headers={
-                                "Authorization": f"X-API-Key: {api_key}",
-                            },
-                        ).content
-                        break
-                    except Exception:
-                        time.sleep(1)
-                        n_try += 1
-                img_path = os.path.join(
-                    data_path, asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]
-                )
-                os.makedirs(img_path, exist_ok=True)
-                with open(os.path.join(img_path, asset["id"] + ".jpg"), "wb") as handler:
-                    handler.write(img_data)
-                toc = time.time() - tic
-                throttling_per_call = 60.0 / 250  # Kili API calls are limited to 250 per minute
-                if toc < throttling_per_call:
-                    time.sleep(throttling_per_call - toc)
+            download_assets(assets, api_key, data_path, job_name)
 
             model_name = set_default(
                 model_name,
@@ -147,35 +159,16 @@ def main(
                 model_dir=model_path,
                 model_name=model_name,
                 training_epochs=training_epochs,
+                verbose=verbose,
             )
 
             print()
             kili_print("Number of wrong labels found: ", len(found_errors))
 
             if found_errors:
-                found_errors_dict = {"assetIds": found_errors}
-                found_errors_json = json.dumps(found_errors_dict, sort_keys=True, indent=4)
-                if found_errors_json is not None:
-                    json_path = os.path.join(job_path, "error_labels.json")
-                    with open(json_path, "wb") as output_file:
-                        output_file.write(found_errors_json.encode("utf-8"))
-                        kili_print("Asset IDs of wrong labels written to: ", json_path)
-
-                kili_print("Updating metadatas for the concerned assets")
-                first = min(100, len(found_errors))
-                for skip in tqdm(range(0, len(found_errors), first)):
-                    error_assets = kili.assets(
-                        asset_id_in=found_errors[skip : skip + first], fields=["id", "metadata"]
-                    )
-                    asset_ids = [asset["id"] for asset in error_assets]
-                    new_metadatas = [asset["metadata"] for asset in error_assets]
-
-                    for meta in new_metadatas:
-                        meta["cleanlab_error"] = True
-
-                    kili.update_properties_in_assets(
-                        asset_ids=asset_ids, json_metadatas=new_metadatas
-                    )
+                save_errors(found_errors, job_path)
+                if upload_errors:
+                    upload_errors_to_kili(found_errors, kili)
         else:
             kili_print("not implemented yet")
 

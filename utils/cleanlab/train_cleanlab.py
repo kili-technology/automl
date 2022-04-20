@@ -16,7 +16,15 @@ from utils.constants import ModelName
 
 
 def train_model(
-    model, criterion, optimizer, scheduler, dataloaders, device, dataset_sizes, num_epochs=10
+    model,
+    criterion,
+    optimizer,
+    scheduler,
+    dataloaders,
+    device,
+    dataset_sizes,
+    verbose=0,
+    num_epochs=10,
 ):
     """
     Method that trains the given model and return the best one found in the given epochs
@@ -27,8 +35,9 @@ def train_model(
     best_acc = 0.0
 
     for epoch in range(num_epochs):
-        print(f"Epoch {epoch + 1}/{num_epochs}")
-        print("-" * 10)
+        if verbose >= 2:
+            print(f"Epoch {epoch + 1}/{num_epochs}")
+            print("-" * 10)
 
         # Each epoch has a training and validation phase
         for phase in ["train", "val"]:
@@ -69,25 +78,27 @@ def train_model(
             epoch_loss = running_loss / dataset_sizes[phase]
             epoch_acc = running_corrects.double() / dataset_sizes[phase]
 
-            print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}")
+            if verbose >= 2:
+                print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}")
 
             # deep copy the model
             if phase == "val" and epoch_acc > best_acc:
                 best_acc = epoch_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
+        if verbose >= 2:
+            print()
 
-        print()
-
-    time_elapsed = time.time() - since
-    print(f"Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s")
-    print(f"Best val Acc: {best_acc:4f}")
+    if verbose >= 2:
+        time_elapsed = time.time() - since
+        print(f"Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s")
+        print(f"Best val Acc: {best_acc:4f}")
 
     # load best model weights
     model.load_state_dict(best_model_wts)
     return model
 
 
-def get_probs(loader, model):
+def get_probs(loader, model, verbose=0):
     """
     Method to compute the probabilities for all classes for the assets in the holdout set
     """
@@ -95,9 +106,12 @@ def get_probs(loader, model):
     model.eval()
     n_total = len(loader.dataset.imgs) / float(loader.batch_size)
     outputs = []
+    if verbose >= 2:
+        print("Computing probabilities for this fold")
     with torch.no_grad():
         for i, (input, target) in enumerate(loader):
-            print("\rComplete: {:.1%}".format(i / n_total), end="")
+            if verbose >= 2:
+                print("\rComplete: {:.1%}".format(i / n_total), end="")
             if torch.cuda.is_available():
                 input = input.cuda(non_blocking=True)
                 target = target.cuda(non_blocking=True)
@@ -111,13 +125,14 @@ def get_probs(loader, model):
     return probs
 
 
-def combine_folds(data_dir, model_dir, num_classes=10, nb_folds=4, seed=42):
+def combine_folds(data_dir, model_dir, verbose=0, num_classes=10, nb_folds=4, seed=42):
     """
     Method that combines the probabilities from all the holdout sets into a single file
     """
     destination = os.path.join(model_dir, "train_model_intel_pyx.npy")
-    print()
-    print("This method will overwrite file: {}".format(destination))
+    if verbose >= 1:
+        print()
+        print("Combining probabilities. This method will overwrite file: {}".format(destination))
     # Prepare labels
     labels = [label for _, label in datasets.ImageFolder(data_dir).imgs]
     # Initialize pyx array (output of trained network)
@@ -129,13 +144,15 @@ def combine_folds(data_dir, model_dir, num_classes=10, nb_folds=4, seed=42):
         probs_path = os.path.join(model_dir, "model_fold_{}__probs.npy".format(k))
         probs = np.load(probs_path)
         pyx[cv_holdout_idx] = probs[:, :num_classes]
-    print("Writing final predicted probabilities.")
+    if verbose >= 1:
+        print("Writing final predicted probabilities.")
     np.save(destination, pyx)
 
-    # Compute overall accuracy
-    print("Computing Accuracy.", flush=True)
-    acc = sum(np.array(labels) == np.argmax(pyx, axis=1)) / float(len(labels))
-    print("Accuracy: {:.25}".format(acc))
+    if verbose >= 1:
+        # Compute overall accuracy
+        print("Computing Accuracy.", flush=True)
+        acc = sum(np.array(labels) == np.argmax(pyx, axis=1)) / float(len(labels))
+        print("Accuracy: {:.25}".format(acc))
 
     return destination
 
@@ -146,6 +163,7 @@ def train_and_get_error_labels(
     model_dir,
     model_name,
     training_epochs,
+    verbose=0,
     cv_seed=42,
 ):
     """
@@ -198,11 +216,12 @@ def train_and_get_error_labels(
         image_datasets["val"].imgs = [image_datasets["val"].imgs[i] for i in val_idx]
         image_datasets["val"].samples = image_datasets["val"].imgs
 
-        print(f"\n\nCV Fold: {cv_fold+1}/{cv_n_folds}")
-        print(f"Train size: {len(image_datasets['train'].imgs)}")
-        print(f"Validation size: {len(image_datasets['val'].imgs)}")
-        print(f"Holdout size: {len(holdout_dataset.imgs)}")
-        print()
+        if verbose >= 1:
+            print(f"\n\nCV Fold: {cv_fold+1}/{cv_n_folds}")
+            print(f"Train size: {len(image_datasets['train'].imgs)}")
+            print(f"Validation size: {len(image_datasets['val'].imgs)}")
+            print(f"Holdout size: {len(holdout_dataset.imgs)}")
+            print()
 
         dataloaders = {
             x: torch.utils.data.DataLoader(
@@ -239,6 +258,7 @@ def train_and_get_error_labels(
             dataloaders,
             device,
             dataset_sizes,
+            verbose=verbose,
             num_epochs=training_epochs,
         )
         # torch.save(model_ft.state_dict(), os.path.join(model_dir, f'model_{cv_fold}.pt'))
@@ -251,12 +271,16 @@ def train_and_get_error_labels(
             pin_memory=True,
         )
 
-        probs = get_probs(holdout_loader, model_ft)
+        probs = get_probs(holdout_loader, model_ft, verbose=verbose)
         probs_path = os.path.join(model_dir, "model_fold_{}__probs.npy".format(cv_fold))
         np.save(probs_path, probs)
 
     psx_path = combine_folds(
-        data_dir=data_dir, model_dir=model_dir, num_classes=len(class_names), seed=cv_seed
+        data_dir=data_dir,
+        model_dir=model_dir,
+        num_classes=len(class_names),
+        seed=cv_seed,
+        verbose=verbose,
     )
 
     psx = np.load(psx_path)
