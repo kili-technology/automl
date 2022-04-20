@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 import os
 from typing import Dict, List
+from warnings import warn
 
 import datasets
 
@@ -142,27 +143,34 @@ def huggingface_train_text_classification_single(
     kili_print(f"Downloading data to {path_dataset}")
     if os.path.exists(path_dataset) and clear_dataset_cache:
         os.remove(path_dataset)
-    if os.path.exists(path_dataset):
-        raise FileExistsError(f"Dataset already exists at {path_dataset}")
     job_categories = categories_from_job(job)
-    with open(ensure_dir(path_dataset), "w") as handler:
-        for asset in assets:
-            response = requests.get(
-                asset["content"],
-                headers={
-                    "Authorization": f"X-API-Key: {api_key}",
-                },
-            )
-            label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]
-            handler.write(
-                json.dumps(
-                    {
-                        "text": response.text,
-                        "label": job_categories.index(label_category),
-                    }
+    if not os.path.exists(path_dataset):
+        with open(ensure_dir(path_dataset), "w") as handler:
+            for asset in assets:
+                response = requests.get(
+                    asset["content"],
+                    headers={
+                        "Authorization": f"X-API-Key: {api_key}",
+                    },
                 )
-                + "\n"
-            )
+                if job_name in asset["labels"][0]["jsonResponse"]:
+                    label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0][
+                        "name"
+                    ]
+                    handler.write(
+                        json.dumps(
+                            {
+                                "text": response.text,
+                                "label": job_categories.index(label_category),
+                            }
+                        )
+                        + "\n"
+                    )
+                else:
+                    asset_id = asset["id"]
+                    warn(f"Asset {asset_id} does not have {job_name} annotation")
+    else:
+        raise Exception(f"Dataset already exists at {path_dataset}")
     raw_datasets = datasets.load_dataset(
         "json",
         data_files=path_dataset,
@@ -184,12 +192,16 @@ def huggingface_train_text_classification_single(
         path, "model", model_framework, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
     if model_framework == ModelFramework.PyTorch:
+
         model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, num_labels=len(job_categories)
+            model_name, num_labels=len(job_categories), id2label=dict(enumerate(job_categories))
         )
     elif model_framework == ModelFramework.Tensorflow:
         model = TFAutoModelForSequenceClassification.from_pretrained(
-            model_name, num_labels=len(job_categories), from_pt=True
+            model_name,
+            num_labels=len(job_categories),
+            from_pt=True,
+            id2label=dict(enumerate(job_categories)),
         )
     else:
         raise NotImplementedError
@@ -198,6 +210,7 @@ def huggingface_train_text_classification_single(
         model=model,
         args=training_args,
         train_dataset=train_dataset,  # type: ignore
+        tokenizer=tokenizer,
     )
     output = trainer.train()
     kili_print(f"Saving model to {path_model}")

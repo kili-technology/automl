@@ -100,7 +100,9 @@ class JobPredictions:
             len(set(external_id_array)) == n_assets
         ), "external_id_array must not contain duplicates"
 
-        kili_print(f"JobPredictions: {n_assets} assets successfully created for job {job_name}.")
+        kili_print(
+            f"JobPredictions: {n_assets} predictions successfully created for job {job_name}."
+        )
 
     def __repr__(self):
         return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"
@@ -127,11 +129,9 @@ def _get_asset_memoized(*, kili, project_id, first, skip):
 def asset_is_kept(asset, labeling_statuses: List[str] = ["LABELED", "UNLABELED"]) -> bool:
     labeled = len(asset["labels"]) > 0
     unlabeled = len(asset["labels"]) == 0
-    if "LABELED" in labeling_statuses:
-        return labeled
-    if "UNLABELED" in labeling_statuses:
-        return unlabeled
-    return False
+    return ("LABELED" in labeling_statuses and labeled) or (
+        "UNLABELED" in labeling_statuses and unlabeled
+    )
 
 
 @kili_project_memoizer(sub_dir="get_assets_memoized")
@@ -149,10 +149,13 @@ def get_assets(
             "LABELED"
         ], "active_learning_demo is only supported for LABELED assets."
         assert max_assets is None, "max_assets must be None for active_learning_demo."
+    if not labeling_statuses:
+        raise ValueError("labeling_statuses must be a non-empty list.")
 
     total = kili.count_assets(project_id=project_id)
 
     first = min(100, total)
+
     assets = []
     for skip in tqdm(range(0, total, first)):
         assets += _get_asset_memoized(kili=kili, project_id=project_id, first=first, skip=skip)
@@ -167,8 +170,6 @@ def get_assets(
         }
         for a in assets
     ]
-    if not labeling_statuses:
-        raise ValueError("labeling_statuses must be a non-empty list.")
     assets = [a for a in assets if asset_is_kept(a, labeling_statuses)]
 
     if active_learning_demo:
