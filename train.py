@@ -235,7 +235,7 @@ def main(
 ):
     """ """
     kili = Kili(api_key=api_key)
-    input_type, jobs, title = get_project(kili, project_id)
+    input_type, jobs, title = get_project(kili=kili, project_id=project_id)
 
     training_losses = []
     for job_name, job in jobs.items():

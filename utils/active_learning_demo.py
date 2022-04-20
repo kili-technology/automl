@@ -1,3 +1,8 @@
+"""
+select_assets_training_active_learning_cycle
+
+
+"""
 import os
 from typing import List, Any
 import pandas as pd
@@ -8,35 +13,46 @@ from utils.helpers_functools import kili_print
 
 
 def get_active_learning_recap_path(project_id):
-    return os.path.join(HOME, project_id, "recap_active_learning_csv")
+    res = os.path.join(HOME, project_id, "recap_active_learning.csv")
+
+    dir_path = os.path.join(HOME, project_id)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+    kili_print(f"Active learning recap path: {res}")
+    return res
 
 
-def select_assets_training_active_learning_cycle(project_id, assets):
-    """Selects assets for training and active learning cycle."""
+N_ASSETS_PER_CYCLE = 100
+
+
+def get_assets_training_active_learning_cycle(
+    project_id: str, all_assets: List[Any], cycle_0=False
+):
+    """Selects assets for training the current active learning cycle."""
     active_learning_recap_path = get_active_learning_recap_path(project_id)
-    if os.path.exists(active_learning_recap_path):
+    if os.path.exists(active_learning_recap_path) and not cycle_0:
         # if the csv exists, we load it and remove the external_ids that have already been labeled
         df = pd.read_csv(active_learning_recap_path)
     else:
         # if the csv does not exist, we create it and add the external_ids to the csv
-        external_ids = [a["externalId"] for a in assets]
+        external_ids = [a["externalId"] for a in all_assets]
         df = pd.DataFrame({"external_id": external_ids})
-        random_index = np.random.choice(len(external_ids), 100, replace=False)
+        random_index = np.random.choice(len(external_ids), N_ASSETS_PER_CYCLE, replace=False)
         df.loc[random_index, "labeled_during_cycle"] = 0  # type: ignore
         df.to_csv(active_learning_recap_path, index=False)
 
-    current_cycle = max(df["labeled_during_cycle"])
+    current_cycle = max(df["labeled_during_cycle"].dropna())
     kili_print(f"Current active learning cycle: {current_cycle}")
     external_ids_train = df[df["labeled_during_cycle"] <= current_cycle]["external_id"].to_list()
-    kili_print(
-        f"Number of asset having been labeled during the past cycle: {len(external_ids_train)}"
-    )
-    assets = [a for a in assets if a["externalId"] in external_ids_train]
-    return assets
+    train_assets = [a for a in all_assets if a["externalId"] in external_ids_train]
+    kili_print(f"Number of assets selected for training: {len(train_assets)}")
+    return train_assets
 
 
-def update_recap_active_learning(assets: List[Any], project_id: str, priorities: List[int]):
-    """Updates the recap_active_learning_csv file with the new priorities."""
+def update_active_learning_recap(assets: List[Any], project_id: str, priorities: List[int]):
+    """Write on the recaping csv the labels which will be labeled during the
+    next active learning cycle."""
     assert len(assets) == len(priorities)
 
     active_learning_recap_path = get_active_learning_recap_path(project_id)
@@ -51,20 +67,21 @@ def update_recap_active_learning(assets: List[Any], project_id: str, priorities:
     assert len(df["external_id"].unique()) == len(df)
     assert len(set(external_ids)) == len(external_ids)
 
-    current_cycle = max(df["labeled_during_cycle"]) + 1
+    next_cycle = int(max(df["labeled_during_cycle"].dropna())) + 1
 
     counter_new_added_assets = 0
     for index in index_top_priority:
         mask = df["external_id"] == external_ids[index]
         row = df.loc[mask]
 
-        # either this asset has already been labeled
         asset_cycle = row["labeled_during_cycle"].values[0]
-        if not asset_cycle and counter_new_added_assets < 100:
-            # or it is the first time we label this asset
+        asset_not_labeled = bool(pd.isnull(asset_cycle))
+
+        # check this asset has already been labeled
+        if asset_not_labeled and counter_new_added_assets < N_ASSETS_PER_CYCLE:
             counter_new_added_assets += 1
-            df.loc[mask, "labeled_during_cycle"] = current_cycle
+            df.loc[mask, "labeled_during_cycle"] = next_cycle
 
-        df.loc[mask, f"priority_cycle_{current_cycle}"] = priorities[index]
-
+        df.loc[mask, f"priority_cycle_{next_cycle}"] = priorities[index]
+    print("Active learning cycle scheduled:", set(df.labeled_during_cycle.dropna()))
     df.to_csv(active_learning_recap_path, index=False)

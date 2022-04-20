@@ -13,7 +13,7 @@ from tqdm import tqdm
 from PIL import Image
 from PIL.Image import Image as PILImage
 import requests
-from utils.active_learning_demo import select_assets_training_active_learning_cycle
+from utils.active_learning_demo import get_assets_training_active_learning_cycle
 
 from utils.constants import HOME
 from utils.helpers_functools import kili_print
@@ -134,11 +134,11 @@ def asset_is_kept(asset, labeling_statuses: List[str] = ["LABELED", "UNLABELED"]
     return False
 
 
+@kili_project_memoizer(sub_dir="get_assets_memoized")
 def get_assets(
     *,
     kili,
     project_id: str,
-    active_learning_demo: bool,
     label_types: List[str] = ["DEFAULT", "REVIEW"],
     max_assets: Optional[int] = None,
     labeling_statuses: List[str] = ["LABELED", "UNLABELED"],
@@ -172,14 +172,15 @@ def get_assets(
     assets = [a for a in assets if asset_is_kept(a, labeling_statuses)]
 
     if active_learning_demo:
-        assets = select_assets_training_active_learning_cycle(project_id, assets)
+        assets = get_assets_training_active_learning_cycle(project_id, assets)
 
     max_assets = min(max_assets, len(assets)) if max_assets else len(assets)
     assets = assets[:max_assets]
     return assets
 
 
-def get_project(kili, project_id: str) -> Tuple[str, Dict, str]:
+@kili_project_memoizer(sub_dir="get_project_memoized")
+def get_project(*, kili, project_id: str) -> Tuple[str, Dict, str]:
     projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface", "title"])
     if len(projects) == 0:
         raise ValueError("no such project")

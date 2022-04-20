@@ -14,7 +14,7 @@ from more_itertools import chunked
 from tqdm import tqdm
 from predict import predict_one_job
 from numpy.testing import assert_almost_equal
-from utils.active_learning_demo import update_recap_active_learning
+from utils.active_learning_demo import update_active_learning_recap
 
 
 from utils.constants import (
@@ -28,7 +28,6 @@ from utils.helpers import (
     get_project,
     parse_label_types,
 )
-from utils.active_learning_demo import update_recap_active_learning
 from utils.helpers_functools import kili_print
 
 
@@ -391,7 +390,7 @@ def main(
         raise ValueError("max_assets should be greater than 10")
 
     kili = Kili(api_key=api_key)
-    input_type, jobs, _ = get_project(kili, project_id)
+    input_type, jobs, _ = get_project(kili=kili, project_id=project_id)
     kili_print("Input type: ", input_type)
     kili_print("jobs: ", jobs)
 
@@ -447,7 +446,7 @@ def main(
         diversity_sampling=diversity_sampling, uncertainty_sampling=uncertainty_sampling
     )
     if active_learning_demo:
-        update_recap_active_learning(unlabeled_assets, project_id, priorities)
+        update_active_learning_recap(unlabeled_assets, project_id, priorities)
     if not dry_run:
         kili.update_properties_in_assets(asset_ids=asset_ids, priorities=priorities)
 

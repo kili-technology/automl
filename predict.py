@@ -194,7 +194,7 @@ def main(
 ):
 
     kili = Kili(api_key=api_key)
-    input_type, jobs, _ = get_project(kili, project_id)
+    input_type, jobs, _ = get_project(kili=kili, project_id=project_id)
     assets = get_assets(
         kili=kili,
         project_id=project_id,
