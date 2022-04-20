@@ -40,10 +40,7 @@ PrioritiesNormalized = List[int]
 class PriorityQueue:
     """List of asset_index beginning with highest priority
 
-
     Compared to the queue in the standard library, this queue adds the method remove.
-
-
     """
 
     def __init__(self, priorities: Priorities):
@@ -310,7 +307,7 @@ def embedding_text(
 
 @click.command()
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
-@click.option("--project-id", default=os.environ.get("PROJECT_ID"), help="Kili project ID")
+@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--label-types",
     default=None,

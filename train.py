@@ -88,7 +88,7 @@ def train_ner(
     project_id,
     clear_dataset_cache,
 ):
-    from utils.huggingface.train import huggingface_train_ner
+    from utils.huggingface.train_huggingface import huggingface_train_ner
     import nltk
 
     nltk.download("punkt")
@@ -144,7 +144,7 @@ def train_text_classification_single(
     import nltk
 
     nltk.download("punkt")
-    from utils.huggingface.train import huggingface_train_text_classification_single
+    from utils.huggingface.train_huggingface import huggingface_train_text_classification_single
 
     model_repository = set_default(
         model_repository,

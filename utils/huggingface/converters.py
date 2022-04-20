@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, List
+from typing import Any, Dict, List, TypedDict
 from warnings import warn
 
 from nltk import sent_tokenize
@@ -92,6 +92,13 @@ def write_asset(api_key, job_name, labels_to_ids, handler, asset):
         offset = offset + sentence_tokens[-1][1] + 1
 
 
+class KiliNerAnnotations(TypedDict):
+    beginOffset: Any
+    content: Any
+    endOffset: Any
+    categories: Any
+
+
 def predicted_tokens_to_kili_annotations(
     text: str,
     predicted_label: List[str],
@@ -99,13 +106,13 @@ def predicted_tokens_to_kili_annotations(
     tokens: List[str],
     null_category: str,
     offset_in_text: int,
-):
+) -> List[KiliNerAnnotations]:
     """
     Format token predictions into a the kili format.
     :param: text:
     """
 
-    kili_annotations = []
+    kili_annotations: List[KiliNerAnnotations] = []
     offset_in_sentence = 0
     for label, proba, token in zip(predicted_label, predicted_proba, tokens):
         if token in [
@@ -130,12 +137,18 @@ def predicted_tokens_to_kili_annotations(
             is_i_tag = label.startswith("I-")
             c_kili = label.replace("B-", "").replace("I-", "")
 
-            ann = {
+            ann_ = {
                 "beginOffset": offset_in_text + offset_in_sentence,
                 "content": token,
                 "endOffset": offset_in_text + offset_in_sentence + len(token),
                 "categories": [{"name": c_kili, "confidence": int(proba * 100)}],
             }
+            ann = KiliNerAnnotations(
+                beginOffset=ann_["beginOffset"],
+                content=ann_["content"],
+                endOffset=ann_["endOffset"],
+                categories=ann_["categories"],
+            )
 
             if (
                 len(kili_annotations)

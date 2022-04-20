@@ -1,14 +1,15 @@
+# pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 from typing import Dict, List, Union
 import requests
 
 from nltk import sent_tokenize
 import numpy as np
-from transformers import AutoTokenizer  # type: ignore
+from transformers import AutoTokenizer
 from transformers import (
-    AutoModelForSequenceClassification,  # type: ignore
-    AutoModelForTokenClassification,  # type: ignore
-    TFAutoModelForSequenceClassification,  # type: ignore
-    TFAutoModelForTokenClassification,  # type: ignore
+    AutoModelForSequenceClassification,
+    AutoModelForTokenClassification,
+    TFAutoModelForSequenceClassification,
+    TFAutoModelForTokenClassification,
 )
 from utils.constants import ModelFramework
 from utils.helpers import JobPredictions
@@ -19,19 +20,21 @@ def get_tokenizer_and_model(model_framework, model_path, model_type):
     if model_framework == ModelFramework.PyTorch:
         tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True)
         if model_type == "ner":
-            model = AutoModelForTokenClassification.from_pretrained(model_path)  # type: ignore
+            model = AutoModelForTokenClassification.from_pretrained(model_path)
         elif model_type == "classification":
-            model = AutoModelForSequenceClassification.from_pretrained(model_path)  # type: ignore
+            model = AutoModelForSequenceClassification.from_pretrained(model_path)
         else:
             raise ValueError("unknown model type")
     elif model_framework == ModelFramework.Tensorflow:
         tokenizer = AutoTokenizer.from_pretrained(model_path)
         if model_type == "ner":
-            model = TFAutoModelForTokenClassification.from_pretrained(model_path)  # type: ignore
+            model = TFAutoModelForTokenClassification.from_pretrained(model_path)
         elif model_type == "classfication":
-            model = TFAutoModelForSequenceClassification.from_pretrained(model_path)  # type: ignore
+            model = TFAutoModelForSequenceClassification.from_pretrained(model_path)
         else:
             raise ValueError("unknown model type")
+    else:
+        raise NotImplementedError
     return tokenizer, model
 
 
@@ -51,7 +54,7 @@ def huggingface_predict_ner(
     proba_assets = []
     for asset in assets:
         response = requests.get(
-            asset["content"],  # type: ignore
+            asset["content"],  # type:ignore
             headers={
                 "Authorization": f"X-API-Key: {api_key}",
             },
@@ -74,13 +77,12 @@ def huggingface_predict_ner(
             )
             probas_asset.append(min(probas))
 
-            predictions_asset.extend(predictions_sentence)
+            predictions_asset.extend(predictions_sentence)  # type:ignore
 
         predictions.append({job_name: {"annotations": predictions_asset}})
         proba_assets.append(min(probas_asset))
 
         if verbose:
-            print(sentence)
             if len(predictions_asset):
                 for p in predictions_asset:
                     print(p)
@@ -90,7 +92,7 @@ def huggingface_predict_ner(
     # Warning: the granularity of proba_assets is the whole document
     job_predictions = JobPredictions(
         job_name=job_name,
-        external_id_array=[a["externalId"] for a in assets],  # type: ignore
+        external_id_array=[a["externalId"] for a in assets],  # type:ignore
         json_response_array=predictions,
         model_name_array=["Kili AutoML"] * len(assets),
         predictions_probability=proba_assets,
@@ -146,7 +148,7 @@ def huggingface_predict_classification(
     # Warning: the granularity of proba_assets is the whole document
     job_predictions = JobPredictions(
         job_name=job_name,
-        external_id_array=[a["externalId"] for a in assets],  # type: ignore
+        external_id_array=[a["externalId"] for a in assets],
         json_response_array=predictions,
         model_name_array=["Kili AutoML"] * len(assets),
         predictions_probability=proba_assets,
