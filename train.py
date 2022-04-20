@@ -32,8 +32,9 @@ def train_image_bounding_box(
     api_key,
     job,
     job_name,
-    max_assets,
     args_dict,
+    active_learning_demo,
+    assets,
     model_framework,
     model_name,
     model_repository,
@@ -63,7 +64,7 @@ def train_image_bounding_box(
             api_key=api_key,
             path=path,
             job=job,
-            max_assets=max_assets,
+            assets=assets,
             json_args=args_dict,
             project_id=project_id,
             model_framework=model_framework,
@@ -214,6 +215,12 @@ def train_text_classification_single(
     is_flag=True,
     help="Tells if the dataset cache must be cleared",
 )
+@click.option(
+    "--active-learning-demo",
+    default=False,
+    is_flag=True,
+    help="Used if we want to demonstrate the capabilities of the autoML library.",
+)
 def main(
     api_key: str,
     model_framework: str,
@@ -224,6 +231,7 @@ def main(
     max_assets: int,
     json_args: str,
     clear_dataset_cache: bool,
+    active_learning_demo: bool,
 ):
     """ """
     kili = Kili(api_key=api_key)
@@ -239,6 +247,7 @@ def main(
         assets = get_assets(
             kili=kili,
             project_id=project_id,
+            active_learning_demo=active_learning_demo,
             label_types=parse_label_types(label_types),
             max_assets=max_assets,
             labeling_statuses=["LABELED"],
@@ -286,7 +295,8 @@ def main(
                 api_key=api_key,
                 job=job,
                 job_name=job_name,
-                max_assets=max_assets,
+                assets=assets,
+                active_learning_demo=active_learning_demo,
                 args_dict=json.loads(json_args) if json_args is not None else {},
                 model_framework=model_framework,
                 model_name=model_name,

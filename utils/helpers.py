@@ -138,6 +138,7 @@ def get_assets(
     *,
     kili,
     project_id: str,
+    active_learning_demo: bool,
     label_types: List[str] = ["DEFAULT", "REVIEW"],
     max_assets: Optional[int] = None,
     labeling_statuses: List[str] = ["LABELED", "UNLABELED"],

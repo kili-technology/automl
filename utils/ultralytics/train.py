@@ -1,9 +1,10 @@
 import os
 import subprocess
-from typing import Dict, List, Optional
+from typing import Dict, List
 from datetime import datetime
 import shutil
 from functools import reduce
+import pickle
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import pandas as pd
@@ -43,7 +44,7 @@ def ultralytics_train_yolov5(
     api_key: str,
     path: str,
     job: Dict,
-    max_assets: Optional[int],
+    assets,
     json_args: Dict,
     project_id: str,
     model_framework: str,
@@ -65,6 +66,12 @@ def ultralytics_train_yolov5(
     model_output_path = get_output_path_bbox(title, path, model_framework)
     os.makedirs(model_output_path, exist_ok=True)
 
+    # list of assets to be used for training
+    # This list is further splited by yolo in to train and validation set.
+    temp_file_path = os.path.join(model_output_path, "temp.pkl")
+    with open(temp_file_path, "wb") as f:
+        pickle.dump(assets, f)
+
     with open(config_data_path, "w") as f:
         f.write(
             template.render(
@@ -74,7 +81,7 @@ def ultralytics_train_yolov5(
                 kili_api_key=api_key,
                 project_id=project_id,
                 label_types=label_types,
-                max_assets=max_assets,
+                temp_file_path=temp_file_path,
             )
         )
 
