@@ -33,11 +33,13 @@ def predict_ner(
         job_name, project_id, model_path
     )
     if model_repository == ModelRepository.HuggingFace:
-        from utils.huggingface.predict import huggingface_predict_ner
+        from utils.huggingface.predict_huggingface import huggingface_predict_ner
 
         return huggingface_predict_ner(
             api_key, assets, model_framework, model_path_res, job_name, verbose=verbose
         )
+    else:
+        raise NotImplementedError
 
 
 def extract_model_info(job_name, project_id, model_path):
@@ -74,7 +76,7 @@ def predict_text_classification(
         job_name, project_id, model_path
     )
     if model_repository == ModelRepository.HuggingFace:
-        from utils.huggingface.predict import huggingface_predict_classification
+        from utils.huggingface.predict_huggingface import huggingface_predict_classification
 
         return huggingface_predict_classification(
             api_key, assets, model_framework, model_path_res, job_name, verbose=verbose
@@ -203,7 +205,7 @@ def predict_one_job(
 )
 @click.option(
     "--dry-run",
-    default=None,
+    default=False,
     is_flag=True,
     help="Runs the predictions but do not save them into the Kili project",
 )

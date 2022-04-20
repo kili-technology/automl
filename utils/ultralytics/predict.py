@@ -116,16 +116,16 @@ class BBoxAnnotation(TypedDict):
 
 def yolov5_to_kili_json(
     path_yolov5_inference: str, ind_to_categories: List[str]
-) -> Tuple[List[BBoxAnnotation], List[float]]:
+) -> Tuple[List[BBoxAnnotation], List[int]]:
     """Returns a list of annotations and of probabilities"""
     annotations = []
     probabilities = []
     with open(path_yolov5_inference, "r") as f:
         for line in f.readlines():
-            c, x, y, w, h, p = line.split(" ")
-            x, y, w, h = float(x), float(y), float(w), float(h)
-            c = int(c)
-            p = int(100.0 * float(p))
+            c_, x_, y_, w_, h_, p_ = line.split(" ")
+            x, y, w, h = float(x_), float(y_), float(w_), float(h_)
+            c = int(c_)
+            p = int(100.0 * float(p_))
 
             category: CategoryNameConfidence = {
                 "name": ind_to_categories[c],

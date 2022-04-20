@@ -1,3 +1,4 @@
+# pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 from datetime import datetime
 import json
 import os
@@ -90,7 +91,7 @@ def huggingface_train_ner(
 
     tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
-    train_dataset = tokenized_datasets["train"]
+    train_dataset = tokenized_datasets["train"]  # type:  ignore
     path_model = os.path.join(
         path, "model", model_framework, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
@@ -98,21 +99,23 @@ def huggingface_train_ner(
         model = AutoModelForTokenClassification.from_pretrained(
             model_name, num_labels=len(label_list), id2label=dict(enumerate(label_list))
         )
-    if model_framework == ModelFramework.Tensorflow:
+    elif model_framework == ModelFramework.Tensorflow:
         model = TFAutoModelForTokenClassification.from_pretrained(
             model_name,
             num_labels=len(label_list),
             from_pt=True,
             id2label=dict(enumerate(label_list)),
         )
+    else:
+        raise NotImplementedError
     training_args = TrainingArguments(os.path.join(path_model, "training_args"))
     data_collator = DataCollatorForTokenClassification(tokenizer)
     trainer = Trainer(
         model=model,
         args=training_args,
-        data_collator=data_collator,
+        data_collator=data_collator,  # type:ignore
         tokenizer=tokenizer,
-        train_dataset=train_dataset,
+        train_dataset=train_dataset,  # type:ignore
     )
     output = trainer.train()
     kili_print(f"Saving model to {path_model}")
@@ -180,7 +183,7 @@ def huggingface_train_text_classification_single(
         return tokenizer(examples["text"], padding="max_length", truncation=True)
 
     tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
-    train_dataset = tokenized_datasets["train"]
+    train_dataset: datasets.Dataset = tokenized_datasets["train"]  # type:ignore
     path_model = os.path.join(
         path, "model", model_framework, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     )
@@ -189,18 +192,20 @@ def huggingface_train_text_classification_single(
         model = AutoModelForSequenceClassification.from_pretrained(
             model_name, num_labels=len(job_categories), id2label=dict(enumerate(job_categories))
         )
-    if model_framework == ModelFramework.Tensorflow:
+    elif model_framework == ModelFramework.Tensorflow:
         model = TFAutoModelForSequenceClassification.from_pretrained(
             model_name,
             num_labels=len(job_categories),
             from_pt=True,
             id2label=dict(enumerate(job_categories)),
         )
+    else:
+        raise NotImplementedError
     training_args = TrainingArguments(os.path.join(path_model, "training_args"))
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=train_dataset,
+        train_dataset=train_dataset,  # type:ignore
         tokenizer=tokenizer,
     )
     output = trainer.train()
