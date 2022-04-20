@@ -14,6 +14,7 @@ from more_itertools import chunked
 from tqdm import tqdm
 from predict import predict_one_job
 from numpy.testing import assert_almost_equal
+from utils.active_learning_demo import update_recap_active_learning
 
 
 from utils.constants import (
@@ -409,6 +410,7 @@ def main(
     unlabeled_assets = get_assets(
         kili=kili,
         project_id=project_id,
+        active_learning_demo=active_learning_demo,
         label_types=parse_label_types(label_types),
         max_assets=max_assets,
         labeling_statuses=["LABELED"] if active_learning_demo else ["UNLABELED"],
