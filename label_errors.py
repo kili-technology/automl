@@ -60,6 +60,11 @@ def download_assets(assets, api_key, data_path, job_name):
 
 
 @click.command()
+@click.option(
+    "--api-endpoint",
+    default="https://cloud.kili-technology.com/api/label/v2/graphql",
+    help="Kili Endpoint",
+)
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
 @click.option("--cv-folds", default=4, type=int, help="Number of CV folds to use")
 @click.option(
@@ -97,6 +102,7 @@ def download_assets(assets, api_key, data_path, job_name):
 )
 @click.option("--verbose", default=0, type=int, help="Verbose level")
 def main(
+    api_endpoint: str,
     api_key: str,
     cv_folds: int,
     clear_dataset_cache: bool,
@@ -116,7 +122,7 @@ def main(
     easily filter them later in the app.
     """
 
-    kili = Kili(api_key=api_key)
+    kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
 
     for job_name, job in jobs.items():

@@ -309,6 +309,11 @@ def embedding_text(
 
 
 @click.command()
+@click.option(
+    "--api-endpoint",
+    default="https://cloud.kili-technology.com/api/label/v2/graphql",
+    help="Kili Endpoint",
+)
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
 @click.option("--project-id", default=os.environ.get("PROJECT_ID"), help="Kili project ID")
 @click.option(
@@ -360,6 +365,7 @@ def embedding_text(
     help="Tells if the dataset cache must be cleared",
 )
 def main(
+    api_endpoint: str,
     api_key: str,
     project_id: str,
     label_types: str,
@@ -384,7 +390,7 @@ def main(
     if max_assets and max_assets < 10:
         raise ValueError("max_assets should be greater than 10")
 
-    kili = Kili(api_key=api_key)
+    kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
     kili_print("Input type: ", input_type)
     kili_print("jobs: ", jobs)
