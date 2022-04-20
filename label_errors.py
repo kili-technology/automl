@@ -66,7 +66,9 @@ def download_assets(assets, api_key, data_path, job_name):
     help="Kili Endpoint",
 )
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
-@click.option("--cv-folds", default=4, type=int, help="Number of CV folds to use")
+@click.option(
+    "--cv-folds", default=4, type=int, show_default=True, help="Number of CV folds to use"
+)
 @click.option(
     "--clear-dataset-cache",
     default=False,
@@ -92,12 +94,14 @@ def download_assets(assets, api_key, data_path, job_name):
     "--training-epochs",
     default=10,
     type=int,
+    show_default=True,
     help="Number of epochs to train each CV fold",
 )
 @click.option(
     "--upload-errors",
     default=True,
     type=bool,
+    show_default=True,
     help="Upload 'labeling_error: True' metadata to Kili for concerned assets",
 )
 @click.option("--verbose", default=0, type=int, help="Verbose level")

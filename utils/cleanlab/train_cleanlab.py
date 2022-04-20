@@ -118,6 +118,8 @@ def get_probs(loader, model, verbose=0):
 
             # compute output
             outputs.append(model(input))
+        if verbose >= 2:
+            print()
 
     # Prepare outputs as a single matrix
     probs = np.concatenate([torch.nn.functional.softmax(z, dim=1).cpu().numpy() for z in outputs])
@@ -130,7 +132,7 @@ def combine_folds(data_dir, model_dir, verbose=0, num_classes=10, nb_folds=4, se
     Method that combines the probabilities from all the holdout sets into a single file
     """
     destination = os.path.join(model_dir, "train_model_intel_pyx.npy")
-    if verbose >= 1:
+    if verbose >= 2:
         print()
         print("Combining probabilities. This method will overwrite file: {}".format(destination))
     # Prepare labels
@@ -144,11 +146,11 @@ def combine_folds(data_dir, model_dir, verbose=0, num_classes=10, nb_folds=4, se
         probs_path = os.path.join(model_dir, "model_fold_{}__probs.npy".format(k))
         probs = np.load(probs_path)
         pyx[cv_holdout_idx] = probs[:, :num_classes]
-    if verbose >= 1:
+    if verbose >= 2:
         print("Writing final predicted probabilities.")
     np.save(destination, pyx)
 
-    if verbose >= 1:
+    if verbose >= 2:
         # Compute overall accuracy
         print("Computing Accuracy.", flush=True)
         acc = sum(np.array(labels) == np.argmax(pyx, axis=1)) / float(len(labels))
@@ -217,7 +219,7 @@ def train_and_get_error_labels(
         image_datasets["val"].samples = image_datasets["val"].imgs
 
         if verbose >= 1:
-            print(f"\n\nCV Fold: {cv_fold+1}/{cv_n_folds}")
+            print(f"\nCV Fold: {cv_fold+1}/{cv_n_folds}")
             print(f"Train size: {len(image_datasets['train'].imgs)}")
             print(f"Validation size: {len(image_datasets['val'].imgs)}")
             print(f"Holdout size: {len(holdout_dataset.imgs)}")
