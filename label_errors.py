@@ -76,6 +76,19 @@ def download_assets(assets, api_key, data_path, job_name):
     help="Tells if the dataset cache must be cleared",
 )
 @click.option(
+    "--dry-run",
+    default=None,
+    is_flag=True,
+    help="Get the labeling errors but do not upload them into the Kili project",
+)
+@click.option(
+    "--epochs",
+    default=10,
+    type=int,
+    show_default=True,
+    help="Number of epochs to train each CV fold",
+)
+@click.option(
     "--label-types",
     default="DEFAULT",
     help=(
@@ -90,32 +103,18 @@ def download_assets(assets, api_key, data_path, job_name):
     help="Model name (one of efficientnet_b0, resnet50)",
 )
 @click.option("--project-id", default=None, required=True, help="Kili project ID")
-@click.option(
-    "--training-epochs",
-    default=10,
-    type=int,
-    show_default=True,
-    help="Number of epochs to train each CV fold",
-)
-@click.option(
-    "--upload-errors",
-    default=True,
-    type=bool,
-    show_default=True,
-    help="Upload 'labeling_error: True' metadata to Kili for concerned assets",
-)
 @click.option("--verbose", default=0, type=int, help="Verbose level")
 def main(
     api_endpoint: str,
     api_key: str,
-    cv_folds: int,
     clear_dataset_cache: bool,
+    cv_folds: int,
+    dry_run: bool,
+    epochs: int,
     label_types: str,
     max_assets: int,
     model_name: str,
     project_id: str,
-    training_epochs: int,
-    upload_errors: bool,
     verbose: int,
 ):
     """
@@ -166,9 +165,9 @@ def main(
             found_errors = train_and_get_error_labels(
                 cv_n_folds=cv_folds,
                 data_dir=data_path,
+                epochs=epochs,
                 model_dir=model_path,
                 model_name=model_name,
-                training_epochs=training_epochs,
                 verbose=verbose,
             )
 
@@ -177,10 +176,10 @@ def main(
 
             if found_errors:
                 save_errors(found_errors, job_path)
-                if upload_errors:
+                if not dry_run:
                     upload_errors_to_kili(found_errors, kili)
         else:
-            kili_print("not implemented yet")
+            raise NotImplementedError
 
 
 if __name__ == "__main__":

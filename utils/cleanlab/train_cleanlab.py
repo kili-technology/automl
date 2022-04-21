@@ -162,9 +162,9 @@ def combine_folds(data_dir, model_dir, verbose=0, num_classes=10, nb_folds=4, se
 def train_and_get_error_labels(
     cv_n_folds,
     data_dir,
+    epochs,
     model_dir,
     model_name,
-    training_epochs,
     verbose=0,
     cv_seed=42,
 ):
@@ -261,7 +261,7 @@ def train_and_get_error_labels(
             device,
             dataset_sizes,
             verbose=verbose,
-            num_epochs=training_epochs,
+            num_epochs=epochs,
         )
         # torch.save(model_ft.state_dict(), os.path.join(model_dir, f'model_{cv_fold}.pt'))
 
