@@ -108,6 +108,11 @@ class JobPredictions:
         return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"
 
 
+labeling_statusT = Literal["LABELED", "UNLABELED"]
+status_inT = Literal["TODO", "ONGOING", "LABELED", "REVIEWED", "DEFAULT"]
+label_typeT = Literal["DEFAULT", "REVIEW"]
+
+
 @kili_project_memoizer(sub_dir="get_asset_memoized")
 def get_asset_memoized(
     *,
@@ -115,7 +120,8 @@ def get_asset_memoized(
     project_id,
     first,
     skip,
-    status_in: Optional[List[Literal["TODO", "ONGOING", "LABELED", "REVIEWED"]]] = None,
+    status_in: Optional[List[status_inT]] = None,
+    label_type_in: Optional[List[label_typeT]] = None,
 ) -> List[Dict]:
     return kili.assets(
         project_id=project_id,
@@ -131,14 +137,13 @@ def get_asset_memoized(
             "labels.labelType",
         ],
         status_in=status_in,
+        label_type_in=label_type_in,
     )
 
 
-labeling_statusesT = List[Literal["LABELED", "UNLABELED"]]
-status_inT = List[Literal["TODO", "ONGOING", "LABELED", "REVIEWED"]]
-
-
-def asset_is_kept(asset, labeling_statuses: labeling_statusesT = ["LABELED", "UNLABELED"]) -> bool:
+def asset_is_kept(
+    asset, labeling_statuses: List[labeling_statusT] = ["LABELED", "UNLABELED"]
+) -> bool:
     labeled = len(asset["labels"]) > 0
     unlabeled = len(asset["labels"]) == 0
     return ("LABELED" in labeling_statuses and labeled) or (
@@ -146,9 +151,9 @@ def asset_is_kept(asset, labeling_statuses: labeling_statusesT = ["LABELED", "UN
     )
 
 
-def compute_status_in(labeling_statuses: labeling_statusesT) -> status_inT:
-    labeled: status_inT = ["LABELED", "REVIEWED"]
-    unlabeled: status_inT = ["TODO", "ONGOING"]
+def compute_status_in(labeling_statuses: List[labeling_statusT]) -> List[status_inT]:
+    labeled: List[status_inT] = ["LABELED", "REVIEWED"]
+    unlabeled: List[status_inT] = ["TODO", "ONGOING"]
     status_in = []
     if "LABELED" in labeling_statuses:
         status_in += labeled
@@ -160,9 +165,10 @@ def compute_status_in(labeling_statuses: labeling_statusesT) -> status_inT:
 def get_assets(
     kili,
     project_id: str,
-    label_types: List[str] = ["DEFAULT", "REVIEW"],
+    label_type_in: List[label_typeT] = ["DEFAULT", "REVIEW"],
     max_assets: Optional[int] = None,
-    labeling_statuses: labeling_statusesT = ["LABELED", "UNLABELED"],
+    labeling_statuses: List[labeling_statusT] = ["LABELED", "UNLABELED"],
+    test_mock: bool = False,
 ) -> List[Dict]:
     if not labeling_statuses:
         raise ValueError("labeling_statuses must be a non-empty list.")
@@ -176,21 +182,15 @@ def get_assets(
     for skip in tqdm(range(0, total, first)):
         status_in = compute_status_in(labeling_statuses)
         assets += get_asset_memoized(
-            kili=kili, project_id=project_id, first=first, skip=skip, status_in=status_in
+            kili=kili,
+            project_id=project_id,
+            first=first,
+            skip=skip,
+            status_in=status_in,
+            label_type_in=label_type_in,
+            test_mock=test_mock,  # type: ignore
         )
 
-    assets = [
-        {
-            **a,
-            "labels": [
-                line
-                for line in sorted(a["labels"], key=lambda l: l["createdAt"])
-                if (line["labelType"] in label_types and line["jsonResponse"])
-            ][-1:],
-        }
-        for a in assets
-    ]
-    assets = [a for a in assets if asset_is_kept(a, labeling_statuses)]
     if len(assets) == 0:
         raise Exception("There is no asset matching the query. Exiting...")
     return assets

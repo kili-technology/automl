@@ -1,10 +1,10 @@
 from kili.client import Kili
-
-
 from utils.helpers import get_assets
 
 project_id = "cl0wihlop3rwc0mtj9np28ti2"
-kili = Kili()
+kili = Kili(api_key="2fdd00aa-4825-44cb-b9a7-2a10445cfc18")
+
+test_mock = True
 
 
 class TestAssets:
@@ -12,9 +12,10 @@ class TestAssets:
         assets = get_assets(
             kili=kili,
             project_id=project_id,
-            label_types=["DEFAULT", "REVIEW"],
+            label_type_in=["DEFAULT", "REVIEW"],
             max_assets=20,
             labeling_statuses=["LABELED", "UNLABELED"],
+            test_mock=test_mock,
         )
         assert len(assets) == 20
 
@@ -22,17 +23,9 @@ class TestAssets:
         assets = get_assets(
             kili=kili,
             project_id=project_id,
-            label_types=["DEFAULT", "REVIEW"],
+            label_type_in=["DEFAULT", "REVIEW"],
             max_assets=20,
             labeling_statuses=["LABELED"],
-        )
-        assert len(assets) == 20
-
-        assets = get_assets(
-            kili=kili,
-            project_id=project_id,
-            label_types=["DEFAULT", "REVIEW"],
-            max_assets=20,
-            labeling_statuses=["UNLABELED"],
+            test_mock=test_mock,
         )
         assert len(assets) == 20
