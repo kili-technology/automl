@@ -181,6 +181,11 @@ def train_text_classification_single(
 
 
 @click.command()
+@click.option(
+    "--api-endpoint",
+    default="https://cloud.kili-technology.com/api/label/v2/graphql",
+    help="Kili Endpoint",
+)
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
 @click.option("--model-framework", default=None, help="Model framework (eg. pytorch, tensorflow)")
 @click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
@@ -216,6 +221,7 @@ def train_text_classification_single(
     help="Tells if the dataset cache must be cleared",
 )
 def main(
+    api_endpoint: str,
     api_key: str,
     model_framework: str,
     model_name: str,
@@ -227,7 +233,7 @@ def main(
     clear_dataset_cache: bool,
 ):
     """ """
-    kili = Kili(api_key=api_key)
+    kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
 
     training_losses = []

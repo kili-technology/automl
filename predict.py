@@ -193,6 +193,11 @@ def predict_one_job(
 
 
 @click.command()
+@click.option(
+    "--api-endpoint",
+    default="https://cloud.kili-technology.com/api/label/v2/graphql",
+    help="Kili Endpoint",
+)
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
 @click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
@@ -226,6 +231,7 @@ def predict_one_job(
     help="Maximum number of assets to consider",
 )
 def main(
+    api_endpoint: str,
     api_key: str,
     project_id: str,
     label_types: str,
@@ -235,7 +241,7 @@ def main(
     max_assets: Optional[int],
 ):
 
-    kili = Kili(api_key=api_key)
+    kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
     assets = get_assets(kili, project_id, label_types.split(","), max_assets=max_assets)
 
