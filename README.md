@@ -66,7 +66,7 @@ Use trained models to push pre-annotations onto unlabeled assets. Typically spee
 
 ![Predict a model](./images/predict.png)
 
-### Prioritize labeling on Kili (coming soon)
+### Prioritize labeling on Kili
 
 Where is the model confident or confused today?
 
@@ -87,6 +87,16 @@ python prioritize.py \
     --sampling diversity
     --method model-based-outlier
 ```
+
+### Label errors on Kili
+Note: for image classfication projects only.
+
+```bash
+python label_errors.py \
+    --api-key $KILI_API_KEY \
+    --project-id $KILI_PROJECT_ID
+```
+
 
 ### Serve a model (coming soon)
 
