@@ -2,7 +2,7 @@ import copy
 import os
 import time
 
-from cleanlab.pruning import get_noise_indices
+from cleanlab.filter import find_label_issues
 import numpy as np
 from sklearn.model_selection import StratifiedKFold, train_test_split
 import torch
@@ -288,7 +288,7 @@ def train_and_get_error_labels(
     psx = np.load(psx_path)
     train_imgs = datasets.ImageFolder(data_dir).imgs
 
-    noise_indices = get_noise_indices(labels, psx, sorted_index_method="normalized_margin")
+    noise_indices = find_label_issues(labels, psx, return_indices_ranked_by="normalized_margin")
 
     noise_paths = []
     for idx in noise_indices:
