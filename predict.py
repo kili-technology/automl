@@ -96,7 +96,6 @@ def predict_object_detection(
 ) -> JobPredictions:
     from utils.ultralytics.predict import ultralytics_predict_object_detection
 
-    # /Users/raph/.cache/kili/automl/cl0wihlop3rwc0mtj9np28ti2/DETECTION/ultralytics/model/pytorch/2022-04-12_17_04_35/Severstal-steel-defect-detection
     model_path_res = get_last_trained_model_path(
         project_id=project_id,
         job_name=job_name,
