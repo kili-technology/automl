@@ -1,4 +1,4 @@
-cleanlab
+cleanlab>=2.0.0
 click
 datasets
 kili
