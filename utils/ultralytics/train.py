@@ -77,6 +77,9 @@ def ultralytics_train_yolov5(
             )
         )
 
+    if not json_args:
+        json_args = {"epochs": 50}
+        kili_print("No arguments were passed to the train function. Defaulting to epochs=50.")
     args_from_json = reduce(lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in json_args.items()))
     kili_print("Starting Ultralytics' YoloV5 ...")
     try:
