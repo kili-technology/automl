@@ -3,7 +3,8 @@
   "python.linting.mypyEnabled": true,
   "python.linting.enabled": true,
   "python.formatting.blackArgs": ["--preview"],
-  "python.testing.pytestArgs": ["."],
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  "python.testing.pytestEnabled": true,
+  "python.testing.cwd": "${workspaceFolder}",
+  "python.linting.pylintEnabled": false
 }
