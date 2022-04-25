@@ -407,8 +407,9 @@ def main(
         project_id,
         parse_label_types(label_types),
         max_assets,
-        labeling_statuses=["UNLABELED"],
+        labeling_statuses=["UNLABELED"] if not ACTIVE_LEARNING_DEMO else ["LABELED"],
     )
+    print(f"Unlabeled assets: {len(unlabeled_assets)}")
 
     # TODO: useless if uncertainty_sampling == 0
     job_predictions = predict_one_job(

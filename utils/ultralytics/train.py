@@ -1,10 +1,14 @@
 import os
 import subprocess
-from typing import Dict, List
+from typing import Dict
 from datetime import datetime
 import shutil
 from functools import reduce
-import pickle
+import math
+import re
+import time
+import requests
+from tqdm.auto import tqdm
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import pandas as pd
@@ -45,15 +49,12 @@ def ultralytics_train_yolov5(
     job: Dict,
     assets,
     json_args: Dict,
-    project_id: str,
     model_framework: str,
-    label_types: List[str],
     title: str,
     clear_dataset_cache: bool = False,
 ) -> float:
     yolov5_path = os.path.join(os.getcwd(), "utils", "ultralytics", "yolov5")
 
-    template = env.get_template("kili_template.yml")
     class_names = categories_from_job(job)
     data_path = os.path.join(path, "data")
     config_data_path = os.path.join(yolov5_path, "data", "kili.yaml")
@@ -65,12 +66,7 @@ def ultralytics_train_yolov5(
     model_output_path = get_output_path_bbox(title, path, model_framework)
     os.makedirs(model_output_path, exist_ok=True)
 
-    # list of assets to be used for training
-    # This list is further splited by yolo in to train and validation set.
-    temp_file_path = os.path.join(model_output_path, "temp.pkl")
-    with open(temp_file_path, "wb") as f:
-        pickle.dump(assets, f)
-
+    template = env.get_template("kili_template.yml")
     with open(config_data_path, "w") as f:
         f.write(
             template.render(
@@ -78,15 +74,81 @@ def ultralytics_train_yolov5(
                 class_names=class_names,
                 number_classes=len(class_names),
                 kili_api_key=api_key,
-                project_id=project_id,
-                label_types=label_types,
-                temp_file_path=temp_file_path,
             )
         )
 
     if not json_args:
         json_args = {"epochs": 50}
         kili_print("No arguments were passed to the train function. Defaulting to epochs=50.")
+    print("Downloading datasets from Kili")
+    train_val_proportions = [0.8, 0.1]
+    if "/kili/" not in path:
+        raise ValueError("'path' field in config must contain '/kili/'")
+
+    n_train_assets = math.floor(len(assets) * train_val_proportions[0])
+    n_val_assets = math.floor(len(assets) * train_val_proportions[1])
+    assets_splits = {
+        "train": assets[:n_train_assets],
+        "val": assets[n_train_assets : n_train_assets + n_val_assets],
+        "test": assets[n_train_assets + n_val_assets :],
+    }
+
+    for name_split, assets_split in assets_splits.items():
+        if len(assets_split) == 0:
+            raise Exception("No asset in dataset, exiting...")
+        path_split = os.path.join(data_path, "images", name_split)
+        print(f"Building {name_split} in {path_split} ...")
+        os.makedirs(path_split, exist_ok=True)
+        for asset in tqdm(assets_split, desc=f"Downloading {name_split}", unit="assets"):
+            tic = time.time()
+            n_try = 0
+            while n_try < 20:
+                try:
+                    img_data = requests.get(
+                        asset["content"],
+                        headers={
+                            "Authorization": f"X-API-Key: {api_key}",
+                        },
+                    ).content
+                    break
+                except Exception:
+                    time.sleep(1)
+                    n_try += 1
+            with open(os.path.join(path_split, asset["id"] + ".jpg"), "wb") as handler:
+                handler.write(img_data)
+            toc = time.time() - tic
+            throttling_per_call = 60.0 / 250  # Kili API calls are limited to 250 per minute
+            if toc < throttling_per_call:
+                time.sleep(throttling_per_call - toc)
+
+        names = class_names
+        path_labels = re.sub("/images/", "/labels/", path_split)
+        print(path_labels)
+        os.makedirs(path_labels, exist_ok=True)
+        for asset in assets_split:
+            with open(os.path.join(path_labels, asset["id"] + ".txt"), "w") as handler:
+                json_response = asset["labels"][0]["jsonResponse"]
+                for job in json_response.values():
+                    for annotation in job.get("annotations", []):
+                        name = annotation["categories"][0]["name"]
+                        try:
+                            category = names.index(name)
+                        except ValueError:
+                            raise ValueError(f"{name} not in {names}")
+                        bounding_poly = annotation.get("boundingPoly", [])
+                        if len(bounding_poly) < 1:
+                            continue
+                        if "normalizedVertices" not in bounding_poly[0]:
+                            continue
+                        normalized_vertices = bounding_poly[0]["normalizedVertices"]
+                        x_s = [vertice["x"] for vertice in normalized_vertices]
+                        y_s = [vertice["y"] for vertice in normalized_vertices]
+                        x_min, y_min = min(x_s), min(y_s)
+                        x_max, y_max = max(x_s), max(y_s)
+                        _x_, _y_ = (x_max + x_min) / 2, (y_max + y_min) / 2
+                        _w_, _h_ = x_max - x_min, y_max - y_min
+                        handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")
+
     args_from_json = reduce(lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in json_args.items()))
     kili_print("Starting Ultralytics' YoloV5 ...")
     try:

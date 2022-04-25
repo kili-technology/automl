@@ -39,7 +39,6 @@ def train_image_bounding_box(
     model_name,
     model_repository,
     project_id,
-    label_types,
     clear_dataset_cache,
     title,
 ):
@@ -69,9 +68,7 @@ def train_image_bounding_box(
             job=job,
             assets=assets,
             json_args=args_dict,
-            project_id=project_id,
             model_framework=model_framework,
-            label_types=label_types,
             clear_dataset_cache=clear_dataset_cache,
             title=title,
         )
@@ -304,7 +301,6 @@ def main(
                 model_name=model_name,
                 model_repository=model_repository,
                 project_id=project_id,
-                label_types=parse_label_types(label_types),
                 clear_dataset_cache=clear_dataset_cache,
                 title=title,
             )

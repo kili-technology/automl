@@ -52,3 +52,5 @@ class Tool:
 
 # Used if we want to demonstrate the capabilities of the autoML library.
 ACTIVE_LEARNING_DEMO = os.getenv("ACTIVE_LEARNING_DEMO", False)
+if ACTIVE_LEARNING_DEMO:
+    print("ACTIVE_LEARNING_DEMO is set to True. This is a demo of the autoML library.")

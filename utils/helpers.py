@@ -15,7 +15,8 @@ from PIL import Image
 from PIL.Image import Image as PILImage
 import requests
 
-from utils.constants import HOME
+from utils.active_learning_demo import get_assets_training_active_learning_cycle
+from utils.constants import ACTIVE_LEARNING_DEMO, HOME
 from utils.helpers_functools import kili_print
 
 
@@ -41,7 +42,10 @@ def kili_project_memoizer(
             if not project_id:
                 raise ValueError("project_id not specified in a keyword argument")
             cache_path = os.path.join(HOME, project_id, sub_dir)
-            memory = Memory(cache_path, verbose=0)
+            memory = Memory(
+                cache_path,
+                verbose=0,
+            )
             return memory.cache(some_function)(*args, **kwargs)
 
         return wrapper
@@ -189,6 +193,10 @@ def get_assets(
         raise Exception("There is no asset matching the query. Exiting...")
 
     assets = assets[:max_assets] if max_assets is not None else assets
+
+    if ACTIVE_LEARNING_DEMO:
+        # TODO: add cycle_0 argument
+        assets = get_assets_training_active_learning_cycle(project_id=project_id, all_assets=assets)
     return assets
 
 
