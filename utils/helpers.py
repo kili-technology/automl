@@ -3,7 +3,8 @@ import random
 from io import BytesIO
 import json
 import shutil
-from typing import Any, List, Literal, Optional, Dict, Tuple
+from typing import Any, List, Optional, Dict, Tuple
+from typing_extensions import Literal
 from dataclasses import dataclass
 
 import torch
