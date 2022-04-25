@@ -408,8 +408,11 @@ def main(
         parse_label_types(label_types),
         max_assets,
         labeling_statuses=["UNLABELED"] if not ACTIVE_LEARNING_DEMO else ["LABELED"],
+        priorization=True,
     )
     print(f"Unlabeled assets: {len(unlabeled_assets)}")
+    if not unlabeled_assets:
+        raise ValueError("No unlabeled assets found")
 
     # TODO: useless if uncertainty_sampling == 0
     job_predictions = predict_one_job(

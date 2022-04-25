@@ -15,7 +15,10 @@ from PIL import Image
 from PIL.Image import Image as PILImage
 import requests
 
-from utils.active_learning_demo import get_assets_training_active_learning_cycle
+from utils.active_learning_demo import (
+    get_assets_to_be_prioritized,
+    get_assets_training_active_learning_cycle,
+)
 from utils.constants import ACTIVE_LEARNING_DEMO, HOME
 from utils.helpers_functools import kili_print
 
@@ -172,6 +175,7 @@ def get_assets(
     label_type_in: List[label_typeT] = ["DEFAULT", "REVIEW"],
     max_assets: Optional[int] = None,
     labeling_statuses: List[labeling_statusT] = ["LABELED", "UNLABELED"],
+    priorization: Optional[bool] = False,
 ) -> List[Dict]:
     if not labeling_statuses:
         raise ValueError("labeling_statuses must be a non-empty list.")
@@ -196,7 +200,12 @@ def get_assets(
 
     if ACTIVE_LEARNING_DEMO:
         # TODO: add cycle_0 argument
-        assets = get_assets_training_active_learning_cycle(project_id=project_id, all_assets=assets)
+        if not priorization:
+            assets = get_assets_training_active_learning_cycle(
+                project_id=project_id, all_assets=assets
+            )
+        else:
+            assets = get_assets_to_be_prioritized(project_id=project_id, all_assets=assets)
     return assets
 
 

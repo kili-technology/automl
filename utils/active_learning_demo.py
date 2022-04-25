@@ -48,6 +48,28 @@ def get_assets_training_active_learning_cycle(
     return train_assets
 
 
+def get_assets_to_be_prioritized(project_id: str, all_assets: List[Any]):
+    """Selects assets for prioritization.
+
+    The assets selected are the one which have a label, but which have volontarily
+    not been considered in the training.
+    """
+    active_learning_recap_path = get_active_learning_recap_path(project_id)
+    assert os.path.exists(active_learning_recap_path)
+    df = pd.read_csv(active_learning_recap_path)
+
+    current_cycle = max(df["labeled_during_cycle"].dropna())
+    kili_print(f"Current active learning cycle: {current_cycle}")
+    external_ids_train = df[df["labeled_during_cycle"] <= current_cycle]["external_id"].to_list()
+    kili_print(f"Number of assets already labeled: {len(external_ids_train)}")
+    to_be_prioritized = [a for a in all_assets if a["externalId"] not in external_ids_train]
+    kili_print(
+        "Number of assets without label remaining and which must be prioritized:"
+        f" {len(to_be_prioritized)}"
+    )
+    return to_be_prioritized
+
+
 def save_prioritization(assets: List[Any], project_id: str, priorities: List[int]):
     """Write on the recaping csv the labels which will be labeled during the
     next active learning cycle."""
