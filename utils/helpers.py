@@ -127,7 +127,6 @@ def get_asset_memoized(
         project_id=project_id,
         first=first,
         skip=skip,
-        disable_tqdm=True,
         fields=[
             "id",
             "externalId",
@@ -138,6 +137,7 @@ def get_asset_memoized(
         ],
         status_in=status_in,
         label_type_in=label_type_in,
+        as_generator=False,
     )
 
 
@@ -168,7 +168,6 @@ def get_assets(
     label_type_in: List[label_typeT] = ["DEFAULT", "REVIEW"],
     max_assets: Optional[int] = None,
     labeling_statuses: List[labeling_statusT] = ["LABELED", "UNLABELED"],
-    test_mock: bool = False,
 ) -> List[Dict]:
     if not labeling_statuses:
         raise ValueError("labeling_statuses must be a non-empty list.")
@@ -176,20 +175,15 @@ def get_assets(
     total = kili.count_assets(project_id=project_id)
     total = total if max_assets is None else min(total, max_assets)
 
-    first = min(100, total)
-
-    assets = []
-    for skip in tqdm(range(0, total, first)):
-        status_in = compute_status_in(labeling_statuses)
-        assets += get_asset_memoized(
-            kili=kili,
-            project_id=project_id,
-            first=first,
-            skip=skip,
-            status_in=status_in,
-            label_type_in=label_type_in,
-            test_mock=test_mock,  # type: ignore
-        )
+    status_in = compute_status_in(labeling_statuses)
+    assets = get_asset_memoized(
+        kili=kili,
+        project_id=project_id,
+        first=total,
+        skip=0,
+        status_in=status_in,
+        label_type_in=label_type_in,
+    )
 
     if len(assets) == 0:
         raise Exception("There is no asset matching the query. Exiting...")
