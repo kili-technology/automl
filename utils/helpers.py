@@ -4,9 +4,12 @@ from io import BytesIO
 import json
 import shutil
 from typing import Any, List, Optional, Dict, Tuple
-try:
+
+import sys
+
+if sys.version_info >= (3, 8):
     from typing import Literal
-except ImportError:
+else:
     from typing_extensions import Literal
 from dataclasses import dataclass
 
