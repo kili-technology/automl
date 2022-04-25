@@ -13,6 +13,7 @@ from utils.constants import (
     ModelFramework,
     ModelName,
     ModelRepository,
+    ACTIVE_LEARNING_DEMO,
     Tool,
 )
 from utils.helpers import (
@@ -25,7 +26,6 @@ from utils.helpers import (
 )
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["WANDB_DISABLED"] = "true"
 
 
 def train_image_bounding_box(
@@ -33,7 +33,7 @@ def train_image_bounding_box(
     api_key,
     job,
     job_name,
-    max_assets,
+    assets,
     args_dict,
     model_framework,
     model_name,
@@ -44,6 +44,9 @@ def train_image_bounding_box(
     title,
 ):
     from utils.ultralytics.train import ultralytics_train_yolov5
+
+    if not ACTIVE_LEARNING_DEMO:
+        os.environ["WANDB_DISABLED"] = "true"
 
     model_repository = set_default(
         model_repository,
@@ -64,7 +67,7 @@ def train_image_bounding_box(
             api_key=api_key,
             path=path,
             job=job,
-            max_assets=max_assets,
+            assets=assets,
             json_args=args_dict,
             project_id=project_id,
             model_framework=model_framework,
@@ -130,6 +133,7 @@ def train_ner(
 
 
 def train_text_classification_single(
+    *,
     api_key,
     assets,
     job,
@@ -190,7 +194,7 @@ def train_text_classification_single(
 @click.option("--model-framework", default=None, help="Model framework (eg. pytorch, tensorflow)")
 @click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
 @click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
-@click.option("--project-id", default=None, help="Kili project ID")
+@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--label-types",
     default=None,
@@ -242,41 +246,37 @@ def main(
         ml_task = job.get("mlTask")
         tools = job.get("tools")
         training_loss = None
+
+        assets = get_assets(
+            kili=kili,
+            project_id=project_id,
+            label_types=parse_label_types(label_types),
+            max_assets=max_assets,
+            labeling_statuses=["LABELED"],
+        )
         if (
             content_input == ContentInput.Radio
             and input_type == InputType.Text
             and ml_task == MLTask.Classification
         ):
-            assets = get_assets(
-                kili,
-                project_id,
-                parse_label_types(label_types),
-                labeling_statuses=["LABELED"],
-            )
-            assets = assets[:max_assets] if max_assets is not None else assets
+
             training_loss = train_text_classification_single(
-                api_key,
-                assets,
-                job,
-                job_name,
-                model_framework,
-                model_name,
-                model_repository,
-                project_id,
-                clear_dataset_cache,
+                api_key=api_key,
+                job=job,
+                job_name=job_name,
+                model_framework=model_framework,
+                model_name=model_name,
+                assets=assets,
+                model_repository=model_repository,
+                project_id=project_id,
+                clear_dataset_cache=clear_dataset_cache,
             )
         elif (
             content_input == ContentInput.Radio
             and input_type == InputType.Text
             and ml_task == MLTask.NamedEntitiesRecognition
         ):
-            assets = get_assets(
-                kili,
-                project_id,
-                parse_label_types(label_types),
-                labeling_statuses=["LABELED"],
-            )
-            assets = assets[:max_assets] if max_assets is not None else assets
+
             training_loss = train_ner(
                 api_key=api_key,
                 assets=assets,
@@ -294,12 +294,11 @@ def main(
             and ml_task == MLTask.ObjectDetection
             and Tool.Rectangle in tools
         ):
-            # no need to get_assets here because it's done in kili_template.yaml
             training_loss = train_image_bounding_box(
                 api_key=api_key,
                 job=job,
                 job_name=job_name,
-                max_assets=max_assets,
+                assets=assets,
                 args_dict=json.loads(json_args) if json_args is not None else {},
                 model_framework=model_framework,
                 model_name=model_name,

@@ -33,7 +33,7 @@ def kili_assets_to_hf_ner_dataset(
         os.remove(path_dataset)
     if not os.path.exists(path_dataset):
         with open(ensure_dir(path_dataset), "w") as handler:
-            for asset in tqdm(assets):
+            for asset in tqdm(assets, desc="converting to kili format"):
                 write_asset(api_key, job_name, labels_to_ids, handler, asset)
 
     return label_list

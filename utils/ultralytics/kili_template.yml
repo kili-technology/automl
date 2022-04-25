@@ -17,6 +17,7 @@ val: images/val # val images (relative to 'path')
 test: images/test # test images (optional)
 
 # Classes
+# yamllint disable-line
 names: [{% for class_name in class_names %}"{{ class_name }}", {% endfor %}] # class names, must match your Kili project class names.
 nc: {{ number_classes }} # number of classes (cardinality of the list above)
 
@@ -33,6 +34,7 @@ download: |
   import time
   from kili.client import Kili
   import requests
+  import pickle
   from tqdm.auto import tqdm
   print("Downloading datasets from Kili")
   train_val_proportions = yaml['train_val_proportions']
@@ -40,32 +42,10 @@ download: |
   if '/kili/' not in path:
       raise ValueError("'path' field in config must contain '/kili/'")
   project_id = "{{ project_id }}"
-  kili = Kili(api_key="{{ kili_api_key }}")
-  total ={% if max_assets is not none %} min({{ max_assets }}, kili.count_assets(project_id=project_id)) {% else %} kili.count_assets(project_id=project_id) {% endif %}
-  if total == 0:
-      raise Exception("No asset in project. Exiting...")
-  first = 100
-  assets = []
-  for skip in tqdm(range(0, total, first)):
-      assets += kili.assets(
-          project_id=project_id,
-          first=first,
-          skip=skip,
-          disable_tqdm=True,
-          fields=[
-              'id',
-              'content',
-              'labels.createdAt',
-              'labels.jsonResponse',
-              'labels.labelType'])
-  assets = [{
-          **a,
-          'labels': [
-              l for l in sorted(a['labels'], key=lambda l: l['createdAt']) \
-                  if l['labelType'] in [{% for label_type in label_types %}"{{ label_type }}", {% endfor %}]
-          ][-1:],
-      } for a in assets]
-  assets = [a for a in assets if len(a['labels']) > 0]
+  # use a temporary file in which we put the list of external ids on which to train
+  temp_file_path = "{{ temp_file_path }}"
+  external_ids_training = pickle.load( open(temp_file_path, "rb" ) )
+  assets = pickle.load(open(temp_file_path, "rb"))
   n_train_assets = math.floor(len(assets) * train_val_proportions[0])
   n_val_assets = math.floor(len(assets) * train_val_proportions[1])
   assets_splits = {

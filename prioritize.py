@@ -12,14 +12,12 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from more_itertools import chunked
 from tqdm import tqdm
+from utils.active_learning_demo import save_prioritization
 from predict import predict_one_job
 from numpy.testing import assert_almost_equal
 
 
-from utils.constants import (
-    InputType,
-    ModelFramework,
-)
+from utils.constants import InputType, ModelFramework, ACTIVE_LEARNING_DEMO
 from utils.helpers import (
     clear_automl_cache,
     download_project_images,
@@ -287,7 +285,7 @@ def embeddings_images(images: List[PILImage], batch_size=4) -> np.ndarray:
     color_images = [im.convert("RGB") for im in images]
     img2vec = Img2Vec(cuda=torch.cuda.is_available(), model="efficientnet_b7")
     vecs = []
-    for imgs in tqdm(list(chunked(color_images, batch_size))):
+    for imgs in tqdm(list(chunked(color_images, batch_size)), desc="Embedding Images"):
         _ = np.array(img2vec.get_vec(imgs))
         vecs.append(_)
     return np.concatenate(vecs, axis=0)
@@ -341,7 +339,7 @@ def embedding_text(
 )
 @click.option(
     "--dry-run",
-    default=None,
+    default=False,
     is_flag=True,
     help="Runs the predictions but do not save them into the Kili project",
 )
@@ -442,7 +440,9 @@ def main(
     priorities = prioritizer.get_priorities(
         diversity_sampling=diversity_sampling, uncertainty_sampling=uncertainty_sampling
     )
-    if not dry_run:
+    if ACTIVE_LEARNING_DEMO:
+        save_prioritization(unlabeled_assets, project_id, priorities)
+    if not dry_run and not ACTIVE_LEARNING_DEMO:
         kili.update_properties_in_assets(asset_ids=asset_ids, priorities=priorities)
 
 

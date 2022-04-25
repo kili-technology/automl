@@ -9,7 +9,6 @@ from dataclasses import dataclass
 import torch
 import numpy as np
 from glob import glob
-from termcolor import colored
 from joblib import Memory
 from tqdm import tqdm
 from PIL import Image
@@ -17,6 +16,7 @@ from PIL.Image import Image as PILImage
 import requests
 
 from utils.constants import HOME
+from utils.helpers_functools import kili_print
 
 
 def set_all_seeds(seed):
@@ -187,6 +187,8 @@ def get_assets(
 
     if len(assets) == 0:
         raise Exception("There is no asset matching the query. Exiting...")
+
+    assets = assets[:max_assets] if max_assets is not None else assets
     return assets
 
 
@@ -198,10 +200,6 @@ def get_project(kili, project_id: str) -> Tuple[str, Dict, str]:
     jobs = projects[0]["jsonInterface"].get("jobs", {})
     title = projects[0]["title"]
     return input_type, jobs, title
-
-
-def kili_print(*args, **kwargs) -> None:
-    print(colored("kili:", "yellow", attrs=["bold"]), *args, **kwargs)
 
 
 def build_model_repository_path(
@@ -285,7 +283,7 @@ def download_project_images(
 ) -> List[DownloadedImages]:
     kili_print("Downloading project images...")
     downloaded_images = []
-    for asset in tqdm(assets):
+    for asset in tqdm(assets, desc="downloading images"):
         image = download_image(api_key, asset["content"])
         format = str(image.format or "")
 

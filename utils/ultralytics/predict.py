@@ -44,15 +44,14 @@ def ultralytics_predict_object_detection(
     downloaded_images = download_project_images(api_key, assets, inference_path)
     # https://github.com/ultralytics/yolov5/blob/master/detect.py
     # default  --conf-thres=0.25, --iou-thres=0.45
-    prioritizer_args = " --conf-thres=0.01  --iou-thres=0.45 " if prioritization else ""
+    prioritizer_args = " --conf-thres=0.001  --iou-thres=0.45 " if prioritization else ""
 
     kili_print("Starting Ultralytics' YoloV5 inference...")
     cmd = (
         "python detect.py "
-        + f'--weights "{model_weights}" '
-        + "--save-txt --save-conf --nosave --exist-ok "
-        + f'--source "{inference_path}" --project "{inference_path}" '
-        + prioritizer_args
+        f'--weights "{model_weights}" '
+        "--save-txt --save-conf --nosave --exist-ok "
+        f'--source "{inference_path}" --project "{inference_path}" ' + prioritizer_args
     )
     os.system("cd utils/ultralytics/yolov5 && " + cmd)
 
