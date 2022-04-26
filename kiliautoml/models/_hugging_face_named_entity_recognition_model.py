@@ -3,7 +3,6 @@ from typing import Union, List, Dict, Any, Optional
 from typing_extensions import TypedDict
 import os
 from warnings import warn
-from datetime import datetime
 import json
 
 import nltk
@@ -38,7 +37,7 @@ class KiliNerAnnotations(TypedDict):
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task = MLTask.NamedEntityRecognition
+    ml_task: MLTask = MLTask.NamedEntityRecognition  # type: ignore
 
     def __init__(self, project_id: str, api_key: str, api_endpoint: str) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
@@ -57,13 +56,13 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
         path = Path.model_repository(HOME, self.project_id, job_name, self.model_repository)
 
-        self.model_framework = set_default(
+        self.model_framework = set_default(  # type: ignore
             model_framework,
             ModelFramework.PyTorch,
             "model_framework",
             [ModelFramework.PyTorch, ModelFramework.Tensorflow],
         )
-        model_name = set_default(
+        model_name_setted: ModelName = set_default(  # type: ignore
             model_name,
             ModelName.BertBaseMultilingualCased,
             "model_name",
@@ -76,7 +75,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             assets,
             job,
             job_name,
-            model_name,
+            model_name_setted,
             path,
             clear_dataset_cache,
         )
@@ -100,7 +99,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         predictions = []
         proba_assets = []
         for asset in assets:
-            text = self._get_text_from(asset)
+            text = self._get_text_from(asset)  # type: ignore
 
             offset = 0
             predictions_asset: List[dict] = []
@@ -145,7 +144,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_name: str,
+        model_name: ModelName,
         path: str,
         clear_dataset_cache: bool,
     ) -> float:
@@ -212,9 +211,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
         train_dataset = tokenized_datasets["train"]  # type:  ignore
-        path_model = os.path.join(
-            path, "model", self.model_framework, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
+        path_model = Path.append_hf_model_folder(path, self.model_framework)
 
         training_args = TrainingArguments(os.path.join(path_model, "training_args"))
         data_collator = DataCollatorForTokenClassification(tokenizer)

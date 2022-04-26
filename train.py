@@ -229,8 +229,8 @@ def train_text_classification_single(
 def main(
     api_endpoint: str,
     api_key: str,
-    model_framework: str,
-    model_name: str,
+    model_framework: ModelFramework,
+    model_name: ModelName,
     model_repository: str,
     project_id: str,
     label_types: str,

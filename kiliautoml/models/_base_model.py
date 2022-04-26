@@ -8,7 +8,7 @@ from kiliautoml.utils.constants import ModelFramework, ModelName
 class BaseModel(metaclass=ABCMeta):
     def __init__(self) -> None:
         # internal state attributes
-        self.model_framework: Optional[ModelFramework] = None
+        self.model_framework: ModelFramework = ModelFramework.PyTorch  # type: ignore
 
     @abstractmethod
     def train(
