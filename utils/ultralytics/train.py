@@ -6,12 +6,14 @@ import shutil
 from functools import reduce
 import math
 import re
+import time
+import requests
 from tqdm.auto import tqdm
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import pandas as pd
 
-from utils.helpers import categories_from_job, download_image, kili_print
+from utils.helpers import categories_from_job, kili_print
 
 env = Environment(
     loader=FileSystemLoader(os.path.abspath("utils/ultralytics")),
@@ -98,9 +100,26 @@ def ultralytics_train_yolov5(
         print(f"Building {name_split} in {path_split} ...")
         os.makedirs(path_split, exist_ok=True)
         for asset in tqdm(assets_split, desc=f"Downloading {name_split}", unit="assets"):
-            img_data = download_image(api_key, asset["content"])
+            tic = time.time()
+            n_try = 0
+            while n_try < 20:
+                try:
+                    img_data = requests.get(
+                        asset["content"],
+                        headers={
+                            "Authorization": f"X-API-Key: {api_key}",
+                        },
+                    ).content
+                    break
+                except Exception:
+                    time.sleep(1)
+                    n_try += 1
             with open(os.path.join(path_split, asset["id"] + ".jpg"), "wb") as handler:
-                handler.write(img_data.tobytes())
+                handler.write(img_data)
+            toc = time.time() - tic
+            throttling_per_call = 60.0 / 250  # Kili API calls are limited to 250 per minute
+            if toc < throttling_per_call:
+                time.sleep(throttling_per_call - toc)
 
         names = class_names
         path_labels = re.sub("/images/", "/labels/", path_split)
@@ -110,7 +129,25 @@ def ultralytics_train_yolov5(
             with open(os.path.join(path_labels, asset["id"] + ".txt"), "w") as handler:
                 json_response = asset["labels"][0]["jsonResponse"]
                 for job in json_response.values():
-                    write_to_yolo_format(job, handler, names)
+                    for annotation in job.get("annotations", []):
+                        name = annotation["categories"][0]["name"]
+                        try:
+                            category = names.index(name)
+                        except ValueError:
+                            raise ValueError(f"{name} not in {names}")
+                        bounding_poly = annotation.get("boundingPoly", [])
+                        if len(bounding_poly) < 1:
+                            continue
+                        if "normalizedVertices" not in bounding_poly[0]:
+                            continue
+                        normalized_vertices = bounding_poly[0]["normalizedVertices"]
+                        x_s = [vertice["x"] for vertice in normalized_vertices]
+                        y_s = [vertice["y"] for vertice in normalized_vertices]
+                        x_min, y_min = min(x_s), min(y_s)
+                        x_max, y_max = max(x_s), max(y_s)
+                        _x_, _y_ = (x_max + x_min) / 2, (y_max + y_min) / 2
+                        _w_, _h_ = x_max - x_min, y_max - y_min
+                        handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")
 
     args_from_json = reduce(lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in json_args.items()))
     kili_print("Starting Ultralytics' YoloV5 ...")
@@ -136,25 +173,3 @@ def ultralytics_train_yolov5(
 
     # we take the class loss as the main metric
     return df_result.iloc[-1:][["        val/obj_loss"]].to_numpy()[0][0]  # type: ignore
-
-
-def write_to_yolo_format(job, handler, names):
-    for annotation in job.get("annotations", []):
-        name = annotation["categories"][0]["name"]
-        try:
-            category = names.index(name)
-        except ValueError:
-            raise ValueError(f"{name} not in {names}")
-        bounding_poly = annotation.get("boundingPoly", [])
-        if len(bounding_poly) < 1:
-            continue
-        if "normalizedVertices" not in bounding_poly[0]:
-            continue
-        normalized_vertices = bounding_poly[0]["normalizedVertices"]
-        x_s = [vertice["x"] for vertice in normalized_vertices]
-        y_s = [vertice["y"] for vertice in normalized_vertices]
-        x_min, y_min = min(x_s), min(y_s)
-        x_max, y_max = max(x_s), max(y_s)
-        _x_, _y_ = (x_max + x_min) / 2, (y_max + y_min) / 2
-        _w_, _h_ = x_max - x_min, y_max - y_min
-        handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")  # type: ignore
