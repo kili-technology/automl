@@ -24,7 +24,15 @@ from kiliautoml.utils.helpers import (
     kili_print,
     ensure_dir,
 )
-from kiliautoml.utils.constants import ModelFramework, ModelName, MLTask, HOME
+from kiliautoml.utils.constants import (
+    ModelFramework,
+    ModelFrameworkT,
+    ModelName,
+    MLTask,
+    HOME,
+    ModelNameT,
+    MLTaskT,
+)
 from kiliautoml.utils.path import Path
 
 
@@ -37,7 +45,7 @@ class KiliNerAnnotations(TypedDict):
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task: MLTask = MLTask.NamedEntityRecognition  # type: ignore
+    ml_task: MLTaskT = MLTask.NamedEntityRecognition  # type: ignore
 
     def __init__(self, project_id: str, api_key: str, api_endpoint: str) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
@@ -48,8 +56,8 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_framework: Optional[ModelFramework],
-        model_name: Optional[ModelName],
+        model_framework: Optional[ModelFrameworkT],
+        model_name: Optional[ModelNameT],
         clear_dataset_cache: bool = False,
     ):
         nltk.download("punkt")
@@ -62,7 +70,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             "model_framework",
             [ModelFramework.PyTorch, ModelFramework.Tensorflow],
         )
-        model_name_setted: ModelName = set_default(  # type: ignore
+        model_name_setted: ModelNameT = set_default(  # type: ignore
             model_name,
             ModelName.BertBaseMultilingualCased,
             "model_name",
@@ -144,7 +152,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_name: ModelName,
+        model_name: ModelNameT,
         path: str,
         clear_dataset_cache: bool,
     ) -> float:

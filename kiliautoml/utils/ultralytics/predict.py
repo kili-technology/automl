@@ -11,7 +11,7 @@ from kiliautoml.utils.helpers import (
     download_project_images,
     kili_print,
 )
-from kiliautoml.utils.constants import HOME, ModelFramework, ModelRepository
+from kiliautoml.utils.constants import HOME, ModelFramework, ModelFrameworkT, ModelRepository
 from kiliautoml.utils.ultralytics.constants import YOLOV5_REL_PATH
 from kiliautoml.utils.path import Path
 
@@ -20,7 +20,7 @@ def ultralytics_predict_object_detection(
     api_key: str,
     assets: Union[List[Dict], List[str]],
     project_id: str,
-    model_framework: ModelFramework,
+    model_framework: ModelFrameworkT,
     model_path: str,
     job_name: str,
     verbose: int = 0,
