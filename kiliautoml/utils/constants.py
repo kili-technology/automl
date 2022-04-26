@@ -41,7 +41,7 @@ class ModelRepository:
 @dataclass
 class MLTask:
     Classification = "CLASSIFICATION"
-    NamedEntitiesRecognition = "NAMED_ENTITIES_RECOGNITION"
+    NamedEntityRecognition = "NAMED_ENTITIES_RECOGNITION"
     ObjectDetection = "OBJECT_DETECTION"
 
 

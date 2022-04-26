@@ -8,10 +8,11 @@ from functools import reduce
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import pandas as pd
 
-from utils.helpers import categories_from_job, kili_print
+from kiliautoml.utils.helpers import categories_from_job, kili_print
+from kiliautoml.utils.ultralytics.constants import ULTRALYTICS_REL_PATH, YOLOV5_REL_PATH
 
 env = Environment(
-    loader=FileSystemLoader(os.path.abspath("utils/ultralytics")),
+    loader=FileSystemLoader(os.path.abspath(ULTRALYTICS_REL_PATH)),
     autoescape=select_autoescape(),
 )
 
@@ -50,7 +51,7 @@ def ultralytics_train_yolov5(
     title: str,
     clear_dataset_cache: bool = False,
 ) -> float:
-    yolov5_path = os.path.join(os.getcwd(), "utils", "ultralytics", "yolov5")
+    yolov5_path = os.path.join(os.getcwd(), YOLOV5_REL_PATH)
 
     template = env.get_template("kili_template.yml")
     class_names = categories_from_job(job)

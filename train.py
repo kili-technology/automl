@@ -5,7 +5,12 @@ import click
 from kili.client import Kili
 from tabulate import tabulate
 
-from utils.constants import (
+from kiliautoml.models import (
+    HuggingFaceTextClassificationModel,
+    HuggingFaceNamedEntityRecognitionModel,
+)
+
+from kiliautoml.utils.constants import (
     ContentInput,
     HOME,
     InputType,
@@ -15,7 +20,7 @@ from utils.constants import (
     ModelRepository,
     Tool,
 )
-from utils.helpers import (
+from kiliautoml.utils.helpers import (
     get_assets,
     get_project,
     kili_print,
@@ -43,7 +48,7 @@ def train_image_bounding_box(
     clear_dataset_cache,
     title,
 ):
-    from utils.ultralytics.train import ultralytics_train_yolov5
+    from kiliautoml.utils.ultralytics.train import ultralytics_train_yolov5
 
     model_repository = set_default(
         model_repository,
@@ -71,110 +76,6 @@ def train_image_bounding_box(
             label_types=label_types,
             clear_dataset_cache=clear_dataset_cache,
             title=title,
-        )
-    else:
-        raise NotImplementedError
-
-
-def train_ner(
-    *,
-    api_key,
-    assets,
-    job,
-    job_name,
-    model_framework,
-    model_name,
-    model_repository,
-    project_id,
-    clear_dataset_cache,
-):
-    from utils.huggingface.train_huggingface import huggingface_train_ner
-    import nltk
-
-    nltk.download("punkt")
-    model_repository = set_default(
-        model_repository,
-        ModelRepository.HuggingFace,
-        "model_repository",
-        [ModelRepository.HuggingFace],
-    )
-    path = build_model_repository_path(HOME, project_id, job_name, model_repository)
-    if model_repository == ModelRepository.HuggingFace:
-        model_framework = set_default(
-            model_framework,
-            ModelFramework.PyTorch,
-            "model_framework",
-            [ModelFramework.PyTorch, ModelFramework.Tensorflow],
-        )
-        model_name = set_default(
-            model_name,
-            ModelName.BertBaseMultilingualCased,
-            "model_name",
-            [
-                ModelName.BertBaseMultilingualCased,
-                ModelName.DistilbertBaseCased,
-            ],
-        )
-        return huggingface_train_ner(
-            api_key,
-            assets,
-            job,
-            job_name,
-            model_framework,
-            model_name,
-            path,
-            clear_dataset_cache,
-        )
-    else:
-        raise NotImplementedError
-
-
-def train_text_classification_single(
-    api_key,
-    assets,
-    job,
-    job_name,
-    model_framework,
-    model_name,
-    model_repository,
-    project_id,
-    clear_dataset_cache,
-) -> float:
-    """ """
-    import nltk
-
-    nltk.download("punkt")
-    from utils.huggingface.train_huggingface import huggingface_train_text_classification_single
-
-    model_repository = set_default(
-        model_repository,
-        ModelRepository.HuggingFace,
-        "model_repository",
-        [ModelRepository.HuggingFace],
-    )
-    path = build_model_repository_path(HOME, project_id, job_name, model_repository)
-    if model_repository == ModelRepository.HuggingFace:
-        model_framework = set_default(
-            model_framework,
-            ModelFramework.PyTorch,
-            "model_framework",
-            [ModelFramework.PyTorch, ModelFramework.Tensorflow],
-        )
-        model_name = set_default(
-            model_name,
-            ModelName.BertBaseMultilingualCased,
-            "model_name",
-            [ModelName.BertBaseMultilingualCased],
-        )
-        return huggingface_train_text_classification_single(
-            api_key,
-            assets,
-            job,
-            job_name,
-            model_framework,
-            model_name,
-            path,
-            clear_dataset_cache,
         )
     else:
         raise NotImplementedError
@@ -247,6 +148,7 @@ def main(
             and input_type == InputType.Text
             and ml_task == MLTask.Classification
         ):
+
             assets = get_assets(
                 kili,
                 project_id,
@@ -254,21 +156,21 @@ def main(
                 labeling_statuses=["LABELED"],
             )
             assets = assets[:max_assets] if max_assets is not None else assets
-            training_loss = train_text_classification_single(
-                api_key,
-                assets,
-                job,
-                job_name,
-                model_framework,
-                model_name,
-                model_repository,
-                project_id,
-                clear_dataset_cache,
+            training_loss = HuggingFaceTextClassificationModel(
+                project_id, api_key, api_endpoint
+            ).train(
+                assets=assets,
+                job=job,
+                job_name=job_name,
+                model_framework=model_framework,
+                model_name=model_name,
+                clear_dataset_cache=clear_dataset_cache,
             )
+
         elif (
             content_input == ContentInput.Radio
             and input_type == InputType.Text
-            and ml_task == MLTask.NamedEntitiesRecognition
+            and ml_task == MLTask.NamedEntityRecognition
         ):
             assets = get_assets(
                 kili,
@@ -277,15 +179,14 @@ def main(
                 labeling_statuses=["LABELED"],
             )
             assets = assets[:max_assets] if max_assets is not None else assets
-            training_loss = train_ner(
-                api_key=api_key,
+            training_loss = HuggingFaceNamedEntityRecognitionModel(
+                project_id, api_key, api_endpoint
+            ).train(
                 assets=assets,
                 job=job,
                 job_name=job_name,
                 model_framework=model_framework,
                 model_name=model_name,
-                model_repository=model_repository,
-                project_id=project_id,
                 clear_dataset_cache=clear_dataset_cache,
             )
         elif (

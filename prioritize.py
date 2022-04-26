@@ -16,11 +16,11 @@ from predict import predict_one_job
 from numpy.testing import assert_almost_equal
 
 
-from utils.constants import (
+from kiliautoml.utils.constants import (
     InputType,
     ModelFramework,
 )
-from utils.helpers import (
+from kiliautoml.utils.helpers import (
     clear_automl_cache,
     download_project_images,
     get_assets,
@@ -415,6 +415,7 @@ def main(
     # TODO: useless if uncertainty_sampling == 0
     job_predictions = predict_one_job(
         api_key=api_key,
+        api_endpoint=api_endpoint,
         project_id=project_id,
         from_model=from_model,
         verbose=verbose,
