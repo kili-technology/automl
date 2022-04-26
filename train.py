@@ -247,7 +247,7 @@ def main(
         assets = get_assets(
             kili=kili,
             project_id=project_id,
-            label_types=parse_label_types(label_types),
+            label_type_in=parse_label_types(label_types),  # type: ignore
             max_assets=max_assets,
             labeling_statuses=["LABELED"],
         )
