@@ -25,9 +25,10 @@ from kiliautoml.utils.helpers import (
     get_project,
     kili_print,
     set_default,
-    build_model_repository_path,
     parse_label_types,
 )
+from utils.memoization import clear_automl_cache
+from utils.path_manager import build_model_repository_path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["WANDB_DISABLED"] = "true"
@@ -139,6 +140,10 @@ def main(
 
     training_losses = []
     for job_name, job in jobs.items():
+        if clear_dataset_cache:
+            clear_automl_cache(
+                project_id, command="train", job_name=job_name, model_repository=model_repository
+            )
         content_input = job.get("content", {}).get("input")
         ml_task = job.get("mlTask")
         tools = job.get("tools")
