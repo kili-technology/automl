@@ -28,7 +28,7 @@ from kiliautoml.utils.helpers import (
     parse_label_types,
 )
 from utils.memoization import clear_automl_cache
-from utils.path_manager import build_model_repository_path
+from utils.path import Path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["WANDB_DISABLED"] = "true"
@@ -57,7 +57,7 @@ def train_image_bounding_box(
         "model_repository",
         [ModelRepository.Ultralytics],
     )
-    path = build_model_repository_path(HOME, project_id, job_name, model_repository)
+    path = Path.model_repository(HOME, project_id, job_name, model_repository)
     if model_repository == ModelRepository.Ultralytics:
         model_framework = set_default(
             model_framework,
@@ -77,6 +77,110 @@ def train_image_bounding_box(
             label_types=label_types,
             clear_dataset_cache=clear_dataset_cache,
             title=title,
+        )
+    else:
+        raise NotImplementedError
+
+
+def train_ner(
+    *,
+    api_key,
+    assets,
+    job,
+    job_name,
+    model_framework,
+    model_name,
+    model_repository,
+    project_id,
+    clear_dataset_cache,
+):
+    from utils.huggingface.train_huggingface import huggingface_train_ner
+    import nltk
+
+    nltk.download("punkt")
+    model_repository = set_default(
+        model_repository,
+        ModelRepository.HuggingFace,
+        "model_repository",
+        [ModelRepository.HuggingFace],
+    )
+    path = Path.model_repository(HOME, project_id, job_name, model_repository)
+    if model_repository == ModelRepository.HuggingFace:
+        model_framework = set_default(
+            model_framework,
+            ModelFramework.PyTorch,
+            "model_framework",
+            [ModelFramework.PyTorch, ModelFramework.Tensorflow],
+        )
+        model_name = set_default(
+            model_name,
+            ModelName.BertBaseMultilingualCased,
+            "model_name",
+            [
+                ModelName.BertBaseMultilingualCased,
+                ModelName.DistilbertBaseCased,
+            ],
+        )
+        return huggingface_train_ner(
+            api_key,
+            assets,
+            job,
+            job_name,
+            model_framework,
+            model_name,
+            path,
+            clear_dataset_cache,
+        )
+    else:
+        raise NotImplementedError
+
+
+def train_text_classification_single(
+    api_key,
+    assets,
+    job,
+    job_name,
+    model_framework,
+    model_name,
+    model_repository,
+    project_id,
+    clear_dataset_cache,
+) -> float:
+    """ """
+    import nltk
+
+    nltk.download("punkt")
+    from utils.huggingface.train_huggingface import huggingface_train_text_classification_single
+
+    model_repository = set_default(
+        model_repository,
+        ModelRepository.HuggingFace,
+        "model_repository",
+        [ModelRepository.HuggingFace],
+    )
+    path = Path.model_repository(HOME, project_id, job_name, model_repository)
+    if model_repository == ModelRepository.HuggingFace:
+        model_framework = set_default(
+            model_framework,
+            ModelFramework.PyTorch,
+            "model_framework",
+            [ModelFramework.PyTorch, ModelFramework.Tensorflow],
+        )
+        model_name = set_default(
+            model_name,
+            ModelName.BertBaseMultilingualCased,
+            "model_name",
+            [ModelName.BertBaseMultilingualCased],
+        )
+        return huggingface_train_text_classification_single(
+            api_key,
+            assets,
+            job,
+            job_name,
+            model_framework,
+            model_name,
+            path,
+            clear_dataset_cache,
         )
     else:
         raise NotImplementedError

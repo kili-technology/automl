@@ -16,7 +16,6 @@ from utils.constants import (
     ModelName,
 )
 from utils.helpers import (
-    build_model_repository_path,
     get_assets,
     get_project,
     kili_print,
@@ -25,6 +24,7 @@ from utils.helpers import (
     set_default,
     upload_errors_to_kili,
 )
+from utils.path import Path
 
 
 def download_assets(assets, api_key, data_path, job_name):
@@ -136,7 +136,7 @@ def main(
             and input_type == InputType.Image
             and ml_task == MLTask.Classification
         ):
-            job_path = build_model_repository_path(HOME, project_id, job_name, "")
+            job_path = Path.model_repository(HOME, project_id, job_name, "")
             data_path = os.path.join(job_path, "data")
             model_path = os.path.join(job_path, "model")
 

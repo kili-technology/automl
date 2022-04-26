@@ -21,11 +21,7 @@ from transformers import (
 from utils.constants import ModelFramework
 from utils.helpers import ensure_dir, kili_print, categories_from_job
 from utils.huggingface.converters import kili_assets_to_hf_ner_dataset
-from utils.path_manager import (
-    get_huggingface_train_path,
-    get_training_arguments_huggingface,
-    get_path_model_huggingface,
-)
+from utils.path import Path
 
 
 def huggingface_train_ner(
@@ -46,7 +42,7 @@ def huggingface_train_ner(
     """
     kili_print(f"Job Name: {job_name}")
     kili_print(f"Base model: {model_name}")
-    path_dataset = get_huggingface_train_path(path)
+    path_dataset = Path.append_hf_training_file(path)
 
     label_list = kili_assets_to_hf_ner_dataset(
         api_key, job, job_name, path_dataset, assets, clear_dataset_cache
@@ -96,7 +92,8 @@ def huggingface_train_ner(
     tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
     train_dataset = tokenized_datasets["train"]  # type:  ignore
-    path_model = get_path_model_huggingface(path, model_framework)
+    path_model = Path.append_hf_model_folder(path, model_framework)
+
     if model_framework == ModelFramework.PyTorch:
         model = AutoModelForTokenClassification.from_pretrained(
             model_name, num_labels=len(label_list), id2label=dict(enumerate(label_list))
@@ -110,7 +107,7 @@ def huggingface_train_ner(
         )
     else:
         raise NotImplementedError
-    training_args = TrainingArguments(get_training_arguments_huggingface(path_model))
+    training_args = TrainingArguments(Path.append_hf_training_args_folder(path_model))
     data_collator = DataCollatorForTokenClassification(tokenizer)
     trainer = Trainer(
         model=model,
@@ -139,7 +136,7 @@ def huggingface_train_text_classification_single(
     Source: https://huggingface.co/docs/transformers/training
     """
     kili_print(job_name)
-    path_dataset = get_huggingface_train_path(path)
+    path_dataset = Path.append_hf_training_file(path)
     kili_print(f"Downloading data to {path_dataset}")
     if os.path.exists(path_dataset) and clear_dataset_cache:
         os.remove(path_dataset)
@@ -186,7 +183,7 @@ def huggingface_train_text_classification_single(
 
     tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
     train_dataset: datasets.Dataset = tokenized_datasets["train"]  # type:ignore
-    path_model = get_path_model_huggingface(path, model_framework)
+    path_model = Path.append_hf_model_folder(path, model_framework)
     if model_framework == ModelFramework.PyTorch:
 
         model = AutoModelForSequenceClassification.from_pretrained(
@@ -201,7 +198,7 @@ def huggingface_train_text_classification_single(
         )
     else:
         raise NotImplementedError
-    training_args = TrainingArguments(get_training_arguments_huggingface(path_model))
+    training_args = TrainingArguments(Path.append_hf_training_args_folder(path_model))
     trainer = Trainer(
         model=model,
         args=training_args,
