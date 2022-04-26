@@ -18,10 +18,10 @@ from transformers import (
     TrainingArguments,
 )
 
-from utils.constants import ModelFramework
-from utils.helpers import ensure_dir, kili_print, categories_from_job
+from kiliautoml.utils.constants import ModelFramework
+from kiliautoml.utils.helpers import ensure_dir, kili_print, categories_from_job
 from utils.huggingface.converters import kili_assets_to_hf_ner_dataset
-from utils.path import Path
+from kiliautoml.utils.path import Path
 
 
 def huggingface_train_ner(

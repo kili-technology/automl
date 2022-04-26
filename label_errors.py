@@ -7,15 +7,15 @@ import click
 from kili.client import Kili
 from tqdm.auto import tqdm
 
-from utils.cleanlab.train_cleanlab import train_and_get_error_labels
-from utils.constants import (
+from kiliautoml.utils.cleanlab.train_cleanlab import train_and_get_error_labels
+from kiliautoml.utils.constants import (
     HOME,
     ContentInput,
     InputType,
     MLTask,
     ModelName,
 )
-from utils.helpers import (
+from kiliautoml.utils.helpers import (
     get_assets,
     get_project,
     kili_print,
@@ -24,7 +24,7 @@ from utils.helpers import (
     set_default,
     upload_errors_to_kili,
 )
-from utils.path import Path
+from kiliautoml.utils.path import Path
 
 
 def download_assets(assets, api_key, data_path, job_name):

@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from utils.constants import HOME
+from kiliautoml.utils.constants import HOME
 
 
 class Path:

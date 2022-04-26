@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import os
+from typing_extensions import Literal
 
 
 HOME = os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type: ignore
@@ -30,6 +31,15 @@ class ModelName:
     EfficientNetB0 = "efficientnet_b0"
     Resnet50 = "resnet50"
     YoloV5 = "ultralytics/yolov5"
+
+
+ModelNameT = Literal[
+    "bert-base-multilingual-cased",
+    "distilbert-base-cased",
+    "efficientnet_b0",
+    "resnet50",
+    "ultralytics/yolov5",
+]
 
 
 @dataclass

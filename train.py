@@ -27,8 +27,8 @@ from kiliautoml.utils.helpers import (
     set_default,
     parse_label_types,
 )
-from utils.memoization import clear_automl_cache
-from utils.path import Path
+from kiliautoml.utils.memoization import clear_automl_cache
+from kiliautoml.utils.path import Path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["WANDB_DISABLED"] = "true"

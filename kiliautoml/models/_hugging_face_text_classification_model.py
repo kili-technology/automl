@@ -1,3 +1,4 @@
+# pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 from datetime import datetime
 import json
 import os
@@ -18,12 +19,12 @@ from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import ModelFramework, ModelName, MLTask, HOME
 from kiliautoml.utils.helpers import (
     set_default,
-    build_model_repository_path,
     kili_print,
     categories_from_job,
     ensure_dir,
     JobPredictions,
 )
+from kiliautoml.utils.path import Path
 
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
@@ -48,7 +49,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         nltk.download("punkt")
 
-        path = build_model_repository_path(HOME, self.project_id, job_name, self.model_repository)
+        path = Path.model_repository(HOME, self.project_id, job_name, self.model_repository)
 
         self.model_framework = set_default(
             model_framework,
