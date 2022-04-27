@@ -1,8 +1,8 @@
+# pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 from typing import Union, List, Dict, Any, Optional
 from typing_extensions import TypedDict
 import os
 from warnings import warn
-from datetime import datetime
 import json
 
 import nltk
@@ -20,12 +20,20 @@ from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.helpers import (
     set_default,
-    build_model_repository_path,
     JobPredictions,
     kili_print,
     ensure_dir,
 )
-from kiliautoml.utils.constants import ModelFramework, ModelName, MLTask, HOME
+from kiliautoml.utils.constants import (
+    ModelFramework,
+    ModelFrameworkT,
+    ModelName,
+    MLTask,
+    HOME,
+    ModelNameT,
+    MLTaskT,
+)
+from kiliautoml.utils.path import Path
 
 
 class KiliNerAnnotations(TypedDict):
@@ -37,7 +45,7 @@ class KiliNerAnnotations(TypedDict):
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task = MLTask.NamedEntityRecognition
+    ml_task: MLTaskT = MLTask.NamedEntityRecognition  # type: ignore
 
     def __init__(self, project_id: str, api_key: str, api_endpoint: str) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
@@ -48,21 +56,21 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_framework: Optional[ModelFramework],
-        model_name: Optional[ModelName],
+        model_framework: Optional[ModelFrameworkT],
+        model_name: Optional[ModelNameT],
         clear_dataset_cache: bool = False,
     ):
         nltk.download("punkt")
 
-        path = build_model_repository_path(HOME, self.project_id, job_name, self.model_repository)
+        path = Path.model_repository(HOME, self.project_id, job_name, self.model_repository)
 
-        self.model_framework = set_default(
+        self.model_framework = set_default(  # type: ignore
             model_framework,
             ModelFramework.PyTorch,
             "model_framework",
             [ModelFramework.PyTorch, ModelFramework.Tensorflow],
         )
-        model_name = set_default(
+        model_name_setted: ModelNameT = set_default(  # type: ignore
             model_name,
             ModelName.BertBaseMultilingualCased,
             "model_name",
@@ -75,7 +83,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             assets,
             job,
             job_name,
-            model_name,
+            model_name_setted,
             path,
             clear_dataset_cache,
         )
@@ -99,7 +107,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         predictions = []
         proba_assets = []
         for asset in assets:
-            text = self._get_text_from(asset)
+            text = self._get_text_from(asset)  # type: ignore
 
             offset = 0
             predictions_asset: List[dict] = []
@@ -122,7 +130,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             proba_assets.append(min(probas_asset))
 
             if verbose:
-                print(sentence)
                 if len(predictions_asset):
                     for p in predictions_asset:
                         print(p)
@@ -145,7 +152,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_name: str,
+        model_name: ModelNameT,
         path: str,
         clear_dataset_cache: bool,
     ) -> float:
@@ -212,9 +219,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
         train_dataset = tokenized_datasets["train"]  # type:  ignore
-        path_model = os.path.join(
-            path, "model", self.model_framework, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
+        path_model = Path.append_hf_model_folder(path, self.model_framework)
 
         training_args = TrainingArguments(os.path.join(path_model, "training_args"))
         data_collator = DataCollatorForTokenClassification(tokenizer)

@@ -18,16 +18,16 @@ from numpy.testing import assert_almost_equal
 
 from kiliautoml.utils.constants import (
     InputType,
-    ModelFramework,
+    ModelFrameworkT,
 )
 from kiliautoml.utils.helpers import (
-    clear_automl_cache,
     download_project_images,
     get_assets,
     get_project,
     kili_print,
     parse_label_types,
 )
+from kiliautoml.utils.memoization import clear_automl_cache
 
 
 # Priorities
@@ -370,7 +370,7 @@ def main(
     diversity_sampling: float,
     uncertainty_sampling: float,
     dry_run: bool,
-    from_model: ModelFramework,
+    from_model: ModelFrameworkT,
     verbose: bool,
     clear_dataset_cache: bool,
 ):
@@ -393,7 +393,7 @@ def main(
     kili_print("jobs: ", jobs)
 
     if clear_dataset_cache:
-        clear_automl_cache()
+        clear_automl_cache(project_id, command="prioritize")
 
     jobs_item = list(jobs.items())
     if len(jobs_item) > 1:

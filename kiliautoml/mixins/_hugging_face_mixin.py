@@ -1,3 +1,4 @@
+# pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 from abc import ABCMeta
 import os
 from typing import List
@@ -10,7 +11,14 @@ from transformers import (
     TFAutoModelForTokenClassification,
 )
 
-from kiliautoml.utils.constants import ModelFramework, ModelRepository, MLTask, ModelName
+from kiliautoml.utils.constants import (
+    MLTaskT,
+    ModelFramework,
+    ModelFrameworkT,
+    ModelRepository,
+    MLTask,
+    ModelNameT,
+)
 from kiliautoml.utils.helpers import get_last_trained_model_path, kili_print
 
 
@@ -22,7 +30,9 @@ class HuggingFaceMixin(metaclass=ABCMeta):
     model_repository = ModelRepository.HuggingFace
 
     @staticmethod
-    def _get_tokenizer_and_model(model_framework: ModelFramework, model_path: str, ml_task: MLTask):
+    def _get_tokenizer_and_model(
+        model_framework: ModelFrameworkT, model_path: str, ml_task: MLTaskT
+    ):
         if model_framework == ModelFramework.PyTorch:
             tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True)
             if ml_task == MLTask.NamedEntityRecognition:
@@ -45,10 +55,10 @@ class HuggingFaceMixin(metaclass=ABCMeta):
 
     def _get_tokenizer_and_model_from_name(
         self,
-        model_name: ModelName,
-        model_framework: ModelFramework,
+        model_name: ModelNameT,
+        model_framework: ModelFrameworkT,
         label_list: List[str],
-        ml_task: MLTask,
+        ml_task: MLTaskT,
     ):
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         kwargs = {"num_labels": len(label_list), "id2label": dict(list(enumerate(label_list)))}
@@ -82,7 +92,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
             raise ValueError("Inconsistent model base repository")
 
         if split_path[-2] in [ModelFramework.PyTorch, ModelFramework.Tensorflow]:
-            model_framework = split_path[-2]
+            model_framework: ModelFrameworkT = split_path[-2]  # type: ignore
             kili_print(f"Model framework: {model_framework}")
         else:
             raise ValueError("Unknown model framework")

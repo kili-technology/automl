@@ -8,3 +8,22 @@ exclude = '''
   | \.mypy_cache
 )/
 '''
+
+[tool.pylint.master]
+ignore-paths = ["utils/ultralytics/yolov5"]
+ignored-modules = ["utils/ultralytics/yolov5"]
+ignore-patterns = ["utils/ultralytics/yolov5/*"]
+py-version = [3, 7]
+suggestion-mode = true
+
+
+[tool.pyright]
+exclude = [
+    "**/utils/ultralytics/yolov5/**",
+    "**/__pycache__",
+]
+
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+pythonVersion = "3.7"

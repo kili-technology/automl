@@ -65,6 +65,7 @@ def ultralytics_train_yolov5(
     model_output_path = get_output_path_bbox(title, path, model_framework)
     os.makedirs(model_output_path, exist_ok=True)
 
+    os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
     with open(config_data_path, "w") as f:
         f.write(
             template.render(
@@ -96,9 +97,13 @@ def ultralytics_train_yolov5(
             "--upload_dataset",  # wandb
             *args_from_json,
         ]
+        print("Executing Yolo with command line:", " ".join(args))
         subprocess.run(args, check=True, cwd=f"{yolov5_path}", env=yolo_env)
     except subprocess.CalledProcessError as e:
-        raise AutoMLYoloException("YoloV5 training crashed." + str(e))
+        kili_print("Error while executing YoloV5:")
+        print(e)
+        print(e.output)
+        raise AutoMLYoloException()
 
     shutil.copy(config_data_path, model_output_path)
     df_result = pd.read_csv(os.path.join(model_output_path, "exp", "results.csv"))

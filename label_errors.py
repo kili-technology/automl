@@ -16,7 +16,6 @@ from kiliautoml.utils.constants import (
     ModelName,
 )
 from kiliautoml.utils.helpers import (
-    build_model_repository_path,
     get_assets,
     get_project,
     kili_print,
@@ -25,6 +24,7 @@ from kiliautoml.utils.helpers import (
     set_default,
     upload_errors_to_kili,
 )
+from kiliautoml.utils.path import Path
 
 
 def download_assets(assets, api_key, data_path, job_name):
@@ -52,7 +52,7 @@ def download_assets(assets, api_key, data_path, job_name):
         )
         os.makedirs(img_path, exist_ok=True)
         with open(os.path.join(img_path, asset["id"] + ".jpg"), "wb") as handler:
-            handler.write(img_data)
+            handler.write(img_data)  # type: ignore
         toc = time.time() - tic
         throttling_per_call = 60.0 / 250  # Kili API calls are limited to 250 per minute
         if toc < throttling_per_call:
@@ -136,7 +136,7 @@ def main(
             and input_type == InputType.Image
             and ml_task == MLTask.Classification
         ):
-            job_path = build_model_repository_path(HOME, project_id, job_name, "")
+            job_path = Path.model_repository(HOME, project_id, job_name, "")
             data_path = os.path.join(job_path, "data")
             model_path = os.path.join(job_path, "model")
 

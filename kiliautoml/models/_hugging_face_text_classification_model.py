@@ -1,4 +1,4 @@
-from datetime import datetime
+# pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
 from typing import List, Dict, Optional
@@ -15,20 +15,28 @@ import numpy as np
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.constants import ModelFramework, ModelName, MLTask, HOME
+from kiliautoml.utils.constants import (
+    ModelFramework,
+    ModelFrameworkT,
+    ModelName,
+    ModelNameT,
+    MLTask,
+    MLTaskT,
+    HOME,
+)
 from kiliautoml.utils.helpers import (
     set_default,
-    build_model_repository_path,
     kili_print,
     categories_from_job,
     ensure_dir,
     JobPredictions,
 )
+from kiliautoml.utils.path import Path
 
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task = MLTask.Classification
+    ml_task: MLTaskT = MLTask.Classification  # type: ignore
 
     def __init__(self, project_id: str, api_key: str, api_endpoint: str) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
@@ -39,8 +47,8 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_framework: Optional[ModelFramework],
-        model_name: Optional[ModelName],
+        model_framework: Optional[ModelFrameworkT],
+        model_name: Optional[ModelNameT],
         clear_dataset_cache: bool = False,
     ) -> float:
 
@@ -48,15 +56,15 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         nltk.download("punkt")
 
-        path = build_model_repository_path(HOME, self.project_id, job_name, self.model_repository)
+        path = Path.model_repository(HOME, self.project_id, job_name, self.model_repository)
 
-        self.model_framework = set_default(
+        self.model_framework = set_default(  # type: ignore
             model_framework,
             ModelFramework.PyTorch,
             "model_framework",
             [ModelFramework.PyTorch, ModelFramework.Tensorflow],
         )
-        model_name = set_default(
+        model_name_setted: ModelNameT = set_default(  # type: ignore
             model_name,
             ModelName.BertBaseMultilingualCased,
             "model_name",
@@ -66,7 +74,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             assets,
             job,
             job_name,
-            model_name,
+            model_name_setted,
             path,
             clear_dataset_cache,
         )
@@ -121,7 +129,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_name: str,
+        model_name: ModelNameT,
         path: str,
         clear_dataset_cache: bool,
     ) -> float:
@@ -152,10 +160,9 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             return tokenizer(examples["text"], padding="max_length", truncation=True)
 
         tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)  # type: ignore
-        train_dataset = tokenized_datasets["train"]
-        path_model = os.path.join(
-            path, "model", self.model_framework, datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
+        train_dataset = tokenized_datasets["train"]  # type: ignore
+
+        path_model = Path.append_hf_model_folder(path, self.model_framework)
 
         training_args = TrainingArguments(os.path.join(path_model, "training_args"))
         trainer = Trainer(

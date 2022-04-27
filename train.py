@@ -16,7 +16,9 @@ from kiliautoml.utils.constants import (
     InputType,
     MLTask,
     ModelFramework,
+    ModelFrameworkT,
     ModelName,
+    ModelNameT,
     ModelRepository,
     Tool,
 )
@@ -25,9 +27,10 @@ from kiliautoml.utils.helpers import (
     get_project,
     kili_print,
     set_default,
-    build_model_repository_path,
     parse_label_types,
 )
+from kiliautoml.utils.memoization import clear_automl_cache
+from kiliautoml.utils.path import Path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["WANDB_DISABLED"] = "true"
@@ -56,7 +59,7 @@ def train_image_bounding_box(
         "model_repository",
         [ModelRepository.Ultralytics],
     )
-    path = build_model_repository_path(HOME, project_id, job_name, model_repository)
+    path = Path.model_repository(HOME, project_id, job_name, model_repository)
     if model_repository == ModelRepository.Ultralytics:
         model_framework = set_default(
             model_framework,
@@ -124,8 +127,8 @@ def train_image_bounding_box(
 def main(
     api_endpoint: str,
     api_key: str,
-    model_framework: str,
-    model_name: str,
+    model_framework: ModelFrameworkT,
+    model_name: ModelNameT,
     model_repository: str,
     project_id: str,
     label_types: str,
@@ -139,6 +142,10 @@ def main(
 
     training_losses = []
     for job_name, job in jobs.items():
+        if clear_dataset_cache:
+            clear_automl_cache(
+                project_id, command="train", job_name=job_name, model_repository=model_repository
+            )
         content_input = job.get("content", {}).get("input")
         ml_task = job.get("mlTask")
         tools = job.get("tools")

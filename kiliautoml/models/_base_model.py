@@ -2,13 +2,13 @@ from abc import abstractmethod, ABCMeta
 from typing import List, Dict, Optional
 
 from kiliautoml.utils.helpers import JobPredictions
-from kiliautoml.utils.constants import ModelFramework, ModelName
+from kiliautoml.utils.constants import ModelFramework, ModelFrameworkT, ModelNameT
 
 
 class BaseModel(metaclass=ABCMeta):
     def __init__(self) -> None:
         # internal state attributes
-        self.model_framework: Optional[ModelFramework] = None
+        self.model_framework: ModelFrameworkT = ModelFramework.PyTorch  # type: ignore
 
     @abstractmethod
     def train(
@@ -16,7 +16,7 @@ class BaseModel(metaclass=ABCMeta):
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_name: Optional[ModelName],
+        model_name: Optional[ModelNameT],
         clear_dataset_cache: bool = False,
     ):
         pass

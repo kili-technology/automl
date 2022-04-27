@@ -1,29 +1,34 @@
-from dataclasses import dataclass
 import os
+from typing_extensions import Literal
 
 
 HOME = os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type: ignore
 
 
-@dataclass
 class ContentInput:
     Checkbox = "checkbox"
     Radio = "radio"
 
 
-@dataclass
+ContentInputT = Literal["checkbox", "radio"]
+
+
 class InputType:
     Image = "IMAGE"
     Text = "TEXT"
 
 
-@dataclass
+InputTypeT = Literal["IMAGE", "TEXT"]
+
+
 class ModelFramework:
     PyTorch = "pytorch"
     Tensorflow = "tensorflow"
 
 
-@dataclass
+ModelFrameworkT = Literal["pytorch", "tensorflow"]
+
+
 class ModelName:
     BertBaseMultilingualCased = "bert-base-multilingual-cased"
     DistilbertBaseCased = "distilbert-base-cased"
@@ -32,19 +37,34 @@ class ModelName:
     YoloV5 = "ultralytics/yolov5"
 
 
-@dataclass
+ModelNameT = Literal[
+    "bert-base-multilingual-cased",
+    "distilbert-base-cased",
+    "efficientnet_b0",
+    "resnet50",
+    "ultralytics/yolov5",
+]
+
+
 class ModelRepository:
     HuggingFace = "huggingface"
     Ultralytics = "ultralytics"
 
 
-@dataclass
+ModelRepositoryT = Literal["huggingface", "ultralytics"]
+
+
 class MLTask:
     Classification = "CLASSIFICATION"
     NamedEntityRecognition = "NAMED_ENTITIES_RECOGNITION"
     ObjectDetection = "OBJECT_DETECTION"
 
 
-@dataclass
+MLTaskT = Literal["CLASSIFICATION", "NAMED_ENTITIES_RECOGNITION", "OBJECT_DETECTION"]
+
+
 class Tool:
     Rectangle = "rectangle"
+
+
+ToolT = Literal["rectangle"]
