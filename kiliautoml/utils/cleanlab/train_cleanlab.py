@@ -12,7 +12,7 @@ from torch.optim import lr_scheduler
 import torch.backends.cudnn as cudnn
 from torchvision import datasets, models, transforms
 
-from utils.constants import ModelName
+from kiliautoml.utils.constants import ModelName
 
 
 def train_model(

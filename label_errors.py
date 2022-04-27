@@ -7,15 +7,15 @@ import click
 from kili.client import Kili
 from tqdm.auto import tqdm
 
-from utils.cleanlab.train_cleanlab import train_and_get_error_labels
-from utils.constants import (
+from kiliautoml.utils.cleanlab.train_cleanlab import train_and_get_error_labels
+from kiliautoml.utils.constants import (
     HOME,
     ContentInput,
     InputType,
     MLTask,
     ModelName,
 )
-from utils.helpers import (
+from kiliautoml.utils.helpers import (
     build_model_repository_path,
     get_assets,
     get_project,
