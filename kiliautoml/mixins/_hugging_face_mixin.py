@@ -83,7 +83,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
             raise ValueError("Inconsistent model base repository")
 
         if split_path[-2] in [ModelFramework.PyTorch, ModelFramework.Tensorflow]:
-            model_framework = split_path[-2]
+            model_framework: ModelFramework = split_path[-2]  # type: ignore
             kili_print(f"Model framework: {model_framework}")
         else:
             raise ValueError("Unknown model framework")

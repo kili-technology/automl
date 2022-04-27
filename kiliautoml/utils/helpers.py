@@ -180,7 +180,7 @@ def parse_label_types(label_types: Optional[str]) -> List[label_typeT]:
         return ["DEFAULT", "REVIEW"]
 
 
-def set_default(x: str, x_default: str, x_name: str, x_range: List[str]) -> str:
+def set_default(x, x_default, x_name: str, x_range: List):
     if x not in x_range:
         kili_print(f"defaulting to {x_name}={x_default}")
         x = x_default
