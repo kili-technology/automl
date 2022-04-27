@@ -67,6 +67,7 @@ def ultralytics_train_yolov5(
     os.makedirs(model_output_path, exist_ok=True)
 
     template = env.get_template("kili_template.yml")
+    os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
     with open(config_data_path, "w") as f:
         f.write(
             template.render(
