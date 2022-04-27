@@ -76,7 +76,7 @@ def train_model(
                 scheduler.step()
 
             epoch_loss = running_loss / dataset_sizes[phase]
-            epoch_acc = running_corrects.double() / dataset_sizes[phase]
+            epoch_acc = running_corrects.double() / dataset_sizes[phase]  # type:ignore
 
             if verbose >= 2:
                 print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}")
@@ -122,7 +122,9 @@ def get_probs(loader, model, verbose=0):
             print()
 
     # Prepare outputs as a single matrix
-    probs = np.concatenate([torch.nn.functional.softmax(z, dim=1).cpu().numpy() for z in outputs])
+    probs = np.concatenate(
+        [torch.nn.functional.softmax(z, dim=1).cpu().numpy() for z in outputs]  # type:ignore
+    )
 
     return probs
 
@@ -226,7 +228,7 @@ def train_and_get_error_labels(
             print()
 
         dataloaders = {
-            x: torch.utils.data.DataLoader(
+            x: torch.utils.data.DataLoader(  # type:ignore
                 image_datasets[x], batch_size=64, shuffle=True, num_workers=4
             )
             for x in ["train", "val"]
@@ -237,13 +239,13 @@ def train_and_get_error_labels(
         if model_name == ModelName.EfficientNetB0:
             model_ft = models.efficientnet_b0(pretrained=True)
             num_ftrs = model_ft.classifier[1].in_features
-            model_ft.classifier[1] = nn.Linear(num_ftrs, len(class_names))
+            model_ft.classifier[1] = nn.Linear(num_ftrs, len(class_names))  # type:ignore
         elif model_name == ModelName.Resnet50:
             model_ft = models.resnet50(pretrained=True)
             num_ftrs = model_ft.fc.in_features
             model_ft.fc = nn.Linear(num_ftrs, len(class_names))
 
-        model_ft = model_ft.to(device)
+        model_ft = model_ft.to(device)  # type:ignore
 
         criterion = nn.CrossEntropyLoss()
 
@@ -265,7 +267,7 @@ def train_and_get_error_labels(
         )
         # torch.save(model_ft.state_dict(), os.path.join(model_dir, f'model_{cv_fold}.pt'))
 
-        holdout_loader = torch.utils.data.DataLoader(
+        holdout_loader = torch.utils.data.DataLoader(  # type:ignore
             holdout_dataset,
             batch_size=64,
             shuffle=False,

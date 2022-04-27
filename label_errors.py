@@ -52,7 +52,7 @@ def download_assets(assets, api_key, data_path, job_name):
         )
         os.makedirs(img_path, exist_ok=True)
         with open(os.path.join(img_path, asset["id"] + ".jpg"), "wb") as handler:
-            handler.write(img_data)
+            handler.write(img_data)  # type: ignore
         toc = time.time() - tic
         throttling_per_call = 60.0 / 250  # Kili API calls are limited to 250 per minute
         if toc < throttling_per_call:
