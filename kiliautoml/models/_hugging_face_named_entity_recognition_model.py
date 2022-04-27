@@ -1,4 +1,5 @@
-from typing import Union, List, Dict, TypedDict, Any, Optional
+from typing import Union, List, Dict, Any, Optional
+from typing_extensions import TypedDict
 import os
 from warnings import warn
 from datetime import datetime
