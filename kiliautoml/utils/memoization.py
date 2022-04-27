@@ -15,11 +15,7 @@ import shutil
 from joblib import Memory
 from utils.constants import HOME
 
-from utils.path_manager import (
-    build_model_repository_path,
-    get_cache_path,
-    get_path_model_huggingface,
-)
+from utils.path import Path
 
 
 def kili_project_memoizer(
@@ -32,7 +28,7 @@ def kili_project_memoizer(
             project_id = kwargs.get("project_id")
             if not project_id:
                 raise ValueError("project_id not specified in a keyword argument")
-            cache_path = get_cache_path(project_id, sub_dir)
+            cache_path = Path.cache(project_id, sub_dir)
             memory = Memory(cache_path, verbose=0)
             return memory.cache(some_function)(*args, **kwargs)
 
@@ -57,18 +53,18 @@ def clear_automl_cache(project_id: str, command: str, job_name=None, model_repos
     else:
         raise ValueError(f"command {command} not recognized")
 
-    cache_paths = [get_cache_path(project_id, sub_dir) for sub_dir in sub_dirs]
+    cache_paths = [Path.cache(project_id, sub_dir) for sub_dir in sub_dirs]
 
     if command == "train":
         assert job_name is not None
         assert model_repository is not None
-        path = build_model_repository_path(
+        path = Path.model_repository(
             root_dir=HOME,
             project_id=project_id,
             job_name=job_name,
             model_repository=model_repository,
         )
-        cache_paths.append(get_path_model_huggingface(path, "pytorch"))
+        cache_paths.append(Path.append_hf_model_folder(path, "pytorch"))
 
     for cache_path in cache_paths:
         if os.path.exists(cache_path):
