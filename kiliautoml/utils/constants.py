@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import os
+from typing import Literal
 
 
 HOME = os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type: ignore
@@ -48,3 +49,8 @@ class MLTask:
 @dataclass
 class Tool:
     Rectangle = "rectangle"
+
+
+labeling_statusT = Literal["LABELED", "UNLABELED"]
+status_inT = Literal["TODO", "ONGOING", "LABELED", "REVIEWED", "DEFAULT"]
+label_typeT = Literal["DEFAULT", "REVIEW"]

@@ -2,22 +2,20 @@ import os
 import random
 from io import BytesIO
 import json
-import shutil
 from typing import Any, List, Optional, Dict, Tuple
-from typing_extensions import Literal
 from dataclasses import dataclass
 
 import torch
 import numpy as np
 from glob import glob
 from termcolor import colored
-from joblib import Memory
 from tqdm import tqdm
 from PIL import Image
 from PIL.Image import Image as PILImage
 import requests
+from utils.memoization import kili_memoizer, kili_project_memoizer
 
-from kiliautoml.utils.constants import HOME
+from utils.constants import HOME, status_inT, labeling_statusT, label_typeT
 
 
 def set_all_seeds(seed):
@@ -29,33 +27,6 @@ def set_all_seeds(seed):
 
 
 set_all_seeds(42)
-
-
-def kili_project_memoizer(
-    sub_dir: str,
-):
-    """Decorator factory for memoizing a function that takes a project_id as input."""
-
-    def decorator(some_function):
-        def wrapper(*args, **kwargs):
-            project_id = kwargs.get("project_id")
-            if not project_id:
-                raise ValueError("project_id not specified in a keyword argument")
-            cache_path = os.path.join(HOME, project_id, sub_dir)
-            memory = Memory(cache_path, verbose=0)
-            return memory.cache(some_function)(*args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
-def kili_memoizer(some_function):
-    def wrapper(*args, **kwargs):
-        memory = Memory(HOME, verbose=0)
-        return memory.cache(some_function)(*args, **kwargs)
-
-    return wrapper
 
 
 def categories_from_job(job: Dict):
@@ -107,11 +78,6 @@ class JobPredictions:
 
     def __repr__(self):
         return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"
-
-
-labeling_statusT = Literal["LABELED", "UNLABELED"]
-status_inT = Literal["TODO", "ONGOING", "LABELED", "REVIEWED", "DEFAULT"]
-label_typeT = Literal["DEFAULT", "REVIEW"]
 
 
 @kili_project_memoizer(sub_dir="get_asset_memoized")
@@ -205,24 +171,12 @@ def kili_print(*args, **kwargs) -> None:
     print(colored("kili:", "yellow", attrs=["bold"]), *args, **kwargs)
 
 
-def build_model_repository_path(
-    root_dir: str, project_id: str, job_name: str, model_repository: str
-) -> str:
-    return os.path.join(root_dir, project_id, job_name, model_repository)
-
-
-def build_dataset_path(root_dir: str, project_id: str, job_name: str) -> str:
-    return os.path.join(root_dir, project_id, job_name, "dataset")
-
-
-def build_inference_path(
-    root_dir: str, project_id: str, job_name: str, model_repository: str
-) -> str:
-    return os.path.join(root_dir, project_id, job_name, model_repository, "inference")
-
-
-def parse_label_types(label_types: Optional[str]) -> List[str]:
-    return label_types.split(",") if label_types else ["DEFAULT", "REVIEW"]
+def parse_label_types(label_types: Optional[str]) -> List[label_typeT]:
+    if label_types:
+        res: List[label_typeT] = label_types.split(",")  # type: ignore
+        return res
+    else:
+        return ["DEFAULT", "REVIEW"]
 
 
 def set_default(x: str, x_default: str, x_name: str, x_range: List[str]) -> str:
@@ -306,11 +260,6 @@ def download_project_images(
             )
         )
     return downloaded_images
-
-
-def clear_automl_cache():
-    if os.path.exists(HOME):
-        shutil.rmtree(HOME)
 
 
 def save_errors(found_errors, job_path):
