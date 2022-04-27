@@ -24,7 +24,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
     get_last_trained_model_path,
 )
-from utils.type import label_typeT
+from kiliautoml.utils.type import label_typeT
 
 
 def predict_object_detection(
