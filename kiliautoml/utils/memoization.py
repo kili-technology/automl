@@ -15,7 +15,7 @@ import shutil
 from joblib import Memory
 from utils.constants import HOME
 
-from utils.path import Path
+from kiliautoml.utils.path import Path
 
 
 def kili_project_memoizer(

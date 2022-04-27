@@ -13,9 +13,7 @@ from kiliautoml.utils.helpers import (
 )
 from kiliautoml.utils.constants import HOME, ModelFramework, ModelRepository
 from kiliautoml.utils.ultralytics.constants import YOLOV5_REL_PATH
-from utils.helpers import JobPredictions, download_project_images, kili_print
-from utils.constants import HOME, ModelFramework, ModelRepository
-from utils.path import Path
+from kiliautoml.utils.path import Path
 
 
 def ultralytics_predict_object_detection(

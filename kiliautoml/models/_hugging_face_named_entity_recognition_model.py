@@ -1,3 +1,4 @@
+# pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 from typing import Union, List, Dict, Any, Optional
 from typing_extensions import TypedDict
 import os
@@ -20,12 +21,12 @@ from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.helpers import (
     set_default,
-    build_model_repository_path,
     JobPredictions,
     kili_print,
     ensure_dir,
 )
 from kiliautoml.utils.constants import ModelFramework, ModelName, MLTask, HOME
+from kiliautoml.utils.path import Path
 
 
 class KiliNerAnnotations(TypedDict):
@@ -54,7 +55,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     ):
         nltk.download("punkt")
 
-        path = build_model_repository_path(HOME, self.project_id, job_name, self.model_repository)
+        path = Path.model_repository(HOME, self.project_id, job_name, self.model_repository)
 
         self.model_framework = set_default(
             model_framework,
@@ -122,7 +123,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             proba_assets.append(min(probas_asset))
 
             if verbose:
-                print(sentence)
                 if len(predictions_asset):
                     for p in predictions_asset:
                         print(p)

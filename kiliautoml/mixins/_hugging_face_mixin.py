@@ -1,3 +1,4 @@
+# pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 from abc import ABCMeta
 import os
 from typing import List

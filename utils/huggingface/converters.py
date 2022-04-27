@@ -9,7 +9,7 @@ from nltk.tokenize import TreebankWordTokenizer
 import requests
 from tqdm.auto import tqdm
 
-from utils.helpers import ensure_dir, kili_print
+from kiliautoml.utils.helpers import ensure_dir, kili_print
 
 
 def kili_assets_to_hf_ner_dataset(

@@ -24,7 +24,7 @@ from kiliautoml.utils.helpers import (
     set_default,
     upload_errors_to_kili,
 )
-from utils.path import Path
+from kiliautoml.utils.path import Path
 
 
 def download_assets(assets, api_key, data_path, job_name):
