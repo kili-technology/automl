@@ -13,9 +13,9 @@ from tqdm import tqdm
 from PIL import Image
 from PIL.Image import Image as PILImage
 import requests
-from utils.constants import HOME
-from utils.memoization import kili_memoizer, kili_project_memoizer
 
+from kiliautoml.utils.constants import HOME
+from kiliautoml.utils.memoization import kili_memoizer, kili_project_memoizer
 from kiliautoml.utils.type import status_inT, labeling_statusT, label_typeT
 
 

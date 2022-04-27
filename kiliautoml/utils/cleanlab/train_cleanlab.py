@@ -202,9 +202,9 @@ def train_and_get_error_labels(
     }
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+    class_names = original_image_datasets["train"].classes
+    labels = [label for img, label in datasets.ImageFolder(data_dir).imgs]
     for cv_fold in range(cv_n_folds):
-        labels = [label for img, label in datasets.ImageFolder(data_dir).imgs]
         # Split train into train and holdout for particular cv_fold.
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=cv_seed)
         cv_train_idx, cv_holdout_idx = list(kf.split(range(len(labels)), labels))[cv_fold]
@@ -234,7 +234,6 @@ def train_and_get_error_labels(
             for x in ["train", "val"]
         }
         dataset_sizes = {x: len(image_datasets[x]) for x in ["train", "val"]}
-        class_names = image_datasets["train"].classes
 
         if model_name == ModelName.EfficientNetB0:
             model_ft = models.efficientnet_b0(pretrained=True)

@@ -19,7 +19,7 @@ suggestion-mode = true
 
 [tool.pyright]
 exclude = [
-    "utils/ultralytics/yolov5/**",
+    "**/utils/ultralytics/yolov5/**",
     "**/__pycache__",
 ]
 

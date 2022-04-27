@@ -13,8 +13,8 @@ The following elements are memoïzed:
 import os
 import shutil
 from joblib import Memory
-from utils.constants import HOME
 
+from kiliautoml.utils.constants import HOME
 from kiliautoml.utils.path import Path
 
 
