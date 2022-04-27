@@ -16,7 +16,9 @@ from kiliautoml.utils.constants import (
     InputType,
     MLTask,
     ModelFramework,
+    ModelFrameworkT,
     ModelName,
+    ModelNameT,
     ModelRepository,
     Tool,
 )
@@ -229,8 +231,8 @@ def train_text_classification_single(
 def main(
     api_endpoint: str,
     api_key: str,
-    model_framework: ModelFramework,
-    model_name: ModelName,
+    model_framework: ModelFrameworkT,
+    model_name: ModelNameT,
     model_repository: str,
     project_id: str,
     label_types: str,

@@ -18,7 +18,7 @@ from numpy.testing import assert_almost_equal
 
 from kiliautoml.utils.constants import (
     InputType,
-    ModelFramework,
+    ModelFrameworkT,
 )
 from kiliautoml.utils.helpers import (
     download_project_images,
@@ -370,7 +370,7 @@ def main(
     diversity_sampling: float,
     uncertainty_sampling: float,
     dry_run: bool,
-    from_model: ModelFramework,
+    from_model: ModelFrameworkT,
     verbose: bool,
     clear_dataset_cache: bool,
 ):

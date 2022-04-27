@@ -13,6 +13,7 @@ from kiliautoml.utils.constants import (
     InputType,
     MLTask,
     ModelFramework,
+    ModelFrameworkT,
     ModelRepository,
     Tool,
 )
@@ -58,7 +59,7 @@ def predict_object_detection(
     if model_repository not in [ModelRepository.Ultralytics]:
         raise ValueError(f"Unknown model base repository: {model_repository}")
 
-    model_framework: ModelFramework = split_path[-5]  # type: ignore
+    model_framework: ModelFrameworkT = split_path[-5]  # type: ignore
     kili_print(f"Model framework: {model_framework}")
     if model_framework not in [ModelFramework.PyTorch, ModelFramework.Tensorflow]:
         raise ValueError(f"Unknown model framework: {model_framework}")
@@ -177,7 +178,7 @@ def main(
     project_id: str,
     label_types: str,
     dry_run: bool,
-    from_model: Optional[ModelFramework],
+    from_model: Optional[ModelFrameworkT],
     verbose: bool,
     max_assets: Optional[int],
 ):

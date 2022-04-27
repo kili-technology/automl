@@ -15,7 +15,15 @@ import numpy as np
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.constants import ModelFramework, ModelName, MLTask, HOME
+from kiliautoml.utils.constants import (
+    ModelFramework,
+    ModelFrameworkT,
+    ModelName,
+    ModelNameT,
+    MLTask,
+    MLTaskT,
+    HOME,
+)
 from kiliautoml.utils.helpers import (
     set_default,
     kili_print,
@@ -28,7 +36,7 @@ from kiliautoml.utils.path import Path
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task: MLTask = MLTask.Classification  # type: ignore
+    ml_task: MLTaskT = MLTask.Classification  # type: ignore
 
     def __init__(self, project_id: str, api_key: str, api_endpoint: str) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
@@ -39,8 +47,8 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_framework: Optional[ModelFramework],
-        model_name: Optional[ModelName],
+        model_framework: Optional[ModelFrameworkT],
+        model_name: Optional[ModelNameT],
         clear_dataset_cache: bool = False,
     ) -> float:
 
@@ -56,7 +64,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             "model_framework",
             [ModelFramework.PyTorch, ModelFramework.Tensorflow],
         )
-        model_name_setted: ModelName = set_default(  # type: ignore
+        model_name_setted: ModelNameT = set_default(  # type: ignore
             model_name,
             ModelName.BertBaseMultilingualCased,
             "model_name",
@@ -121,7 +129,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_name: ModelName,
+        model_name: ModelNameT,
         path: str,
         clear_dataset_cache: bool,
     ) -> float:
