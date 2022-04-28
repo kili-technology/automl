@@ -33,7 +33,6 @@ from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.path import Path
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["WANDB_DISABLED"] = "true"
 
 
 def train_image_bounding_box(
@@ -142,6 +141,8 @@ def main(
 
     training_losses = []
     for job_name, job in jobs.items():
+        os.environ["WANDB_PROJECT"] = title + "_" + job_name
+
         if clear_dataset_cache:
             clear_automl_cache(
                 project_id, command="train", job_name=job_name, model_repository=model_repository

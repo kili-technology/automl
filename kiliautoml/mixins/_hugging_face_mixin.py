@@ -2,6 +2,7 @@
 from abc import ABCMeta
 import os
 from typing import List
+from datetime import datetime
 
 from transformers import (
     AutoModelForSequenceClassification,
@@ -9,6 +10,7 @@ from transformers import (
     AutoTokenizer,
     TFAutoModelForSequenceClassification,
     TFAutoModelForTokenClassification,
+    TrainingArguments,
 )
 
 from kiliautoml.utils.constants import (
@@ -97,3 +99,13 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         else:
             raise ValueError("Unknown model framework")
         return model_path_res, cls.model_repository, model_framework
+
+    @staticmethod
+    def _get_training_args(path_model, model_name):
+        date = datetime.now().strftime("%Y-%m-%d_%H:%M")
+        training_args = TrainingArguments(
+            os.path.join(path_model, "training_args"),  # type:ignore
+            report_to="wandb",  # type:ignore
+            run_name=model_name + "_" + date,
+        )
+        return training_args
