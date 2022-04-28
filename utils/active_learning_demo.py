@@ -57,6 +57,7 @@ def get_assets_to_be_prioritized(project_id: str, all_assets: List[Any]):
     active_learning_recap_path = get_active_learning_recap_path(project_id)
     assert os.path.exists(active_learning_recap_path)
     df = pd.read_csv(active_learning_recap_path)
+    print("Total number of assets", len(df))
 
     current_cycle = max(df["labeled_during_cycle"].dropna())
     kili_print(f"Current active learning cycle: {current_cycle}")

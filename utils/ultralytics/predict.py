@@ -67,7 +67,7 @@ def ultralytics_predict_object_detection(
             kili_predictions, probabilities = yolov5_to_kili_json(
                 inference_files_by_id[image.id], kili_data_dict["names"]
             )
-            proba_list.append(min(probabilities))
+            proba_list.append(max(probabilities))
             if verbose >= 1:
                 print(f"Asset {image.externalId}: {kili_predictions}")
             id_json_list.append((image.externalId, {job_name: {"annotations": kili_predictions}}))
