@@ -11,7 +11,6 @@ import datasets
 from transformers import (
     DataCollatorForTokenClassification,
     Trainer,
-    TrainingArguments,
 )
 from tqdm.auto import tqdm
 
@@ -221,7 +220,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         train_dataset = tokenized_datasets["train"]  # type:  ignore
         path_model = Path.append_hf_model_folder(path, self.model_framework)
 
-        training_args = TrainingArguments(os.path.join(path_model, "training_args"))
+        training_args = self._get_training_args(path_model, model_name)
         data_collator = DataCollatorForTokenClassification(tokenizer)
         trainer = Trainer(
             model=model,
