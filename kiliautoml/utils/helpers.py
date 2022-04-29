@@ -213,7 +213,7 @@ def get_last_trained_model_path(
                 kili_print(f"Trained model found in path: {model_path}")
                 break
         if model_path is None:
-            raise Exception("No trained model found for job {job}. Exiting ...")
+            raise Exception(f"No trained model found for job {job_name}. Exiting ...")
     return model_path
 
 

@@ -20,7 +20,6 @@ from kiliautoml.utils.constants import (
     MLTaskT,
     ModelFramework,
     ModelFrameworkT,
-    ModelName,
     ModelNameT,
 )
 from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print, set_default
@@ -47,9 +46,10 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_framework: Optional[ModelFrameworkT],
-        model_name: Optional[ModelNameT],
+        model_framework: Optional[ModelFrameworkT] = None,
+        model_name: Optional[ModelNameT] = None,
         clear_dataset_cache: bool = False,
+        training_args: dict = {},
     ):
         nltk.download("punkt")
 
@@ -63,20 +63,15 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
         model_name_setted: ModelNameT = set_default(  # type: ignore
             model_name,
-            ModelName.BertBaseMultilingualCased,
+            "bert-base-multilingual-cased",
             "model_name",
             [
-                ModelName.BertBaseMultilingualCased,
-                ModelName.DistilbertBaseCased,
+                "bert-base-multilingual-cased",
+                "distilbert-base-cased",
             ],
         )
         return self._train(
-            assets,
-            job,
-            job_name,
-            model_name_setted,
-            path,
-            clear_dataset_cache,
+            assets, job, job_name, model_name_setted, path, clear_dataset_cache, training_args
         )
 
     def predict(
@@ -98,7 +93,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         predictions = []
         proba_assets = []
         for asset in assets:
-            text = self._get_text_from(asset)  # type: ignore
+            text = self._get_text_from(asset["content"])  # type: ignore
 
             offset = 0
             predictions_asset: List[dict] = []
@@ -146,6 +141,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         model_name: ModelNameT,
         path: str,
         clear_dataset_cache: bool,
+        training_args: Dict,
     ) -> float:
         """
         Sources:
@@ -212,11 +208,11 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         train_dataset = tokenized_datasets["train"]  # type:  ignore
         path_model = Path.append_hf_model_folder(path, self.model_framework)
 
-        training_args = self._get_training_args(path_model, model_name)
+        training_arguments = self._get_training_args(path_model, model_name, **training_args)
         data_collator = DataCollatorForTokenClassification(tokenizer)
         trainer = Trainer(
             model=model,
-            args=training_args,
+            args=training_arguments,
             data_collator=data_collator,  # type:ignore
             tokenizer=tokenizer,
             train_dataset=train_dataset,  # type:ignore

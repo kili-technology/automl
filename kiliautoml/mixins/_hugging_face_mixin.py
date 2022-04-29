@@ -101,11 +101,15 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         return model_path_res, cls.model_repository, model_framework
 
     @staticmethod
-    def _get_training_args(path_model, model_name):
+    def _get_training_args(path_model, model_name, **kwargs):
         date = datetime.now().strftime("%Y-%m-%d_%H:%M")
+        default_args = {
+            "report_to": "wandb",  # type:ignore
+            "run_name": model_name + "_" + date,
+        }
+        default_args.update(kwargs)
         training_args = TrainingArguments(
             os.path.join(path_model, "training_args"),  # type:ignore
-            report_to="wandb",  # type:ignore
-            run_name=model_name + "_" + date,
+            **default_args,
         )
         return training_args

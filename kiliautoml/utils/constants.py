@@ -30,8 +30,6 @@ ModelFrameworkT = Literal["pytorch", "tensorflow"]
 
 
 class ModelName:
-    BertBaseMultilingualCased = "bert-base-multilingual-cased"
-    DistilbertBaseCased = "distilbert-base-cased"
     EfficientNetB0 = "efficientnet_b0"
     Resnet50 = "resnet50"
     YoloV5 = "ultralytics/yolov5"
