@@ -183,7 +183,6 @@ def get_assets(
 
     total = kili.count_assets(project_id=project_id)
     total = total if max_assets is None else min(total, max_assets)
-    total = 320
 
     status_in = compute_status_in(labeling_statuses)
     assets = get_asset_memoized(
