@@ -154,14 +154,18 @@ def get_assets(
     )
 
     if len(assets) == 0:
-        raise Exception("There is no asset matching the query. Exiting...")
+        if len(labeling_statuses) == 1:
+            kili_print(f"No {labeling_statuses[0]} assets found in project {project_id}.")
+        raise Exception("There is no asset matching the query. ")
     return assets
 
 
 def get_project(kili, project_id: str) -> Tuple[str, Dict, str]:
     projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface", "title"])
     if len(projects) == 0:
-        raise ValueError("no such project")
+        raise ValueError(
+            "no such project. Maybe your KILI_API_KEY does not belong to a member of the project."
+        )
     input_type = projects[0]["inputType"]
     jobs = projects[0]["jsonInterface"].get("jobs", {})
     title = projects[0]["title"]
