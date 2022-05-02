@@ -12,9 +12,11 @@ The following elements are memoïzed:
 """
 import os
 import shutil
+from typing import List, Optional
+from typing_extensions import get_args
 from joblib import Memory
 
-from kiliautoml.utils.constants import HOME
+from kiliautoml.utils.constants import HOME, ModelRepositoryT
 from kiliautoml.utils.path import Path
 
 
@@ -45,7 +47,10 @@ def kili_memoizer(some_function):
     return wrapper
 
 
-def clear_automl_cache(project_id: str, command: str, job_name=None, model_repository=None):
+def clear_automl_cache(
+    project_id: str, command: str, model_repository: Optional[ModelRepositoryT], job_name=None
+):
+    """If model_repository is None, then it clears for every modelRepository cache."""
     if command == "train":
         sub_dirs = ["get_asset_memoized"]
     elif command == "prioritize":
@@ -55,17 +60,23 @@ def clear_automl_cache(project_id: str, command: str, job_name=None, model_repos
 
     cache_paths = [Path.cache(project_id, sub_dir) for sub_dir in sub_dirs]
 
-    if command == "train":
-        assert job_name is not None
-        assert model_repository is not None
-        path = Path.model_repository(
-            root_dir=HOME,
-            project_id=project_id,
-            job_name=job_name,
-            model_repository=model_repository,
-        )
-        cache_paths.append(Path.append_hf_model_folder(path, "pytorch"))
+    if model_repository is None:
+        model_repositories: List[ModelRepositoryT] = get_args(ModelRepositoryT)  # type: ignore
+    else:
+        model_repositories = [model_repository]
 
-    for cache_path in cache_paths:
-        if os.path.exists(cache_path):
-            shutil.rmtree(cache_path)
+    for model_repository in model_repositories:
+        if command == "train":
+            assert job_name is not None
+            assert model_repository is not None
+            path = Path.model_repository(
+                root_dir=HOME,
+                project_id=project_id,
+                job_name=job_name,
+                model_repository=model_repository,
+            )
+            cache_paths.append(Path.append_hf_model_folder(path, "pytorch"))
+
+        for cache_path in cache_paths:
+            if os.path.exists(cache_path):
+                shutil.rmtree(cache_path)

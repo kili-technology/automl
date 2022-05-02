@@ -20,6 +20,7 @@ from kiliautoml.utils.constants import (
     ModelName,
     ModelNameT,
     ModelRepository,
+    ModelRepositoryT,
     Tool,
 )
 from kiliautoml.utils.helpers import (
@@ -44,7 +45,7 @@ def train_image_bounding_box(
     args_dict,
     model_framework,
     model_name,
-    model_repository,
+    model_repository: ModelRepositoryT,
     project_id,
     label_types,
     clear_dataset_cache,
@@ -52,14 +53,14 @@ def train_image_bounding_box(
 ):
     from kiliautoml.utils.ultralytics.train import ultralytics_train_yolov5
 
-    model_repository = set_default(
+    model_repository_initialized: ModelRepositoryT = set_default(  # type: ignore
         model_repository,
         ModelRepository.Ultralytics,
         "model_repository",
         [ModelRepository.Ultralytics],
     )
-    path = Path.model_repository(HOME, project_id, job_name, model_repository)
-    if model_repository == ModelRepository.Ultralytics:
+    path = Path.model_repository(HOME, project_id, job_name, model_repository_initialized)
+    if model_repository_initialized == ModelRepository.Ultralytics:
         model_framework = set_default(
             model_framework,
             ModelFramework.PyTorch,
@@ -128,7 +129,7 @@ def main(
     api_key: str,
     model_framework: ModelFrameworkT,
     model_name: ModelNameT,
-    model_repository: str,
+    model_repository: ModelRepositoryT,
     project_id: str,
     label_types: str,
     max_assets: int,
