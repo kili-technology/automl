@@ -1,34 +1,31 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional
 from warnings import warn
 
 import datasets
-
-from transformers import (
-    Trainer,
-)
 import numpy as np
+from transformers import Trainer
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
+    HOME,
+    MLTask,
+    MLTaskT,
     ModelFramework,
     ModelFrameworkT,
     ModelName,
     ModelNameT,
-    MLTask,
-    MLTaskT,
-    HOME,
 )
 from kiliautoml.utils.helpers import (
-    set_default,
-    kili_print,
+    JobPredictions,
     categories_from_job,
     ensure_dir,
-    JobPredictions,
+    kili_print,
+    set_default,
 )
 from kiliautoml.utils.path import Path
 

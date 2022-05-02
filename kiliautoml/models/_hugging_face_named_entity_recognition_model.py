@@ -1,37 +1,29 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
-from typing import Union, List, Dict, Any, Optional
-from typing_extensions import TypedDict
-import os
-from warnings import warn
 import json
+import os
+from typing import Any, Dict, List, Optional, Union
+from warnings import warn
 
+import datasets
 import nltk
 import numpy as np
-import datasets
-from transformers import (
-    DataCollatorForTokenClassification,
-    Trainer,
-)
 from tqdm.auto import tqdm
+from transformers import DataCollatorForTokenClassification, Trainer
+from typing_extensions import TypedDict
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.helpers import (
-    set_default,
-    JobPredictions,
-    kili_print,
-    ensure_dir,
-)
 from kiliautoml.utils.constants import (
+    HOME,
+    MLTask,
+    MLTaskT,
     ModelFramework,
     ModelFrameworkT,
     ModelName,
-    MLTask,
-    HOME,
     ModelNameT,
-    MLTaskT,
 )
+from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print, set_default
 from kiliautoml.utils.path import Path
 
 

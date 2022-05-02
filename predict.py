@@ -1,13 +1,13 @@
 import os
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
 import click
 from kili.client import Kili
-from kiliautoml.models import (
-    HuggingFaceTextClassificationModel,
-    HuggingFaceNamedEntityRecognitionModel,
-)
 
+from kiliautoml.models import (
+    HuggingFaceNamedEntityRecognitionModel,
+    HuggingFaceTextClassificationModel,
+)
 from kiliautoml.utils.constants import (
     ContentInput,
     InputType,
@@ -20,9 +20,9 @@ from kiliautoml.utils.constants import (
 from kiliautoml.utils.helpers import (
     JobPredictions,
     get_assets,
+    get_last_trained_model_path,
     get_project,
     kili_print,
-    get_last_trained_model_path,
 )
 from kiliautoml.utils.type import label_typeT
 
@@ -36,7 +36,9 @@ def predict_object_detection(
     verbose: int,
     prioritization: bool,
 ) -> JobPredictions:
-    from kiliautoml.utils.ultralytics.predict import ultralytics_predict_object_detection
+    from kiliautoml.utils.ultralytics.predict import (
+        ultralytics_predict_object_detection,
+    )
 
     model_path_res = get_last_trained_model_path(
         project_id=project_id,

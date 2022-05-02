@@ -2,14 +2,14 @@ import copy
 import os
 import time
 
-from cleanlab.filter import find_label_issues
 import numpy as np
-from sklearn.model_selection import StratifiedKFold, train_test_split
 import torch
+import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.optim as optim
+from cleanlab.filter import find_label_issues
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from torch.optim import lr_scheduler
-import torch.backends.cudnn as cudnn
 from torchvision import datasets, models, transforms
 
 from kiliautoml.utils.constants import ModelName

@@ -1,20 +1,14 @@
 import os
-import requests
 import shutil
 import time
 
 import click
+import requests
 from kili.client import Kili
 from tqdm.auto import tqdm
 
 from kiliautoml.utils.cleanlab.train_cleanlab import train_and_get_error_labels
-from kiliautoml.utils.constants import (
-    HOME,
-    ContentInput,
-    InputType,
-    MLTask,
-    ModelName,
-)
+from kiliautoml.utils.constants import HOME, ContentInput, InputType, MLTask, ModelName
 from kiliautoml.utils.helpers import (
     get_assets,
     get_project,

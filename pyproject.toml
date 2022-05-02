@@ -27,3 +27,11 @@ reportMissingImports = true
 reportMissingTypeStubs = false
 
 pythonVersion = "3.7"
+typeCheckingMode = "basic"
+
+
+
+[tool.isort]
+profile = "black"
+py_version=37
+skip_glob = ["**/utils/ultralytics/yolov5/**"]

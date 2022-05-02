@@ -1,18 +1,17 @@
-import os
 import json
+import os
 
 import click
 from kili.client import Kili
 from tabulate import tabulate
 
 from kiliautoml.models import (
-    HuggingFaceTextClassificationModel,
     HuggingFaceNamedEntityRecognitionModel,
+    HuggingFaceTextClassificationModel,
 )
-
 from kiliautoml.utils.constants import (
-    ContentInput,
     HOME,
+    ContentInput,
     InputType,
     MLTask,
     ModelFramework,
@@ -27,8 +26,8 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_project,
     kili_print,
-    set_default,
     parse_label_types,
+    set_default,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.path import Path

@@ -1,12 +1,12 @@
 import os
-import subprocess
-from typing import Dict, List, Optional
-from datetime import datetime
 import shutil
+import subprocess
+from datetime import datetime
 from functools import reduce
+from typing import Dict, List, Optional
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 import pandas as pd
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from kiliautoml.utils.helpers import categories_from_job, kili_print
 from kiliautoml.utils.ultralytics.constants import ULTRALYTICS_REL_PATH, YOLOV5_REL_PATH

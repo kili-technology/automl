@@ -13,8 +13,9 @@ The following elements are memoïzed:
 import os
 import shutil
 from typing import List, Optional
-from typing_extensions import get_args
+
 from joblib import Memory
+from typing_extensions import get_args
 
 from kiliautoml.utils.constants import HOME, ModelRepositoryT
 from kiliautoml.utils.path import Path

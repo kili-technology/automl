@@ -1,8 +1,8 @@
-from abc import abstractmethod, ABCMeta
-from typing import List, Dict, Optional
+from abc import ABCMeta, abstractmethod
+from typing import Dict, List, Optional
 
-from kiliautoml.utils.helpers import JobPredictions
 from kiliautoml.utils.constants import ModelFramework, ModelFrameworkT, ModelNameT
+from kiliautoml.utils.helpers import JobPredictions
 
 
 class BaseModel(metaclass=ABCMeta):

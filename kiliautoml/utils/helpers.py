@@ -1,22 +1,22 @@
+import json
 import os
 import random
-from io import BytesIO
-import json
-from typing import Any, List, Optional, Dict, Tuple
 from dataclasses import dataclass
-
-import torch
-import numpy as np
 from glob import glob
-from termcolor import colored
-from tqdm import tqdm
+from io import BytesIO
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
+import requests
+import torch
 from PIL import Image
 from PIL.Image import Image as PILImage
-import requests
+from termcolor import colored
+from tqdm import tqdm
 
 from kiliautoml.utils.constants import HOME
 from kiliautoml.utils.memoization import kili_memoizer, kili_project_memoizer
-from kiliautoml.utils.type import status_inT, labeling_statusT, label_typeT
+from kiliautoml.utils.type import label_typeT, labeling_statusT, status_inT
 
 
 def set_all_seeds(seed):

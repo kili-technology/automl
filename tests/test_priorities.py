@@ -1,7 +1,8 @@
-from prioritize import Prioritizer, PriorityQueue
+import random
 
 import numpy as np
-import random
+
+from prioritize import Prioritizer, PriorityQueue
 
 
 class TestQueue:
