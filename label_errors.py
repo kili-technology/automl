@@ -1,6 +1,7 @@
 import os
 import shutil
 import time
+from typing import List
 
 import click
 import requests
@@ -70,6 +71,16 @@ def download_assets(assets, api_key, data_path, job_name):
     help="Tells if the dataset cache must be cleared",
 )
 @click.option(
+    "--target-job",
+    default=None,
+    multiple=True,
+    help=(
+        "Add a specific target job for which to detect the errors "
+        "(multiple can be passed if --target-job <job_name> is repeated)"
+        "Example: python label_errors.py --target-job BBOX --target-job CLASSIFICATION"
+    ),
+)
+@click.option(
     "--dry-run",
     default=None,
     is_flag=True,
@@ -103,6 +114,7 @@ def main(
     api_key: str,
     clear_dataset_cache: bool,
     cv_folds: int,
+    target_jobs: List[str],
     dry_run: bool,
     epochs: int,
     label_types: str,
@@ -123,6 +135,9 @@ def main(
     input_type, jobs, _ = get_project(kili, project_id)
 
     for job_name, job in jobs.items():
+        if target_jobs and job_name not in target_jobs:
+            continue
+        kili_print(f"Detecting errors for job: {job_name}")
         content_input = job.get("content", {}).get("input")
         ml_task = job.get("mlTask")
         if (
