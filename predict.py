@@ -153,6 +153,16 @@ def predict_one_job(
     ),
 )
 @click.option(
+    "--target-job",
+    default=None,
+    multiple=True,
+    help=(
+        "Add a specific target job for which to output the predictions "
+        "(multiple can be passed if --target-job <job_name> is repeated) "
+        "Example: python predict.py --target-job BBOX --target-job CLASSIFICATION"
+    ),
+)
+@click.option(
     "--dry-run",
     default=False,
     is_flag=True,
@@ -179,18 +189,21 @@ def main(
     api_key: str,
     project_id: str,
     label_types: str,
+    target_job: List[str],
     dry_run: bool,
     from_model: Optional[ModelFrameworkT],
     verbose: bool,
     max_assets: Optional[int],
 ):
-
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
     label_type_in: List[label_typeT] = label_types.split(",")  # type: ignore
     assets = get_assets(kili, project_id, label_type_in, max_assets=max_assets)
 
     for job_name, job in jobs.items():
+        if target_job and job_name not in target_job:
+            continue
+        kili_print(f"Predicting annotations for job: {job_name}")
         content_input = job.get("content", {}).get("input")
         ml_task = job.get("mlTask")
         tools = job.get("tools")

@@ -1,5 +1,6 @@
 import json
 import os
+from typing import List
 
 import click
 from kili.client import Kili
@@ -103,6 +104,16 @@ def train_image_bounding_box(
     ),
 )
 @click.option(
+    "--target-job",
+    default=None,
+    multiple=True,
+    help=(
+        "Add a specific target job on which to train on "
+        "(multiple can be passed if --target-job <job_name> is repeated) "
+        "Example: python train.py --target-job BBOX --target-job CLASSIFICATION"
+    ),
+)
+@click.option(
     "--max-assets",
     default=None,
     type=int,
@@ -131,6 +142,7 @@ def main(
     model_repository: ModelRepositoryT,
     project_id: str,
     label_types: str,
+    target_job: List[str],
     max_assets: int,
     json_args: str,
     clear_dataset_cache: bool,
@@ -141,6 +153,9 @@ def main(
 
     training_losses = []
     for job_name, job in jobs.items():
+        if target_job and job_name not in target_job:
+            continue
+        kili_print(f"Training on job: {job_name}")
         os.environ["WANDB_PROJECT"] = title + "_" + job_name
 
         if clear_dataset_cache:
