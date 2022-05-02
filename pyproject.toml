@@ -27,3 +27,4 @@ reportMissingImports = true
 reportMissingTypeStubs = false
 
 pythonVersion = "3.7"
+typeCheckingMode = "basic"
