@@ -1,19 +1,15 @@
 import os
-from typing import Any, Union, List, Dict, Tuple
 import shutil
 from glob import glob
+from typing import Any, Dict, List, Tuple, Union
+
 import yaml
 from typing_extensions import TypedDict
 
-
-from kiliautoml.utils.helpers import (
-    JobPredictions,
-    download_project_images,
-    kili_print,
-)
 from kiliautoml.utils.constants import HOME, ModelFramework, ModelFrameworkT
-from kiliautoml.utils.ultralytics.constants import YOLOV5_REL_PATH
+from kiliautoml.utils.helpers import JobPredictions, download_project_images, kili_print
 from kiliautoml.utils.path import Path
+from kiliautoml.utils.ultralytics.constants import YOLOV5_REL_PATH
 
 
 def ultralytics_predict_object_detection(

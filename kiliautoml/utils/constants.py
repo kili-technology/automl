@@ -1,6 +1,6 @@
 import os
-from typing_extensions import Literal
 
+from typing_extensions import Literal
 
 HOME = os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type: ignore
 

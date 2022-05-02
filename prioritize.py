@@ -2,24 +2,19 @@ import os
 from typing import List, Optional
 
 import click
-from PIL.Image import Image as PILImage
-import torch
 import numpy as np
+import torch
 from img2vec_pytorch import Img2Vec
 from kili.client import Kili
-from sklearn.pipeline import Pipeline
-from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans
 from more_itertools import chunked
-from tqdm import tqdm
-from predict import predict_one_job
 from numpy.testing import assert_almost_equal
+from PIL.Image import Image as PILImage
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
+from tqdm import tqdm
 
-
-from kiliautoml.utils.constants import (
-    InputType,
-    ModelFrameworkT,
-)
+from kiliautoml.utils.constants import InputType, ModelFrameworkT
 from kiliautoml.utils.helpers import (
     download_project_images,
     get_assets,
@@ -28,7 +23,7 @@ from kiliautoml.utils.helpers import (
     parse_label_types,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
-
+from predict import predict_one_job
 
 # Priorities
 Priorities = List[float]

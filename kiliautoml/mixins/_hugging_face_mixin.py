@@ -1,8 +1,8 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
-from abc import ABCMeta
 import os
-from typing import List
+from abc import ABCMeta
 from datetime import datetime
+from typing import List
 
 from transformers import (
     AutoModelForSequenceClassification,
@@ -14,10 +14,10 @@ from transformers import (
 )
 
 from kiliautoml.utils.constants import (
+    MLTask,
     MLTaskT,
     ModelFramework,
     ModelFrameworkT,
-    MLTask,
     ModelNameT,
     ModelRepositoryT,
 )
