@@ -17,9 +17,9 @@ from kiliautoml.utils.constants import (
     MLTaskT,
     ModelFramework,
     ModelFrameworkT,
-    ModelRepository,
     MLTask,
     ModelNameT,
+    ModelRepositoryT,
 )
 from kiliautoml.utils.helpers import get_last_trained_model_path, kili_print
 
@@ -29,7 +29,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
     Methods common to HuggingFace jobs
     """
 
-    model_repository = ModelRepository.HuggingFace
+    model_repository: ModelRepositoryT = "huggingface"
 
     @staticmethod
     def _get_tokenizer_and_model(

@@ -136,7 +136,7 @@ def main(
             and input_type == InputType.Image
             and ml_task == MLTask.Classification
         ):
-            job_path = Path.model_repository(HOME, project_id, job_name, "")
+            job_path = Path.model_repository(HOME, project_id, job_name, "huggingface")
             data_path = os.path.join(job_path, "data")
             model_path = os.path.join(job_path, "model")
 

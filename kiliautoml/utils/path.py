@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from kiliautoml.utils.constants import HOME
+from kiliautoml.utils.constants import HOME, ModelRepositoryT
 
 
 class Path:
@@ -17,7 +17,7 @@ class Path:
     # those 3 following functions create the path value.
 
     @staticmethod
-    def model_repository(root_dir, project_id, job_name, model_repository):
+    def model_repository(root_dir, project_id, job_name, model_repository: ModelRepositoryT):
         return os.path.join(root_dir, project_id, job_name, model_repository)
 
     @staticmethod
@@ -25,7 +25,7 @@ class Path:
         return os.path.join(root_dir, project_id, job_name, "dataset")
 
     @staticmethod
-    def inference(root_dir, project_id, job_name, model_repository):
+    def inference(root_dir, project_id, job_name, model_repository: ModelRepositoryT):
         return os.path.join(root_dir, project_id, job_name, model_repository, "inference")
 
     # those 3 functions use the path value for huggingface.

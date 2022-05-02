@@ -393,7 +393,7 @@ def main(
     kili_print("jobs: ", jobs)
 
     if clear_dataset_cache:
-        clear_automl_cache(project_id, command="prioritize")
+        clear_automl_cache(project_id, command="prioritize", model_repository=None)
 
     jobs_item = list(jobs.items())
     if len(jobs_item) > 1:

@@ -11,7 +11,7 @@ from kiliautoml.utils.helpers import (
     download_project_images,
     kili_print,
 )
-from kiliautoml.utils.constants import HOME, ModelFramework, ModelFrameworkT, ModelRepository
+from kiliautoml.utils.constants import HOME, ModelFramework, ModelFrameworkT
 from kiliautoml.utils.ultralytics.constants import YOLOV5_REL_PATH
 from kiliautoml.utils.path import Path
 
@@ -39,7 +39,7 @@ def ultralytics_predict_object_detection(
     with open(os.path.join(model_path, "..", "..", "kili.yaml")) as f:
         kili_data_dict = yaml.load(f, Loader=yaml.FullLoader)
 
-    inference_path = Path.inference(HOME, project_id, job_name, ModelRepository.Ultralytics)
+    inference_path = Path.inference(HOME, project_id, job_name, "ultralytics")
     model_weights = os.path.join(model_path, filename_weights)
 
     # path needs to be cleaned-up to avoid inferring unnecessary items.
