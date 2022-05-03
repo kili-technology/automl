@@ -90,11 +90,11 @@ def train_image_bounding_box(
     default="https://cloud.kili-technology.com/api/label/v2/graphql",
     help="Kili Endpoint",
 )
-@click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
+@click.option("--api-key", default=os.environ.get("KILI_API_KEY", ""), help="Kili API Key")
 @click.option("--model-framework", default=None, help="Model framework (eg. pytorch, tensorflow)")
 @click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
 @click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
-@click.option("--project-id", default=None, help="Kili project ID")
+@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--label-types",
     default=None,
@@ -134,6 +134,12 @@ def train_image_bounding_box(
     is_flag=True,
     help="Tells if the dataset cache must be cleared",
 )
+@click.option(
+    "--disable-wandb",
+    default=False,
+    is_flag=True,
+    help="Tells if wandb is disabled",
+)
 def main(
     api_endpoint: str,
     api_key: str,
@@ -146,6 +152,7 @@ def main(
     max_assets: int,
     json_args: str,
     clear_dataset_cache: bool,
+    disable_wandb: bool,
 ):
     """ """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
@@ -188,6 +195,7 @@ def main(
                 model_framework=model_framework,
                 model_name=model_name,
                 clear_dataset_cache=clear_dataset_cache,
+                training_args={"report_to": "none" if disable_wandb else "wandb"},
             )
 
         elif (
@@ -202,6 +210,7 @@ def main(
                 labeling_statuses=["LABELED"],
             )
             assets = assets[:max_assets] if max_assets is not None else assets
+
             training_loss = HuggingFaceNamedEntityRecognitionModel(
                 project_id, api_key, api_endpoint
             ).train(
@@ -211,6 +220,7 @@ def main(
                 model_framework=model_framework,
                 model_name=model_name,
                 clear_dataset_cache=clear_dataset_cache,
+                training_args={"report_to": "none" if disable_wandb else "wandb"},
             )
         elif (
             content_input == ContentInput.Radio

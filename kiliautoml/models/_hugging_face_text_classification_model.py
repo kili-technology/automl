@@ -17,7 +17,6 @@ from kiliautoml.utils.constants import (
     MLTaskT,
     ModelFramework,
     ModelFrameworkT,
-    ModelName,
     ModelNameT,
 )
 from kiliautoml.utils.helpers import (
@@ -43,9 +42,10 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_framework: Optional[ModelFrameworkT],
-        model_name: Optional[ModelNameT],
+        model_framework: Optional[ModelFrameworkT] = None,
+        model_name: Optional[ModelNameT] = None,
         clear_dataset_cache: bool = False,
+        training_args: Optional[dict] = None,
     ) -> float:
 
         import nltk
@@ -60,19 +60,20 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             "model_framework",
             [ModelFramework.PyTorch, ModelFramework.Tensorflow],
         )
-        model_name_setted: ModelNameT = set_default(  # type: ignore
+        model_name_set: ModelNameT = set_default(  # type: ignore
             model_name,
-            ModelName.BertBaseMultilingualCased,
+            "bert-base-multilingual-cased",
             "model_name",
-            [ModelName.BertBaseMultilingualCased],
+            ["bert-base-multilingual-cased", "distilbert-base-cased"],
         )
         return self._train(
             assets,
             job,
             job_name,
-            model_name_setted,
+            model_name_set,
             path,
             clear_dataset_cache,
+            training_args if training_args is not None else {},
         )
 
     def predict(
@@ -95,7 +96,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         for asset in assets:
-            text = self._get_text_from(asset)
+            text = self._get_text_from(asset["content"])
 
             predictions_asset = self._compute_asset_classification(
                 self.model_framework, tokenizer, model, text
@@ -128,6 +129,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         model_name: ModelNameT,
         path: str,
         clear_dataset_cache: bool,
+        training_args: dict,
     ) -> float:
 
         kili_print(job_name)
@@ -160,10 +162,11 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         path_model = Path.append_hf_model_folder(path, self.model_framework)
 
-        training_args = self._get_training_args(path_model, model_name)
+        training_arguments = self._get_training_args(path_model, model_name, **training_args)
+
         trainer = Trainer(
             model=model,
-            args=training_args,
+            args=training_arguments,
             train_dataset=train_dataset,  # type: ignore
             tokenizer=tokenizer,
         )
@@ -182,7 +185,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                     handler.write(
                         json.dumps(
                             {
-                                "text": self._get_text_from(asset),
+                                "text": self._get_text_from(asset["content"]),
                                 "label": job_categories.index(label_category),
                             }
                         )
