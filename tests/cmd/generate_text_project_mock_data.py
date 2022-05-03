@@ -24,7 +24,7 @@ if __name__ == "__main__":
     with open("tests/e2e/fixtures/text_assets_fixture.json", "w") as f:
         json.dump(assets, f)
 
-    project = kili.projects(project_id="cl1e4umogdgon0ly4737z82lc")[0]  # type:ignore
+    project = kili.projects(project_id=project_id)[0]  # type:ignore
 
     del project["roles"]
     with open("tests/e2e/fixtures/text_project_fixture.json", "w") as f:
@@ -39,7 +39,7 @@ if __name__ == "__main__":
                 "Authorization": f"X-API-Key: {api_key}",
             },
         )
-
+        assert response.status_code == 200
         text = response.text
         c[a["content"]] = text
 
