@@ -18,6 +18,6 @@ class KiliTextProjectMixin(metaclass=ABCMeta):
                 "Authorization": f"X-API-Key: {self.api_key}",
             },
         )
-
+        assert response.status_code == 200
         text = response.text
         return text
