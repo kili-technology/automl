@@ -153,15 +153,12 @@ def main(
                 kili_print("Dataset cache for this project is being cleared.")
                 shutil.rmtree(job_path)
 
-            os.makedirs(job_path, exist_ok=True)
-            os.makedirs(data_path, exist_ok=True)
-            os.makedirs(model_path, exist_ok=True)
-
             kili_print("Downloading datasets from Kili")
             assets = get_assets(kili, project_id, parse_label_types(label_types), max_assets)
             if len(assets) == 0:
                 raise Exception("No asset in dataset, exiting...")
 
+            os.makedirs(data_path, exist_ok=True)
             download_assets(assets, api_key, data_path, job_name)
 
             model_name = set_default(
@@ -171,6 +168,7 @@ def main(
                 [ModelName.EfficientNetB0, ModelName.Resnet50],
             )
 
+            os.makedirs(model_path, exist_ok=True)
             found_errors = train_and_get_error_labels(
                 cv_n_folds=cv_folds,
                 data_dir=data_path,
@@ -184,6 +182,7 @@ def main(
             kili_print("Number of wrong labels found: ", len(found_errors))
 
             if found_errors:
+                os.makedirs(job_path, exist_ok=True)
                 save_errors(found_errors, job_path)
                 if not dry_run:
                     upload_errors_to_kili(found_errors, kili)
