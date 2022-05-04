@@ -22,7 +22,7 @@ from kiliautoml.utils.helpers import (
 from kiliautoml.utils.path import Path
 
 
-def download_assets(assets, api_key, data_path, job_name):
+def download_assets(project_id, assets, api_key, data_path, job_name):
     """
     Download assets that are stored in Kili and save them to folders depending on their
     label category
@@ -36,6 +36,7 @@ def download_assets(assets, api_key, data_path, job_name):
                     asset["content"],
                     headers={
                         "Authorization": f"X-API-Key: {api_key}",
+                        "PROJECT_ID": project_id,
                     },
                 ).content
                 break
@@ -162,7 +163,7 @@ def main(
             if len(assets) == 0:
                 raise Exception("No asset in dataset, exiting...")
 
-            download_assets(assets, api_key, data_path, job_name)
+            download_assets(project_id, assets, api_key, data_path, job_name)
 
             model_name = set_default(
                 model_name,

@@ -87,6 +87,7 @@ download: |
               try:
                   img_data = requests.get(asset['content'], headers={
                     'Authorization': 'X-API-Key: {{ kili_api_key }}',
+                    'PROJECT_ID': self.project_id,
                   }).content
                   break
               except Exception:

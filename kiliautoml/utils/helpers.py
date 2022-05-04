@@ -226,11 +226,12 @@ class DownloadedImages:
 
 
 @kili_memoizer
-def download_image(api_key, asset_content):
+def download_image(project_id, api_key, asset_content):
     img_data = requests.get(
         asset_content,
         headers={
             "Authorization": f"X-API-Key: {api_key}",
+            "PROJECT_ID": project_id,
         },
     ).content
 
@@ -239,6 +240,7 @@ def download_image(api_key, asset_content):
 
 
 def download_project_images(
+    project_id,
     api_key,
     assets,
     inference_path: Optional[str] = None,
@@ -246,7 +248,7 @@ def download_project_images(
     kili_print("Downloading project images...")
     downloaded_images = []
     for asset in tqdm(assets):
-        image = download_image(api_key, asset["content"])
+        image = download_image(project_id, api_key, asset["content"])
         format = str(image.format or "")
 
         filename = ""
