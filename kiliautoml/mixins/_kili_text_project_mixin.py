@@ -16,6 +16,7 @@ class KiliTextProjectMixin(metaclass=ABCMeta):
             asset_url,  # type:ignore
             headers={
                 "Authorization": f"X-API-Key: {self.api_key}",
+                "PROJECT_ID": self.project_id,
             },
         )
         assert response.status_code == 200

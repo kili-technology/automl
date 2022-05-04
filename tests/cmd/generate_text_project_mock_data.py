@@ -37,6 +37,7 @@ if __name__ == "__main__":
             a["content"],  # type:ignore
             headers={
                 "Authorization": f"X-API-Key: {api_key}",
+                "PROJECT_ID": project_id,
             },
         )
         assert response.status_code == 200
