@@ -31,3 +31,7 @@ The KILI_API_KEY is your api key from a KILI account.
 Warning: do not commit your api key.
 This configuration should also allow you to run the tests with vscode Tests Explorer.
 To run some tests, you should contact a team member to allow you access to the test-project.
+
+
+To run pylint:
+pylint kiliautoml  --rcfile pyproject.toml --output-format=colorized
