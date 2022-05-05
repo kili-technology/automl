@@ -35,3 +35,6 @@ To run some tests, you should contact a team member to allow you access to the t
 
 To run pylint:
 pylint kiliautoml  --rcfile pyproject.toml --output-format=colorized
+
+To run one end-to-end test:
+PYTHONPATH=$(pwd) pytest -s tests/e2e/test_from_project.py
