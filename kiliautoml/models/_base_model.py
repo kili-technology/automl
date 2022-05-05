@@ -26,6 +26,7 @@ class BaseModel(metaclass=ABCMeta):
         self,
         assets: List[Dict],
         model_path: Optional[str],
+        from_project: Optional[str],
         job_name: str,
         verbose: int = 0,
     ) -> JobPredictions:

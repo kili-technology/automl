@@ -80,12 +80,13 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         self,
         assets: List[Dict],
         model_path: Optional[str],
+        from_project: Optional[str],
         job_name: str,
         verbose: int = 0,
     ) -> JobPredictions:
 
         model_path_res, _, self.model_framework = self._extract_model_info(
-            job_name, self.project_id, model_path
+            job_name, self.project_id, model_path, from_project
         )
 
         predictions = []
