@@ -7,6 +7,7 @@ import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.optim as optim
+import torch.utils.data as torch_Data
 from cleanlab.filter import find_label_issues
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from torch.optim import lr_scheduler
@@ -16,27 +17,33 @@ from kiliautoml.utils.constants import ModelName
 
 
 def train_model(
+    *,
     model,
-    criterion,
     optimizer,
-    scheduler,
     dataloaders,
-    device,
-    dataset_sizes,
     verbose=0,
-    num_epochs=10,
+    epochs=10,
 ):
     """
     Method that trains the given model and return the best one found in the given epochs
     """
     since = time.time()
 
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    criterion = nn.CrossEntropyLoss()
+    model = model.to(device)  # type:ignore
+    dataset_sizes = {x: len(dataloaders[x]) for x in ["train", "val"]}
+
+    # Decay LR by a factor of 0.1 every 7 epochs
+    scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
 
-    for epoch in range(num_epochs):
+    for epoch in range(epochs):
         if verbose >= 2:
-            print(f"Epoch {epoch + 1}/{num_epochs}")
+            print(f"Epoch {epoch + 1}/{epochs}")
             print("-" * 10)
 
         # Each epoch has a training and validation phase
@@ -49,27 +56,22 @@ def train_model(
             running_loss = 0.0
             running_corrects = 0
 
-            # Iterate over data.
             for inputs, labels in dataloaders[phase]:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
 
-                # zero the parameter gradients
                 optimizer.zero_grad()
 
-                # forward
                 # track history if only in train
                 with torch.set_grad_enabled(phase == "train"):
                     outputs = model(inputs)
                     _, preds = torch.max(outputs, 1)
                     loss = criterion(outputs, labels)
 
-                    # backward + optimize only if in training phase
                     if phase == "train":
                         loss.backward()
                         optimizer.step()
 
-                # statistics
                 running_loss += loss.item() * inputs.size(0)
                 running_corrects += torch.sum(preds == labels.data)
             if phase == "train":
@@ -162,7 +164,7 @@ def combine_folds(data_dir, model_dir, verbose=0, num_classes=10, nb_folds=4, se
 
 
 def train_and_get_error_labels(
-    cv_n_folds,
+    cv_n_folds: int,
     data_dir,
     epochs,
     model_dir,
@@ -201,7 +203,6 @@ def train_and_get_error_labels(
         x: datasets.ImageFolder(data_dir, data_transforms[x]) for x in ["train", "val"]
     }
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     class_names = original_image_datasets["train"].classes
     labels = [label for img, label in datasets.ImageFolder(data_dir).imgs]
     for cv_fold in range(cv_n_folds):
@@ -228,53 +229,40 @@ def train_and_get_error_labels(
             print()
 
         dataloaders = {
-            x: torch.utils.data.DataLoader(  # type:ignore
-                image_datasets[x], batch_size=64, shuffle=True, num_workers=4
-            )
+            x: torch_Data.DataLoader(image_datasets[x], batch_size=64, shuffle=True, num_workers=4)
             for x in ["train", "val"]
         }
-        dataset_sizes = {x: len(image_datasets[x]) for x in ["train", "val"]}
 
         if model_name == ModelName.EfficientNetB0:
-            model_ft = models.efficientnet_b0(pretrained=True)
-            num_ftrs = model_ft.classifier[1].in_features
-            model_ft.classifier[1] = nn.Linear(num_ftrs, len(class_names))  # type:ignore
+            model = models.efficientnet_b0(pretrained=True)
+            num_ftrs = model.classifier[1].in_features
+            model.classifier[1] = nn.Linear(num_ftrs, len(class_names))  # type:ignore
         elif model_name == ModelName.Resnet50:
-            model_ft = models.resnet50(pretrained=True)
-            num_ftrs = model_ft.fc.in_features
-            model_ft.fc = nn.Linear(num_ftrs, len(class_names))
+            model = models.resnet50(pretrained=True)
+            num_ftrs = model.fc.in_features
+            model.fc = nn.Linear(num_ftrs, len(class_names))
+        else:
+            raise ValueError(f"Model {model_name} not supported.")
 
-        model_ft = model_ft.to(device)  # type:ignore
+        optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
-        criterion = nn.CrossEntropyLoss()
-
-        optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
-
-        # Decay LR by a factor of 0.1 every 7 epochs
-        exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
-
-        model_ft = train_model(
-            model_ft,
-            criterion,
-            optimizer_ft,
-            exp_lr_scheduler,
-            dataloaders,
-            device,
-            dataset_sizes,
+        model = train_model(
+            model=model,
+            optimizer=optimizer,
+            dataloaders=dataloaders,
             verbose=verbose,
-            num_epochs=epochs,
+            epochs=epochs,
         )
         # torch.save(model_ft.state_dict(), os.path.join(model_dir, f'model_{cv_fold}.pt'))
 
-        holdout_loader = torch.utils.data.DataLoader(  # type:ignore
+        holdout_loader = torch_Data.DataLoader(
             holdout_dataset,
             batch_size=64,
             shuffle=False,
-            num_workers=4,
             pin_memory=True,
         )
 
-        probs = get_probs(holdout_loader, model_ft, verbose=verbose)
+        probs = get_probs(holdout_loader, model, verbose=verbose)
         probs_path = os.path.join(model_dir, "model_fold_{}__probs.npy".format(cv_fold))
         np.save(probs_path, probs)
 
