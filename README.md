@@ -66,6 +66,14 @@ Use trained models to push pre-annotations onto unlabeled assets. Typically spee
 
 ![Predict a model](./images/predict.png)
 
+You can also use a model coming from another project, if they have the same ontology:
+```bash
+python predict.py \
+    --api-key $KILI_API_KEY \
+    --project-id $KILI_PROJECT_ID \
+    --from-project $ANOTHER_KILI_PROJECT_ID
+```
+
 ### Prioritize labeling on Kili
 
 Where is the model confident or confused today?
