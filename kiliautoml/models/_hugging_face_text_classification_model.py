@@ -26,7 +26,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
     set_default,
 )
-from kiliautoml.utils.path import Path
+from kiliautoml.utils.path import ModelRepositoryPathT, Path, PathHF
 
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
@@ -45,14 +45,19 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         model_framework: Optional[ModelFrameworkT] = None,
         model_name: Optional[ModelNameT] = None,
         clear_dataset_cache: bool = False,
-        training_args: Optional[dict] = None,
+        training_args: dict = {},
+        disable_wandb: bool = False,
     ) -> float:
 
         import nltk
 
         nltk.download("punkt")
 
-        path = Path.model_repository(HOME, self.project_id, job_name, self.model_repository)
+        training_args["report_to"] = "none" if disable_wandb else "wandb"
+
+        model_repository_path = Path.model_repository(
+            HOME, self.project_id, job_name, self.model_repository
+        )
 
         self.model_framework = set_default(  # type: ignore
             model_framework,
@@ -71,9 +76,10 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             job,
             job_name,
             model_name_set,
-            path,
+            model_repository_path,
             clear_dataset_cache,
-            training_args if training_args is not None else {},
+            training_args,
+            disable_wandb,
         )
 
     def predict(
@@ -128,13 +134,15 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         job: Dict,
         job_name: str,
         model_name: ModelNameT,
-        path: str,
+        model_repository_path: ModelRepositoryPathT,
         clear_dataset_cache: bool,
         training_args: dict,
+        disable_wandb: bool,
     ) -> float:
+        training_args = training_args or {}
 
         kili_print(job_name)
-        path_dataset = os.path.join(path, "dataset", "data.json")
+        path_dataset = os.path.join(PathHF.dataset(model_repository_path), "data.json")
         kili_print(f"Downloading data to {path_dataset}")
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
@@ -161,9 +169,11 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)  # type: ignore
         train_dataset = tokenized_datasets["train"]  # type: ignore
 
-        path_model = Path.append_hf_model_folder(path, self.model_framework)
+        path_model = PathHF.append_model_folder(model_repository_path, self.model_framework)
 
-        training_arguments = self._get_training_args(path_model, model_name, **training_args)
+        training_arguments = self._get_training_args(
+            path_model, model_name, disable_wandb=disable_wandb, **training_args
+        )
 
         trainer = Trainer(
             model=model,

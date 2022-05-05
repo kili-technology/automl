@@ -9,7 +9,7 @@ import torch
 from termcolor import colored
 from tqdm import tqdm
 
-from kiliautoml.utils.constants import HOME
+from kiliautoml.utils.constants import HOME, InputTypeT
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.type import label_typeT, labeling_statusT, status_inT
 
@@ -156,7 +156,7 @@ def get_assets(
     return assets
 
 
-def get_project(kili, project_id: str) -> Tuple[str, Dict, str]:
+def get_project(kili, project_id: str) -> Tuple[InputTypeT, Dict, str]:
     projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface", "title"])
     if len(projects) == 0:
         raise ValueError(
@@ -213,7 +213,8 @@ def get_last_trained_model_path(
     return model_path
 
 
-def save_errors(found_errors, job_path):
+# TODO: This function is not used anywhere
+def save_errors(found_errors, job_path: str):
     found_errors_dict = {"assetIds": found_errors}
     found_errors_json = json.dumps(found_errors_dict, sort_keys=True, indent=4)
     if found_errors_json is not None:

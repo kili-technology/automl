@@ -1,4 +1,5 @@
 from abc import ABCMeta
+from typing import Dict
 
 from kili.client import Kili
 

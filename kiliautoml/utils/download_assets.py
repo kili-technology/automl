@@ -65,7 +65,7 @@ def download_image_retry(api_key, asset, n_try):
 
 
 def download_project_images(
-    api_key,
+    api_key: str,
     assets,
     output_folder: Optional[str] = None,
 ) -> List[DownloadedImages]:
@@ -91,3 +91,17 @@ def download_project_images(
             )
         )
     return downloaded_images
+
+
+def download_project_image_clean_lab(assets, api_key, data_path, job_name):
+    """
+    Download assets that are stored in Kili and save them to folders depending on their
+    label category
+    """
+    for asset in tqdm(assets):
+        img_data = download_asset_binary(api_key, asset["content"])
+        imag_name = asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]
+        img_path = os.path.join(data_path, imag_name)
+        os.makedirs(img_path, exist_ok=True)
+        with open(os.path.join(img_path, asset["id"] + ".jpg"), "wb") as handler:
+            handler.write(img_data)  # type: ignore

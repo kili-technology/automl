@@ -50,6 +50,7 @@ def train_image_bounding_box(
     label_types,
     clear_dataset_cache,
     title,
+    disable_wandb,
 ):
     from kiliautoml.utils.ultralytics.train import ultralytics_train_yolov5
 
@@ -59,7 +60,9 @@ def train_image_bounding_box(
         "model_repository",
         [ModelRepository.Ultralytics],
     )
-    path = Path.model_repository(HOME, project_id, job_name, model_repository_initialized)
+    path_repository = Path.model_repository(
+        HOME, project_id, job_name, model_repository_initialized
+    )
     if model_repository_initialized == ModelRepository.Ultralytics:
         model_framework = set_default(
             model_framework,
@@ -70,7 +73,7 @@ def train_image_bounding_box(
         model_name = set_default(model_name, ModelName.YoloV5, "model_name", [ModelName.YoloV5])
         return ultralytics_train_yolov5(
             api_key=api_key,
-            path=path,
+            model_repository_path=path_repository,
             job=job,
             max_assets=max_assets,
             json_args=args_dict,
@@ -79,6 +82,7 @@ def train_image_bounding_box(
             label_types=label_types,
             clear_dataset_cache=clear_dataset_cache,
             title=title,
+            disable_wandb=disable_wandb,
         )
     else:
         raise NotImplementedError
@@ -140,6 +144,7 @@ def train_image_bounding_box(
     is_flag=True,
     help="Tells if wandb is disabled",
 )
+@click.option("--verbose", default=0, type=int, help="Verbose level")
 def main(
     api_endpoint: str,
     api_key: str,
@@ -153,6 +158,7 @@ def main(
     json_args: str,
     clear_dataset_cache: bool,
     disable_wandb: bool,
+    verbose: int,
 ):
     """ """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
@@ -167,7 +173,11 @@ def main(
 
         if clear_dataset_cache:
             clear_automl_cache(
-                project_id, command="train", job_name=job_name, model_repository=model_repository
+                command="train",
+                project_id=project_id,
+                job_name=job_name,
+                model_framework=model_framework,
+                model_repository=model_repository,
             )
         content_input = job.get("content", {}).get("input")
         ml_task = job.get("mlTask")
@@ -195,7 +205,7 @@ def main(
                 model_framework=model_framework,
                 model_name=model_name,
                 clear_dataset_cache=clear_dataset_cache,
-                training_args={"report_to": "none" if disable_wandb else "wandb"},
+                disable_wandb=disable_wandb,
             )
 
         elif (
@@ -220,7 +230,7 @@ def main(
                 model_framework=model_framework,
                 model_name=model_name,
                 clear_dataset_cache=clear_dataset_cache,
-                training_args={"report_to": "none" if disable_wandb else "wandb"},
+                disable_wandb=disable_wandb,
             )
         elif (
             content_input == ContentInput.Radio
@@ -242,6 +252,7 @@ def main(
                 label_types=parse_label_types(label_types),
                 clear_dataset_cache=clear_dataset_cache,
                 title=title,
+                disable_wandb=disable_wandb,
             )
         else:
             kili_print("not implemented yet")

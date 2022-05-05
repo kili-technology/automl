@@ -9,7 +9,7 @@ from typing_extensions import TypedDict
 from kiliautoml.utils.constants import HOME, ModelFramework, ModelFrameworkT
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import JobPredictions, kili_print
-from kiliautoml.utils.path import Path
+from kiliautoml.utils.path import PathUltralytics
 from kiliautoml.utils.ultralytics.constants import YOLOV5_REL_PATH
 
 
@@ -36,7 +36,7 @@ def ultralytics_predict_object_detection(
     with open(os.path.join(model_path, "..", "..", "kili.yaml")) as f:
         kili_data_dict = yaml.load(f, Loader=yaml.FullLoader)
 
-    inference_path = Path.inference(HOME, project_id, job_name, "ultralytics")
+    inference_path = PathUltralytics.inference(HOME, project_id, job_name, "ultralytics")
     model_weights = os.path.join(model_path, filename_weights)
 
     # path needs to be cleaned-up to avoid inferring unnecessary items.

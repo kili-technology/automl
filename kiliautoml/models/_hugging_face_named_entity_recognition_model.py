@@ -23,7 +23,7 @@ from kiliautoml.utils.constants import (
     ModelNameT,
 )
 from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print, set_default
-from kiliautoml.utils.path import Path
+from kiliautoml.utils.path import ModelRepositoryPathT, Path, PathHF
 
 
 class KiliNerAnnotations(TypedDict):
@@ -50,6 +50,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         model_name: Optional[ModelNameT] = None,
         clear_dataset_cache: bool = False,
         training_args: dict = {},
+        disable_wandb: bool = False,
     ):
         nltk.download("punkt")
 
@@ -71,7 +72,14 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             ],
         )
         return self._train(
-            assets, job, job_name, model_name_setted, path, clear_dataset_cache, training_args
+            assets,
+            job,
+            job_name,
+            model_name_setted,
+            path,
+            clear_dataset_cache,
+            training_args,
+            disable_wandb,
         )
 
     def predict(
@@ -142,9 +150,10 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         job: Dict,
         job_name: str,
         model_name: ModelNameT,
-        path: str,
+        model_repository_path: ModelRepositoryPathT,
         clear_dataset_cache: bool,
         training_args: Dict,
+        disable_wandb: bool,
     ) -> float:
         """
         Sources:
@@ -154,7 +163,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         """
         kili_print(f"Job Name: {job_name}")
         kili_print(f"Base model: {model_name}")
-        path_dataset = os.path.join(path, "dataset", "data.json")
+        path_dataset = os.path.join(PathHF.dataset(model_repository_path), "data.json")
 
         label_list = self._kili_assets_to_hf_ner_dataset(
             job, job_name, path_dataset, assets, clear_dataset_cache
@@ -209,9 +218,11 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
         train_dataset = tokenized_datasets["train"]  # type:  ignore
-        path_model = Path.append_hf_model_folder(path, self.model_framework)
+        path_model = PathHF.append_model_folder(model_repository_path, self.model_framework)
 
-        training_arguments = self._get_training_args(path_model, model_name, **training_args)
+        training_arguments = self._get_training_args(
+            path_model, model_name, disable_wandb=disable_wandb, **training_args
+        )
         data_collator = DataCollatorForTokenClassification(tokenizer)
         trainer = Trainer(
             model=model,

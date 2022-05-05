@@ -22,6 +22,7 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
 )
 from kiliautoml.utils.helpers import get_last_trained_model_path, kili_print
+from kiliautoml.utils.path import PathHF
 
 
 class HuggingFaceMixin(metaclass=ABCMeta):
@@ -110,15 +111,15 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         return model_path_res, cls.model_repository, model_framework
 
     @staticmethod
-    def _get_training_args(path_model, model_name, **kwargs):
+    def _get_training_args(path_model, model_name, disable_wandb: bool, **kwargs):
         date = datetime.now().strftime("%Y-%m-%d_%H:%M")
         default_args = {
-            "report_to": "wandb",  # type:ignore
+            "report_to": "wandb" if not disable_wandb else "none",
             "run_name": model_name + "_" + date,
         }
         default_args.update(kwargs)
         training_args = TrainingArguments(
-            os.path.join(path_model, "training_args"),  # type:ignore
+            PathHF.append_training_args_folder(path_model),
             **default_args,
         )
         return training_args

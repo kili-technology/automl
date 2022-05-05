@@ -1,6 +1,7 @@
 import copy
 import os
 import time
+from typing import Any, List
 
 import numpy as np
 import torch
@@ -13,13 +14,15 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 from torch.optim import lr_scheduler
 from torchvision import datasets, models, transforms
 
-from kiliautoml.utils.constants import ModelName
+from kiliautoml.utils.constants import HOME, ModelName, ModelNameT, ModelRepositoryT
+from kiliautoml.utils.download_assets import download_project_image_clean_lab
+from kiliautoml.utils.helpers import set_default
+from kiliautoml.utils.path import Path, PathPytorchVision
 
 
-def train_model(
+def train_model_pytorch(
     *,
     model,
-    optimizer,
     dataloaders,
     verbose=0,
     epochs=10,
@@ -32,6 +35,8 @@ def train_model(
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
     model = model.to(device)  # type:ignore
     dataset_sizes = {x: len(dataloaders[x]) for x in ["train", "val"]}
 
@@ -147,7 +152,7 @@ def combine_folds(data_dir, model_dir, verbose=0, num_classes=10, nb_folds=4, se
     # Split train into train and holdout for each cv_fold.
     kf = StratifiedKFold(n_splits=nb_folds, shuffle=True, random_state=seed)
     for k, (_, cv_holdout_idx) in enumerate(kf.split(range(len(labels)), labels)):
-        probs_path = os.path.join(model_dir, "model_fold_{}__probs.npy".format(k))
+        probs_path = os.path.join(model_dir, f"model_fold_{k}__probs.npy")
         probs = np.load(probs_path)
         pyx[cv_holdout_idx] = probs[:, :num_classes]
     if verbose >= 2:
@@ -163,19 +168,44 @@ def combine_folds(data_dir, model_dir, verbose=0, num_classes=10, nb_folds=4, se
     return destination
 
 
-def train_and_get_error_labels(
+def train_and_get_error_image_classification(
     cv_n_folds: int,
-    data_dir,
-    epochs,
-    model_dir,
-    model_name,
-    verbose=0,
-    cv_seed=42,
+    epochs: int,
+    assets: List[Any],
+    model_repository: ModelRepositoryT,
+    model_name: ModelNameT,
+    job_name: str,
+    project_id: str,
+    api_key: str,
+    verbose: int = 0,
+    cv_seed: int = 42,
 ):
     """
     Main method that trains the model on the assets that are in data_dir, computes the
     incorrect labels using Cleanlab and returns the IDs of the concerned assets.
     """
+    model_repository = set_default(
+        model_repository,
+        "torchvision",
+        "model_repository",
+        ["torchvision"],
+    )
+
+    model_name = set_default(  # type:ignore
+        model_name,
+        ModelName.EfficientNetB0,
+        "model_name",
+        [ModelName.EfficientNetB0, ModelName.Resnet50],
+    )
+
+    model_repository_path = Path.model_repository(HOME, project_id, job_name, model_repository)
+
+    # TODO: move to Path
+    model_dir = PathPytorchVision.append_model_folder(model_repository_path)
+    data_dir = os.path.join(model_repository_path, "data")
+
+    download_project_image_clean_lab(assets, api_key, data_dir, job_name)
+
     # To set to False if the input size varies a lot and you see that the training takes
     # too much time
     cudnn.benchmark = True
@@ -244,11 +274,8 @@ def train_and_get_error_labels(
         else:
             raise ValueError(f"Model {model_name} not supported.")
 
-        optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
-        model = train_model(
+        model = train_model_pytorch(
             model=model,
-            optimizer=optimizer,
             dataloaders=dataloaders,
             verbose=verbose,
             epochs=epochs,

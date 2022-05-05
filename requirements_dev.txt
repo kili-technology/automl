@@ -3,3 +3,6 @@ pre-commit
 pytest
 pytest-dotenv
 pytest-mock
+mypy
+types-termcolor
+types-requests
