@@ -83,5 +83,7 @@ def test_hugging_face_text_classification(mocker):
         ],
     )
     assert result.exception is None
-    assert result.output.count("OPTIMISM") == 10
+    words = ["OPTIMISM", "ENTHUSIASM", "CONCERN", "ANGER", "FEAR", "UNCERTAIN"]
+    assert sum(result.output.count(c) for c in words) == 10
+
     mock_create_predictions.assert_not_called()
