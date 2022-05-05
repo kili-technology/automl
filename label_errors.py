@@ -4,12 +4,12 @@ import time
 from typing import List
 
 import click
-import requests
 from kili.client import Kili
 from tqdm.auto import tqdm
 
 from kiliautoml.utils.cleanlab.train_cleanlab import train_and_get_error_labels
 from kiliautoml.utils.constants import HOME, ContentInput, InputType, MLTask, ModelName
+from kiliautoml.utils.download_assets import download_asset_binary
 from kiliautoml.utils.helpers import (
     get_assets,
     get_project,
@@ -29,20 +29,7 @@ def download_assets(project_id, assets, api_key, data_path, job_name):
     """
     for asset in tqdm(assets):
         tic = time.time()
-        n_try = 0
-        while n_try < 20:
-            try:
-                img_data = requests.get(
-                    asset["content"],
-                    headers={
-                        "Authorization": f"X-API-Key: {api_key}",
-                        "PROJECT_ID": project_id,
-                    },
-                ).content
-                break
-            except Exception:
-                time.sleep(1)
-                n_try += 1
+        img_data = download_asset_binary(api_key, asset["content"])
         img_path = os.path.join(
             data_path, asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]
         )
@@ -115,7 +102,7 @@ def main(
     api_key: str,
     clear_dataset_cache: bool,
     cv_folds: int,
-    target_jobs: List[str],
+    target_job: List[str],
     dry_run: bool,
     epochs: int,
     label_types: str,
@@ -136,7 +123,7 @@ def main(
     input_type, jobs, _ = get_project(kili, project_id)
 
     for job_name, job in jobs.items():
-        if target_jobs and job_name not in target_jobs:
+        if target_job and job_name not in target_job:
             continue
         kili_print(f"Detecting errors for job: {job_name}")
         content_input = job.get("content", {}).get("input")
@@ -154,10 +141,7 @@ def main(
                 kili_print("Dataset cache for this project is being cleared.")
                 shutil.rmtree(job_path)
 
-            kili_print("Downloading datasets from Kili")
             assets = get_assets(kili, project_id, parse_label_types(label_types), max_assets)
-            if len(assets) == 0:
-                raise Exception("No asset in dataset, exiting...")
 
             os.makedirs(data_path, exist_ok=True)
             download_assets(project_id, assets, api_key, data_path, job_name)

@@ -15,8 +15,8 @@ from sklearn.pipeline import Pipeline
 from tqdm import tqdm
 
 from kiliautoml.utils.constants import InputType, ModelFrameworkT
+from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
-    download_project_images,
     get_assets,
     get_project,
     kili_print,

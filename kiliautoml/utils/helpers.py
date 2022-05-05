@@ -1,21 +1,16 @@
 import json
 import os
 import random
-from dataclasses import dataclass
 from glob import glob
-from io import BytesIO
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
-import requests
 import torch
-from PIL import Image
-from PIL.Image import Image as PILImage
 from termcolor import colored
 from tqdm import tqdm
 
 from kiliautoml.utils.constants import HOME
-from kiliautoml.utils.memoization import kili_memoizer, kili_project_memoizer
+from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.type import label_typeT, labeling_statusT, status_inT
 
 
@@ -137,6 +132,7 @@ def get_assets(
     max_assets: Optional[int] = None,
     labeling_statuses: List[labeling_statusT] = ["LABELED", "UNLABELED"],
 ) -> List[Dict]:
+    kili_print("Downloading datasets metadata from Kili")
     if not labeling_statuses:
         raise ValueError("labeling_statuses must be a non-empty list.")
 
@@ -215,58 +211,6 @@ def get_last_trained_model_path(
         if model_path is None:
             raise Exception(f"No trained model found for job {job_name}. Exiting ...")
     return model_path
-
-
-@dataclass
-class DownloadedImages:
-    id: str
-    externalId: str
-    filename: str
-    image: PILImage
-
-
-@kili_memoizer
-def download_image(project_id, api_key, asset_content):
-    img_data = requests.get(
-        asset_content,
-        headers={
-            "Authorization": f"X-API-Key: {api_key}",
-            "PROJECT_ID": project_id,
-        },
-    ).content
-
-    image = Image.open(BytesIO(img_data))
-    return image
-
-
-def download_project_images(
-    project_id,
-    api_key,
-    assets,
-    inference_path: Optional[str] = None,
-) -> List[DownloadedImages]:
-    kili_print("Downloading project images...")
-    downloaded_images = []
-    for asset in tqdm(assets):
-        image = download_image(project_id, api_key, asset["content"])
-        format = str(image.format or "")
-
-        filename = ""
-        if inference_path:
-            filename = os.path.join(inference_path, asset["id"] + "." + format.lower())
-
-            with open(filename, "w") as fp:
-                image.save(fp, format)  # type: ignore
-
-        downloaded_images.append(
-            DownloadedImages(
-                id=asset["id"],
-                externalId=asset["externalId"],
-                filename=filename or "",
-                image=image,
-            )
-        )
-    return downloaded_images
 
 
 def save_errors(found_errors, job_path):
