@@ -2,7 +2,7 @@
 import os
 from abc import ABCMeta
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from transformers import (
     AutoModelForSequenceClassification,
@@ -81,7 +81,16 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         return tokenizer, model
 
     @classmethod
-    def _extract_model_info(cls, job_name, project_id, model_path):
+    def _extract_model_info(cls, job_name, project_id, model_path, from_project: Optional[str]):
+        if from_project is not None:
+            if model_path is None:
+                project_id = from_project
+            else:
+                kili_print(
+                    "You have specified both a model path and a project id. "
+                    "The model path will be used."
+                )
+
         model_path_res = get_last_trained_model_path(
             job_name=job_name,
             project_id=project_id,

@@ -6,3 +6,4 @@ kiliautoml/utils/ultralytics/yolov5/data/kili_wandb.yaml
 kiliautoml/utils/ultralytics/yolov5/artifacts
 .envs
 wandb/**
+.mypy_cache/**

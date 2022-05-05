@@ -356,6 +356,17 @@ def embedding_text(
     is_flag=True,
     help="Tells if the dataset cache must be cleared",
 )
+@click.option(
+    "--from-project",
+    default=None,
+    type=str,
+    help=(
+        "Use a model trained of a different project to predict on project_id."
+        "This is usefull if you do not want to pollute the original project with "
+        "experimental predictions."
+        "This argument is ignored if --from-model is used."
+    ),
+)
 def main(
     api_endpoint: str,
     api_key: str,
@@ -368,6 +379,7 @@ def main(
     from_model: ModelFrameworkT,
     verbose: bool,
     clear_dataset_cache: bool,
+    from_project: Optional[str],
 ):
     """
     Prioritize assets in a Kili project.
@@ -421,6 +433,7 @@ def main(
         ml_task=ml_task,
         tools=tools,
         prioritization=True,
+        from_project=from_project,
     )
 
     if input_type == InputType.Image:

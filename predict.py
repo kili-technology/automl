@@ -35,13 +35,14 @@ def predict_object_detection(
     model_path: Optional[str],
     verbose: int,
     prioritization: bool,
+    from_project: Optional[str],
 ) -> JobPredictions:
-    from kiliautoml.utils.ultralytics.predict import (
+    from kiliautoml.utils.ultralytics.predict_ultralytics import (
         ultralytics_predict_object_detection,
     )
 
     model_path_res = get_last_trained_model_path(
-        project_id=project_id,
+        project_id=project_id if from_project is None else from_project,
         job_name=job_name,
         project_path_wildcard=[
             "*",  # ultralytics or huggingface
@@ -89,6 +90,7 @@ def predict_one_job(
     api_endpoint,
     project_id,
     from_model,
+    from_project: Optional[str],
     verbose,
     input_type,
     assets,
@@ -108,7 +110,8 @@ def predict_one_job(
         ).predict(
             assets=assets,
             job_name=job_name,
-            model_path=from_model,
+            model_path=from_model,  # TODO: rename from_model to model_path
+            from_project=from_project,
             verbose=verbose,
         )
 
@@ -119,7 +122,13 @@ def predict_one_job(
     ):
         job_predictions = HuggingFaceNamedEntityRecognitionModel(
             project_id, api_key, api_endpoint
-        ).predict(assets=assets, job_name=job_name, model_path=from_model, verbose=verbose)
+        ).predict(
+            assets=assets,
+            job_name=job_name,
+            model_path=from_model,
+            verbose=verbose,
+            from_project=from_project,
+        )
 
     elif (
         content_input == ContentInput.Radio
@@ -128,7 +137,14 @@ def predict_one_job(
         and Tool.Rectangle in tools
     ):
         job_predictions = predict_object_detection(
-            api_key, assets, job_name, project_id, from_model, verbose, prioritization
+            api_key,
+            assets,
+            job_name,
+            project_id,
+            from_model,
+            verbose,
+            prioritization,
+            from_project=from_project,
         )
 
     else:
@@ -184,6 +200,17 @@ def predict_one_job(
     type=int,
     help="Maximum number of assets to consider",
 )
+@click.option(
+    "--from-project",
+    default=None,
+    type=str,
+    help=(
+        "Use a model trained of a different project to predict on project_id."
+        "This is usefull if you do not want to pollute the original project with "
+        "experimental predictions."
+        "This argument is ignored if --from-model is used."
+    ),
+)
 def main(
     api_endpoint: str,
     api_key: str,
@@ -194,6 +221,7 @@ def main(
     from_model: Optional[ModelFrameworkT],
     verbose: bool,
     max_assets: Optional[int],
+    from_project: Optional[str],
 ):
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
@@ -218,6 +246,7 @@ def main(
             assets=assets,
             job_name=job_name,
             content_input=content_input,
+            from_project=from_project,
             ml_task=ml_task,
             tools=tools,
             prioritization=False,

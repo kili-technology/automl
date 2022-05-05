@@ -10,12 +10,8 @@ exclude = '''
 '''
 
 [tool.pylint.master]
-ignore-paths = ["utils/ultralytics/yolov5"]
-ignored-modules = ["utils/ultralytics/yolov5"]
-ignore-patterns = ["utils/ultralytics/yolov5/*"]
-py-version = [3, 7]
 suggestion-mode = true
-
+ignore-paths = [ "^kiliautoml/utils/ultralytics/yolov5/.*$"]
 
 [tool.pyright]
 exclude = [

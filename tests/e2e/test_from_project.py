@@ -13,11 +13,26 @@ def mocked__get_text_from(asset_url):
 
 
 def mocked__get_assets(*_, max_assets=None, labeling_statuses=None):
-    return json.load(open("tests/e2e/fixtures/text_assets_fixture.json"))[:max_assets]
+    res = json.load(open("tests/e2e/fixtures/text_assets_fixture.json"))
+    tot = min(20, max_assets) if max_assets is not None else 20
+
+    project_id = "abcdefgh"
+    if project_id == "abcdefgh":
+        return res[:tot]
+    elif project_id == "abcdefgh2":
+        return res[-tot:]
 
 
 def mocked__projects(*_, project_id, fields):
     return json.load(open("tests/e2e/fixtures/text_project_fixture.json"))
+
+
+def debug_subprocess_pytest(result):
+    import traceback
+
+    if result.exception is not None:
+        traceback.print_tb(result.exception.__traceback__)
+    assert result.exception is None
 
 
 def test_hugging_face_text_classification(mocker):
@@ -44,46 +59,27 @@ def test_hugging_face_text_classification(mocker):
             "--model-name",
             "distilbert-base-cased",
             "--disable-wandb",
+            "--clear-dataset-cache",
         ],
     )
-    assert result.exception is None
+    debug_subprocess_pytest(result)
 
     mocker.patch("predict.get_assets", side_effect=mocked__get_assets)
     result = runner.invoke(
         predict.main,
         [
             "--project-id",
-            "abcdefgh",
+            "abcdefgh2",
             "--max-assets",
             "10",
             "--target-job",
             "CLASSIFICATION_JOB_0",
+            "--project-id",
+            "abcdefgh",
         ],
     )
+    debug_subprocess_pytest(result)
+
     assert result.exception is None
     assert result.output.count("OPTIMISM") == 0
     mock_create_predictions.assert_called_once()
-    # Note: useful for debugging:
-    # import traceback
-    # print(traceback.print_tb(result.exception.__traceback__))
-
-    mock_create_predictions = mocker.patch("kili.client.Kili.create_predictions")
-    result = runner.invoke(
-        predict.main,
-        [
-            "--project-id",
-            "abcdefgh",
-            "--max-assets",
-            "10",
-            "--target-job",
-            "CLASSIFICATION_JOB_0",
-            "--dry-run",
-            "--verbose",
-            "1",
-        ],
-    )
-    assert result.exception is None
-    words = ["OPTIMISM", "ENTHUSIASM", "CONCERN", "ANGER", "FEAR", "UNCERTAIN"]
-    assert sum(result.output.count(c) for c in words) == 10
-
-    mock_create_predictions.assert_not_called()

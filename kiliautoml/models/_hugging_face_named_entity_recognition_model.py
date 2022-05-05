@@ -78,12 +78,15 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         self,
         assets: Union[List[Dict], List[str]],
         model_path: str,
+        from_project: Optional[str],
         job_name: str,
         verbose: int = 0,
     ) -> JobPredictions:
-
         model_path_res, _, self.model_framework = self._extract_model_info(
-            job_name, self.project_id, model_path
+            job_name,
+            self.project_id,
+            model_path,
+            from_project,
         )
 
         tokenizer, model = self._get_tokenizer_and_model(
