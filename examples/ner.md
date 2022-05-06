@@ -25,7 +25,7 @@ Kili's AutoML pipeline supports the following pre-trained models, available on [
 
 ### Training set size
 
-The size of the training dataset depends a lot on the task and the data. There is no minimum dataset size from which we are sure that the model will work well.Nevertheless, for a good start, we recommend that you label at least 500 examples per entity type in your training set. Note that some samples can count for several entity types since several entity types can exist in one sample. In total, the training dataset should have at least 1000 samples.
+The size of the training dataset depends a lot on the task and on the data. There is no minimum dataset size from which we are sure that the model will work well. Nevertheless, for a good start, we recommend that you label at least 500 examples per entity type in your training set. Note that some samples can count for several entity types since several entity types can exist in one sample. In total, the training dataset should have at least 1000 samples.
 
 Try to have samples as diverse as possible and keep a good balance between entity types. Prioritize the labeling of samples where entities and words are not present in the already-labeled data.
 
