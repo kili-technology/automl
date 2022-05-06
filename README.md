@@ -122,8 +122,11 @@ Serve trained models while pushing assets and predictions to [Kili](https://www.
 
 AutoML currently supports the following tasks:
 
-- NLP
+- Natural Language Processing (NLP)
   - [Named Entity Recognition](examples/ner.md)
+  - Text Classification
+- Image
+  - Object detection
 
 ## Disclaimer
 
