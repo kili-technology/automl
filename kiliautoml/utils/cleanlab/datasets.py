@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from torchvision import datasets, transforms
 from typing_extensions import Literal
 
-training_phaseT = Literal["train", "test"]
+training_phaseT = Literal["train", "val"]
 dict_datasetT = Dict[training_phaseT, torch_Data.Dataset]
 
 

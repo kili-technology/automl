@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import Any, List
 
 import click
 from kili.client import Kili
@@ -150,7 +150,7 @@ def main(
             )
             assets = assets[:max_assets] if max_assets is not None else assets
 
-            found_errors = train_and_get_error_image_classification(
+            found_errors: List[Any] = train_and_get_error_image_classification(  # type: ignore
                 cv_n_folds=cv_folds,
                 epochs=epochs,
                 job_name=job_name,

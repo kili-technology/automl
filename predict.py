@@ -8,6 +8,9 @@ from kiliautoml.models import (
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
 )
+from kiliautoml.utils.cleanlab.train_cleanlab import (
+    train_and_get_error_image_classification,
+)
 from kiliautoml.utils.constants import (
     ContentInput,
     InputType,
@@ -145,6 +148,24 @@ def predict_one_job(
             verbose,
             prioritization,
             from_project=from_project,
+        )
+    if (
+        content_input == ContentInput.Radio
+        and input_type == InputType.Image
+        and ml_task == MLTask.Classification
+    ):
+        job_predictions: JobPredictions = train_and_get_error_image_classification(  # type: ignore
+            cv_n_folds=None,
+            epochs=0,
+            job_name=job_name,
+            model_repository=None,
+            project_id=project_id,
+            assets=assets,
+            model_name=None,
+            api_key=api_key,
+            verbose=verbose,
+            only_train=False,
+            only_predict=True,
         )
 
     else:

@@ -5,7 +5,6 @@ from typing import Any, List, Optional
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
-import torch.nn as nn
 import torch.utils.data as torch_Data
 from cleanlab.filter import find_label_issues
 from sklearn.model_selection import StratifiedKFold, train_test_split
@@ -19,9 +18,11 @@ from kiliautoml.utils.cleanlab.datasets import (
 )
 from kiliautoml.utils.constants import HOME, ModelNameT, ModelRepositoryT
 from kiliautoml.utils.download_assets import download_project_image_clean_lab
+from kiliautoml.utils.helpers import JobPredictions
 from kiliautoml.utils.path import ModelDirT, Path, PathPytorchVision
 from kiliautoml.utils.pytorchvision.image_classification import (
     get_trained_model_image_classif,
+    initialize_model_img_class,
     predict_probabilities,
     set_model_name_image_classification,
     set_model_repository_image_classification,
@@ -69,8 +70,8 @@ def train_and_get_error_image_classification(
     cv_n_folds: Optional[int],
     epochs: int,
     assets: List[Any],
-    model_repository: ModelRepositoryT,
-    model_name: ModelNameT,
+    model_repository: Optional[ModelRepositoryT],
+    model_name: Optional[ModelNameT],
     job_name: str,
     project_id: str,
     api_key: str,
@@ -118,11 +119,20 @@ def train_and_get_error_image_classification(
         return loss
     elif only_predict:
         image_datasets = copy.deepcopy(original_image_datasets)
-        model: nn.Module = torch.load(model_path)  # type: ignore
+        model = initialize_model_img_class(model_name, class_names)
+        model.load_state_dict(torch.load(model_path))  # type: ignore
         loader = torch_Data.DataLoader(
-            original_image_datasets["test"], batch_size=1, shuffle=False, num_workers=1
+            original_image_datasets["val"], batch_size=1, shuffle=False, num_workers=1
         )
         probs = predict_probabilities(loader, model, verbose=verbose)
+
+        return JobPredictions(
+            job_name=job_name,
+            external_id_array=[asset["externalId"] for asset in assets],
+            model_name_array=[model_name] * len(labels),
+            json_response_array=[asset["labels"][0]["jsonResponse"] for asset in assets],
+            predictions_probability=list(np.max(probs, axis=1)),
+        )
     else:
         pass
     kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=cv_seed)

@@ -1,19 +1,24 @@
 import copy
+import os
 import time
+from typing import Tuple
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 
+# Necessary on mac
+os.environ["OMP_NUM_THREADS"] = "1"
+
 
 def train_model_pytorch(
     *,
-    model,
+    model: nn.Module,
     dataloaders,
     verbose=0,
     epochs=10,
-):
+) -> Tuple[nn.Module, float]:
     """
     Method that trains the given model and return the best one found in the given epochs
     """
@@ -65,7 +70,7 @@ def train_model_pytorch(
                         optimizer.step()
 
                 running_loss += loss.item() * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)
+                running_corrects += torch.sum(preds == labels.data)  # type:ignore
             if phase == "train":
                 scheduler.step()
 

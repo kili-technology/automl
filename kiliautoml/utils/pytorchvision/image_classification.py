@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 import torch
@@ -47,16 +47,7 @@ def get_trained_model_image_classif(
         for x in ["train", "val"]
     }
 
-    if model_name == ModelName.EfficientNetB0:
-        model = models.efficientnet_b0(pretrained=True)
-        num_ftrs = model.classifier[1].in_features
-        model.classifier[1] = nn.Linear(num_ftrs, len(class_names))  # type:ignore
-    elif model_name == ModelName.Resnet50:
-        model = models.resnet50(pretrained=True)
-        num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, len(class_names))
-    else:
-        raise ValueError(f"Model {model_name} not supported.")
+    model = initialize_model_img_class(model_name, class_names)
 
     model, loss = train_model_pytorch(
         model=model,
@@ -71,7 +62,21 @@ def get_trained_model_image_classif(
     return model, loss
 
 
-def predict_probabilities(loader: torch_Data.DataLoader, model, verbose=0):
+def initialize_model_img_class(model_name: ModelNameT, class_names):
+    if model_name == ModelName.EfficientNetB0:
+        model = models.efficientnet_b0(pretrained=True)
+        num_ftrs = model.classifier[1].in_features
+        model.classifier[1] = nn.Linear(num_ftrs, len(class_names))  # type:ignore
+    elif model_name == ModelName.Resnet50:
+        model = models.resnet50(pretrained=True)
+        num_ftrs = model.fc.in_features
+        model.fc = nn.Linear(num_ftrs, len(class_names))
+    else:
+        raise ValueError(f"Model {model_name} not supported.")
+    return model
+
+
+def predict_probabilities(loader: torch_Data.DataLoader, model, verbose=0) -> List[float]:
     """
     Method to compute the probabilities for all classes for the assets in the holdout set
     """
