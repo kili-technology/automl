@@ -10,7 +10,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from kiliautoml.utils.constants import ModelFrameworkT
 from kiliautoml.utils.helpers import categories_from_job, kili_print
-from kiliautoml.utils.path import ModelRepositoryPathT
+from kiliautoml.utils.path import ModelRepositoryDirT
 from kiliautoml.utils.ultralytics.constants import ULTRALYTICS_REL_PATH, YOLOV5_REL_PATH
 
 env = Environment(
@@ -43,7 +43,7 @@ def get_output_path_bbox(title: str, path: str, model_framework: str) -> str:
 def ultralytics_train_yolov5(
     *,
     api_key: str,
-    model_repository_path: ModelRepositoryPathT,
+    model_repository_dir: ModelRepositoryDirT,
     job: Dict,
     max_assets: Optional[int],
     json_args: Dict,
@@ -58,14 +58,14 @@ def ultralytics_train_yolov5(
 
     template = env.get_template("kili_template.yml")
     class_names = categories_from_job(job)
-    data_path = os.path.join(model_repository_path, "data")
+    data_path = os.path.join(model_repository_dir, "data")
     config_data_path = os.path.join(yolov5_path, "data", "kili.yaml")
 
     if clear_dataset_cache and os.path.exists(data_path) and os.path.isdir(data_path):
         kili_print("Dataset cache for this project is being cleared.")
         shutil.rmtree(data_path)
 
-    model_output_path = get_output_path_bbox(title, model_repository_path, model_framework)
+    model_output_path = get_output_path_bbox(title, model_repository_dir, model_framework)
     os.makedirs(model_output_path, exist_ok=True)
 
     os.makedirs(os.path.dirname(config_data_path), exist_ok=True)

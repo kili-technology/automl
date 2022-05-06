@@ -23,7 +23,7 @@ from kiliautoml.utils.constants import (
     ModelNameT,
 )
 from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print, set_default
-from kiliautoml.utils.path import ModelRepositoryPathT, Path, PathHF
+from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
 
 
 class KiliNerAnnotations(TypedDict):
@@ -54,7 +54,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     ):
         nltk.download("punkt")
 
-        path = Path.model_repository(HOME, self.project_id, job_name, self.model_repository)
+        path = Path.model_repository_dir(HOME, self.project_id, job_name, self.model_repository)
 
         self.model_framework = set_default(  # type: ignore
             model_framework,
@@ -150,7 +150,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         job: Dict,
         job_name: str,
         model_name: ModelNameT,
-        model_repository_path: ModelRepositoryPathT,
+        model_repository_dir: ModelRepositoryDirT,
         clear_dataset_cache: bool,
         training_args: Dict,
         disable_wandb: bool,
@@ -163,19 +163,19 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         """
         kili_print(f"Job Name: {job_name}")
         kili_print(f"Base model: {model_name}")
-        path_dataset = os.path.join(PathHF.dataset(model_repository_path), "data.json")
+        path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
 
         label_list = self._kili_assets_to_hf_ner_dataset(
             job, job_name, path_dataset, assets, clear_dataset_cache
         )
 
-        raw_datasets = datasets.load_dataset(
+        raw_datasets = datasets.load_dataset(  # type: ignore
             "json",
             data_files=path_dataset,
-            features=datasets.features.features.Features(
+            features=datasets.features.features.Features(  # type: ignore
                 {
-                    "ner_tags": datasets.Sequence(feature=datasets.ClassLabel(names=label_list)),
-                    "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),
+                    "ner_tags": datasets.Sequence(feature=datasets.ClassLabel(names=label_list)),  # type: ignore # noqa
+                    "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),  # type: ignore # noqa
                 }
             ),
         )
@@ -218,7 +218,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
         train_dataset = tokenized_datasets["train"]  # type:  ignore
-        path_model = PathHF.append_model_folder(model_repository_path, self.model_framework)
+        path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
         training_arguments = self._get_training_args(
             path_model, model_name, disable_wandb=disable_wandb, **training_args

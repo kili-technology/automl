@@ -24,7 +24,7 @@ from kiliautoml.utils.helpers import (
     upload_errors_to_kili,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
-from kiliautoml.utils.type import label_typeT
+from kiliautoml.utils.type import LabelTypeT
 
 
 @click.command()
@@ -89,7 +89,7 @@ from kiliautoml.utils.type import label_typeT
 @click.option("--verbose", default=0, type=int, help="Verbose level")
 @click.option(
     "--disable-wandb",
-    default=False,
+    default=True,
     is_flag=True,
     help="Tells if wandb is disabled",
 )
@@ -102,7 +102,7 @@ def main(
     model_repository: ModelRepositoryT,
     dry_run: bool,
     epochs: int,
-    label_types: label_typeT,
+    label_types: LabelTypeT,
     max_assets: int,
     model_name: ModelNameT,
     project_id: str,

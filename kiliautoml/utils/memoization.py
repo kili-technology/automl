@@ -19,7 +19,7 @@ from typing_extensions import get_args
 
 from kiliautoml.utils.constants import HOME, ModelFrameworkT, ModelRepositoryT
 from kiliautoml.utils.path import Path, PathHF
-from kiliautoml.utils.type import commandT
+from kiliautoml.utils.type import CommandT
 
 
 def kili_project_memoizer(
@@ -32,7 +32,7 @@ def kili_project_memoizer(
             project_id = kwargs.get("project_id")
             if not project_id:
                 raise ValueError("project_id not specified in a keyword argument")
-            cache_path = Path.cache_memoization(project_id, sub_dir)
+            cache_path = Path.cache_memoization_dir(project_id, sub_dir)
             memory = Memory(cache_path, verbose=0)
             return memory.cache(some_function)(*args, **kwargs)
 
@@ -50,7 +50,7 @@ def kili_memoizer(some_function):
 
 
 def clear_automl_cache(
-    command: commandT,
+    command: CommandT,
     project_id: str,
     job_name: str,
     model_repository: Optional[ModelRepositoryT] = None,
@@ -58,7 +58,7 @@ def clear_automl_cache(
 ):
     """If model_repository is None, then it clears for every modelRepository cache."""
     sub_dirs = ["get_asset_memoized"]
-    cache_paths = [Path.cache_memoization(project_id, sub_dir) for sub_dir in sub_dirs]
+    cache_paths = [Path.cache_memoization_dir(project_id, sub_dir) for sub_dir in sub_dirs]
 
     if model_repository is None:
         model_repositories: List[ModelRepositoryT] = get_args(ModelRepositoryT)  # type: ignore
@@ -69,7 +69,7 @@ def clear_automl_cache(
         if command in ["train", "label_errors"]:
             assert job_name is not None
             assert model_repository is not None
-            path = Path.model_repository(
+            path = Path.model_repository_dir(
                 root_dir=HOME,
                 project_id=project_id,
                 job_name=job_name,

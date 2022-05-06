@@ -26,7 +26,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
     set_default,
 )
-from kiliautoml.utils.path import ModelRepositoryPathT, Path, PathHF
+from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
 
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
@@ -55,7 +55,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         training_args["report_to"] = "none" if disable_wandb else "wandb"
 
-        model_repository_path = Path.model_repository(
+        model_repository_dir = Path.model_repository_dir(
             HOME, self.project_id, job_name, self.model_repository
         )
 
@@ -76,7 +76,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             job,
             job_name,
             model_name_set,
-            model_repository_path,
+            model_repository_dir,
             clear_dataset_cache,
             training_args,
             disable_wandb,
@@ -134,7 +134,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         job: Dict,
         job_name: str,
         model_name: ModelNameT,
-        model_repository_path: ModelRepositoryPathT,
+        model_repository_dir: ModelRepositoryDirT,
         clear_dataset_cache: bool,
         training_args: dict,
         disable_wandb: bool,
@@ -142,20 +142,20 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         training_args = training_args or {}
 
         kili_print(job_name)
-        path_dataset = os.path.join(PathHF.dataset(model_repository_path), "data.json")
+        path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
         kili_print(f"Downloading data to {path_dataset}")
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
         job_categories = categories_from_job(job)
         if not os.path.exists(path_dataset):
             self._write_dataset(assets, job_name, path_dataset, job_categories)
-        raw_datasets = datasets.load_dataset(
+        raw_datasets = datasets.load_dataset(  # type: ignore
             "json",
             data_files=path_dataset,
-            features=datasets.features.features.Features(
+            features=datasets.features.features.Features(  # type: ignore
                 {
-                    "label": datasets.ClassLabel(names=job_categories),
-                    "text": datasets.Value(dtype="string"),
+                    "label": datasets.ClassLabel(names=job_categories),  # type: ignore
+                    "text": datasets.Value(dtype="string"),  # type: ignore
                 }
             ),
         )
@@ -169,7 +169,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)  # type: ignore
         train_dataset = tokenized_datasets["train"]  # type: ignore
 
-        path_model = PathHF.append_model_folder(model_repository_path, self.model_framework)
+        path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
         training_arguments = self._get_training_args(
             path_model, model_name, disable_wandb=disable_wandb, **training_args

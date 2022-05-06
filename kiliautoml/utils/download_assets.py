@@ -22,23 +22,26 @@ class DownloadedImages:
 
 
 @kili_memoizer
-def download_asset_binary(api_key, asset_content):
-    asset_data = requests.get(
-        asset_content,
-        headers={
-            "Authorization": f"X-API-Key: {api_key}",
-        },
-    ).content
-
-    return asset_data
-
-
-@kili_memoizer
-def download_asset_unicode(api_key, asset_content):
+def download_asset_binary(api_key, asset_content, project_id):
     response = requests.get(
         asset_content,
         headers={
             "Authorization": f"X-API-Key: {api_key}",
+            "PROJECT_ID": project_id,
+        },
+    )
+    assert response.status_code == 200
+    asset_data = response.content
+    return asset_data
+
+
+@kili_memoizer
+def download_asset_unicode(api_key, asset_content, project_id):
+    response = requests.get(
+        asset_content,
+        headers={
+            "Authorization": f"X-API-Key: {api_key}",
+            "PROJECT_ID": project_id,
         },
     )
     assert response.status_code == 200
@@ -46,17 +49,17 @@ def download_asset_unicode(api_key, asset_content):
     return text
 
 
-def download_image(api_key, asset_content):
-    img_data = download_asset_binary(api_key, asset_content)
+def download_image(api_key, asset_content, project_id):
+    img_data = download_asset_binary(api_key, asset_content, project_id)
 
     image = Image.open(BytesIO(img_data))
     return image
 
 
-def download_image_retry(api_key, asset, n_try):
+def download_image_retry(api_key, asset, project_id, n_try: int):
     while n_try < 20:
         try:
-            img_data = download_asset_binary(api_key, asset["content"])
+            img_data = download_asset_binary(api_key, asset["content"], project_id)
             break
         except Exception:
             time.sleep(1)
@@ -67,12 +70,13 @@ def download_image_retry(api_key, asset, n_try):
 def download_project_images(
     api_key: str,
     assets,
+    project_id,
     output_folder: Optional[str] = None,
 ) -> List[DownloadedImages]:
     kili_print("Downloading project images...")
     downloaded_images = []
     for asset in tqdm(assets):
-        image = download_image(api_key, asset["content"])
+        image = download_image(api_key, asset["content"], project_id)
         format = str(image.format or "")
 
         filename = ""
@@ -93,15 +97,15 @@ def download_project_images(
     return downloaded_images
 
 
-def download_project_image_clean_lab(assets, api_key, data_path, job_name):
+def download_project_image_clean_lab(*, assets, api_key, data_path, job_name, project_id):
     """
     Download assets that are stored in Kili and save them to folders depending on their
     label category
     """
     for asset in tqdm(assets):
-        img_data = download_asset_binary(api_key, asset["content"])
-        imag_name = asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]
-        img_path = os.path.join(data_path, imag_name)
+        img_data = download_asset_binary(api_key, asset["content"], project_id)
+        img_name = asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]
+        img_path = os.path.join(data_path, img_name)
         os.makedirs(img_path, exist_ok=True)
         with open(os.path.join(img_path, asset["id"] + ".jpg"), "wb") as handler:
             handler.write(img_data)  # type: ignore

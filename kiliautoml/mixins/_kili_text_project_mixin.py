@@ -14,5 +14,5 @@ class KiliTextProjectMixin(metaclass=ABCMeta):
         self.kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
 
     def _get_text_from(self, asset: Dict) -> str:
-        text = download_asset_unicode(self.api_key, asset["content"])
+        text = download_asset_unicode(self.api_key, asset["content"], self.project_id)
         return text

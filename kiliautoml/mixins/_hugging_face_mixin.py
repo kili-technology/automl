@@ -119,7 +119,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         }
         default_args.update(kwargs)
         training_args = TrainingArguments(
-            PathHF.append_training_args_folder(path_model),
+            PathHF.append_training_args_dir(path_model),
             **default_args,
         )
         return training_args

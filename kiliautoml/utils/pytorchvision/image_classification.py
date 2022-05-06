@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -6,6 +8,7 @@ from torchvision import models
 
 from kiliautoml.utils.constants import ModelName, ModelNameT, ModelRepositoryT
 from kiliautoml.utils.helpers import set_default
+from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
 
 
@@ -31,9 +34,16 @@ def set_model_repository_image_classification(model_repository) -> ModelReposito
     return model_repository
 
 
-def get_trained_model_image_classif(epochs, model_name, verbose, class_names, image_datasets):
+def get_trained_model_image_classif(
+    epochs: int,
+    model_name: ModelNameT,
+    verbose: int,
+    class_names: list,
+    image_datasets: dict,
+    save_model_path: Optional[ModelPathT] = None,
+):
     dataloaders = {
-        x: torch_Data.DataLoader(image_datasets[x], batch_size=64, shuffle=True, num_workers=4)
+        x: torch_Data.DataLoader(image_datasets[x], batch_size=64, shuffle=True, num_workers=1)
         for x in ["train", "val"]
     }
 
@@ -48,23 +58,26 @@ def get_trained_model_image_classif(epochs, model_name, verbose, class_names, im
     else:
         raise ValueError(f"Model {model_name} not supported.")
 
-    model = train_model_pytorch(
+    model, loss = train_model_pytorch(
         model=model,
         dataloaders=dataloaders,
         verbose=verbose,
         epochs=epochs,
     )
 
-    return model
+    if save_model_path is not None:
+        torch.save(model.state_dict(), save_model_path)
+
+    return model, loss
 
 
-def predict_probabilities(loader, model, verbose=0):
+def predict_probabilities(loader: torch_Data.DataLoader, model, verbose=0):
     """
     Method to compute the probabilities for all classes for the assets in the holdout set
     """
     # Switch to evaluate mode.
     model.eval()
-    n_total = len(loader.dataset.imgs) / float(loader.batch_size)
+    n_total = len(loader.dataset.imgs) / float(loader.batch_size)  # type:ignore
     outputs = []
     if verbose >= 2:
         print("Computing probabilities for this fold")

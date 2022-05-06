@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from kiliautoml.utils.constants import HOME, InputTypeT
 from kiliautoml.utils.memoization import kili_project_memoizer
-from kiliautoml.utils.type import label_typeT, labeling_statusT, status_inT
+from kiliautoml.utils.type import LabelingStatusT, LabelTypeT, StatusIntT
 
 
 def set_all_seeds(seed):
@@ -83,8 +83,8 @@ def get_asset_memoized(
     project_id,
     first,
     skip,
-    status_in: Optional[List[status_inT]] = None,
-    label_type_in: Optional[List[label_typeT]] = None,
+    status_in: Optional[List[StatusIntT]] = None,
+    label_type_in: Optional[List[LabelTypeT]] = None,
 ) -> List[Dict]:
     return kili.assets(
         project_id=project_id,
@@ -105,7 +105,7 @@ def get_asset_memoized(
 
 
 def asset_is_kept(
-    asset, labeling_statuses: List[labeling_statusT] = ["LABELED", "UNLABELED"]
+    asset, labeling_statuses: List[LabelingStatusT] = ["LABELED", "UNLABELED"]
 ) -> bool:
     labeled = len(asset["labels"]) > 0
     unlabeled = len(asset["labels"]) == 0
@@ -114,9 +114,9 @@ def asset_is_kept(
     )
 
 
-def compute_status_in(labeling_statuses: List[labeling_statusT]) -> List[status_inT]:
-    labeled: List[status_inT] = ["LABELED", "REVIEWED"]
-    unlabeled: List[status_inT] = ["TODO", "ONGOING"]
+def compute_status_in(labeling_statuses: List[LabelingStatusT]) -> List[StatusIntT]:
+    labeled: List[StatusIntT] = ["LABELED", "REVIEWED"]
+    unlabeled: List[StatusIntT] = ["TODO", "ONGOING"]
     status_in = []
     if "LABELED" in labeling_statuses:
         status_in += labeled
@@ -128,11 +128,11 @@ def compute_status_in(labeling_statuses: List[labeling_statusT]) -> List[status_
 def get_assets(
     kili,
     project_id: str,
-    label_type_in: List[label_typeT] = ["DEFAULT", "REVIEW"],
+    label_type_in: List[LabelTypeT] = ["DEFAULT", "REVIEW"],
     max_assets: Optional[int] = None,
-    labeling_statuses: List[labeling_statusT] = ["LABELED", "UNLABELED"],
+    labeling_statuses: List[LabelingStatusT] = ["LABELED", "UNLABELED"],
 ) -> List[Dict]:
-    kili_print("Downloading datasets metadata from Kili")
+    kili_print("Downloading asset metadata from Kili")
     if not labeling_statuses:
         raise ValueError("labeling_statuses must be a non-empty list.")
 
@@ -172,9 +172,9 @@ def kili_print(*args, **kwargs) -> None:
     print(colored("kili:", "yellow", attrs=["bold"]), *args, **kwargs)
 
 
-def parse_label_types(label_types: Optional[str]) -> List[label_typeT]:
+def parse_label_types(label_types: Optional[str]) -> List[LabelTypeT]:
     if label_types:
-        res: List[label_typeT] = label_types.split(",")  # type: ignore
+        res: List[LabelTypeT] = label_types.split(",")  # type: ignore
         return res
     else:
         return ["DEFAULT", "REVIEW"]
@@ -213,7 +213,6 @@ def get_last_trained_model_path(
     return model_path
 
 
-# TODO: This function is not used anywhere
 def save_errors(found_errors, job_path: str):
     found_errors_dict = {"assetIds": found_errors}
     found_errors_json = json.dumps(found_errors_dict, sort_keys=True, indent=4)

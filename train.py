@@ -10,6 +10,9 @@ from kiliautoml.models import (
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
 )
+from kiliautoml.utils.cleanlab.train_cleanlab import (
+    train_and_get_error_image_classification,
+)
 from kiliautoml.utils.constants import (
     HOME,
     ContentInput,
@@ -60,7 +63,7 @@ def train_image_bounding_box(
         "model_repository",
         [ModelRepository.Ultralytics],
     )
-    path_repository = Path.model_repository(
+    path_repository = Path.model_repository_dir(
         HOME, project_id, job_name, model_repository_initialized
     )
     if model_repository_initialized == ModelRepository.Ultralytics:
@@ -73,7 +76,7 @@ def train_image_bounding_box(
         model_name = set_default(model_name, ModelName.YoloV5, "model_name", [ModelName.YoloV5])
         return ultralytics_train_yolov5(
             api_key=api_key,
-            model_repository_path=path_repository,
+            model_repository_dir=path_repository,
             job=job,
             max_assets=max_assets,
             json_args=args_dict,
@@ -118,6 +121,13 @@ def train_image_bounding_box(
     ),
 )
 @click.option(
+    "--epochs",
+    default=10,
+    type=int,
+    show_default=True,
+    help="Number of epochs to train for",
+)
+@click.option(
     "--max-assets",
     default=None,
     type=int,
@@ -152,6 +162,7 @@ def main(
     model_name: ModelNameT,
     model_repository: ModelRepositoryT,
     project_id: str,
+    epochs: int,
     label_types: str,
     target_job: List[str],
     max_assets: int,
@@ -253,6 +264,32 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
                 title=title,
                 disable_wandb=disable_wandb,
+            )
+        if (
+            content_input == ContentInput.Radio
+            and input_type == InputType.Image
+            and ml_task == MLTask.Classification
+        ):
+
+            assets = get_assets(
+                kili,
+                project_id,
+                parse_label_types(label_types),
+                labeling_statuses=["LABELED"],
+            )
+            assets = assets[:max_assets] if max_assets is not None else assets
+
+            training_loss = train_and_get_error_image_classification(
+                cv_n_folds=None,
+                epochs=epochs,
+                job_name=job_name,
+                model_repository=model_repository,
+                project_id=project_id,
+                assets=assets,
+                model_name=model_name,
+                api_key=api_key,
+                verbose=verbose,
+                only_train=True,
             )
         else:
             kili_print("not implemented yet")

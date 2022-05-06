@@ -24,7 +24,7 @@ from kiliautoml.utils.helpers import (
     get_project,
     kili_print,
 )
-from kiliautoml.utils.type import label_typeT
+from kiliautoml.utils.type import LabelTypeT
 
 
 def predict_object_detection(
@@ -225,7 +225,7 @@ def main(
 ):
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
-    label_type_in: List[label_typeT] = label_types.split(",")  # type: ignore
+    label_type_in: List[LabelTypeT] = label_types.split(",")  # type: ignore
     assets = get_assets(kili, project_id, label_type_in, max_assets=max_assets)
 
     for job_name, job in jobs.items():

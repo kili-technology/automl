@@ -36,7 +36,7 @@ def ultralytics_predict_object_detection(
     with open(os.path.join(model_path, "..", "..", "kili.yaml")) as f:
         kili_data_dict = yaml.load(f, Loader=yaml.FullLoader)
 
-    inference_path = PathUltralytics.inference(HOME, project_id, job_name, "ultralytics")
+    inference_path = PathUltralytics.inference_dir(HOME, project_id, job_name, "ultralytics")
     model_weights = os.path.join(model_path, filename_weights)
 
     # path needs to be cleaned-up to avoid inferring unnecessary items.
