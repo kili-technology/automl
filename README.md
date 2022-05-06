@@ -118,6 +118,13 @@ Serve trained models while pushing assets and predictions to [Kili](https://www.
 
 ![Serve a model](./images/serve.png)
 
+## ML Tasks
+
+AutoML currently supports the following tasks:
+
+- NLP
+  - [Named Entity Recognition](examples/ner.md)
+
 ## Disclaimer
 
 AutoML is a utility library that trains and serves models. It is your responsibility to determine whether the model performance is high enough or not.
