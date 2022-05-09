@@ -8,6 +8,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 
+# Necessary on mac for train and predict.
+os.environ["OMP_NUM_THREADS"] = "1"
+
 
 def train_model_pytorch(
     *,
@@ -20,9 +23,6 @@ def train_model_pytorch(
     Method that trains the given model and return the best one found in the given epochs
     """
     since = time.time()
-
-    # Necessary on mac
-    os.environ["OMP_NUM_THREADS"] = "1"
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
