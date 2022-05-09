@@ -149,7 +149,7 @@ def predict_one_job(
             prioritization,
             from_project=from_project,
         )
-    if (
+    elif (
         content_input == ContentInput.Radio
         and input_type == InputType.Image
         and ml_task == MLTask.Classification
