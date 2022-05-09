@@ -4,6 +4,7 @@ from click.testing import CliRunner
 
 import predict
 import train
+from tests.e2e.utils_test_e2e import debug_subprocess_pytest
 
 text_content = json.load(open("tests/e2e/fixtures/text_content_fixture.json"))
 
@@ -46,7 +47,7 @@ def test_hugging_face_text_classification(mocker):
             "--disable-wandb",
         ],
     )
-    assert result.exception is None
+    debug_subprocess_pytest(result)
 
     mocker.patch("predict.get_assets", side_effect=mocked__get_assets)
     result = runner.invoke(
@@ -60,7 +61,7 @@ def test_hugging_face_text_classification(mocker):
             "CLASSIFICATION_JOB_0",
         ],
     )
-    assert result.exception is None
+    debug_subprocess_pytest(result)
     assert result.output.count("OPTIMISM") == 0
     mock_create_predictions.assert_called_once()
     # Note: useful for debugging:
@@ -82,7 +83,7 @@ def test_hugging_face_text_classification(mocker):
             "1",
         ],
     )
-    assert result.exception is None
+    debug_subprocess_pytest(result)
     words = ["OPTIMISM", "ENTHUSIASM", "CONCERN", "ANGER", "FEAR", "UNCERTAIN"]
     assert sum(result.output.count(c) for c in words) == 10
 

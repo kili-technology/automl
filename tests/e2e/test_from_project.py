@@ -4,6 +4,7 @@ from click.testing import CliRunner
 
 import predict
 import train
+from tests.e2e.utils_test_e2e import debug_subprocess_pytest
 
 text_content = json.load(open("tests/e2e/fixtures/text_content_fixture.json"))
 
@@ -25,14 +26,6 @@ def mocked__get_assets(*_, max_assets=None, labeling_statuses=None):
 
 def mocked__projects(*_, project_id, fields):
     return json.load(open("tests/e2e/fixtures/text_project_fixture.json"))
-
-
-def debug_subprocess_pytest(result):
-    import traceback
-
-    if result.exception is not None:
-        traceback.print_tb(result.exception.__traceback__)
-    assert result.exception is None
 
 
 def test_hugging_face_text_classification(mocker):
@@ -79,7 +72,5 @@ def test_hugging_face_text_classification(mocker):
         ],
     )
     debug_subprocess_pytest(result)
-
-    assert result.exception is None
     assert result.output.count("OPTIMISM") == 0
     mock_create_predictions.assert_called_once()
