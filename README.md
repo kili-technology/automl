@@ -35,12 +35,17 @@ We made AutoML very simple to use. The main methods are:
 
 ### Train a model
 
+We train the model with just one line of code:
+
 ```bash
 python train.py \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID
 ```
 
+By default, the library uses wandb to track the training and to track the quality of the predictions.
+The model is then stored in the cache of the AutoML library in HOME/.cache/kili/automl
+We automatically choose a state of the art model corresponding to the type of ML task.
 Retrieve the annotated data from the project and specialize the best model among the following ones on each task:
 
 - Hugging Face (NER, Text Classification)
@@ -55,6 +60,8 @@ Compute model loss to infer when you can stop labeling.
 ![Train a model](./images/train.png)
 
 ### Push predictions to Kili
+
+After training the model with the above python train.py command, we can then predict the labels and add preannotations on the assets that have not yet been labeled by the annotators. The annotators will then only have to validate or correct the preannotations.
 
 ```bash
 python predict.py \
@@ -76,28 +83,21 @@ python predict.py \
 
 ### Prioritize labeling on Kili
 
-Where is the model confident or confused today?
+Once roughly 10 percent of the assets in a project have been labeled, it is possible to prioritize the remaining assets to be labeled on the project in order to prioritize the assets that will best improve the performance of the model.
 
 ```bash
 python prioritize.py \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID
-    --sampling uncertainty
-    --method least-confidence-sampling
 ```
 
-How can we sample the optimal unlabeled data points for human review?
-
-```bash
-python prioritize.py \
-    --api-key $KILI_API_KEY \
-    --project-id $KILI_PROJECT_ID
-    --sampling diversity
-    --method model-based-outlier
-```
+This command will change the priority queue of the assets to be labeled.
+To do this, AutoML uses a mix between diversity sampling and uncertainty sampling.
 
 ### Label errors on Kili
-Note: for image classfication projects only.
+Note: for image classification projects only.
+
+The error is human, fortunately there are methods to detect potential annotation problems. label_errors.py allows to identify potential problems and create a 'potential_label_error' filter on the project's asset exploration view:
 
 ```bash
 python label_errors.py \
@@ -105,18 +105,6 @@ python label_errors.py \
     --project-id $KILI_PROJECT_ID
 ```
 
-
-### Serve a model (coming soon)
-
-```bash
-python serve.py \
-    --api-key $KILI_API_KEY \
-    --project-id $KILI_PROJECT_ID
-```
-
-Serve trained models while pushing assets and predictions to [Kili](https://www.kili-technology.com) for continuous labeling. Allows monitoring the model drift.
-
-![Serve a model](./images/serve.png)
 
 ## Disclaimer
 
