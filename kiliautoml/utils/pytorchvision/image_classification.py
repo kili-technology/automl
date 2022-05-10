@@ -43,7 +43,7 @@ def get_trained_model_image_classif(
     save_model_path: Optional[ModelPathT] = None,
 ):
     dataloaders = {
-        x: torch_Data.DataLoader(image_datasets[x], batch_size=64, shuffle=True, num_workers=1)
+        x: torch_Data.DataLoader(image_datasets[x], batch_size=10, shuffle=True, num_workers=1)
         for x in ["train", "val"]
     }
 
