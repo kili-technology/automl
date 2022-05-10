@@ -137,26 +137,66 @@ def get_assets(
     max_assets: Optional[int] = None,
     labeling_statuses: List[labeling_statusT] = ["LABELED", "UNLABELED"],
 ) -> List[Dict]:
+    kili_print("Downloading asset metadata from Kili")
     if not labeling_statuses:
         raise ValueError("labeling_statuses must be a non-empty list.")
 
-    total = kili.count_assets(project_id=project_id)
-    total = total if max_assets is None else min(total, max_assets)
-
-    status_in = compute_status_in(labeling_statuses)
-    assets = get_asset_memoized(
-        kili=kili,
-        project_id=project_id,
-        first=total,
-        skip=0,
-        status_in=status_in,
-        label_type_in=label_type_in,
+    # Recover total number of labeled and unlabeled assets in project
+    status_in_labeled: List[status_inT] = ["LABELED", "REVIEWED"]
+    total_labeled = kili.count_assets(
+        project_id=project_id, status_in=status_in_labeled, label_type_in=label_type_in
     )
+    total_labeled = total_labeled if "LABELED" in labeling_statuses else 0
 
+    status_in_unlabeled: List[status_inT] = ["TODO", "ONGOING"]
+    total_unlabeled = kili.count_assets(
+        project_id=project_id, status_in=status_in_unlabeled, label_type_in=None
+    )
+    total_unlabeled = total_unlabeled if "UNLABELED" in labeling_statuses else 0
+
+    # if max_assets specified, we prioritize the recovery of labeled assets
+    # over unlabeled assets (Kili default order)
+    if max_assets is not None:
+        total_labeled = min(total_labeled, max_assets)
+        total_unlabeled = min(total_unlabeled, max_assets - total_labeled)
+
+    assets_labeled = []
+    if ("LABELED" in labeling_statuses) and (total_labeled > 0):
+
+        assets_labeled = get_asset_memoized(
+            kili=kili,
+            project_id=project_id,
+            first=total_labeled,
+            skip=0,
+            status_in=status_in_labeled,
+            label_type_in=label_type_in,
+        )
+
+        if len(assets_labeled) == 0:
+            if len(label_type_in) == 1:
+                kili_print(f"No {label_type_in[0]} labeled assets found in project {project_id}.")
+            else:
+                kili_print(f"No labeled assets found in project {project_id}.")
+
+    assets_unlabeled = []
+    if ("UNLABELED" in labeling_statuses) and (total_unlabeled > 0):
+
+        assets_unlabeled = get_asset_memoized(
+            kili=kili,
+            project_id=project_id,
+            first=total_unlabeled,
+            skip=0,
+            status_in=status_in_unlabeled,
+            label_type_in=None,
+        )
+
+        if len(assets_unlabeled) == 0:
+            kili_print(f"No unlabeled assets found in project {project_id}.")
+
+    assets = assets_labeled + assets_unlabeled
     if len(assets) == 0:
-        if len(labeling_statuses) == 1:
-            kili_print(f"No {labeling_statuses[0]} assets found in project {project_id}.")
         raise Exception("There is no asset matching the query. ")
+
     return assets
 
 
