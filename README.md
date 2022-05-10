@@ -26,7 +26,7 @@ git submodule update --init
 
 then
 ```bash
-pip install -r requirements.txt -r utils/ultralytics/yolov5/requirements.txt
+pip install -r requirements.txt -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
 ```
 
 ## Usage

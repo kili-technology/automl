@@ -18,8 +18,8 @@ Kili's AutoML pipeline follows this paradigm and uses BERT pre-trained models as
 
 Kili's AutoML pipeline supports the following pre-trained models, available on [HuggingFace](https://huggingface.co/):
 
-- [bert-base-multinlingual-cased](https://huggingface.co/bert-base-multilingual-cased)
-- [distilbert-base-cased](https://huggingface.co/distilbert-base-cased)
+- [bert-base-multinlingual-cased](https://huggingface.co/bert-base-multilingual-cased): supports any language (performance might be low for low-ressource languages)
+- [distilbert-base-cased](https://huggingface.co/distilbert-base-cased): only supports text in English
 
 ## Good practices for AutoML NER training
 
