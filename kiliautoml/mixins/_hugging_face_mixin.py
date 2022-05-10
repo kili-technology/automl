@@ -111,7 +111,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         return model_path_res, cls.model_repository, model_framework
 
     @staticmethod
-    def _get_training_args(path_model, model_name, disable_wandb: bool, **kwargs):
+    def _get_training_args(path_model, model_name, epochs: int, disable_wandb: bool, **kwargs):
         date = datetime.now().strftime("%Y-%m-%d_%H:%M")
         default_args = {
             "report_to": "wandb" if not disable_wandb else "none",
@@ -120,6 +120,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         default_args.update(kwargs)
         training_args = TrainingArguments(
             PathHF.append_training_args_dir(path_model),
+            num_train_epochs=epochs,
             **default_args,
         )
         return training_args

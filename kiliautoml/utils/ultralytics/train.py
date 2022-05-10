@@ -48,6 +48,7 @@ def ultralytics_train_yolov5(
     max_assets: Optional[int],
     json_args: Dict,
     project_id: str,
+    epochs: int,
     model_framework: ModelFrameworkT,
     label_types: List[str],
     title: str,
@@ -83,7 +84,7 @@ def ultralytics_train_yolov5(
         )
 
     if not json_args:
-        json_args = {"epochs": 50}
+        json_args = {"epochs": epochs}
         kili_print("No arguments were passed to the train function. Defaulting to epochs=50.")
     args_from_json = reduce(lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in json_args.items()))
     kili_print("Starting Ultralytics' YoloV5 ...")

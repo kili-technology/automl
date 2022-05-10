@@ -6,11 +6,11 @@ from sklearn.model_selection import train_test_split
 from torchvision import datasets, transforms
 from typing_extensions import Literal
 
-training_phaseT = Literal["train", "val"]
-dict_datasetT = Dict[training_phaseT, torch_Data.Dataset]
+TrainingPhaseT = Literal["train", "val"]
+DictDatasetT = Dict[TrainingPhaseT, torch_Data.Dataset]
 
 
-def get_original_image_dataset(data_dir) -> dict_datasetT:
+def get_original_image_dataset(data_dir) -> DictDatasetT:
     data_transforms = {
         "train": transforms.Compose(
             [

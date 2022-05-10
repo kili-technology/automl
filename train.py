@@ -46,6 +46,7 @@ def train_image_bounding_box(
     job_name,
     max_assets,
     args_dict,
+    epochs,
     model_framework,
     model_name,
     model_repository: ModelRepositoryT,
@@ -80,6 +81,7 @@ def train_image_bounding_box(
             job=job,
             max_assets=max_assets,
             json_args=args_dict,
+            epochs=epochs,
             project_id=project_id,
             model_framework=model_framework,
             label_types=label_types,
@@ -216,6 +218,7 @@ def main(
                 model_framework=model_framework,
                 model_name=model_name,
                 clear_dataset_cache=clear_dataset_cache,
+                epochs=epochs,
                 disable_wandb=disable_wandb,
             )
 
@@ -241,6 +244,7 @@ def main(
                 model_framework=model_framework,
                 model_name=model_name,
                 clear_dataset_cache=clear_dataset_cache,
+                epochs=epochs,
                 disable_wandb=disable_wandb,
             )
         elif (
@@ -260,12 +264,13 @@ def main(
                 model_name=model_name,
                 model_repository=model_repository,
                 project_id=project_id,
+                epochs=epochs,
                 label_types=parse_label_types(label_types),
                 clear_dataset_cache=clear_dataset_cache,
                 title=title,
                 disable_wandb=disable_wandb,
             )
-        if (
+        elif (
             content_input == ContentInput.Radio
             and input_type == InputType.Image
             and ml_task == MLTask.Classification

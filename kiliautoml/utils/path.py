@@ -20,6 +20,8 @@ def makedirs_exist_ok(path_building_function):
 
 JobDirT = str
 ModelRepositoryDirT = str
+ModelDirT = str
+ModelPathT = str
 
 
 class Path:
@@ -66,9 +68,6 @@ class Path:
 """
 Once we have the model repository dir, we can create the following nested directories:
 """
-
-ModelDirT = str
-ModelPathT = str
 
 
 class PathUltralytics:

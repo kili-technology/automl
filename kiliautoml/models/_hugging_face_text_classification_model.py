@@ -42,6 +42,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         assets: List[Dict],
         job: Dict,
         job_name: str,
+        epochs: int,
         model_framework: Optional[ModelFrameworkT] = None,
         model_name: Optional[ModelNameT] = None,
         clear_dataset_cache: bool = False,
@@ -78,6 +79,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             model_name_set,
             model_repository_dir,
             clear_dataset_cache,
+            epochs,
             training_args,
             disable_wandb,
         )
@@ -136,6 +138,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         model_name: ModelNameT,
         model_repository_dir: ModelRepositoryDirT,
         clear_dataset_cache: bool,
+        epochs: int,
         training_args: dict,
         disable_wandb: bool,
     ) -> float:
@@ -172,7 +175,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
         training_arguments = self._get_training_args(
-            path_model, model_name, disable_wandb=disable_wandb, **training_args
+            path_model, model_name, disable_wandb=disable_wandb, epochs=epochs, **training_args
         )
 
         trainer = Trainer(
