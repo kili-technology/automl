@@ -380,6 +380,8 @@ def main(
     verbose: bool,
     clear_dataset_cache: bool,
     from_project: Optional[str],
+    model_name: Optional[str],
+    model_repository: Optional[str],
 ):
     """
     Prioritize assets in a Kili project.
@@ -432,6 +434,8 @@ def main(
         assets=unlabeled_assets,
         job_name=job_name,
         content_input=content_input,
+        model_repository=model_repository,
+        model_name=model_name,
         ml_task=ml_task,
         tools=tools,
         prioritization=True,

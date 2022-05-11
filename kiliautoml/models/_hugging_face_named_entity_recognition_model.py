@@ -21,6 +21,7 @@ from kiliautoml.utils.constants import (
     ModelFramework,
     ModelFrameworkT,
     ModelNameT,
+    ModelRepositoryT,
 )
 from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print, set_default
 from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
@@ -37,9 +38,29 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     ml_task: MLTaskT = MLTask.NamedEntityRecognition  # type: ignore
 
-    def __init__(self, project_id: str, api_key: str, api_endpoint: str) -> None:
+    def __init__(
+        self,
+        project_id: str,
+        api_key: str,
+        api_endpoint: str,
+        model_repository: ModelRepositoryT = "huggingface",
+        model_name: ModelNameT = "bert-base-multilingual-cased",
+    ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(self)
+
+        self.model_repository = model_repository
+
+        model_name_setted: ModelNameT = set_default(  # type: ignore
+            model_name,
+            "bert-base-multilingual-cased",
+            "model_name",
+            [
+                "bert-base-multilingual-cased",
+                "distilbert-base-cased",
+            ],
+        )
+        self.model_name: ModelNameT = model_name_setted
 
     def train(
         self,
@@ -48,7 +69,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         job_name: str,
         epochs: int,
         model_framework: Optional[ModelFrameworkT] = None,
-        model_name: Optional[ModelNameT] = None,
         clear_dataset_cache: bool = False,
         training_args: dict = {},
         disable_wandb: bool = False,
@@ -63,21 +83,12 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             "model_framework",
             [ModelFramework.PyTorch, ModelFramework.Tensorflow],
         )
-        model_name_setted: ModelNameT = set_default(  # type: ignore
-            model_name,
-            "bert-base-multilingual-cased",
-            "model_name",
-            [
-                "bert-base-multilingual-cased",
-                "distilbert-base-cased",
-            ],
-        )
+
         return self._train(
             assets,
             job,
             job_name,
             epochs,
-            model_name_setted,
             path,
             clear_dataset_cache,
             training_args,
@@ -152,7 +163,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         job: Dict,
         job_name: str,
         epochs: int,
-        model_name: ModelNameT,
         model_repository_dir: ModelRepositoryDirT,
         clear_dataset_cache: bool,
         training_args: Dict,
@@ -164,6 +174,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
         - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
         """
+        model_name = self.model_name
         kili_print(f"Job Name: {job_name}")
         kili_print(f"Base model: {model_name}")
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
@@ -184,7 +195,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.model_framework, label_list, self.ml_task
+            self.model_name, self.model_framework, label_list, self.ml_task
         )
 
         label_all_tokens = True

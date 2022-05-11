@@ -113,11 +113,11 @@ class ImageClassificationModel(BaseModel):
         self.class_names = class_names
         self.labels = labels
 
-    def train(self, epochs, verbose, cv_seed):
+    def train(self, epochs, verbose):
 
         image_datasets = copy.deepcopy(self.original_image_datasets)
         train_idx, val_idx = train_test_split(
-            range(len(self.labels)), test_size=0.2, random_state=cv_seed
+            range(len(self.labels)), test_size=0.2, random_state=42
         )
         prepare_image_dataset(train_idx, val_idx, image_datasets)
         model, loss = get_trained_model_image_classif(
@@ -147,8 +147,8 @@ class ImageClassificationModel(BaseModel):
         )
         return job_predictions
 
-    def find_errors(self, cv_n_folds, epochs, verbose, cv_seed):
-        kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=cv_seed)
+    def find_errors(self, cv_n_folds, epochs, verbose):
+        kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
         for cv_fold in tqdm(range(cv_n_folds)):  # type: ignore
             # Split train into train and holdout for particular cv_fold.
             cv_train_idx, cv_holdout_idx = list(kf.split(range(len(self.labels)), self.labels))[
@@ -189,7 +189,6 @@ class ImageClassificationModel(BaseModel):
             data_dir=self.data_dir,
             model_dir=self.model_dir,
             num_classes=len(self.class_names),
-            seed=cv_seed,
             verbose=verbose,
         )
 
@@ -204,43 +203,3 @@ class ImageClassificationModel(BaseModel):
         for idx in noise_indices:
             noise_paths.append(os.path.basename(train_imgs[idx][0])[:-4])
         return noise_paths
-
-
-def train_and_get_error_image_classification(
-    cv_n_folds: Optional[int],
-    epochs: int,
-    assets: List[Any],
-    model_repository: Optional[ModelRepositoryT],
-    model_name: Optional[ModelNameT],
-    job_name: str,
-    project_id: str,
-    api_key: str,
-    verbose: int = 0,
-    cv_seed: int = 42,
-    only_train: bool = False,
-    only_predict: bool = False,
-):
-    """
-    Main method that trains the model on the assets that are in data_dir, computes the
-    incorrect labels using Cleanlab and returns the IDs of the concerned assets.
-    """
-    assert single_true([only_train, only_predict, bool(cv_n_folds)])
-    image_classification_model = ImageClassificationModel(
-        assets,
-        model_repository,
-        model_name,
-        job_name,
-        project_id,
-        api_key,
-    )
-
-    if only_train:
-        loss = image_classification_model.train(epochs, verbose, cv_seed)
-        return loss
-    elif only_predict:
-        return image_classification_model.predict(verbose, assets, job_name)
-    else:
-        pass
-    noise_paths = image_classification_model.find_errors(cv_n_folds, epochs, verbose, cv_seed)
-
-    return noise_paths

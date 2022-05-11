@@ -10,9 +10,7 @@ from kiliautoml.models import (
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
 )
-from kiliautoml.utils.cleanlab.train_cleanlab import (
-    train_and_get_error_image_classification,
-)
+from kiliautoml.utils.cleanlab.train_cleanlab import ImageClassificationModel
 from kiliautoml.utils.constants import (
     HOME,
     ContentInput,
@@ -207,8 +205,8 @@ def main(
                 project_id,
                 parse_label_types(label_types),
                 labeling_statuses=["LABELED"],
+                max_assets=max_assets,
             )
-            assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = HuggingFaceTextClassificationModel(
                 project_id, api_key, api_endpoint
             ).train(
@@ -216,7 +214,6 @@ def main(
                 job=job,
                 job_name=job_name,
                 model_framework=model_framework,
-                model_name=model_name,
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
                 disable_wandb=disable_wandb,
@@ -232,8 +229,8 @@ def main(
                 project_id,
                 parse_label_types(label_types),
                 labeling_statuses=["LABELED"],
+                max_assets=max_assets,
             )
-            assets = assets[:max_assets] if max_assets is not None else assets
 
             training_loss = HuggingFaceNamedEntityRecognitionModel(
                 project_id, api_key, api_endpoint
@@ -242,7 +239,6 @@ def main(
                 job=job,
                 job_name=job_name,
                 model_framework=model_framework,
-                model_name=model_name,
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
                 disable_wandb=disable_wandb,
@@ -281,21 +277,20 @@ def main(
                 project_id,
                 parse_label_types(label_types),
                 labeling_statuses=["LABELED"],
+                max_assets=max_assets,
             )
-            assets = assets[:max_assets] if max_assets is not None else assets
 
-            training_loss = train_and_get_error_image_classification(
-                cv_n_folds=None,
-                epochs=epochs,
-                job_name=job_name,
-                model_repository=model_repository,
-                project_id=project_id,
-                assets=assets,
-                model_name=model_name,
-                api_key=api_key,
-                verbose=verbose,
-                only_train=True,
+            image_classification_model = ImageClassificationModel(
+                assets,
+                model_repository,
+                model_name,
+                job_name,
+                project_id,
+                api_key,
             )
+
+            training_loss = image_classification_model.train(epochs, verbose)
+
         else:
             kili_print("not implemented yet")
         training_losses.append([job_name, training_loss])

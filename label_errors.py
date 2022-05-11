@@ -1,12 +1,10 @@
 import os
-from typing import Any, List
+from typing import List
 
 import click
 from kili.client import Kili
 
-from kiliautoml.utils.cleanlab.train_cleanlab import (
-    train_and_get_error_image_classification,
-)
+from kiliautoml.utils.cleanlab.train_cleanlab import ImageClassificationModel
 from kiliautoml.utils.constants import (
     ContentInput,
     InputType,
@@ -147,20 +145,19 @@ def main(
                 project_id,
                 parse_label_types(label_types),
                 labeling_statuses=["LABELED"],
+                max_assets=max_assets,
             )
-            assets = assets[:max_assets] if max_assets is not None else assets
 
-            found_errors: List[Any] = train_and_get_error_image_classification(  # type: ignore
-                cv_n_folds=cv_folds,
-                epochs=epochs,
-                job_name=job_name,
-                model_repository=model_repository,
-                project_id=project_id,
-                assets=assets,
-                model_name=model_name,
-                api_key=api_key,
-                verbose=verbose,
+            image_classification_model = ImageClassificationModel(
+                assets,
+                model_repository,
+                model_name,
+                job_name,
+                project_id,
+                api_key,
             )
+
+            found_errors = image_classification_model.find_errors(cv_folds, epochs, verbose)
 
             print()
             kili_print("Number of wrong labels found: ", len(found_errors))

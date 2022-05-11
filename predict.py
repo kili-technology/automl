@@ -8,9 +8,7 @@ from kiliautoml.models import (
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
 )
-from kiliautoml.utils.cleanlab.train_cleanlab import (
-    train_and_get_error_image_classification,
-)
+from kiliautoml.utils.cleanlab.train_cleanlab import ImageClassificationModel
 from kiliautoml.utils.constants import (
     ContentInput,
     InputType,
@@ -31,6 +29,7 @@ from kiliautoml.utils.type import LabelTypeT
 
 
 def predict_object_detection(
+    *,
     api_key: str,
     assets: List[Dict],
     job_name: str,
@@ -100,6 +99,8 @@ def predict_one_job(
     job_name,
     content_input,
     ml_task,
+    model_repository,
+    model_name,
     tools,
     prioritization,
 ) -> JobPredictions:
@@ -109,7 +110,11 @@ def predict_one_job(
         and ml_task == MLTask.Classification
     ):
         job_predictions = HuggingFaceTextClassificationModel(
-            project_id, api_key, api_endpoint
+            project_id,
+            api_key,
+            api_endpoint,
+            model_repository=model_repository,
+            model_name=model_name,
         ).predict(
             assets=assets,
             job_name=job_name,
@@ -124,7 +129,11 @@ def predict_one_job(
         and ml_task == MLTask.NamedEntityRecognition
     ):
         job_predictions = HuggingFaceNamedEntityRecognitionModel(
-            project_id, api_key, api_endpoint
+            project_id,
+            api_key,
+            api_endpoint,
+            model_repository=model_repository,
+            model_name=model_name,
         ).predict(
             assets=assets,
             job_name=job_name,
@@ -140,13 +149,13 @@ def predict_one_job(
         and Tool.Rectangle in tools
     ):
         job_predictions = predict_object_detection(
-            api_key,
-            assets,
-            job_name,
-            project_id,
-            from_model,
-            verbose,
-            prioritization,
+            api_key=api_key,
+            assets=assets,
+            job_name=job_name,
+            project_id=project_id,
+            model_path=from_model,
+            verbose=verbose,
+            prioritization=prioritization,
             from_project=from_project,
         )
     elif (
@@ -154,19 +163,16 @@ def predict_one_job(
         and input_type == InputType.Image
         and ml_task == MLTask.Classification
     ):
-        job_predictions: JobPredictions = train_and_get_error_image_classification(  # type: ignore
-            cv_n_folds=None,
-            epochs=0,
-            job_name=job_name,
-            model_repository=None,
-            project_id=project_id,
-            assets=assets,
-            model_name=None,
-            api_key=api_key,
-            verbose=verbose,
-            only_train=False,
-            only_predict=True,
+        image_classification_model = ImageClassificationModel(
+            assets,
+            model_repository,
+            model_name,
+            job_name,
+            project_id,
+            api_key,
         )
+
+        job_predictions = image_classification_model.predict(verbose, assets, job_name)
 
     else:
         raise NotImplementedError
@@ -189,6 +195,8 @@ def predict_one_job(
         " REVIEW, PREDICTION), defaults to 'DEFAULT,REVIEW'"
     ),
 )
+@click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
+@click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
 @click.option(
     "--target-job",
     default=None,
@@ -243,6 +251,8 @@ def main(
     verbose: bool,
     max_assets: Optional[int],
     from_project: Optional[str],
+    model_name: Optional[str],
+    model_repository: Optional[str],
 ):
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
@@ -267,6 +277,8 @@ def main(
             assets=assets,
             job_name=job_name,
             content_input=content_input,
+            model_repository=model_repository,
+            model_name=model_name,
             from_project=from_project,
             ml_task=ml_task,
             tools=tools,

@@ -18,6 +18,7 @@ from kiliautoml.utils.constants import (
     ModelFramework,
     ModelFrameworkT,
     ModelNameT,
+    ModelRepositoryT,
 )
 from kiliautoml.utils.helpers import (
     JobPredictions,
@@ -33,9 +34,25 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     ml_task: MLTaskT = MLTask.Classification  # type: ignore
 
-    def __init__(self, project_id: str, api_key: str, api_endpoint: str) -> None:
+    def __init__(
+        self,
+        project_id: str,
+        api_key: str,
+        api_endpoint: str,
+        model_repository: ModelRepositoryT = "huggingface",
+        model_name: ModelNameT = "bert-base-multilingual-cased",
+    ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(self)
+
+        self.model_repository = model_repository
+        model_name_set: ModelNameT = set_default(  # type: ignore
+            model_name,
+            "bert-base-multilingual-cased",
+            "model_name",
+            ["bert-base-multilingual-cased", "distilbert-base-cased"],
+        )
+        self.model_name: ModelNameT = model_name_set
 
     def train(
         self,
@@ -44,7 +61,6 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         job_name: str,
         epochs: int,
         model_framework: Optional[ModelFrameworkT] = None,
-        model_name: Optional[ModelNameT] = None,
         clear_dataset_cache: bool = False,
         training_args: dict = {},
         disable_wandb: bool = False,
@@ -66,17 +82,11 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             "model_framework",
             [ModelFramework.PyTorch, ModelFramework.Tensorflow],
         )
-        model_name_set: ModelNameT = set_default(  # type: ignore
-            model_name,
-            "bert-base-multilingual-cased",
-            "model_name",
-            ["bert-base-multilingual-cased", "distilbert-base-cased"],
-        )
+
         return self._train(
             assets,
             job,
             job_name,
-            model_name_set,
             model_repository_dir,
             clear_dataset_cache,
             epochs,
@@ -135,7 +145,6 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_name: ModelNameT,
         model_repository_dir: ModelRepositoryDirT,
         clear_dataset_cache: bool,
         epochs: int,
@@ -143,6 +152,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         disable_wandb: bool,
     ) -> float:
         training_args = training_args or {}
+        model_name = self.model_name
 
         kili_print(job_name)
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
