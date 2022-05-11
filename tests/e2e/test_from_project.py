@@ -53,6 +53,8 @@ def test_hugging_face_text_classification(mocker):
             "distilbert-base-cased",
             "--disable-wandb",
             "--clear-dataset-cache",
+            "--epochs",
+            "1",
         ],
     )
     debug_subprocess_pytest(result)

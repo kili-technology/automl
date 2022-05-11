@@ -51,7 +51,7 @@ def test_image_classification(mocker):
             "300",
             "--disable-wandb",
             "--epochs",
-            "2",
+            "1",
         ],
     )
     debug_subprocess_pytest(result)
