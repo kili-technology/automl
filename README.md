@@ -31,11 +31,11 @@ pip install -r requirements.txt -r utils/ultralytics/yolov5/requirements.txt
 
 ## Usage
 
-We made AutoML very simple to use. The main methods are:
+We made AutoML very simple to use. The following sections detail how to call the main methods.
 
 ### Train a model
 
-We train the model with just one line of code:
+We train the model with the following command line:
 
 ```bash
 python train.py \
@@ -43,10 +43,15 @@ python train.py \
     --project-id $KILI_PROJECT_ID
 ```
 
-By default, the library uses wandb to track the training and to track the quality of the predictions.
-The model is then stored in the cache of the AutoML library in HOME/.cache/kili/automl
-We automatically choose a state of the art model corresponding to the type of ML task.
-Retrieve the annotated data from the project and specialize the best model among the following ones on each task:
+By default, the library uses [Weights and Biases](https://wandb.ai/site) to track the training and the quality of the predictions.
+The model is then stored in the cache of the AutoML library in `HOME/.cache/kili/automl`.
+Kili automl training does the following:
+* Selects the models related to the tasks declared in the project.
+* Retrieve Kili's asset data and convert it into the input format for the model.
+* Finetunes the model on the input data.
+* Outputs the model loss
+
+Here are the supported ML frameworks and the tasks they are used for.
 
 - Hugging Face (NER, Text Classification)
 - YOLOv5 (Object Detection)
@@ -61,7 +66,7 @@ Compute model loss to infer when you can stop labeling.
 
 ### Push predictions to Kili
 
-After training the model with the above python train.py command, we can then predict the labels and add preannotations on the assets that have not yet been labeled by the annotators. The annotators will then only have to validate or correct the preannotations.
+Once trained, the models are used to predict the labels, add preannotations on the assets that have not yet been labeled by the annotators. The annotators can then validate or correct the preannotations in the Kili user interface.
 
 ```bash
 python predict.py \
@@ -69,7 +74,7 @@ python predict.py \
     --project-id $KILI_PROJECT_ID
 ```
 
-Use trained models to push pre-annotations onto unlabeled assets. Typically speeds up labeling by 10% with each iteration.
+Using trained models to push pre-annotations onto unlabeled assets typically speeds up labeling by 10%.
 
 ![Predict a model](./images/predict.png)
 
@@ -97,7 +102,7 @@ To do this, AutoML uses a mix between diversity sampling and uncertainty samplin
 ### Label errors on Kili
 Note: for image classification projects only.
 
-The error is human, fortunately there are methods to detect potential annotation problems. label_errors.py allows to identify potential problems and create a 'potential_label_error' filter on the project's asset exploration view:
+The error is human, fortunately there are methods to detect potential annotation problems. `label_errors.py` allows to identify potential problems and create a 'potential_label_error' filter on the project's asset exploration view:
 
 ```bash
 python label_errors.py \
