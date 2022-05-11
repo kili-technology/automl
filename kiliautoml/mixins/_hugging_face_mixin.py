@@ -121,6 +121,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         training_args = TrainingArguments(
             PathHF.append_training_args_dir(path_model),
             num_train_epochs=epochs,
+            per_device_train_batch_size=2,
             **default_args,
         )
         return training_args
