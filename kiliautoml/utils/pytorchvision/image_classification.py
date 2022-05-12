@@ -82,6 +82,8 @@ def predict_probabilities(loader: torch_Data.DataLoader, model, verbose=0) -> Li
     """
     # Switch to evaluate mode.
     model.eval()
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(device)
     n_total = len(loader.dataset.imgs) / float(loader.batch_size)  # type:ignore
     outputs = []
     if verbose >= 2:
