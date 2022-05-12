@@ -47,9 +47,10 @@ ModelNameT = Literal[
 class ModelRepository:
     HuggingFace = "huggingface"
     Ultralytics = "ultralytics"
+    TorchVision = "torchvision"
 
 
-ModelRepositoryT = Literal["huggingface", "ultralytics"]
+ModelRepositoryT = Literal["huggingface", "ultralytics", "torchvision"]
 
 
 class MLTask:

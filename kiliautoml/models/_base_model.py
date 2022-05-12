@@ -18,6 +18,7 @@ class BaseModel(metaclass=ABCMeta):
         job_name: str,
         model_name: Optional[ModelNameT],
         clear_dataset_cache: bool = False,
+        disable_wandb: bool = False,
     ):
         pass
 

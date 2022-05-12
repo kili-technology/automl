@@ -10,6 +10,9 @@ from kiliautoml.models import (
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
 )
+from kiliautoml.models._pytorchvision_image_classification import (
+    PyTorchVisionImageClassificationModel,
+)
 from kiliautoml.utils.constants import (
     HOME,
     ContentInput,
@@ -43,6 +46,7 @@ def train_image_bounding_box(
     job_name,
     max_assets,
     args_dict,
+    epochs,
     model_framework,
     model_name,
     model_repository: ModelRepositoryT,
@@ -50,6 +54,7 @@ def train_image_bounding_box(
     label_types,
     clear_dataset_cache,
     title,
+    disable_wandb,
 ):
     from kiliautoml.utils.ultralytics.train import ultralytics_train_yolov5
 
@@ -59,7 +64,9 @@ def train_image_bounding_box(
         "model_repository",
         [ModelRepository.Ultralytics],
     )
-    path = Path.model_repository(HOME, project_id, job_name, model_repository_initialized)
+    path_repository = Path.model_repository_dir(
+        HOME, project_id, job_name, model_repository_initialized
+    )
     if model_repository_initialized == ModelRepository.Ultralytics:
         model_framework = set_default(
             model_framework,
@@ -70,15 +77,17 @@ def train_image_bounding_box(
         model_name = set_default(model_name, ModelName.YoloV5, "model_name", [ModelName.YoloV5])
         return ultralytics_train_yolov5(
             api_key=api_key,
-            path=path,
+            model_repository_dir=path_repository,
             job=job,
             max_assets=max_assets,
             json_args=args_dict,
+            epochs=epochs,
             project_id=project_id,
             model_framework=model_framework,
             label_types=label_types,
             clear_dataset_cache=clear_dataset_cache,
             title=title,
+            disable_wandb=disable_wandb,
         )
     else:
         raise NotImplementedError
@@ -114,6 +123,13 @@ def train_image_bounding_box(
     ),
 )
 @click.option(
+    "--epochs",
+    default=10,
+    type=int,
+    show_default=True,
+    help="Number of epochs to train for",
+)
+@click.option(
     "--max-assets",
     default=None,
     type=int,
@@ -140,6 +156,7 @@ def train_image_bounding_box(
     is_flag=True,
     help="Tells if wandb is disabled",
 )
+@click.option("--verbose", default=0, type=int, help="Verbose level")
 def main(
     api_endpoint: str,
     api_key: str,
@@ -147,12 +164,14 @@ def main(
     model_name: ModelNameT,
     model_repository: ModelRepositoryT,
     project_id: str,
+    epochs: int,
     label_types: str,
     target_job: List[str],
     max_assets: int,
     json_args: str,
     clear_dataset_cache: bool,
     disable_wandb: bool,
+    verbose: int,
 ):
     """ """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
@@ -167,7 +186,11 @@ def main(
 
         if clear_dataset_cache:
             clear_automl_cache(
-                project_id, command="train", job_name=job_name, model_repository=model_repository
+                command="train",
+                project_id=project_id,
+                job_name=job_name,
+                model_framework=model_framework,
+                model_repository=model_repository,
             )
         content_input = job.get("content", {}).get("input")
         ml_task = job.get("mlTask")
@@ -184,8 +207,8 @@ def main(
                 project_id,
                 parse_label_types(label_types),
                 labeling_statuses=["LABELED"],
+                max_assets=max_assets,
             )
-            assets = assets[:max_assets] if max_assets is not None else assets
             training_loss = HuggingFaceTextClassificationModel(
                 project_id, api_key, api_endpoint
             ).train(
@@ -193,9 +216,9 @@ def main(
                 job=job,
                 job_name=job_name,
                 model_framework=model_framework,
-                model_name=model_name,
                 clear_dataset_cache=clear_dataset_cache,
-                training_args={"report_to": "none" if disable_wandb else "wandb"},
+                epochs=epochs,
+                disable_wandb=disable_wandb,
             )
 
         elif (
@@ -208,8 +231,8 @@ def main(
                 project_id,
                 parse_label_types(label_types),
                 labeling_statuses=["LABELED"],
+                max_assets=max_assets,
             )
-            assets = assets[:max_assets] if max_assets is not None else assets
 
             training_loss = HuggingFaceNamedEntityRecognitionModel(
                 project_id, api_key, api_endpoint
@@ -218,9 +241,9 @@ def main(
                 job=job,
                 job_name=job_name,
                 model_framework=model_framework,
-                model_name=model_name,
                 clear_dataset_cache=clear_dataset_cache,
-                training_args={"report_to": "none" if disable_wandb else "wandb"},
+                epochs=epochs,
+                disable_wandb=disable_wandb,
             )
         elif (
             content_input == ContentInput.Radio
@@ -239,10 +262,37 @@ def main(
                 model_name=model_name,
                 model_repository=model_repository,
                 project_id=project_id,
+                epochs=epochs,
                 label_types=parse_label_types(label_types),
                 clear_dataset_cache=clear_dataset_cache,
                 title=title,
+                disable_wandb=disable_wandb,
             )
+        elif (
+            content_input == ContentInput.Radio
+            and input_type == InputType.Image
+            and ml_task == MLTask.Classification
+        ):
+
+            assets = get_assets(
+                kili,
+                project_id,
+                parse_label_types(label_types),
+                labeling_statuses=["LABELED"],
+                max_assets=max_assets,
+            )
+
+            image_classification_model = PyTorchVisionImageClassificationModel(
+                assets=assets,
+                model_repository=model_repository,
+                model_name=model_name,
+                job_name=job_name,
+                project_id=project_id,
+                api_key=api_key,
+            )
+
+            training_loss = image_classification_model.train(epochs, verbose)
+
         else:
             kili_print("not implemented yet")
         training_losses.append([job_name, training_loss])

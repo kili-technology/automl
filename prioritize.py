@@ -14,9 +14,9 @@ from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from tqdm import tqdm
 
-from kiliautoml.utils.constants import InputType, ModelFrameworkT
+from kiliautoml.utils.constants import InputType, MLTaskT, ModelFrameworkT, ToolT
+from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
-    download_project_images,
     get_assets,
     get_project,
     kili_print,
@@ -380,6 +380,8 @@ def main(
     verbose: bool,
     clear_dataset_cache: bool,
     from_project: Optional[str],
+    model_name: Optional[str],
+    model_repository: Optional[str],
 ):
     """
     Prioritize assets in a Kili project.
@@ -399,17 +401,19 @@ def main(
     kili_print("Input type: ", input_type)
     kili_print("jobs: ", jobs)
 
-    if clear_dataset_cache:
-        clear_automl_cache(project_id, command="prioritize", model_repository=None)
-
     jobs_item = list(jobs.items())
     if len(jobs_item) > 1:
         raise NotImplementedError
 
     job_name, job = jobs_item[0]
     content_input = job.get("content", {}).get("input")
-    ml_task = job.get("mlTask")
-    tools = job.get("tools")
+    ml_task: MLTaskT = job.get("mlTask")
+    tools: ToolT = job.get("tools")
+
+    if clear_dataset_cache:
+        clear_automl_cache(
+            command="prioritize", project_id=project_id, job_name=job_name, model_repository=None
+        )
 
     unlabeled_assets = get_assets(
         kili,
@@ -430,6 +434,8 @@ def main(
         assets=unlabeled_assets,
         job_name=job_name,
         content_input=content_input,
+        model_repository=model_repository,
+        model_name=model_name,
         ml_task=ml_task,
         tools=tools,
         prioritization=True,
@@ -437,7 +443,7 @@ def main(
     )
 
     if input_type == InputType.Image:
-        downloaded_images = download_project_images(project_id, api_key, unlabeled_assets)
+        downloaded_images = download_project_images(api_key, unlabeled_assets, project_id)
         pil_images = [image.image for image in downloaded_images]
         embeddings = embeddings_images(pil_images)
         kili_print("Embeddings successfully computed with shape ", embeddings.shape)

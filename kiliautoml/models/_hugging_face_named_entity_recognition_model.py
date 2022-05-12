@@ -21,9 +21,10 @@ from kiliautoml.utils.constants import (
     ModelFramework,
     ModelFrameworkT,
     ModelNameT,
+    ModelRepositoryT,
 )
 from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print, set_default
-from kiliautoml.utils.path import Path
+from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
 
 
 class KiliNerAnnotations(TypedDict):
@@ -36,31 +37,18 @@ class KiliNerAnnotations(TypedDict):
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
     ml_task: MLTaskT = MLTask.NamedEntityRecognition  # type: ignore
+    model_repository: ModelRepositoryT = "huggingface"
 
-    def __init__(self, project_id: str, api_key: str, api_endpoint: str) -> None:
+    def __init__(
+        self,
+        project_id: str,
+        api_key: str,
+        api_endpoint: str,
+        model_name: ModelNameT = "bert-base-multilingual-cased",
+    ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(self)
 
-    def train(
-        self,
-        assets: List[Dict],
-        job: Dict,
-        job_name: str,
-        model_framework: Optional[ModelFrameworkT] = None,
-        model_name: Optional[ModelNameT] = None,
-        clear_dataset_cache: bool = False,
-        training_args: dict = {},
-    ):
-        nltk.download("punkt")
-
-        path = Path.model_repository(HOME, self.project_id, job_name, self.model_repository)
-
-        self.model_framework = set_default(  # type: ignore
-            model_framework,
-            ModelFramework.PyTorch,
-            "model_framework",
-            [ModelFramework.PyTorch, ModelFramework.Tensorflow],
-        )
         model_name_setted: ModelNameT = set_default(  # type: ignore
             model_name,
             "bert-base-multilingual-cased",
@@ -70,8 +58,39 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                 "distilbert-base-cased",
             ],
         )
+        self.model_name: ModelNameT = model_name_setted
+
+    def train(
+        self,
+        assets: List[Dict],
+        job: Dict,
+        job_name: str,
+        epochs: int,
+        model_framework: Optional[ModelFrameworkT] = None,
+        clear_dataset_cache: bool = False,
+        training_args: dict = {},
+        disable_wandb: bool = False,
+    ):
+        nltk.download("punkt")
+
+        path = Path.model_repository_dir(HOME, self.project_id, job_name, self.model_repository)
+
+        self.model_framework = set_default(  # type: ignore
+            model_framework,
+            ModelFramework.PyTorch,
+            "model_framework",
+            [ModelFramework.PyTorch, ModelFramework.Tensorflow],
+        )
+
         return self._train(
-            assets, job, job_name, model_name_setted, path, clear_dataset_cache, training_args
+            assets,
+            job,
+            job_name,
+            epochs,
+            path,
+            clear_dataset_cache,
+            training_args,
+            disable_wandb,
         )
 
     def predict(
@@ -141,10 +160,11 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[Dict],
         job: Dict,
         job_name: str,
-        model_name: ModelNameT,
-        path: str,
+        epochs: int,
+        model_repository_dir: ModelRepositoryDirT,
         clear_dataset_cache: bool,
         training_args: Dict,
+        disable_wandb: bool,
     ) -> float:
         """
         Sources:
@@ -152,27 +172,28 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
         - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
         """
+        model_name = self.model_name
         kili_print(f"Job Name: {job_name}")
         kili_print(f"Base model: {model_name}")
-        path_dataset = os.path.join(path, "dataset", "data.json")
+        path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
 
         label_list = self._kili_assets_to_hf_ner_dataset(
             job, job_name, path_dataset, assets, clear_dataset_cache
         )
 
-        raw_datasets = datasets.load_dataset(
+        raw_datasets = datasets.load_dataset(  # type: ignore
             "json",
             data_files=path_dataset,
-            features=datasets.features.features.Features(
+            features=datasets.features.features.Features(  # type: ignore
                 {
-                    "ner_tags": datasets.Sequence(feature=datasets.ClassLabel(names=label_list)),
-                    "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),
+                    "ner_tags": datasets.Sequence(feature=datasets.ClassLabel(names=label_list)),  # type: ignore # noqa
+                    "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),  # type: ignore # noqa
                 }
             ),
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.model_framework, label_list, self.ml_task
+            self.model_name, self.model_framework, label_list, self.ml_task
         )
 
         label_all_tokens = True
@@ -209,9 +230,11 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
         train_dataset = tokenized_datasets["train"]  # type:  ignore
-        path_model = Path.append_hf_model_folder(path, self.model_framework)
+        path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
-        training_arguments = self._get_training_args(path_model, model_name, **training_args)
+        training_arguments = self._get_training_args(
+            path_model, model_name, disable_wandb=disable_wandb, epochs=epochs, **training_args
+        )
         data_collator = DataCollatorForTokenClassification(tokenizer)
         trainer = Trainer(
             model=model,
