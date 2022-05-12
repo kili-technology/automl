@@ -83,16 +83,20 @@ download: |
       for asset in tqdm(assets_split):
           tic = time.time()
           n_try = 0
+          img_data = None
           while n_try < 20:
               try:
                   img_data = requests.get(asset['content'], headers={
                     'Authorization': 'X-API-Key: {{ kili_api_key }}',
-                    'PROJECT_ID': self.project_id,
+                    'PROJECT_ID': project_id,
                   }).content
                   break
               except Exception:
                   time.sleep(1)
                   n_try += 1
+          if img_data is None:
+              asset_id = asset["id"]
+              raise Exception(f"Failed to get image data for asset {asset_id}")
           with open(os.path.join(path_split, asset['id'] + '.jpg'), 'wb') as handler:
               handler.write(img_data)
           toc = time.time() - tic

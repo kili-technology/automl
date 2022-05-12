@@ -26,7 +26,7 @@ git submodule update --init
 
 then
 ```bash
-pip install -r requirements.txt -r utils/ultralytics/yolov5/requirements.txt
+pip install -r requirements.txt -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
 ```
 
 ## Usage
@@ -117,6 +117,16 @@ python serve.py \
 Serve trained models while pushing assets and predictions to [Kili](https://www.kili-technology.com) for continuous labeling. Allows monitoring the model drift.
 
 ![Serve a model](./images/serve.png)
+
+## ML Tasks
+
+AutoML currently supports the following tasks:
+
+- Natural Language Processing (NLP)
+  - [Named Entity Recognition](examples/ner.md)
+  - Text Classification
+- Image
+  - Object detection
 
 ## Disclaimer
 
