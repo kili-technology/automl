@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     project = kili.projects(project_id=project_id)  # type:ignore
 
-    del project[0]["roles"]
+    del project[0]["roles"]  # type:ignore
     with open("tests/e2e/fixtures/object_detection_project_fixture.json", "w") as f:
         json.dump(project, f)
 
