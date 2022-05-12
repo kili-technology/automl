@@ -60,7 +60,7 @@ class Path:
     @staticmethod
     @makedirs_exist_ok
     def model_repository_dir(
-        root_dir, project_id, job_name, model_repository: ModelRepositoryT
+        root_dir, project_id: str, job_name, model_repository: ModelRepositoryT
     ) -> ModelRepositoryDirT:
         return os.path.join(Path.job_dir(root_dir, project_id, job_name), model_repository)
 

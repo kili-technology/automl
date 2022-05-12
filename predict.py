@@ -8,7 +8,9 @@ from kiliautoml.models import (
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
 )
-from kiliautoml.utils.cleanlab.train_cleanlab import ImageClassificationModel
+from kiliautoml.models._pytorchvision_image_classification import (
+    PyTorchVisionImageClassificationModel,
+)
 from kiliautoml.utils.constants import (
     ContentInput,
     InputType,
@@ -113,7 +115,6 @@ def predict_one_job(
             project_id,
             api_key,
             api_endpoint,
-            model_repository=model_repository,
             model_name=model_name,
         ).predict(
             assets=assets,
@@ -132,7 +133,6 @@ def predict_one_job(
             project_id,
             api_key,
             api_endpoint,
-            model_repository=model_repository,
             model_name=model_name,
         ).predict(
             assets=assets,
@@ -163,13 +163,13 @@ def predict_one_job(
         and input_type == InputType.Image
         and ml_task == MLTask.Classification
     ):
-        image_classification_model = ImageClassificationModel(
-            assets,
-            model_repository,
-            model_name,
-            job_name,
-            project_id,
-            api_key,
+        image_classification_model = PyTorchVisionImageClassificationModel(
+            assets=assets,
+            model_repository=model_repository,
+            model_name=model_name,
+            job_name=job_name,
+            project_id=project_id,
+            api_key=api_key,
         )
 
         job_predictions = image_classification_model.predict(verbose, assets, job_name)

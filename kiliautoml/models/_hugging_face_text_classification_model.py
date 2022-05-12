@@ -33,19 +33,18 @@ from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
     ml_task: MLTaskT = MLTask.Classification  # type: ignore
+    model_repository: ModelRepositoryT = "huggingface"
 
     def __init__(
         self,
         project_id: str,
         api_key: str,
         api_endpoint: str,
-        model_repository: ModelRepositoryT = "huggingface",
         model_name: ModelNameT = "bert-base-multilingual-cased",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(self)
 
-        self.model_repository = model_repository
         model_name_set: ModelNameT = set_default(  # type: ignore
             model_name,
             "bert-base-multilingual-cased",

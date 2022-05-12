@@ -37,19 +37,17 @@ class KiliNerAnnotations(TypedDict):
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
     ml_task: MLTaskT = MLTask.NamedEntityRecognition  # type: ignore
+    model_repository: ModelRepositoryT = "huggingface"
 
     def __init__(
         self,
         project_id: str,
         api_key: str,
         api_endpoint: str,
-        model_repository: ModelRepositoryT = "huggingface",
         model_name: ModelNameT = "bert-base-multilingual-cased",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(self)
-
-        self.model_repository = model_repository
 
         model_name_setted: ModelNameT = set_default(  # type: ignore
             model_name,

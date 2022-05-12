@@ -4,7 +4,9 @@ from typing import List
 import click
 from kili.client import Kili
 
-from kiliautoml.utils.cleanlab.train_cleanlab import ImageClassificationModel
+from kiliautoml.models._pytorchvision_image_classification import (
+    PyTorchVisionImageClassificationModel,
+)
 from kiliautoml.utils.constants import (
     ContentInput,
     InputType,
@@ -148,13 +150,13 @@ def main(
                 max_assets=max_assets,
             )
 
-            image_classification_model = ImageClassificationModel(
-                assets,
-                model_repository,
-                model_name,
-                job_name,
-                project_id,
-                api_key,
+            image_classification_model = PyTorchVisionImageClassificationModel(
+                assets=assets,
+                model_repository=model_repository,
+                model_name=model_name,
+                job_name=job_name,
+                project_id=project_id,
+                api_key=api_key,
             )
 
             found_errors = image_classification_model.find_errors(cv_folds, epochs, verbose)
