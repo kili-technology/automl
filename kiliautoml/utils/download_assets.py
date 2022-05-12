@@ -72,7 +72,7 @@ def download_project_images(
     api_key: str,
     assets,
     project_id,
-    output_folder: Optional[str] = None,
+    output_folder: Optional[str],
 ) -> List[DownloadedImages]:
     kili_print("Downloading project images...")
     downloaded_images = []
@@ -85,6 +85,7 @@ def download_project_images(
             filename = os.path.join(output_folder, asset["id"] + "." + format.lower())
 
             with open(filename, "w") as fp:
+                print(filename)
                 image.save(fp, format)  # type: ignore
 
         downloaded_images.append(

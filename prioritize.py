@@ -443,7 +443,9 @@ def main(
     )
 
     if input_type == InputType.Image:
-        downloaded_images = download_project_images(api_key, unlabeled_assets, project_id)
+        downloaded_images = download_project_images(
+            api_key, unlabeled_assets, project_id, output_folder=None
+        )
         pil_images = [image.image for image in downloaded_images]
         embeddings = embeddings_images(pil_images)
         kili_print("Embeddings successfully computed with shape ", embeddings.shape)

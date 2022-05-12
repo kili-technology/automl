@@ -44,7 +44,9 @@ def ultralytics_predict_object_detection(
         shutil.rmtree(inference_path)
     os.makedirs(inference_path)
 
-    downloaded_images = download_project_images(project_id, api_key, assets, inference_path)
+    downloaded_images = download_project_images(
+        api_key, assets, project_id, output_folder=inference_path
+    )
     # https://github.com/ultralytics/yolov5/blob/master/detect.py
     # default  --conf-thres=0.25, --iou-thres=0.45
     prioritizer_args = " --conf-thres=0.01  --iou-thres=0.45 " if prioritization else ""
