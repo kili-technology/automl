@@ -1,4 +1,6 @@
+import math
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime
@@ -6,7 +8,10 @@ from functools import reduce
 from typing import Dict, List, Optional
 
 import pandas as pd
+import requests
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from kili.client import Kili
+from tqdm.auto import tqdm
 
 from kiliautoml.utils.constants import ModelFrameworkT
 from kiliautoml.utils.helpers import categories_from_job, kili_print
@@ -49,21 +54,78 @@ def yaml_preparation(
     label_types: List[str],
     max_assets: int,
 ):
-    import math
-    import os
-    import re
-
-    import requests
-    from kili.client import Kili
-    from tqdm.auto import tqdm
 
     print("Downloading datasets from Kili")
     train_val_proportions = [0.8, 0.1]
     path = data_path
     if "/kili/" not in path:
         raise ValueError("'path' field in config must contain '/kili/'")
-    project_id = "{{ project_id }}"
-    kili = Kili(api_key="{{ kili_api_key }}")
+    kili = Kili(api_key=kili_api_key)
+    assets = get_assets_object_detection(project_id, label_types, max_assets, kili)
+    n_train_assets = math.floor(len(assets) * train_val_proportions[0])
+    n_val_assets = math.floor(len(assets) * train_val_proportions[1])
+    assets_splits = {
+        "train": assets[:n_train_assets],
+        "val": assets[n_train_assets : n_train_assets + n_val_assets],
+        "test": assets[n_train_assets + n_val_assets :],
+    }
+
+    for name_split, assets_split in assets_splits.items():
+        if len(assets_split) == 0:
+            raise Exception("No asset in dataset, exiting...")
+        path_split = os.path.join(path, "images", name_split)
+        save_images(kili_api_key, project_id, name_split, assets_split, path_split)
+
+        names = class_names
+        path_labels = re.sub("/images/", "/labels/", path_split)
+        print(path_labels)
+        os.makedirs(path_labels, exist_ok=True)
+        for asset in assets_split:
+            asset_id = asset["id"] + ".txt"  # type: ignore
+            with open(os.path.join(path_labels, asset_id), "w") as handler:
+                json_response = asset["labels"][0]["jsonResponse"]
+                for job in json_response.values():
+                    save_annotations_to_yolo_format(names, handler, job)
+
+
+def save_annotations_to_yolo_format(names, handler, job):
+    for annotation in job.get("annotations", []):
+        name = annotation["categories"][0]["name"]
+        try:
+            category = names.index(name)
+        except ValueError:
+            pass
+        bounding_poly = annotation.get("boundingPoly", [])
+        if len(bounding_poly) < 1:
+            continue
+        if "normalizedVertices" not in bounding_poly[0]:
+            continue
+        normalized_vertices = bounding_poly[0]["normalizedVertices"]
+        x_s = [vertice["x"] for vertice in normalized_vertices]
+        y_s = [vertice["y"] for vertice in normalized_vertices]
+        x_min, y_min = min(x_s), min(y_s)
+        x_max, y_max = max(x_s), max(y_s)
+        _x_, _y_ = (x_max + x_min) / 2, (y_max + y_min) / 2
+        _w_, _h_ = x_max - x_min, y_max - y_min
+        handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")  # type: ignore
+
+
+def save_images(kili_api_key, project_id, name_split, assets_split, path_split):
+    print(f"Building {name_split} in {path_split} ...")
+    os.makedirs(path_split, exist_ok=True)
+    for asset in tqdm(assets_split):
+        img_data = requests.get(
+            asset["content"],
+            headers={
+                "Authorization": f"X-API-Key: {kili_api_key}",
+                "PROJECT_ID": project_id,
+            },
+        ).content
+        with open(os.path.join(path_split, asset["id"] + ".jpg"), "wb") as handler:
+            handler.write(img_data)
+
+
+def get_assets_object_detection(project_id, label_types, max_assets, kili):
     total = max_assets if max_assets is not None else kili.count_assets(project_id=project_id)
     if total == 0:
         raise Exception("No asset in project. Exiting...")
@@ -89,59 +151,7 @@ def yaml_preparation(
         for a in assets
     ]
     assets = [a for a in assets if len(a["labels"]) > 0]
-    n_train_assets = math.floor(len(assets) * train_val_proportions[0])
-    n_val_assets = math.floor(len(assets) * train_val_proportions[1])
-    assets_splits = {
-        "train": assets[:n_train_assets],
-        "val": assets[n_train_assets : n_train_assets + n_val_assets],
-        "test": assets[n_train_assets + n_val_assets :],
-    }
-
-    for name_split, assets_split in assets_splits.items():
-        if len(assets_split) == 0:
-            raise Exception("No asset in dataset, exiting...")
-        path_split = os.path.join(path, "images", name_split)
-        print(f"Building {name_split} in {path_split} ...")
-        os.makedirs(path_split, exist_ok=True)
-        for asset in tqdm(assets_split):
-            img_data = requests.get(
-                asset["content"],
-                headers={
-                    "Authorization": f"X-API-Key: {kili_api_key}",
-                    "PROJECT_ID": project_id,
-                },
-            ).content
-            with open(os.path.join(path_split, asset["id"] + ".jpg"), "wb") as handler:
-                handler.write(img_data)
-
-        names = class_names
-        path_labels = re.sub("/images/", "/labels/", path_split)
-        print(path_labels)
-        os.makedirs(path_labels, exist_ok=True)
-        for asset in assets_split:
-            asset_id = asset["id"] + ".txt"  # type: ignore
-            with open(os.path.join(path_labels, asset_id), "w") as handler:
-                json_response = asset["labels"][0]["jsonResponse"]
-                for job in json_response.values():
-                    for annotation in job.get("annotations", []):
-                        name = annotation["categories"][0]["name"]
-                        try:
-                            category = names.index(name)
-                        except ValueError:
-                            pass
-                        bounding_poly = annotation.get("boundingPoly", [])
-                        if len(bounding_poly) < 1:
-                            continue
-                        if "normalizedVertices" not in bounding_poly[0]:
-                            continue
-                        normalized_vertices = bounding_poly[0]["normalizedVertices"]
-                        x_s = [vertice["x"] for vertice in normalized_vertices]
-                        y_s = [vertice["y"] for vertice in normalized_vertices]
-                        x_min, y_min = min(x_s), min(y_s)
-                        x_max, y_max = max(x_s), max(y_s)
-                        _x_, _y_ = (x_max + x_min) / 2, (y_max + y_min) / 2
-                        _w_, _h_ = x_max - x_min, y_max - y_min
-                        handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")  # type: ignore
+    return assets  # type: ignore
 
 
 def ultralytics_train_yolov5(
