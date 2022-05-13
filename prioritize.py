@@ -14,7 +14,7 @@ from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from tqdm import tqdm
 
-from kiliautoml.utils.constants import InputType, MLTaskT, ModelFrameworkT, ToolT
+from kiliautoml.utils.constants import MLTaskT, ModelFrameworkT, ToolT
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
     get_assets,
@@ -442,7 +442,7 @@ def main(
         from_project=from_project,
     )
 
-    if input_type == InputType.Image:
+    if input_type == "IMAGE":
         downloaded_images = download_project_images(api_key, unlabeled_assets, project_id)
         pil_images = [image.image for image in downloaded_images]
         embeddings = embeddings_images(pil_images)

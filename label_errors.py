@@ -8,9 +8,6 @@ from kiliautoml.models._pytorchvision_image_classification import (
     PyTorchVisionImageClassificationModel,
 )
 from kiliautoml.utils.constants import (
-    ContentInput,
-    InputType,
-    MLTask,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
@@ -136,11 +133,7 @@ def main(
                 model_repository=model_repository,
             )
 
-        if (
-            content_input == ContentInput.Radio
-            and input_type == InputType.Image
-            and ml_task == MLTask.Classification
-        ):
+        if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 
             assets = get_assets(
                 kili,

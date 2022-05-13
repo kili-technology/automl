@@ -13,9 +13,7 @@ from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
     HOME,
-    MLTask,
     MLTaskT,
-    ModelFramework,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
@@ -32,7 +30,7 @@ from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task: MLTaskT = MLTask.Classification  # type: ignore
+    ml_task: MLTaskT = "CLASSIFICATION"  # type: ignore
     model_repository: ModelRepositoryT = "huggingface"
 
     def __init__(
@@ -77,9 +75,9 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         self.model_framework = set_default(  # type: ignore
             model_framework,
-            ModelFramework.PyTorch,
+            "pytorch",
             "model_framework",
-            [ModelFramework.PyTorch, ModelFramework.Tensorflow],
+            ["pytorch", "tensorflow"],
         )
 
         return self._train(
@@ -223,7 +221,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         # imposed by the model
         asset = asset[: model.config.max_position_embeddings]
 
-        if model_framework == ModelFramework.PyTorch:
+        if model_framework == "pytorch":
             tokens = tokenizer(
                 asset,
                 return_tensors="pt",

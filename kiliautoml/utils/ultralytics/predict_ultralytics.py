@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Tuple, Union
 import yaml
 from typing_extensions import TypedDict
 
-from kiliautoml.utils.constants import HOME, ModelFramework, ModelFrameworkT
+from kiliautoml.utils.constants import HOME, ModelFrameworkT
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import JobPredictions, kili_print
 from kiliautoml.utils.path import PathUltralytics
@@ -24,7 +24,7 @@ def ultralytics_predict_object_detection(
     prioritization: bool = False,
 ) -> JobPredictions:
 
-    if model_framework == ModelFramework.PyTorch:
+    if model_framework == "pytorch":
         filename_weights = "best.pt"
     else:
         raise NotImplementedError(

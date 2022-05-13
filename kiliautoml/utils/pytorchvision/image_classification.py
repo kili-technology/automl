@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.utils.data as torch_Data
 from torchvision import models
 
-from kiliautoml.utils.constants import ModelName, ModelNameT, ModelRepositoryT
+from kiliautoml.utils.constants import ModelNameT, ModelRepositoryT
 from kiliautoml.utils.helpers import set_default
 from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
@@ -15,9 +15,9 @@ from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
 def set_model_name_image_classification(model_name) -> ModelNameT:
     model_name = set_default(  # type:ignore
         model_name,
-        ModelName.EfficientNetB0,
+        "efficientnet_b0",
         "model_name",
-        [ModelName.EfficientNetB0, ModelName.Resnet50],
+        ["efficientnet_b0", "resnet50"],
     )
 
     return model_name
@@ -63,11 +63,11 @@ def get_trained_model_image_classif(
 
 
 def initialize_model_img_class(model_name: ModelNameT, class_names):
-    if model_name == ModelName.EfficientNetB0:
+    if model_name == "efficientnet_b0":
         model = models.efficientnet_b0(pretrained=True)
         num_ftrs = model.classifier[1].in_features
         model.classifier[1] = nn.Linear(num_ftrs, len(class_names))  # type:ignore
-    elif model_name == ModelName.Resnet50:
+    elif model_name == "resnet50":
         model = models.resnet50(pretrained=True)
         num_ftrs = model.fc.in_features
         model.fc = nn.Linear(num_ftrs, len(class_names))

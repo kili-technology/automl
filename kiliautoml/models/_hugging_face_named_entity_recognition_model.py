@@ -16,9 +16,7 @@ from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
     HOME,
-    MLTask,
     MLTaskT,
-    ModelFramework,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
@@ -36,7 +34,7 @@ class KiliNerAnnotations(TypedDict):
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task: MLTaskT = MLTask.NamedEntityRecognition  # type: ignore
+    ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"  # type: ignore
     model_repository: ModelRepositoryT = "huggingface"
 
     def __init__(
@@ -77,9 +75,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
         self.model_framework = set_default(  # type: ignore
             model_framework,
-            ModelFramework.PyTorch,
+            "pytorch",
             "model_framework",
-            [ModelFramework.PyTorch, ModelFramework.Tensorflow],
+            ["pytorch", "tensorflow"],
         )
 
         return self._train(
@@ -328,7 +326,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         # imposed by the model
         sequence = sentence[: model.config.max_position_embeddings]
 
-        if model_framework == ModelFramework.PyTorch:
+        if model_framework == "pytorch":
             tokens = tokenizer(
                 sequence,
                 return_tensors="pt",
