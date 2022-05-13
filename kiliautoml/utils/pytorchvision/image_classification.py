@@ -13,7 +13,7 @@ from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
 
 
 def set_model_name_image_classification(model_name) -> ModelNameT:
-    model_name = set_default(  # type:ignore
+    model_name = set_default(
         model_name,
         "efficientnet_b0",
         "model_name",

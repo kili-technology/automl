@@ -51,7 +51,7 @@ def train_image_bounding_box(
 ):
     from kiliautoml.utils.ultralytics.train import ultralytics_train_yolov5
 
-    model_repository_initialized: ModelRepositoryT = set_default(  # type: ignore
+    model_repository_initialized: ModelRepositoryT = set_default(
         model_repository,
         "ultralytics",
         "model_repository",

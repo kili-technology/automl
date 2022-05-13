@@ -30,7 +30,7 @@ from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task: MLTaskT = "CLASSIFICATION"  # type: ignore
+    ml_task: MLTaskT = "CLASSIFICATION"
     model_repository: ModelRepositoryT = "huggingface"
 
     def __init__(
@@ -43,7 +43,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(self)
 
-        model_name_set: ModelNameT = set_default(  # type: ignore
+        model_name_set: ModelNameT = set_default(
             model_name,
             "bert-base-multilingual-cased",
             "model_name",
@@ -159,13 +159,13 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         job_categories = categories_from_job(job)
         if not os.path.exists(path_dataset):
             self._write_dataset(assets, job_name, path_dataset, job_categories)
-        raw_datasets = datasets.load_dataset(  # type: ignore
+        raw_datasets = datasets.load_dataset(
             "json",
             data_files=path_dataset,
-            features=datasets.features.features.Features(  # type: ignore
+            features=datasets.features.features.Features(
                 {
-                    "label": datasets.ClassLabel(names=job_categories),  # type: ignore
-                    "text": datasets.Value(dtype="string"),  # type: ignore
+                    "label": datasets.ClassLabel(names=job_categories),
+                    "text": datasets.Value(dtype="string"),
                 }
             ),
         )
@@ -176,7 +176,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         def tokenize_function(examples):
             return tokenizer(examples["text"], padding="max_length", truncation=True)
 
-        tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)  # type: ignore
+        tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
         train_dataset = tokenized_datasets["train"]  # type: ignore
 
         path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)

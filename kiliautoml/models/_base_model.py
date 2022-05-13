@@ -8,7 +8,7 @@ from kiliautoml.utils.helpers import JobPredictions
 class BaseModel(metaclass=ABCMeta):
     def __init__(self) -> None:
         # internal state attributes
-        self.model_framework: ModelFrameworkT = "pytorch"  # type: ignore
+        self.model_framework: ModelFrameworkT = "pytorch"
 
     @abstractmethod
     def train(

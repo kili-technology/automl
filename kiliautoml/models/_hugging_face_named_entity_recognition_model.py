@@ -34,7 +34,7 @@ class KiliNerAnnotations(TypedDict):
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"  # type: ignore
+    ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"
     model_repository: ModelRepositoryT = "huggingface"
 
     def __init__(
@@ -47,7 +47,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(self)
 
-        model_name_setted: ModelNameT = set_default(  # type: ignore
+        model_name_setted: ModelNameT = set_default(
             model_name,
             "bert-base-multilingual-cased",
             "model_name",
@@ -179,13 +179,15 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             job, job_name, path_dataset, assets, clear_dataset_cache
         )
 
-        raw_datasets = datasets.load_dataset(  # type: ignore
+        raw_datasets = datasets.load_dataset(
             "json",
             data_files=path_dataset,
-            features=datasets.features.features.Features(  # type: ignore
+            features=datasets.features.features.Features(
                 {
-                    "ner_tags": datasets.Sequence(feature=datasets.ClassLabel(names=label_list)),  # type: ignore # noqa
-                    "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),  # type: ignore # noqa
+                    "ner_tags": datasets.Sequence(
+                        feature=datasets.ClassLabel(names=label_list)
+                    ),  # noqa
+                    "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),  # noqa
                 }
             ),
         )
@@ -237,9 +239,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         trainer = Trainer(
             model=model,
             args=training_arguments,
-            data_collator=data_collator,  # type:ignore
+            data_collator=data_collator,  # type: ignore
             tokenizer=tokenizer,
-            train_dataset=train_dataset,  # type:ignore
+            train_dataset=train_dataset,  # type: ignore
         )
         output = trainer.train()
         kili_print(f"Saving model to {path_model}")
