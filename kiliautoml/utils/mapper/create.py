@@ -3,16 +3,12 @@ from typing import Any, List  # , Optional
 
 import kmapper as km
 import numpy as np
-import torch
-from img2vec_pytorch import Img2Vec
-from more_itertools import chunked
 from sklearn import linear_model
 from sklearn.model_selection import cross_val_predict
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from tqdm import tqdm
 
-from kiliautoml.utils.download_assets import DownloadedImages, download_project_images
+from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.mapper.clustering import DensityMergeHierarchicalClustering
 from kiliautoml.utils.mapper.gudhi_mapper import (
@@ -23,17 +19,7 @@ from kiliautoml.utils.mapper.gudhi_mapper import (
     gudhi_to_KM,
 )
 from kiliautoml.utils.type import LabelTypeT
-
-
-def embeddings_downloaded_images(images: List[DownloadedImages], batch_size=4) -> np.ndarray:
-    """Get the embeddings of the images using a generic model trained on ImageNet."""
-    color_images = [im.image.convert("RGB") for im in images]
-    img2vec = Img2Vec(cuda=torch.cuda.is_available(), model="efficientnet_b7")
-    vecs = []
-    for imgs in tqdm(list(chunked(color_images, batch_size))):
-        _ = np.array(img2vec.get_vec(imgs))
-        vecs.append(_)
-    return np.concatenate(vecs, axis=0)
+from prioritize import embeddings_images
 
 
 class MapperImageClassification:
@@ -71,10 +57,10 @@ class MapperImageClassification:
         self,
         cv_folds: int,
     ):
-
         # Compute embeddings
         kili_print("Computing embeddings")
-        self.embeddings = embeddings_downloaded_images(self.image_list)
+        pil_images = [image.image for image in self.image_list]
+        self.embeddings = embeddings_images(pil_images)
         kili_print(f"Embeddings successfully computed with shape: {self.embeddings.shape}")
 
         if self.label_types is None:  # TODO modify when asset type changed
