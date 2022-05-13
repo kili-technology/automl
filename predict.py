@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import click
 from kili.client import Kili
@@ -19,13 +19,13 @@ from kiliautoml.utils.helpers import (
     get_project,
     kili_print,
 )
-from kiliautoml.utils.type import LabelTypeT
+from kiliautoml.utils.type import AssetT, LabelTypeT
 
 
 def predict_object_detection(
     *,
     api_key: str,
-    assets: List[Dict],
+    assets: List[AssetT],
     job_name: str,
     project_id: str,
     model_path: Optional[str],

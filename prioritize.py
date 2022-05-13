@@ -96,7 +96,11 @@ def normalize_priorities(
 
 
 class Prioritizer:
-    def __init__(self, embeddings: np.ndarray, predictions_probability: List[float] = []):
+    def __init__(
+        self,
+        embeddings: np.ndarray,  # type: ignore
+        predictions_probability: List[float] = [],
+    ):
         """Initialize Prioritizer class.
 
         Args:
@@ -277,7 +281,7 @@ class Prioritizer:
         return combined_priorities
 
 
-def embeddings_images(images: List[PILImage], batch_size=4) -> np.ndarray:
+def embeddings_images(images: List[PILImage], batch_size=4) -> np.ndarray:  # type: ignore
     """Get the embeddings of the images using a generic model trained on ImageNet."""
     color_images = [im.convert("RGB") for im in images]
     img2vec = Img2Vec(cuda=torch.cuda.is_available(), model="efficientnet_b7")
@@ -407,8 +411,8 @@ def main(
 
     job_name, job = jobs_item[0]
     content_input = job.get("content", {}).get("input")
-    ml_task: MLTaskT = job.get("mlTask")
-    tools: ToolT = job.get("tools")
+    ml_task: MLTaskT = job.get("mlTask")  # type: ignore
+    tools: ToolT = job.get("tools")  # type: ignore
 
     if clear_dataset_cache:
         clear_automl_cache(

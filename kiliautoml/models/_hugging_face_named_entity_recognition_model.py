@@ -1,7 +1,7 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional
 from warnings import warn
 
 import datasets
@@ -23,6 +23,7 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print, set_default
 from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
+from kiliautoml.utils.type import AssetT, JobT, TrainingArgsT
 
 
 class KiliNerAnnotations(TypedDict):
@@ -60,13 +61,13 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def train(
         self,
-        assets: List[Dict],
-        job: Dict,
+        assets: List[AssetT],
+        job: JobT,
         job_name: str,
         epochs: int,
         model_framework: Optional[ModelFrameworkT] = None,
         clear_dataset_cache: bool = False,
-        training_args: dict = {},
+        training_args: TrainingArgsT = {},
         disable_wandb: bool = False,
     ):
         nltk.download("punkt")
@@ -93,7 +94,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def predict(
         self,
-        assets: Union[List[Dict], List[str]],
+        assets: List[AssetT],
         model_path: str,
         from_project: Optional[str],
         job_name: str,
@@ -116,7 +117,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             text = self._get_text_from(asset["content"])  # type: ignore
 
             offset = 0
-            predictions_asset: List[dict] = []
+            predictions_asset: List[dict] = []  # type: ignore
 
             probas_asset = []
             for sentence in nltk.sent_tokenize(text):
@@ -155,13 +156,13 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def _train(
         self,
-        assets: List[Dict],
-        job: Dict,
+        assets: List[AssetT],
+        job: JobT,
         job_name: str,
         epochs: int,
         model_repository_dir: ModelRepositoryDirT,
         clear_dataset_cache: bool,
-        training_args: Dict,
+        training_args: TrainingArgsT,
         disable_wandb: bool,
     ) -> float:
         """
@@ -179,15 +180,15 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             job, job_name, path_dataset, assets, clear_dataset_cache
         )
 
-        raw_datasets = datasets.load_dataset(
+        raw_datasets = datasets.load_dataset(  # type: ignore
             "json",
             data_files=path_dataset,
-            features=datasets.features.features.Features(
+            features=datasets.features.features.Features(  # type: ignore
                 {
-                    "ner_tags": datasets.Sequence(
-                        feature=datasets.ClassLabel(names=label_list)
+                    "ner_tags": datasets.Sequence(  # type: ignore
+                        feature=datasets.ClassLabel(names=label_list)  # type: ignore
                     ),  # noqa
-                    "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),  # noqa
+                    "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),  # type: ignore # noqa
                 }
             ),
         )
@@ -250,10 +251,10 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def _kili_assets_to_hf_ner_dataset(
         self,
-        job: Dict,
+        job: JobT,
         job_name: str,
         path_dataset: str,
-        assets: List[Dict],
+        assets: List[AssetT],
         clear_dataset_cache: bool,
     ):
 

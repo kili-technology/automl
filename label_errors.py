@@ -123,7 +123,7 @@ def main(
             continue
         kili_print(f"Detecting errors for job: {job_name}")
         content_input = job.get("content", {}).get("input")
-        ml_task: MLTaskT = job.get("mlTask")
+        ml_task: MLTaskT = job.get("mlTask")  # type: ignore
         if clear_dataset_cache:
             clear_automl_cache(
                 command="label_errors",

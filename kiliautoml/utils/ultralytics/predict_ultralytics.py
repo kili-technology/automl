@@ -1,7 +1,7 @@
 import os
 import shutil
 from glob import glob
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import yaml
 from typing_extensions import TypedDict
@@ -10,12 +10,13 @@ from kiliautoml.utils.constants import HOME, ModelFrameworkT
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import JobPredictions, kili_print
 from kiliautoml.utils.path import PathUltralytics
+from kiliautoml.utils.type import AssetT
 from kiliautoml.utils.ultralytics.constants import YOLOV5_REL_PATH
 
 
 def ultralytics_predict_object_detection(
     api_key: str,
-    assets: Union[List[Dict], List[str]],
+    assets: List[AssetT],
     project_id: str,
     model_framework: ModelFrameworkT,
     model_path: str,
@@ -63,7 +64,7 @@ def ultralytics_predict_object_detection(
     inference_files_by_id = {get_id_from_path(pf): pf for pf in inference_files}
 
     kili_print("Converting Ultralytics' YoloV5 inference to Kili JSON format...")
-    id_json_list: List[Tuple[str, Dict]] = []
+    id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
 
     proba_list: List[float] = []
     for image in downloaded_images:

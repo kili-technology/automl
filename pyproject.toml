@@ -24,6 +24,7 @@ reportMissingTypeStubs = false
 
 pythonVersion = "3.7"
 typeCheckingMode = "basic"
+reportMissingTypeArgument = true
 
 
 

@@ -11,6 +11,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from kiliautoml.utils.constants import ModelFrameworkT
 from kiliautoml.utils.helpers import categories_from_job, kili_print
 from kiliautoml.utils.path import ModelRepositoryDirT
+from kiliautoml.utils.type import JobT
 from kiliautoml.utils.ultralytics.constants import ULTRALYTICS_REL_PATH, YOLOV5_REL_PATH
 
 env = Environment(
@@ -44,9 +45,9 @@ def ultralytics_train_yolov5(
     *,
     api_key: str,
     model_repository_dir: ModelRepositoryDirT,
-    job: Dict,
+    job: JobT,
     max_assets: Optional[int],
-    json_args: Dict,
+    json_args: Dict,  # type: ignore
     project_id: str,
     epochs: int,
     model_framework: ModelFrameworkT,

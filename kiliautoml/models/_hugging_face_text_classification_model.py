@@ -1,7 +1,7 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
-from typing import Dict, List, Optional
+from typing import List, Optional
 from warnings import warn
 
 import datasets
@@ -26,6 +26,7 @@ from kiliautoml.utils.helpers import (
     set_default,
 )
 from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
+from kiliautoml.utils.type import AssetT, JobT, TrainingArgsT
 
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
@@ -53,13 +54,13 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def train(
         self,
-        assets: List[Dict],
-        job: Dict,
+        assets: List[AssetT],
+        job: JobT,
         job_name: str,
         epochs: int,
         model_framework: Optional[ModelFrameworkT] = None,
         clear_dataset_cache: bool = False,
-        training_args: dict = {},
+        training_args: TrainingArgsT = {},
         disable_wandb: bool = False,
     ) -> float:
 
@@ -93,7 +94,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def predict(
         self,
-        assets: List[Dict],
+        assets: List[AssetT],
         model_path: Optional[str],
         from_project: Optional[str],
         job_name: str,
@@ -139,13 +140,13 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def _train(
         self,
-        assets: List[Dict],
-        job: Dict,
+        assets: List[AssetT],
+        job: JobT,
         job_name: str,
         model_repository_dir: ModelRepositoryDirT,
         clear_dataset_cache: bool,
         epochs: int,
-        training_args: dict,
+        training_args: TrainingArgsT,
         disable_wandb: bool,
     ) -> float:
         training_args = training_args or {}
@@ -159,13 +160,13 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         job_categories = categories_from_job(job)
         if not os.path.exists(path_dataset):
             self._write_dataset(assets, job_name, path_dataset, job_categories)
-        raw_datasets = datasets.load_dataset(
+        raw_datasets = datasets.load_dataset(  # type: ignore
             "json",
             data_files=path_dataset,
-            features=datasets.features.features.Features(
+            features=datasets.features.features.Features(  # type: ignore
                 {
-                    "label": datasets.ClassLabel(names=job_categories),
-                    "text": datasets.Value(dtype="string"),
+                    "label": datasets.ClassLabel(names=job_categories),  # type: ignore
+                    "text": datasets.Value(dtype="string"),  # type: ignore
                 }
             ),
         )

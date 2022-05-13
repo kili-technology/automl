@@ -38,8 +38,8 @@ def get_trained_model_image_classif(
     epochs: int,
     model_name: ModelNameT,
     verbose: int,
-    class_names: list,
-    image_datasets: dict,
+    class_names: List[str],
+    image_datasets: dict,  # type: ignore
     save_model_path: Optional[ModelPathT] = None,
 ):
     dataloaders = {
@@ -76,7 +76,11 @@ def initialize_model_img_class(model_name: ModelNameT, class_names):
     return model
 
 
-def predict_probabilities(loader: torch_Data.DataLoader, model, verbose=0) -> List[float]:
+def predict_probabilities(
+    loader: torch_Data.DataLoader,  # type: ignore
+    model,
+    verbose=0,
+) -> List[float]:
     """
     Method to compute the probabilities for all classes for the assets in the holdout set
     """

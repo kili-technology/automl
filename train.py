@@ -18,6 +18,7 @@ from kiliautoml.utils.constants import (
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ToolT,
 )
 from kiliautoml.utils.helpers import (
     get_assets,
@@ -189,7 +190,7 @@ def main(
             )
         content_input = job.get("content", {}).get("input")
         ml_task = job.get("mlTask")
-        tools = job.get("tools")
+        tools: List[ToolT] = job.get("tools")  # type: ignore
         training_loss = None
         if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
 
