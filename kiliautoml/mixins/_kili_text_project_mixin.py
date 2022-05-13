@@ -3,6 +3,7 @@ from abc import ABCMeta
 from kili.client import Kili
 
 from kiliautoml.utils.download_assets import download_asset_unicode
+from kiliautoml.utils.type import AssetT
 
 
 class KiliTextProjectMixin(metaclass=ABCMeta):
