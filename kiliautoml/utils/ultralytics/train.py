@@ -8,12 +8,12 @@ from functools import reduce
 from typing import Dict, List, Optional
 
 import pandas as pd
-import requests
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from kili.client import Kili
 from tqdm.auto import tqdm
 
 from kiliautoml.utils.constants import ModelFrameworkT
+from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import categories_from_job, kili_print
 from kiliautoml.utils.path import ModelRepositoryDirT
 from kiliautoml.utils.ultralytics.constants import ULTRALYTICS_REL_PATH, YOLOV5_REL_PATH
@@ -74,7 +74,12 @@ def yaml_preparation(
         if len(assets_split) == 0:
             raise Exception("No asset in dataset, exiting...")
         path_split = os.path.join(path, "images", name_split)
-        save_images(kili_api_key, project_id, name_split, assets_split, path_split)
+        download_project_images(
+            api_key=kili_api_key,
+            assets=assets_split,
+            project_id=project_id,
+            output_folder=path_split,
+        )
 
         names = class_names
         path_labels = re.sub("/images/", "/labels/", path_split)
@@ -108,21 +113,6 @@ def save_annotations_to_yolo_format(names, handler, job):
         _x_, _y_ = (x_max + x_min) / 2, (y_max + y_min) / 2
         _w_, _h_ = x_max - x_min, y_max - y_min
         handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")  # type: ignore
-
-
-def save_images(kili_api_key, project_id, name_split, assets_split, path_split):
-    print(f"Building {name_split} in {path_split} ...")
-    os.makedirs(path_split, exist_ok=True)
-    for asset in tqdm(assets_split):
-        img_data = requests.get(
-            asset["content"],
-            headers={
-                "Authorization": f"X-API-Key: {kili_api_key}",
-                "PROJECT_ID": project_id,
-            },
-        ).content
-        with open(os.path.join(path_split, asset["id"] + ".jpg"), "wb") as handler:
-            handler.write(img_data)
 
 
 def get_assets_object_detection(project_id, label_types, max_assets, kili):
