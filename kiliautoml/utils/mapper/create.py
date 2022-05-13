@@ -6,10 +6,10 @@ import numpy as np
 import torch
 from img2vec_pytorch import Img2Vec
 from more_itertools import chunked
+from sklearn import linear_model
 from sklearn.model_selection import cross_val_predict
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.svm import SVC
 from tqdm import tqdm
 
 from kiliautoml.utils.download_assets import DownloadedImages, download_project_images
@@ -53,6 +53,11 @@ class MapperImageClassification:
         self.label_types = label_types
         self.assets = assets
 
+        class_list = self.job["content"]["categories"]
+        self.cat2id = {}
+        for i, cat in enumerate(class_list):
+            self.cat2id[cat] = i
+
         # Check proper way to create folder
         os.makedirs(assets_repository, exist_ok=True)
 
@@ -72,51 +77,10 @@ class MapperImageClassification:
         self.embeddings = embeddings_downloaded_images(self.image_list)
         kili_print(f"Embeddings successfully computed with shape: {self.embeddings.shape}")
 
-        if self.label_types is None:
-            self._create_mapper_with_labels(cv_folds)
-
-        mapper = None
-        return mapper
-
-    def _create_mapper_with_labels(self, cv_folds: int):
-
-        class_list = self.job["content"]["categories"]
-        cat2id = {}
-        for i, cat in enumerate(class_list):
-            cat2id[cat] = i
-
-        # Get labels (as string and number_id)
-        self.labels = [
-            asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
-            for asset in self.assets
-        ]
-        self.label_id_array = [cat2id[label] for label in self.labels]
-
-        # Compute predictions from embeddings with a simple model
-        kili_print("Compute prediction with model: linear SVM")
-        classifier = make_pipeline(StandardScaler(), SVC(kernel="linear", probability=True))
-        self.predict = cross_val_predict(
-            classifier, self.embeddings, self.label_id_array, cv=cv_folds, method="predict_proba"
-        )
-        self.predict_order = np.argsort(self.predict, axis=1)
-        self.prediction_true_class = [
-            self.predict[enum, item] for enum, item in enumerate(self.label_id_array)
-        ]
-        self.predict_class = self.predict_order[:, -1]
-        accuracy = round(
-            np.sum(self.predict_class == self.label_id_array) / len(self.label_id_array) * 100, 2
-        )
-        kili_print("Model accuracy is:" f" {accuracy}%")
-
-        # Cretae custom tooltip (to be put in custom_tooltip_picture function)
-        self.tooltip_s = custom_tooltip_picture(
-            np.column_stack((self.label_id_array, self.predict_class)),
-            pict_data_type="img_list",
-            image_list=self.image_list,
-        )
-
-        # Compute assignments with confusion filter
-        self.assignments = confusion_filter(self.predict, self.label_id_array)
+        if self.label_types is None:  # TODO modify when asset type changed
+            assignments, lens, lens_names = self._get_assignments_and_lens_with_labels(cv_folds)
+        else:  # TODO modify when asset type changed
+            assignments, lens, lens_names = self._get_assignments_and_lens_without_labels(cv_folds)
 
         kili_print("fitting nodes of Mapper")
         Mapper_kili = CoverComplex(
@@ -124,7 +88,7 @@ class MapperImageClassification:
             # can be 'point cloud' or 'distance matrix' if already computed
             input_type="point cloud",
             cover="precomputed",  # Always for our type of cover
-            assignments=self.assignments,
+            assignments=assignments,
             colors=None,  # Choose how to colour the nodes. Must be numpy array of dimension 2
             mask=0,  # Remove the clusters containing less than mask points
             # Choose the clustering algorithm
@@ -149,6 +113,57 @@ class MapperImageClassification:
             " of assets appear in Mapper"
         )
 
+        temp = gudhi_to_KM(Mapper_kili)
+        mapper = km.KeplerMapper(verbose=2)
+        _ = mapper.visualize(
+            temp,
+            lens=lens,
+            lens_names=lens_names,
+            custom_tooltips=self.tooltip_s,
+            color_values=lens,
+            color_function_name=lens_names,
+            title="Mapper_" + self.job_name,
+            path_html="Mapper_" + self.job_name + ".html",
+        )
+        return Mapper_kili
+
+    def _get_assignments_and_lens_with_labels(self, cv_folds: int):
+
+        # Get labels (as string and number_id)
+        self.labels = [
+            asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
+            for asset in self.assets
+        ]
+        self.label_id_array = [self.cat2id[label] for label in self.labels]
+
+        # Compute predictions from embeddings with a simple model
+        kili_print("Compute prediction with model: linear SVM")
+        classifier = make_pipeline(
+            StandardScaler(), linear_model.SGDClassifier(loss="log", alpha=0.1)
+        )
+        self.predict = cross_val_predict(
+            classifier, self.embeddings, self.label_id_array, cv=cv_folds, method="predict_proba"
+        )
+        self.predict_order = np.argsort(self.predict, axis=1)
+        self.prediction_true_class = [
+            self.predict[enum, item] for enum, item in enumerate(self.label_id_array)
+        ]
+        self.predict_class = self.predict_order[:, -1]
+        accuracy = round(
+            np.sum(self.predict_class == self.label_id_array) / len(self.label_id_array) * 100, 2
+        )
+        kili_print("Model accuracy is:" f" {accuracy}%")
+
+        # Cretae custom tooltip (to be put in custom_tooltip_picture function)
+        self.tooltip_s = custom_tooltip_picture(
+            np.column_stack((self.label_id_array, self.predict_class)),
+            pict_data_type="img_list",
+            image_list=self.image_list,
+        )
+
+        # Compute assignments with confusion filter
+        assignments = confusion_filter(self.predict, self.label_id_array)
+
         # Create lens for statistic displayed in Mapper
         lens = np.column_stack(
             (
@@ -159,30 +174,64 @@ class MapperImageClassification:
                 self.predict_class == self.label_id_array,
             )
         )
+        lens_names = [
+            "confidence_C",
+            "correct_class",
+            "confidence_PC",
+            "predicted_class",
+            "prediction_error",
+        ]
 
-        temp = gudhi_to_KM(Mapper_kili)
-        mapper = km.KeplerMapper(verbose=2)
-        _ = mapper.visualize(
-            temp,
-            lens=lens,
-            lens_names=[
-                "confidence_CC",
-                "correct_class",
-                "confidence_PC",
-                "projected_class",
-                "prediction_error",
-            ],
-            custom_tooltips=self.tooltip_s,
-            color_values=lens,
-            color_function_name=[
-                "confidence_C",
-                "correct_class",
-                "confidence_PC",
-                "projected_class",
-                "prediction_error",
-            ],
-            title="Mapper_" + self.job_name,
-            path_html="Mapper_" + self.job_name + ".html",
+        return assignments, lens, lens_names
+
+    def _get_assignments_and_lens_without_labels(self, cv_folds: int):
+
+        idx_labeled_assets = [
+            idx for idx, asset in enumerate(self.assets) if len(asset["labels"]) > 0
+        ]
+
+        # Get labels (as string and number_id)
+        self.labels = [
+            self.assets[idx]["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
+            for idx in idx_labeled_assets
+        ]
+        self.label_id_array = [self.cat2id[label] for label in self.labels]
+
+        # Compute predictions from embeddings with a simple model
+        kili_print("Compute prediction with model: linear SVM")
+        classifier = make_pipeline(
+            StandardScaler(), linear_model.SGDClassifier(loss="log", alpha=0.1)
+        )
+        classifier.fit(self.embeddings[idx_labeled_assets, :], self.label_id_array)
+        self.predict = classifier.predict(self.embeddings)
+        self.predict_order = np.argsort(self.predict, axis=1)
+        self.prediction_true_class = [
+            self.predict[enum, item] for enum, item in enumerate(self.label_id_array)
+        ]
+        self.predict_class = self.predict_order[:, -1]
+        accuracy = round(
+            np.sum(self.predict_class == self.label_id_array) / len(self.label_id_array) * 100, 2
+        )
+        kili_print("Model accuracy is:" f" {accuracy}%")
+
+        # Cretae custom tooltip (to be put in custom_tooltip_picture function)
+        self.tooltip_s = custom_tooltip_picture(
+            self.predict_class,
+            pict_data_type="img_list",
+            image_list=self.image_list,
         )
 
-        return Mapper_kili
+        # Compute assignments with confusion filter
+        assignments = confusion_filter(self.predict)
+
+        # Create lens for statistic displayed in Mapper
+        lens = np.column_stack(
+            (np.max(self.predict, axis=1), self.predict_class, self.predict_order[:, -2])
+        )
+        lens_names = [
+            "confidence_PC",
+            "predicted_class",
+            "alt_predicted_class",
+        ]
+
+        return assignments, lens, lens_names
