@@ -20,15 +20,10 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
     ToolT,
 )
-from kiliautoml.utils.helpers import (
-    get_assets,
-    get_project,
-    kili_print,
-    parse_label_types,
-    set_default,
-)
+from kiliautoml.utils.helpers import get_assets, get_project, kili_print, set_default
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.path import Path
+from kiliautoml.utils.type import AssetStatusT
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
@@ -45,7 +40,7 @@ def train_image_bounding_box(
     model_name,
     model_repository: ModelRepositoryT,
     project_id,
-    label_types,
+    asset_status_in,
     clear_dataset_cache,
     title,
     disable_wandb,
@@ -80,7 +75,7 @@ def train_image_bounding_box(
             epochs=epochs,
             project_id=project_id,
             model_framework=model_framework,
-            label_types=label_types,
+            asset_status_in=asset_status_in,
             clear_dataset_cache=clear_dataset_cache,
             title=title,
             disable_wandb=disable_wandb,
@@ -101,11 +96,11 @@ def train_image_bounding_box(
 @click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
 @click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
-    "--label-types",
-    default=None,
+    "--asset-status-in",
+    default=["LABELED", "TO_REVIEW", "REVIEWED"],
     help=(
-        "Comma separated list Kili specific label types to select (among DEFAULT,"
-        " REVIEW, PREDICTION)"
+        "Comma separated list of Kili asset status to select(among "
+        "'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED')"
     ),
 )
 @click.option(
@@ -161,7 +156,7 @@ def main(
     model_repository: ModelRepositoryT,
     project_id: str,
     epochs: int,
-    label_types: str,
+    asset_status_in: List[AssetStatusT],
     target_job: List[str],
     max_assets: int,
     json_args: str,
@@ -197,8 +192,7 @@ def main(
             assets = get_assets(
                 kili,
                 project_id,
-                parse_label_types(label_types),
-                labeling_statuses=["LABELED"],
+                asset_status_in,
                 max_assets=max_assets,
             )
             training_loss = HuggingFaceTextClassificationModel(
@@ -221,8 +215,7 @@ def main(
             assets = get_assets(
                 kili,
                 project_id,
-                parse_label_types(label_types),
-                labeling_statuses=["LABELED"],
+                asset_status_in=asset_status_in,
                 max_assets=max_assets,
             )
 
@@ -255,7 +248,7 @@ def main(
                 model_repository=model_repository,
                 project_id=project_id,
                 epochs=epochs,
-                label_types=parse_label_types(label_types),
+                asset_status_in=asset_status_in,
                 clear_dataset_cache=clear_dataset_cache,
                 title=title,
                 disable_wandb=disable_wandb,
@@ -265,8 +258,7 @@ def main(
             assets = get_assets(
                 kili,
                 project_id,
-                parse_label_types(label_types),
-                labeling_statuses=["LABELED"],
+                asset_status_in,
                 max_assets=max_assets,
             )
 

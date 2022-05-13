@@ -52,20 +52,13 @@ download: |
           first=first,
           skip=skip,
           disable_tqdm=True,
+          status_in = asset_status_in
           fields=[
               'id',
               'content',
               'labels.createdAt',
               'labels.jsonResponse',
               'labels.labelType'])
-  assets = [{
-          **a,
-          'labels': [
-              l for l in sorted(a['labels'], key=lambda l: l['createdAt']) \
-                  if l['labelType'] in [{% for label_type in label_types %}"{{ label_type }}", {% endfor %}]
-          ][-1:],
-      } for a in assets]
-  assets = [a for a in assets if len(a['labels']) > 0]
   n_train_assets = math.floor(len(assets) * train_val_proportions[0])
   n_val_assets = math.floor(len(assets) * train_val_proportions[1])
   assets_splits = {
