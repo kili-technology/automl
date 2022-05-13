@@ -1,4 +1,5 @@
-from typing import Any, List, Optional
+import os
+from typing import Any, List  # , Optional
 
 import kmapper as km
 import numpy as np
@@ -44,13 +45,16 @@ class MapperImageClassification:
         assets: List[Any],
         job: dict,
         job_name: str,
-        assets_repository: Optional[str],
+        assets_repository,  # check type
         label_types: LabelTypeT,
     ):
         self.job = job
         self.job_name = job_name
         self.label_types = label_types
         self.assets = assets
+
+        # Check proper way to create folder
+        os.makedirs(assets_repository, exist_ok=True)
 
         # Get list of image
         self.image_list = download_project_images(
@@ -68,7 +72,7 @@ class MapperImageClassification:
         self.embeddings = embeddings_downloaded_images(self.image_list)
         kili_print(f"Embeddings successfully computed with shape: {self.embeddings.shape}")
 
-        if self.label_types == "LABELED":
+        if self.label_types is None:
             self._create_mapper_with_labels(cv_folds)
 
         mapper = None
