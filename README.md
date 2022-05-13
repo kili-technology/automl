@@ -46,10 +46,10 @@ python train.py \
 By default, the library uses [Weights and Biases](https://wandb.ai/site) to track the training and the quality of the predictions.
 The model is then stored in the cache of the AutoML library in `HOME/.cache/kili/automl`.
 Kili automl training does the following:
-* Selects the models related to the tasks declared in the project.
-* Retrieve Kili's asset data and convert it into the input format for the model.
+* Selects the models related to the tasks declared in the project ontology.
+* Retrieve Kili's asset data and convert it into the input format for each model.
 * Finetunes the model on the input data.
-* Outputs the model loss
+* Outputs the model loss.
 
 Here are the supported ML frameworks and the tasks they are used for.
 
