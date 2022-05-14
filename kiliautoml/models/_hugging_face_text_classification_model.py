@@ -208,7 +208,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                     handler.write(
                         json.dumps(
                             {
-                                "text": self._get_text_from(asset["content"]),
+                                "text": self._get_text_from(asset),
                                 "label": job_categories.index(label_category),
                             }
                         )
