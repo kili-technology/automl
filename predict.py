@@ -1,5 +1,5 @@
 import os
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import click
 from kili.client import Kili
@@ -11,15 +11,7 @@ from kiliautoml.models import (
 from kiliautoml.models._pytorchvision_image_classification import (
     PyTorchVisionImageClassificationModel,
 )
-from kiliautoml.utils.constants import (
-    ContentInput,
-    InputType,
-    MLTask,
-    ModelFramework,
-    ModelFrameworkT,
-    ModelRepository,
-    Tool,
-)
+from kiliautoml.utils.constants import ModelFrameworkT
 from kiliautoml.utils.helpers import (
     JobPredictions,
     get_assets,
@@ -27,13 +19,13 @@ from kiliautoml.utils.helpers import (
     get_project,
     kili_print,
 )
-from kiliautoml.utils.type import LabelTypeT
+from kiliautoml.utils.type import AssetT, LabelTypeT
 
 
 def predict_object_detection(
     *,
     api_key: str,
-    assets: List[Dict],
+    assets: List[AssetT],
     job_name: str,
     project_id: str,
     model_path: Optional[str],
@@ -63,15 +55,15 @@ def predict_object_detection(
     split_path = os.path.normpath(model_path_res).split(os.path.sep)
     model_repository = split_path[-7]
     kili_print(f"Model base repository: {model_repository}")
-    if model_repository not in [ModelRepository.Ultralytics]:
+    if model_repository not in ["ultralytics"]:
         raise ValueError(f"Unknown model base repository: {model_repository}")
 
     model_framework: ModelFrameworkT = split_path[-5]  # type: ignore
     kili_print(f"Model framework: {model_framework}")
-    if model_framework not in [ModelFramework.PyTorch, ModelFramework.Tensorflow]:
+    if model_framework not in ["pytorch", "tensorflow"]:
         raise ValueError(f"Unknown model framework: {model_framework}")
 
-    if model_repository == ModelRepository.Ultralytics:
+    if model_repository == "ultralytics":
         job_predictions = ultralytics_predict_object_detection(
             api_key,
             assets,
@@ -106,11 +98,7 @@ def predict_one_job(
     tools,
     prioritization,
 ) -> JobPredictions:
-    if (
-        content_input == ContentInput.Radio
-        and input_type == InputType.Text
-        and ml_task == MLTask.Classification
-    ):
+    if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
         job_predictions = HuggingFaceTextClassificationModel(
             project_id,
             api_key,
@@ -125,9 +113,9 @@ def predict_one_job(
         )
 
     elif (
-        content_input == ContentInput.Radio
-        and input_type == InputType.Text
-        and ml_task == MLTask.NamedEntityRecognition
+        content_input == "radio"
+        and input_type == "TEXT"
+        and ml_task == "NAMED_ENTITIES_RECOGNITION"
     ):
         job_predictions = HuggingFaceNamedEntityRecognitionModel(
             project_id,
@@ -143,10 +131,10 @@ def predict_one_job(
         )
 
     elif (
-        content_input == ContentInput.Radio
-        and input_type == InputType.Image
-        and ml_task == MLTask.ObjectDetection
-        and Tool.Rectangle in tools
+        content_input == "radio"
+        and input_type == "IMAGE"
+        and ml_task == "OBJECT_DETECTION"
+        and "rectangle" in tools
     ):
         job_predictions = predict_object_detection(
             api_key=api_key,
@@ -158,11 +146,7 @@ def predict_one_job(
             prioritization=prioritization,
             from_project=from_project,
         )
-    elif (
-        content_input == ContentInput.Radio
-        and input_type == InputType.Image
-        and ml_task == MLTask.Classification
-    ):
+    elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
         image_classification_model = PyTorchVisionImageClassificationModel(
             assets=assets,
             model_repository=model_repository,

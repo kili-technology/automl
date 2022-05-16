@@ -1,7 +1,7 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
-from typing import Dict, List, Optional
+from typing import List, Optional
 from warnings import warn
 
 import datasets
@@ -13,9 +13,7 @@ from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
     HOME,
-    MLTask,
     MLTaskT,
-    ModelFramework,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
@@ -28,11 +26,12 @@ from kiliautoml.utils.helpers import (
     set_default,
 )
 from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
+from kiliautoml.utils.type import AssetT, JobT, TrainingArgsT
 
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task: MLTaskT = MLTask.Classification  # type: ignore
+    ml_task: MLTaskT = "CLASSIFICATION"
     model_repository: ModelRepositoryT = "huggingface"
 
     def __init__(
@@ -45,7 +44,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(self)
 
-        model_name_set: ModelNameT = set_default(  # type: ignore
+        model_name_set: ModelNameT = set_default(
             model_name,
             "bert-base-multilingual-cased",
             "model_name",
@@ -55,13 +54,13 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def train(
         self,
-        assets: List[Dict],
-        job: Dict,
+        assets: List[AssetT],
+        job: JobT,
         job_name: str,
         epochs: int,
         model_framework: Optional[ModelFrameworkT] = None,
         clear_dataset_cache: bool = False,
-        training_args: dict = {},
+        training_args: TrainingArgsT = {},
         disable_wandb: bool = False,
     ) -> float:
 
@@ -77,9 +76,9 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         self.model_framework = set_default(  # type: ignore
             model_framework,
-            ModelFramework.PyTorch,
+            "pytorch",
             "model_framework",
-            [ModelFramework.PyTorch, ModelFramework.Tensorflow],
+            ["pytorch", "tensorflow"],
         )
 
         return self._train(
@@ -95,7 +94,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def predict(
         self,
-        assets: List[Dict],
+        assets: List[AssetT],
         model_path: Optional[str],
         from_project: Optional[str],
         job_name: str,
@@ -141,13 +140,13 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def _train(
         self,
-        assets: List[Dict],
-        job: Dict,
+        assets: List[AssetT],
+        job: JobT,
         job_name: str,
         model_repository_dir: ModelRepositoryDirT,
         clear_dataset_cache: bool,
         epochs: int,
-        training_args: dict,
+        training_args: TrainingArgsT,
         disable_wandb: bool,
     ) -> float:
         training_args = training_args or {}
@@ -178,7 +177,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         def tokenize_function(examples):
             return tokenizer(examples["text"], padding="max_length", truncation=True)
 
-        tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)  # type: ignore
+        tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
         train_dataset = tokenized_datasets["train"]  # type: ignore
 
         path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
@@ -223,7 +222,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         # imposed by the model
         asset = asset[: model.config.max_position_embeddings]
 
-        if model_framework == ModelFramework.PyTorch:
+        if model_framework == "pytorch":
             tokens = tokenizer(
                 asset,
                 return_tensors="pt",

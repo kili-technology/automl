@@ -14,9 +14,7 @@ from transformers import (
 )
 
 from kiliautoml.utils.constants import (
-    MLTask,
     MLTaskT,
-    ModelFramework,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
@@ -36,19 +34,19 @@ class HuggingFaceMixin(metaclass=ABCMeta):
     def _get_tokenizer_and_model(
         model_framework: ModelFrameworkT, model_path: str, ml_task: MLTaskT
     ):
-        if model_framework == ModelFramework.PyTorch:
+        if model_framework == "pytorch":
             tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True)
-            if ml_task == MLTask.NamedEntityRecognition:
+            if ml_task == "NAMED_ENTITIES_RECOGNITION":
                 model = AutoModelForTokenClassification.from_pretrained(model_path)
-            elif ml_task == MLTask.Classification:
+            elif ml_task == "CLASSIFICATION":
                 model = AutoModelForSequenceClassification.from_pretrained(model_path)
             else:
                 raise ValueError("unknown model task")
-        elif model_framework == ModelFramework.Tensorflow:
+        elif model_framework == "tensorflow":
             tokenizer = AutoTokenizer.from_pretrained(model_path)
-            if ml_task == MLTask.NamedEntityRecognition:
+            if ml_task == "NAMED_ENTITIES_RECOGNITION":
                 model = TFAutoModelForTokenClassification.from_pretrained(model_path)
-            elif ml_task == MLTask.Classification:
+            elif ml_task == "CLASSIFICATION":
                 model = TFAutoModelForSequenceClassification.from_pretrained(model_path)
             else:
                 raise ValueError("unknown model task")
@@ -65,16 +63,16 @@ class HuggingFaceMixin(metaclass=ABCMeta):
     ):
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         kwargs = {"num_labels": len(label_list), "id2label": dict(list(enumerate(label_list)))}
-        if model_framework == ModelFramework.PyTorch:
+        if model_framework == "pytorch":
             pass
-        elif model_framework == ModelFramework.Tensorflow:
+        elif model_framework == "tensorflow":
             kwargs.update({"from_pt": True})
         else:
             raise NotImplementedError
 
-        if ml_task == MLTask.NamedEntityRecognition:
+        if ml_task == "NAMED_ENTITIES_RECOGNITION":
             model = AutoModelForTokenClassification.from_pretrained(model_name, **kwargs)
-        elif ml_task == MLTask.Classification:
+        elif ml_task == "CLASSIFICATION":
             model = AutoModelForSequenceClassification.from_pretrained(model_name, **kwargs)
         else:
             raise NotImplementedError
@@ -103,7 +101,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         if split_path[-4] != cls.model_repository:
             raise ValueError("Inconsistent model base repository")
 
-        if split_path[-2] in [ModelFramework.PyTorch, ModelFramework.Tensorflow]:
+        if split_path[-2] in ["pytorch", "tensorflow"]:
             model_framework: ModelFrameworkT = split_path[-2]  # type: ignore
             kili_print(f"Model framework: {model_framework}")
         else:

@@ -34,7 +34,7 @@ if __name__ == "__main__":
     api_key = os.environ["KILI_API_KEY"]
     for a in assets:
         response = requests.get(
-            a["content"],  # type:ignore
+            a["content"],
             headers={
                 "Authorization": f"X-API-Key: {api_key}",
                 "PROJECT_ID": project_id,

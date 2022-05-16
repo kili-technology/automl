@@ -2,7 +2,7 @@ import json
 import os
 import random
 from glob import glob
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -11,7 +11,14 @@ from tqdm import tqdm
 
 from kiliautoml.utils.constants import HOME, InputTypeT
 from kiliautoml.utils.memoization import kili_project_memoizer
-from kiliautoml.utils.type import LabelingStatusT, LabelTypeT, StatusIntT
+from kiliautoml.utils.type import (
+    AssetT,
+    JobsT,
+    JobT,
+    LabelingStatusT,
+    LabelTypeT,
+    StatusIntT,
+)
 
 
 def set_all_seeds(seed):
@@ -25,7 +32,7 @@ def set_all_seeds(seed):
 set_all_seeds(42)
 
 
-def categories_from_job(job: Dict):
+def categories_from_job(job: JobT):
     return list(job["content"]["categories"].keys())
 
 
@@ -85,7 +92,7 @@ def get_asset_memoized(
     skip,
     status_in: Optional[List[StatusIntT]] = None,
     label_type_in: Optional[List[LabelTypeT]] = None,
-) -> List[Dict]:
+) -> List[AssetT]:
     return kili.assets(
         project_id=project_id,
         first=first,
@@ -131,7 +138,7 @@ def get_assets(
     label_type_in: List[LabelTypeT] = ["DEFAULT", "REVIEW"],
     max_assets: Optional[int] = None,
     labeling_statuses: List[LabelingStatusT] = ["LABELED", "UNLABELED"],
-) -> List[Dict]:
+) -> List[AssetT]:
     kili_print("Downloading asset metadata from Kili")
     if not labeling_statuses:
         raise ValueError("labeling_statuses must be a non-empty list.")
@@ -156,7 +163,7 @@ def get_assets(
     return assets
 
 
-def get_project(kili, project_id: str) -> Tuple[InputTypeT, Dict, str]:
+def get_project(kili, project_id: str) -> Tuple[InputTypeT, JobsT, str]:
     projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface", "title"])
     if len(projects) == 0:
         raise ValueError(
@@ -180,7 +187,7 @@ def parse_label_types(label_types: Optional[str]) -> List[LabelTypeT]:
         return ["DEFAULT", "REVIEW"]
 
 
-def set_default(x, x_default, x_name: str, x_range: List):
+def set_default(x, x_default, x_name: str, x_range: List):  # type: ignore
     if x not in x_range:
         kili_print(f"defaulting to {x_name}={x_default}")
         x = x_default
