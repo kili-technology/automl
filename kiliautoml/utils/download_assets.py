@@ -106,6 +106,7 @@ def download_project_images(
 def download_project_text(
     api_key: str,
     assets,
+<<<<<<< HEAD
 ) -> List[DownloadedText]:
     kili_print("Downloading project text...")
     downloaded_text = []
@@ -123,6 +124,14 @@ def download_project_text(
             except Exception:
                 time.sleep(1)
                 n_try += 1
+=======
+    project_id,
+) -> List[DownloadedText]:
+    kili_print("Downloading project text...")
+    downloaded_text = []
+    for asset in tqdm(assets):
+        content = download_asset_unicode(api_key, asset["content"], project_id)
+>>>>>>> b18ff6f (Update Mapper branch with Text Classification)
 
         downloaded_text.append(
             DownloadedText(
@@ -131,6 +140,7 @@ def download_project_text(
                 content=content,
             )
         )
+<<<<<<< HEAD
 
         toc = time.time() - tic
 
@@ -141,6 +151,12 @@ def download_project_text(
 
 
 def download_project_image_clean_lab(*, assets, api_key, data_path, job_name):
+=======
+    return downloaded_text
+
+
+def download_project_image_clean_lab(*, assets, api_key, data_path, job_name, project_id):
+>>>>>>> b18ff6f (Update Mapper branch with Text Classification)
     """
     Download assets that are stored in Kili and save them to folders depending on their
     label category

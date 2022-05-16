@@ -118,6 +118,7 @@ class MapperClassification:
             # Check proper way to create folder
             os.makedirs(assets_repository, exist_ok=True)
 
+        if self.input_type == InputType.Image:
             # Get list of image
             self.data = download_project_images(
                 api_key, assets, project_id, output_folder=assets_repository
