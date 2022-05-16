@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
+from img2vec_pytorch import Img2Vec
+from more_itertools import chunked
+from PIL.Image import Image as PILImage
 from sklearn import linear_model
 from sklearn.model_selection import cross_val_predict
 from sklearn.pipeline import make_pipeline
@@ -30,7 +33,6 @@ from kiliautoml.utils.mapper.gudhi_mapper import (
     gudhi_to_KM,
 )
 from kiliautoml.utils.type import AssetStatusT
-from prioritize import embeddings_images
 
 
 def embeddings_text(list_text: List[str]) -> np.ndarray:
@@ -73,6 +75,17 @@ def embeddings_text(list_text: List[str]) -> np.ndarray:
         embedings.append(sentence_embeddings)
 
     return np.concatenate((embedings), axis=0)
+
+
+def embeddings_images(images: List[PILImage], batch_size=4) -> np.ndarray:
+    """Get the embeddings of the images using a generic model trained on ImageNet."""
+    color_images = [im.convert("RGB") for im in images]
+    img2vec = Img2Vec(cuda=torch.cuda.is_available(), model="efficientnet_b7")
+    vecs = []
+    for imgs in tqdm(list(chunked(color_images, batch_size))):
+        _ = np.array(img2vec.get_vec(imgs))
+        vecs.append(_)
+    return np.concatenate(vecs, axis=0)
 
 
 class MapperClassification:
