@@ -283,7 +283,7 @@ class MapperClassification:
             for idx in idx_labeled_assets
         ]
         label_id_array = [self.cat2id[label] for label in labels]
-
+        print(label_id_array)
         # Compute predictions from embeddings with a simple model
         kili_print("Compute prediction with model: linear SVM")
         classifier = make_pipeline(
@@ -291,6 +291,7 @@ class MapperClassification:
         )
         classifier.fit(embeddings[idx_labeled_assets, :], label_id_array)
         predict = classifier.predict(embeddings)
+        print(predict)
         predict_order = np.argsort(predict, axis=1)
         predict_class = predict_order[:, -1]
         accuracy = round(np.sum(predict_class == label_id_array) / len(label_id_array) * 100, 2)

@@ -825,10 +825,10 @@ def custom_tooltip_text(
     tooltip_s = []
     if not (isinstance(list_text, list)):
         raise ValueError("list_text must be a list")
-    for ys, im in zip(label, list_text):
+    for ys, downloaded_text in zip(label, list_text):
         output = io.BytesIO()
         # Data was a flat row of "pixels".
-        txt_tag = ys + im
+        txt_tag = str(ys) + downloaded_text.content[:100]
         tooltip_s.append(txt_tag)
         output.close()
 
