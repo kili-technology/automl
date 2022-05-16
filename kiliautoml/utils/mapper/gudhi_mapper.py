@@ -4,11 +4,10 @@ import itertools
 import os
 from collections import defaultdict
 
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from gudhi import SimplexTree
+from gudhi import SimplexTree  # type: ignore
 from PIL import Image
 from scipy.spatial.distance import directed_hausdorff
 from skimage.util import img_as_ubyte
@@ -74,7 +73,7 @@ class _MapperComplex(BaseEstimator, TransformerMixin):
             subpop = np.random.choice(num_pts, size=m, replace=False)
             if inp == "point cloud":
                 d, _, _ = directed_hausdorff(X, X[subpop, :])
-            if inp == "distance matrix":
+            else:
                 d = np.max(np.min(X[:, subpop], axis=1), axis=0)
             delta += d / N
         return delta
@@ -221,7 +220,7 @@ class _MapperComplex(BaseEstimator, TransformerMixin):
                     min_f, max_f = self.filter_bnds[i, 0], np.nextafter(
                         self.filter_bnds[i, 1], np.inf
                     )
-                    interval_endpoints, lstep = np.linspace(min_f, max_f, num=r + 1, retstep=True)
+                    interval_endpoints, step = np.linspace(min_f, max_f, num=r + 1, retstep=True)
                     for j in range(len(interval_endpoints) - 1):
                         L.append(interval_endpoints[j] - g * step / (2 - 2 * g))
                         R.append(interval_endpoints[j + 1] + g * step / (2 - 2 * g))
@@ -512,121 +511,6 @@ class CoverComplex(BaseEstimator, TransformerMixin):
         except ImportError:
             print("Networkx not found, nx graph not computed")
 
-    class _constant_clustering:
-        def fit_predict(X):
-            return np.zeros([len(X)], dtype=np.int32)
-
-    def print_to_dot(self, epsv=0.2, epss=0.4):
-        """
-        Write the cover complex in a DOT file, that can be processed with, e.g., neato.
-        Parameters:
-            epsv (float): scale the node colors between [epsv, 1-epsv]
-            epss (float): scale the node sizes between [epss, 1-epss]
-        """
-        st = self.simplex_tree
-        node_info = self.node_info
-
-        maxv, minv = max([node_info[k]["colors"][0] for k in node_info.keys()]), min(
-            [node_info[k]["colors"][0] for k in node_info.keys()]
-        )
-        maxs, mins = max([node_info[k]["size"] for k in node_info.keys()]), min(
-            [node_info[k]["size"] for k in node_info.keys()]
-        )
-
-        f = open(self.input_name + ".dot", "w")
-        f.write("graph MAP{")
-        cols = []
-        for simplex, _ in st.get_skeleton(0):
-            cnode = (
-                (1.0 - 2 * epsv) * (node_info[simplex[0]]["colors"][0] - minv) / (maxv - minv)
-                + epsv
-                if maxv != minv
-                else 0
-            )
-            snode = (
-                (1.0 - 2 * epss) * (node_info[simplex[0]]["size"] - mins) / (maxs - mins) + epss
-                if maxs != mins
-                else 1
-            )
-            f.write(
-                str(simplex[0])
-                + "[shape=circle width="
-                + str(snode)
-                + ' fontcolor=black color=black label="'
-                + '" style=filled fillcolor="'
-                + str(cnode)
-                + ', 1, 1"]'
-            )
-            cols.append(cnode)
-        for simplex, _ in st.get_filtration():
-            if len(simplex) == 2:
-                f.write("  " + str(simplex[0]) + " -- " + str(simplex[1]) + " [weight=15];")
-        f.write("}")
-        f.close()
-
-        L = np.linspace(epsv, 1.0 - epsv, 100)
-        colsrgb = []
-        try:
-            import colorsys
-
-            for c in L:
-                colsrgb.append(colorsys.hsv_to_rgb(c, 1, 1))
-            fig, ax = plt.subplots(figsize=(6, 1))
-            fig.subplots_adjust(bottom=0.5)
-            my_cmap = matplotlib.colors.ListedColormap(colsrgb, name=self.color_name)
-            cb = matplotlib.colorbar.ColorbarBase(
-                ax,
-                cmap=my_cmap,
-                norm=matplotlib.colors.Normalize(vmin=minv, vmax=maxv),
-                orientation="horizontal",
-            )
-            cb.set_label(self.color_name)
-            fig.savefig("colorbar_" + self.color_name + ".pdf", format="pdf")
-            plt.close()
-        except ImportError:
-            print("colorsys not found, colorbar not printed")
-
-    def print_to_txt(self):
-        """
-        Write the cover complex to a TXT file, that can be processed with KeplerMapper.
-        """
-        st = self.simplex_tree
-        if self.complex_type == "gic":
-            self.complex.write_info(
-                self.input_name.encode("utf-8"),
-                self.cover_name.encode("utf-8"),
-                self.color_name.encode("utf-8"),
-            )
-        elif self.complex_type == "mapper":
-            f = open(self.input_name + ".txt", "w")
-            f.write(self.input_name + "\n")
-            f.write(self.cover_name + "\n")
-            f.write(self.color_name + "\n")
-            f.write(str(self.complex.resolutions[0]) + " " + str(self.complex.gains[0]) + "\n")
-            f.write(
-                str(st.num_vertices())
-                + " "
-                + str(len(list(st.get_skeleton(1))) - st.num_vertices())
-                + "\n"
-            )
-            name2id = {}
-            idv = 0
-            for s, _ in st.get_skeleton(0):
-                f.write(
-                    str(idv)
-                    + " "
-                    + str(self.node_info[s[0]]["colors"][0])
-                    + " "
-                    + str(self.node_info[s[0]]["size"])
-                    + "\n"
-                )
-                name2id[s[0]] = idv
-                idv += 1
-            for s, _ in st.get_skeleton(1):
-                if len(s) == 2:
-                    f.write(str(name2id[s[0]]) + " " + str(name2id[s[1]]) + "\n")
-            f.close()
-
 
 def extract_node_value_mapper(mapper_cover_complex, interest_values, method="mean"):
     """Extract values of interest per node
@@ -770,7 +654,7 @@ def display_pic_from_mapper_node(
             )
         ]
         for i in range(nb_display):
-            axarr[i].imshow(Image.open(os.path.join(pict_folder, list_pict[i])))
+            axarr[i].imshow(Image.open(os.path.join(pict_folder, list_pict[i])))  # type: ignore
         plt.show()
 
 
@@ -891,7 +775,7 @@ def custom_tooltip_picture(
 
     if pict_data_type == "img_list":
         if not (isinstance(image_list, list)):
-            raise ValueError("image_list must be a plist")
+            raise ValueError("image_list must be a list")
         for ys, im in zip(label, image_list):
             output = io.BytesIO()
             # Data was a flat row of "pixels".
@@ -912,6 +796,41 @@ def custom_tooltip_picture(
             )
             tooltip_s.append(img_tag)
             output.close()
+
+    tooltip_s = np.array(tooltip_s)
+
+    return tooltip_s
+
+
+def custom_tooltip_text(
+    label,
+    list_text=None,
+):
+    """Create numpy array with picture to be used as custom_tooltips in KepplerMapper.visualize
+    Args:
+        label (numpy array): label to be display with picture in visualization
+        pict_data_type (str): either "pandas_df", "img_link", or "img_list"
+        pict_size (tuple): picture size (only required if pict_data_type == "pandas_df")
+        pict_dataset (pandas dataframe): dataframe where picture data are stored
+            (only required if pict_data_type == "pandas_df")
+        pict_folder (str): folder where picture are stored
+            (only required if pict_data_type == "img_link")
+        pict_file_names (pandas dataframe): dataframe column where picture file names are stored
+            (only required if pict_data_type == "img_link")
+        image_list (list of DownloadedImages): list of downloaded image from a Kili dataset
+            (only required if pict_data_type == "img_list")
+    Returns:
+        Numpy array: ready to use for visualization
+    """
+    tooltip_s = []
+    if not (isinstance(list_text, list)):
+        raise ValueError("list_text must be a list")
+    for ys, im in zip(label, list_text):
+        output = io.BytesIO()
+        # Data was a flat row of "pixels".
+        txt_tag = ys + im
+        tooltip_s.append(txt_tag)
+        output.close()
 
     tooltip_s = np.array(tooltip_s)
 

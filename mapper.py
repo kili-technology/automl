@@ -1,23 +1,17 @@
 import os
-from typing import List
+from typing import List, Optional
 
 import click
 from kili.client import Kili
 
 from kiliautoml.utils.constants import (  # ModelFrameworkT,; ModelNameT,; ModelRepositoryT,
     ContentInput,
-    InputType,
     MLTask,
     MLTaskT,
 )
-from kiliautoml.utils.helpers import (
-    get_assets,
-    get_project,
-    kili_print,
-    parse_label_types,
-)
-from kiliautoml.utils.mapper.create import MapperImageClassification
-from kiliautoml.utils.type import LabelTypeT
+from kiliautoml.utils.helpers import get_assets, get_project, kili_print
+from kiliautoml.utils.mapper.create import MapperClassification
+from kiliautoml.utils.type import AssetStatusT
 
 
 @click.option(
@@ -37,11 +31,11 @@ from kiliautoml.utils.type import LabelTypeT
     ),
 )
 @click.option(
-    "--label-types",
-    default=None,
+    "--asset-status-in",
+    default=["TODO", "ONGOING"],
     help=(
-        "Comma separated list Kili specific label types to select (among DEFAULT,"
-        " REVIEW, PREDICTION)"
+        "Comma separated list of Kili asset status to select(among "
+        "'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED')"
     ),
 )
 @click.option(
@@ -59,6 +53,13 @@ from kiliautoml.utils.type import LabelTypeT
     show_default=True,
     help="Number of CV folds to use if all data are labeled",
 )
+@click.option(
+    "--focus-class",
+    default=None,
+    type=Optional[List[str]],
+    show_default=True,
+    help="Only display selected class in Mapper graph",
+)
 def main(
     api_endpoint: str,
     api_key: str,
@@ -67,10 +68,11 @@ def main(
     target_job: List[str],
     #    model_name: ModelNameT,
     #    model_repository: ModelRepositoryT,
-    label_types: LabelTypeT,
+    asset_status_in: Optional[List[AssetStatusT]],
     max_assets: int,
     assets_repository: str,
     cv_folds: int,
+    focus_class: Optional[List[str]],
 ):
     """
     Main method for creating mapper
@@ -90,28 +92,25 @@ def main(
 
         content_input = job.get("content", {}).get("input")
         ml_task: MLTaskT = job.get("mlTask")
-        if (
-            content_input == ContentInput.Radio
-            and input_type == InputType.Image
-            and ml_task == MLTask.Classification
-        ):
+        if content_input == ContentInput.Radio and ml_task == MLTask.Classification:
             # Get assets
             assets = get_assets(
                 kili,
                 project_id,
-                parse_label_types(label_types),
-                labeling_statuses=["UNLABELED", "LABELED"],
+                asset_status_in=asset_status_in,
                 max_assets=max_assets,
             )
 
-            mapper_image_classification = MapperImageClassification(
+            mapper_image_classification = MapperClassification(
                 api_key=api_key,
                 project_id=project_id,
+                input_type=input_type,
                 assets=assets,
                 job=job,
                 job_name=job_name,
                 assets_repository=assets_repository,
-                label_types=label_types,
+                asset_status_in=asset_status_in,
+                focus_class=focus_class,
             )
 
             _ = mapper_image_classification.create_mapper(cv_folds)
