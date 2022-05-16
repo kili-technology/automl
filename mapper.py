@@ -56,6 +56,7 @@ from kiliautoml.utils.type import AssetStatusT
 @click.option(
     "--focus-class",
     default=None,
+    type=Optional[List[str]],
     show_default=True,
     help="Only display selected class in Mapper graph",
 )
