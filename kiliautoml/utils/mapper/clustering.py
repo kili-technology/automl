@@ -41,9 +41,9 @@ def aggregate_small_clusters(clustering, limit_size, input_data, method="shared"
             clf = sklearn.neighbors.NearestCentroid()
             clf.fit(input_data, new_clustering)
 
-            distance_between_clusters = sklearn.metrics.pairwise_distances(
+            distance_between_clusters = sklearn.metrics.pairwise_distances(  # type: ignore
                 clf.centroids_
-            )  # type: ignore
+            )
 
             distance_between_clusters[:, small_clusters] = np.nan
             closest_large_cluster = np.nanargmin(distance_between_clusters, axis=1)[small_clusters]
