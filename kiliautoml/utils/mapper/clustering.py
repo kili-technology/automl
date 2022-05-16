@@ -41,7 +41,9 @@ def aggregate_small_clusters(clustering, limit_size, input_data, method="shared"
             clf = sklearn.neighbors.NearestCentroid()
             clf.fit(input_data, new_clustering)
 
-            distance_between_clusters = sklearn.metrics.pairwise_distances(clf.centroids_)
+            distance_between_clusters = sklearn.metrics.pairwise_distances(
+                clf.centroids_
+            )  # type: ignore
 
             distance_between_clusters[:, small_clusters] = np.nan
             closest_large_cluster = np.nanargmin(distance_between_clusters, axis=1)[small_clusters]
@@ -227,9 +229,9 @@ class DensityMergeHierarchicalClustering(ClusterMixin, BaseEstimator):
 
         out = memory.cache(_single_linkage)(
             X,
-            connectivity=connectivity,
-            n_clusters=n_clusters,
-            return_distance=return_distance,
+            connectivity=connectivity,  # type: ignore
+            n_clusters=n_clusters,  # type: ignore
+            return_distance=return_distance,  # type: ignore
             **kwargs,
         )
         (self.children_, self.n_connected_components_, self.n_leaves_, parents) = out[:4]

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from io import BytesIO
 from typing import List, Optional
 
-import requests
+import requests  # type: ignore
 from PIL import Image
 from PIL.Image import Image as PILImage
 from tqdm import tqdm
