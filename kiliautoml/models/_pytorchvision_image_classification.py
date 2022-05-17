@@ -57,7 +57,6 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             api_key=api_key,
             data_path=data_dir,
             job_name=job_name,
-            project_id=project_id,
         )
 
         # To set to False if the input size varies a lot and you see that the training takes
