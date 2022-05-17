@@ -114,10 +114,10 @@ class MapperClassification:
         for i, cat in enumerate(class_list):
             self.cat2id[cat] = i
 
-        # Check proper way to create folder
-        os.makedirs(assets_repository, exist_ok=True)
-
         if self.input_type == InputType.Image:
+            # Check proper way to create folder
+            os.makedirs(assets_repository, exist_ok=True)
+
             # Get list of image
             self.data = download_project_images(
                 api_key, assets, project_id, output_folder=assets_repository
@@ -236,7 +236,7 @@ class MapperClassification:
         label_id_array = [self.cat2id[label] for label in labels]
 
         # Compute predictions from embeddings with a simple model
-        kili_print("Compute prediction with model: linear SVM")
+        kili_print("Compute prediction by cross-validation with model: linear SVM")
         classifier = make_pipeline(
             StandardScaler(), linear_model.SGDClassifier(loss="log", alpha=0.1)
         )
@@ -283,19 +283,20 @@ class MapperClassification:
             for idx in idx_labeled_assets
         ]
         label_id_array = [self.cat2id[label] for label in labels]
-        print(label_id_array)
         # Compute predictions from embeddings with a simple model
         kili_print("Compute prediction with model: linear SVM")
         classifier = make_pipeline(
             StandardScaler(), linear_model.SGDClassifier(loss="log", alpha=0.1)
         )
         classifier.fit(embeddings[idx_labeled_assets, :], label_id_array)
-        predict = classifier.predict(embeddings)
-        print(predict)
+        predict = classifier.predict_proba(embeddings)
         predict_order = np.argsort(predict, axis=1)
         predict_class = predict_order[:, -1]
-        accuracy = round(np.sum(predict_class == label_id_array) / len(label_id_array) * 100, 2)
-        kili_print("Model accuracy is:" f" {accuracy}%")
+        accuracy = round(
+            np.sum(predict_class[idx_labeled_assets] == label_id_array) / len(label_id_array) * 100,
+            2,
+        )
+        kili_print("Model accuracy (on training data) is:" f" {accuracy}%")
 
         # Compute assignments with confusion filter
         self.assignments = confusion_filter(predict)
