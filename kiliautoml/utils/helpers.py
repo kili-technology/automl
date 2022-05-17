@@ -108,7 +108,10 @@ def get_assets(
     asset_status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
 ) -> List[AssetT]:
-    kili_print(f"Downloading assets with status in {asset_status_in} from Kili")
+    if asset_status_in is not None:
+        kili_print(f"Downloading assets with status in {asset_status_in} from Kili project")
+    else:
+        kili_print("Downloading all assets from Kili project")
 
     total = kili.count_assets(project_id=project_id, status_in=asset_status_in)
     total = total if max_assets is None else min(total, max_assets)
