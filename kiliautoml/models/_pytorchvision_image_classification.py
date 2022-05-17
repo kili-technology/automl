@@ -113,7 +113,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
 
     def find_errors(self, cv_n_folds, epochs, verbose):
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
-        for cv_fold in tqdm(range(cv_n_folds)):  # type: ignore
+        for cv_fold in tqdm(range(cv_n_folds)):
             # Split train into train and holdout for particular cv_fold.
             cv_train_idx, cv_holdout_idx = list(kf.split(range(len(self.labels)), self.labels))[
                 cv_fold

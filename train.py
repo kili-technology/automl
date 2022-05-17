@@ -15,16 +15,10 @@ from kiliautoml.models._pytorchvision_image_classification import (
 )
 from kiliautoml.utils.constants import (
     HOME,
-    ContentInput,
-    InputType,
-    MLTask,
-    ModelFramework,
     ModelFrameworkT,
-    ModelName,
     ModelNameT,
-    ModelRepository,
     ModelRepositoryT,
-    Tool,
+    ToolT,
 )
 from kiliautoml.utils.helpers import (
     get_assets,
@@ -58,23 +52,25 @@ def train_image_bounding_box(
 ):
     from kiliautoml.utils.ultralytics.train import ultralytics_train_yolov5
 
-    model_repository_initialized: ModelRepositoryT = set_default(  # type: ignore
+    model_repository_initialized: ModelRepositoryT = set_default(
         model_repository,
-        ModelRepository.Ultralytics,
+        "ultralytics",
         "model_repository",
-        [ModelRepository.Ultralytics],
+        ["ultralytics"],
     )
     path_repository = Path.model_repository_dir(
         HOME, project_id, job_name, model_repository_initialized
     )
-    if model_repository_initialized == ModelRepository.Ultralytics:
+    if model_repository_initialized == "ultralytics":
         model_framework = set_default(
             model_framework,
-            ModelFramework.PyTorch,
+            "pytorch",
             "model_framework",
-            [ModelFramework.PyTorch],
+            ["pytorch"],
         )
-        model_name = set_default(model_name, ModelName.YoloV5, "model_name", [ModelName.YoloV5])
+        model_name = set_default(
+            model_name, "ultralytics/yolov", "model_name", ["ultralytics/yolov"]
+        )
         return ultralytics_train_yolov5(
             api_key=api_key,
             model_repository_dir=path_repository,
@@ -194,13 +190,9 @@ def main(
             )
         content_input = job.get("content", {}).get("input")
         ml_task = job.get("mlTask")
-        tools = job.get("tools")
+        tools: List[ToolT] = job.get("tools")  # type: ignore
         training_loss = None
-        if (
-            content_input == ContentInput.Radio
-            and input_type == InputType.Text
-            and ml_task == MLTask.Classification
-        ):
+        if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
 
             assets = get_assets(
                 kili,
@@ -222,9 +214,9 @@ def main(
             )
 
         elif (
-            content_input == ContentInput.Radio
-            and input_type == InputType.Text
-            and ml_task == MLTask.NamedEntityRecognition
+            content_input == "radio"
+            and input_type == "TEXT"
+            and ml_task == "NAMED_ENTITIES_RECOGNITION"
         ):
             assets = get_assets(
                 kili,
@@ -246,10 +238,10 @@ def main(
                 disable_wandb=disable_wandb,
             )
         elif (
-            content_input == ContentInput.Radio
-            and input_type == InputType.Image
-            and ml_task == MLTask.ObjectDetection
-            and Tool.Rectangle in tools
+            content_input == "radio"
+            and input_type == "IMAGE"
+            and ml_task == "OBJECT_DETECTION"
+            and "rectangle" in tools
         ):
             # no need to get_assets here because it's done in kili_template.yaml
             training_loss = train_image_bounding_box(
@@ -268,11 +260,7 @@ def main(
                 title=title,
                 disable_wandb=disable_wandb,
             )
-        elif (
-            content_input == ContentInput.Radio
-            and input_type == InputType.Image
-            and ml_task == MLTask.Classification
-        ):
+        elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 
             assets = get_assets(
                 kili,

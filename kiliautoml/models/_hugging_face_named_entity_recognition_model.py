@@ -1,7 +1,7 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional
 from warnings import warn
 
 import datasets
@@ -16,15 +16,14 @@ from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
     HOME,
-    MLTask,
     MLTaskT,
-    ModelFramework,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
 )
 from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print, set_default
 from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
+from kiliautoml.utils.type import AssetT, JobT, TrainingArgsT
 
 
 class KiliNerAnnotations(TypedDict):
@@ -36,7 +35,7 @@ class KiliNerAnnotations(TypedDict):
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task: MLTaskT = MLTask.NamedEntityRecognition  # type: ignore
+    ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"
     model_repository: ModelRepositoryT = "huggingface"
 
     def __init__(
@@ -49,7 +48,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(self)
 
-        model_name_setted: ModelNameT = set_default(  # type: ignore
+        model_name_setted: ModelNameT = set_default(
             model_name,
             "bert-base-multilingual-cased",
             "model_name",
@@ -62,13 +61,13 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def train(
         self,
-        assets: List[Dict],
-        job: Dict,
+        assets: List[AssetT],
+        job: JobT,
         job_name: str,
         epochs: int,
         model_framework: Optional[ModelFrameworkT] = None,
         clear_dataset_cache: bool = False,
-        training_args: dict = {},
+        training_args: TrainingArgsT = {},
         disable_wandb: bool = False,
     ):
         nltk.download("punkt")
@@ -77,9 +76,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
         self.model_framework = set_default(  # type: ignore
             model_framework,
-            ModelFramework.PyTorch,
+            "pytorch",
             "model_framework",
-            [ModelFramework.PyTorch, ModelFramework.Tensorflow],
+            ["pytorch", "tensorflow"],
         )
 
         return self._train(
@@ -95,7 +94,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def predict(
         self,
-        assets: Union[List[Dict], List[str]],
+        assets: List[AssetT],
         model_path: str,
         from_project: Optional[str],
         job_name: str,
@@ -118,7 +117,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             text = self._get_text_from(asset["content"])  # type: ignore
 
             offset = 0
-            predictions_asset: List[dict] = []
+            predictions_asset: List[dict] = []  # type: ignore
 
             probas_asset = []
             for sentence in nltk.sent_tokenize(text):
@@ -157,13 +156,13 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def _train(
         self,
-        assets: List[Dict],
-        job: Dict,
+        assets: List[AssetT],
+        job: JobT,
         job_name: str,
         epochs: int,
         model_repository_dir: ModelRepositoryDirT,
         clear_dataset_cache: bool,
-        training_args: Dict,
+        training_args: TrainingArgsT,
         disable_wandb: bool,
     ) -> float:
         """
@@ -186,7 +185,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             data_files=path_dataset,
             features=datasets.features.features.Features(  # type: ignore
                 {
-                    "ner_tags": datasets.Sequence(feature=datasets.ClassLabel(names=label_list)),  # type: ignore # noqa
+                    "ner_tags": datasets.Sequence(  # type: ignore
+                        feature=datasets.ClassLabel(names=label_list)  # type: ignore
+                    ),  # noqa
                     "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),  # type: ignore # noqa
                 }
             ),
@@ -239,9 +240,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         trainer = Trainer(
             model=model,
             args=training_arguments,
-            data_collator=data_collator,  # type:ignore
+            data_collator=data_collator,  # type: ignore
             tokenizer=tokenizer,
-            train_dataset=train_dataset,  # type:ignore
+            train_dataset=train_dataset,  # type: ignore
         )
         output = trainer.train()
         kili_print(f"Saving model to {path_model}")
@@ -250,10 +251,10 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def _kili_assets_to_hf_ner_dataset(
         self,
-        job: Dict,
+        job: JobT,
         job_name: str,
         path_dataset: str,
-        assets: List[Dict],
+        assets: List[AssetT],
         clear_dataset_cache: bool,
     ):
 
@@ -328,7 +329,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         # imposed by the model
         sequence = sentence[: model.config.max_position_embeddings]
 
-        if model_framework == ModelFramework.PyTorch:
+        if model_framework == "pytorch":
             tokens = tokenizer(
                 sequence,
                 return_tensors="pt",

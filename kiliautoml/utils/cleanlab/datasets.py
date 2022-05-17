@@ -7,7 +7,7 @@ from torchvision import datasets, transforms
 from typing_extensions import Literal
 
 TrainingPhaseT = Literal["train", "val"]
-DictDatasetT = Dict[TrainingPhaseT, torch_Data.Dataset]
+DictDatasetT = Dict[TrainingPhaseT, torch_Data.Dataset]  # type: ignore
 
 
 def get_original_image_dataset(data_dir) -> DictDatasetT:

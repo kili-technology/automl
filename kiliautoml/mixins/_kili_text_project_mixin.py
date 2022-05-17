@@ -1,9 +1,9 @@
 from abc import ABCMeta
-from typing import Dict
 
 from kili.client import Kili
 
 from kiliautoml.utils.download_assets import download_asset_unicode
+from kiliautoml.utils.type import AssetT
 
 
 class KiliTextProjectMixin(metaclass=ABCMeta):
@@ -15,4 +15,5 @@ class KiliTextProjectMixin(metaclass=ABCMeta):
 
     def _get_text_from(self, asset: Dict) -> str:
         text = download_asset_unicode(self.api_key, asset["content"])
-        return text
+
+

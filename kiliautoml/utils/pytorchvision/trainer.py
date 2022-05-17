@@ -29,7 +29,7 @@ def train_model_pytorch(
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
-    model = model.to(device)  # type:ignore
+    model = model.to(device)
     dataset_sizes = {x: len(dataloaders[x]) for x in ["train", "val"]}
 
     # Decay LR by a factor of 0.1 every 7 epochs
