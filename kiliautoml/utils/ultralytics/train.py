@@ -53,7 +53,7 @@ def yaml_preparation(
     kili_api_key: str,
     project_id: str,
     label_types: List[str],
-    max_assets: int,
+    max_assets: Optional[int],
 ):
 
     print("Downloading datasets from Kili")
@@ -75,6 +75,7 @@ def yaml_preparation(
         if len(assets_split) == 0:
             raise Exception("No asset in dataset, exiting...")
         path_split = os.path.join(path, "images", name_split)
+
         download_project_images(
             api_key=kili_api_key,
             assets=assets_split,
@@ -116,7 +117,7 @@ def save_annotations_to_yolo_format(names, handler, job):
         handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")  # type: ignore
 
 
-def get_assets_object_detection(project_id, label_types, max_assets, kili):
+def get_assets_object_detection(project_id, label_types, max_assets: Optional[int], kili):
     total = max_assets if max_assets is not None else kili.count_assets(project_id=project_id)
     if total == 0:
         raise Exception("No asset in project. Exiting...")
@@ -175,6 +176,15 @@ def ultralytics_train_yolov5(
     os.makedirs(model_output_path, exist_ok=True)
 
     os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
+    yaml_preparation(
+        data_path,
+        class_names,
+        len(class_names),
+        kili_api_key=api_key,
+        project_id=project_id,
+        label_types=label_types,
+        max_assets=max_assets,
+    )
 
     with open(config_data_path, "w") as f:
         f.write(
@@ -190,8 +200,8 @@ def ultralytics_train_yolov5(
         )
 
     if not json_args:
-        json_args = {"epochs": epochs}
-        kili_print("No arguments were passed to the train function. Defaulting to epochs=50.")
+        json_args = {}
+    json_args["epochs"] = epochs
     args_from_json = reduce(lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in json_args.items()))
     kili_print("Starting Ultralytics' YoloV5 ...")
     try:
