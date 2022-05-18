@@ -15,7 +15,7 @@ def mocked__projects(*_, project_id, fields):
     return json.load(open("tests/e2e/fixtures/object_detection_project_fixture.json"))
 
 
-def mocked__download_asset_binary(api_key, asset_content, project_id):
+def mocked__download_asset_binary(api_key, asset_content):
     import pickle
 
     id = asset_content.split("label/v2/files?id=")[-1]

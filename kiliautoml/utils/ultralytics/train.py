@@ -79,7 +79,6 @@ def yaml_preparation(
         download_project_images(
             api_key=kili_api_key,
             assets=assets_split,
-            project_id=project_id,
             output_folder=path_split,
         )
 
