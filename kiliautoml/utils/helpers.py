@@ -3,7 +3,6 @@ import os
 import random
 from glob import glob
 from typing import Any, List, Optional, Tuple
-from kiliautoml.utils.type import AssetStatusT, AssetT, JobT, JobsT
 
 import numpy as np
 import torch
@@ -12,6 +11,7 @@ from tqdm import tqdm
 
 from kiliautoml.utils.constants import HOME, InputTypeT
 from kiliautoml.utils.memoization import kili_project_memoizer
+from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT
 
 
 def set_all_seeds(seed):
@@ -146,7 +146,7 @@ def kili_print(*args, **kwargs) -> None:
     print(colored("kili:", "yellow", attrs=["bold"]), *args, **kwargs)
 
 
-def set_default(x, x_default, x_name: str, x_range: List): # type: ignore
+def set_default(x, x_default, x_name: str, x_range: List):  # type: ignore
     if x not in x_range:
         kili_print(f"defaulting to {x_name}={x_default}")
         x = x_default
