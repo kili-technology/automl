@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn.functional as F
-from img2vec_pytorch import Img2Vec
+from img2vec_pytorch import Img2Vec  # type: ignore
 from more_itertools import chunked
 from PIL.Image import Image as PILImage
 from sklearn import linear_model
@@ -189,6 +189,12 @@ class MapperClassification:
         # Cretae custom tooltip (to be put in custom_tooltip_picture function)
         tooltip_s = self._get_custom_tooltip()
 
+        if self.input_type == InputType.Text:
+            list_text = [downloaded_text.content for downloaded_text in self.data]  # type: ignore
+            self.lens = np.column_stack((self.lens, topic_score(list_text)))
+            topic_list = ["topic_" + str(i) for i in range(10)]
+            self.lens_names = self.lens_names + topic_list
+
         temp = gudhi_to_KM(Mapper_kili)
         mapper = km.KeplerMapper(verbose=2)
         _ = mapper.visualize(
@@ -342,3 +348,54 @@ class MapperClassification:
                 )
         else:
             raise NotImplementedError
+
+
+def topic_score(list_text: List[str]) -> np.ndarray:
+    import nltk
+
+    nltk.download("wordnet")
+    from nltk.stem import SnowballStemmer, WordNetLemmatizer
+
+    stemmer = SnowballStemmer("english")
+    import gensim  # type: ignore
+
+    ds = datasets.Dataset.from_pandas(pd.DataFrame({"content": list_text}))  # type: ignore
+
+    def lemmatize_stemming(text: str):
+        return stemmer.stem(WordNetLemmatizer().lemmatize(text, pos="v"))
+
+    # Tokenize and lemmatize
+    def preprocess(doc):
+        result = []
+        for token in gensim.utils.simple_preprocess(doc["content"]):
+            if token not in gensim.parsing.preprocessing.STOPWORDS and len(token) > 3:
+                result.append(lemmatize_stemming(token))
+        doc["lemmatized"] = result
+        return doc
+
+    ds = ds.map(preprocess)
+
+    dictionary = gensim.corpora.Dictionary([doc["lemmatized"] for doc in ds])  # type: ignore
+    dictionary.filter_extremes(no_below=10, no_above=0.1, keep_n=10000)
+
+    bow_corpus = [dictionary.doc2bow(doc["lemmatized"]) for doc in ds]  # type: ignore
+
+    import multiprocessing
+
+    lda_model = gensim.models.LdaMulticore(
+        bow_corpus,
+        num_topics=10,
+        id2word=dictionary,
+        passes=50,
+        workers=max(1, multiprocessing.cpu_count() - 2),
+    )
+
+    def score_ds(doc):
+        scores = lda_model.get_document_topics(dictionary.doc2bow(preprocess(ds[10])["lemmatized"]))
+        for i in range(10):
+            doc["topic_" + str(i)] = scores[i][1]
+        return doc
+
+    ds = ds.map(score_ds)
+
+    return ds.to_pandas().iloc[:, -10:].to_numpy()  # type: ignore
