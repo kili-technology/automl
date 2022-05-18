@@ -149,4 +149,4 @@ def download_project_image_clean_lab(*, assets, api_key, data_path, job_name):
         img_path = os.path.join(data_path, img_name)
         os.makedirs(img_path, exist_ok=True)
         with open(os.path.join(img_path, asset["id"] + ".jpg"), "wb") as handler:
-            handler.write(img_data)  # type: ignore
+            handler.write(img_data)
