@@ -216,14 +216,22 @@ def ultralytics_train_yolov5(
             "--project",
             f"{model_output_path}",
             "--upload_dataset",  # wandb
+            "--weights",
+            "yolov5n.pt",
+            "--batch",
+            "2",
             *args_from_json,
         ]
         print("Executing Yolo with command line:", " ".join(args))
-        subprocess.run(args, check=True, cwd=f"{yolov5_path}", env=yolo_env)
+        subprocess.run(args, cwd=yolov5_path, env=yolo_env, capture_output=True, check=True)
     except subprocess.CalledProcessError as e:
         kili_print("Error while executing YoloV5:")
-        print(e)
-        print(e.output)
+        for k, v in e.__dict__.items():
+            print(k)
+            if isinstance(v, bytes):
+                print(v.decode("utf-8"))
+            else:
+                print(v)
         raise AutoMLYoloException()
 
     shutil.copy(config_data_path, model_output_path)
