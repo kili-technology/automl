@@ -114,7 +114,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         predictions = []
         proba_assets = []
         for asset in assets:
-            text = self._get_text_from(asset["content"])  # type: ignore
+            text = self._get_text_from(asset)  # type: ignore
 
             offset = 0
             predictions_asset: List[dict] = []  # type: ignore

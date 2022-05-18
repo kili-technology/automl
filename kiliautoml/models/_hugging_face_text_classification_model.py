@@ -113,7 +113,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         for asset in assets:
-            text = self._get_text_from(asset["content"])
+            text = self._get_text_from(asset)
 
             predictions_asset = self._compute_asset_classification(
                 self.model_framework, tokenizer, model, text
@@ -207,7 +207,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                     handler.write(
                         json.dumps(
                             {
-                                "text": self._get_text_from(asset["content"]),
+                                "text": self._get_text_from(asset),
                                 "label": job_categories.index(label_category),
                             }
                         )
