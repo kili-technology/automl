@@ -190,6 +190,7 @@ class MapperClassification:
         tooltip_s = self._get_custom_tooltip()
 
         if self.input_type == InputType.Text:
+            kili_print("Compute document topic score from list of topic")
             list_text = [downloaded_text.content for downloaded_text in self.data]  # type: ignore
             self.lens = np.column_stack((self.lens, topic_score(list_text)))
             topic_list = ["topic_" + str(i) for i in range(10)]
@@ -380,22 +381,18 @@ def topic_score(list_text: List[str]) -> np.ndarray:
 
     bow_corpus = [dictionary.doc2bow(doc["lemmatized"]) for doc in ds]  # type: ignore
 
-    import multiprocessing
-
     lda_model = gensim.models.LdaMulticore(
         bow_corpus,
         num_topics=10,
         id2word=dictionary,
         passes=50,
-        workers=max(1, multiprocessing.cpu_count() - 2),
     )
 
-    def score_ds(doc):
-        scores = lda_model.get_document_topics(dictionary.doc2bow(preprocess(ds[10])["lemmatized"]))
-        for i in range(10):
-            doc["topic_" + str(i)] = scores[i][1]
-        return doc
+    output = np.zeros((len(list_text), 10))
 
-    ds = ds.map(score_ds)
+    for i, doc in tqdm(enumerate(ds)):
+        scores = lda_model.get_document_topics(dictionary.doc2bow(doc["lemmatized"]))
+        for topic, score in scores:
+            output[i, topic] = score
 
-    return ds.to_pandas().iloc[:, -10:].to_numpy()  # type: ignore
+    return output
