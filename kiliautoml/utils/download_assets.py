@@ -38,6 +38,7 @@ def download_asset_binary(api_key, asset_content):
     )
     assert response.status_code == 200
     asset_data = response.content
+
     return asset_data
 
 
