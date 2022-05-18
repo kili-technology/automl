@@ -3,7 +3,6 @@ from abc import ABCMeta
 from kili.client import Kili
 
 from kiliautoml.utils.download_assets import download_asset_unicode
-from kiliautoml.utils.type import AssetT
 
 
 class KiliTextProjectMixin(metaclass=ABCMeta):
@@ -13,6 +12,6 @@ class KiliTextProjectMixin(metaclass=ABCMeta):
 
         self.kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
 
-    def _get_text_from(self, asset: AssetT) -> str:
-        text = download_asset_unicode(self.api_key, asset["content"], self.project_id)
+    def _get_text_from(self, asset_url: str) -> str:
+        text = download_asset_unicode(self.api_key, asset_url)
         return text

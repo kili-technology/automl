@@ -279,7 +279,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         return label_list
 
     def _write_asset(self, job_name, labels_to_ids, handler, asset):
-        text = self._get_text_from(asset)
+        text = self._get_text_from(asset["content"])
         if (
             job_name not in asset["labels"][0]["jsonResponse"]
         ):  # always taking the first label (for now)
