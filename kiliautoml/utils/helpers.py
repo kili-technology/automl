@@ -113,7 +113,7 @@ def get_assets(
     if status_in is not None:
         for status in status_in:
             if not (status in AssetStatusT.__args__):  # type: ignore
-                warn(f"{status} is not a correct asset status in Kili.")
+                warn(f"{status} is not a valid asset status.")
 
     if status_in is not None:
         kili_print(f"Downloading assets with status in {status_in} from Kili project")
