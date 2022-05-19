@@ -4,11 +4,7 @@ from typing import List, Optional
 import click
 from kili.client import Kili
 
-from kiliautoml.utils.constants import (  # ModelFrameworkT,; ModelNameT,; ModelRepositoryT,
-    ContentInput,
-    MLTask,
-    MLTaskT,
-)
+from kiliautoml.utils.constants import ContentInput, MLTask, MLTaskT
 from kiliautoml.utils.helpers import get_assets, get_project, kili_print
 from kiliautoml.utils.mapper.create import MapperClassification
 from kiliautoml.utils.type import AssetStatusT
