@@ -88,14 +88,14 @@ def get_asset_memoized(
     *,
     kili,
     project_id,
-    first,
+    total,
     skip,
     status_in: Optional[List[StatusIntT]] = None,
     label_type_in: Optional[List[LabelTypeT]] = None,
 ) -> List[AssetT]:
     return kili.assets(
         project_id=project_id,
-        first=first,
+        first=total,
         skip=skip,
         fields=[
             "id",
@@ -144,17 +144,22 @@ def get_assets(
         raise ValueError("labeling_statuses must be a non-empty list.")
 
     total = kili.count_assets(project_id=project_id)
-    total = total if max_assets is None else min(total, max_assets)
 
     status_in = compute_status_in(labeling_statuses)
     assets = get_asset_memoized(
         kili=kili,
         project_id=project_id,
-        first=total,
+        total=total,
         skip=0,
         status_in=status_in,
         label_type_in=label_type_in,
     )
+
+    # In order to obtain a mix of all assets, we need to shuffle the list
+    random.shuffle(assets)
+
+    total = total if max_assets is None else min(total, max_assets)
+    assets = assets[:total]
 
     if len(assets) == 0:
         if len(labeling_statuses) == 1:

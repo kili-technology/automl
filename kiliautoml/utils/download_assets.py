@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 from dataclasses import dataclass
 from io import BytesIO
@@ -94,7 +95,7 @@ def download_project_images(
         downloaded_images.append(
             DownloadedImages(
                 id=asset["id"],
-                externalId=asset["id"],  # ??
+                externalId=asset["externalId"],
                 filename=filename or "",
                 image=image,
             )
@@ -144,6 +145,8 @@ def download_project_image_clean_lab(*, assets, api_key, data_path, job_name):
     Download assets that are stored in Kili and save them to folders depending on their
     label category
     """
+    shutil.rmtree(data_path, ignore_errors=True)
+
     for asset in tqdm(assets):
         img_data = download_asset_binary(api_key, asset["content"])
         img_name = asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]

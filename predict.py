@@ -242,7 +242,6 @@ def main(
     input_type, jobs, _ = get_project(kili, project_id)
     label_type_in: List[LabelTypeT] = label_types.split(",")  # type: ignore
     assets = get_assets(kili, project_id, label_type_in, max_assets=max_assets)
-
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:
             continue
