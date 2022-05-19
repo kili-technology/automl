@@ -108,6 +108,12 @@ def get_assets(
     status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
 ) -> List[AssetT]:
+
+    if status_in is not None:
+        for status in status_in:
+            if not (status in AssetStatusT.__args__):  # type: ignore
+                raise Exception(f"{status} is not a correct asset status in Kili.")
+
     if status_in is not None:
         kili_print(f"Downloading assets with status in {status_in} from Kili project")
     else:
@@ -123,7 +129,7 @@ def get_assets(
 
     if len(assets) == 0:
         kili_print(f"No {status_in} assets found in project {project_id}.")
-        raise Exception("There is no asset matching the query. ")
+        raise Exception("There is no asset matching the query.")
     return assets
 
 
