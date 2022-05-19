@@ -215,8 +215,8 @@ def main(
             assets = get_assets(
                 kili,
                 project_id,
-                asset_status_in=asset_status_in,
-                max_assets=max_assets,
+                asset_status_in,
+                max_assets,
             )
 
             training_loss = HuggingFaceNamedEntityRecognitionModel(

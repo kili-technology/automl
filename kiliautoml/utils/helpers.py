@@ -105,27 +105,24 @@ def get_asset_memoized(
 def get_assets(
     kili,
     project_id: str,
-    asset_status_in: Optional[List[AssetStatusT]] = None,
+    status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
 ) -> List[AssetT]:
-    if asset_status_in is not None:
-        kili_print(f"Downloading assets with status in {asset_status_in} from Kili project")
+    if status_in is not None:
+        kili_print(f"Downloading assets with status in {status_in} from Kili project")
     else:
         kili_print("Downloading all assets from Kili project")
-
-    total = kili.count_assets(project_id=project_id, status_in=asset_status_in)
-    total = total if max_assets is None else min(total, max_assets)
 
     assets = get_asset_memoized(
         kili=kili,
         project_id=project_id,
-        first=total,
+        first=max_assets,
         skip=0,
-        status_in=asset_status_in,
+        status_in=status_in,
     )
 
     if len(assets) == 0:
-        kili_print(f"No {asset_status_in} assets found in project {project_id}.")
+        kili_print(f"No {status_in} assets found in project {project_id}.")
         raise Exception("There is no asset matching the query. ")
     return assets
 
