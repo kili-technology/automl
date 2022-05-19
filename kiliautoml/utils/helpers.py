@@ -3,6 +3,7 @@ import os
 import random
 from glob import glob
 from typing import Any, List, Optional, Tuple
+from warnings import warn
 
 import numpy as np
 import torch
@@ -112,7 +113,7 @@ def get_assets(
     if status_in is not None:
         for status in status_in:
             if not (status in AssetStatusT.__args__):  # type: ignore
-                raise Exception(f"{status} is not a correct asset status in Kili.")
+                warn(f"{status} is not a correct asset status in Kili.")
 
     if status_in is not None:
         kili_print(f"Downloading assets with status in {status_in} from Kili project")
