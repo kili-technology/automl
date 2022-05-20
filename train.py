@@ -98,9 +98,11 @@ def train_image_bounding_box(
 @click.option(
     "--asset-status-in",
     default=["LABELED", "TO_REVIEW", "REVIEWED"],
+    callback=lambda _, __, x: x.upper().split(",") if x else [],
     help=(
-        "Comma separated list of Kili asset status to select(among "
-        "'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED')"
+        "Comma separated (without space) list of Kili asset status to select "
+        "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
+        "Example: python train.py --asset-status-in TO_REVIEW,REVIEWED "
     ),
 )
 @click.option(
