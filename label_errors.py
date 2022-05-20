@@ -70,9 +70,11 @@ from kiliautoml.utils.type import AssetStatusT
 @click.option(
     "--asset-status-in",
     default=["LABELED", "TO_REVIEW", "REVIEWED"],
+    callback=lambda _, __, x: x.upper().split(",") if x else [],
     help=(
-        "Comma separated list of Kili asset status to select(among "
-        "'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED')"
+        "Comma separated (without space) list of Kili asset status to select "
+        "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
+        "Example: python train.py --asset-status-in TO_REVIEW,REVIEWED "
     ),
 )
 @click.option("--max-assets", default=None, type=int, help="Maximum number of assets to consider")
