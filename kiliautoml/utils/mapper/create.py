@@ -17,7 +17,7 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer  # type: ignore
 
-from kiliautoml.utils.constants import InputType, InputTypeT
+from kiliautoml.utils.constants import InputTypeT
 from kiliautoml.utils.download_assets import (
     download_project_images,
     download_project_text,
@@ -32,7 +32,7 @@ from kiliautoml.utils.mapper.gudhi_mapper import (
     data_index_in_mapper,
     gudhi_to_KM,
 )
-from kiliautoml.utils.type import AssetStatusT
+from kiliautoml.utils.type import AssetStatusT, JobT
 
 
 def embeddings_text(list_text: List[str]) -> np.ndarray:
@@ -96,7 +96,7 @@ class MapperClassification:
         project_id: str,
         input_type: InputTypeT,
         assets: List[Any],
-        job: dict,
+        job: JobT,
         job_name: str,
         assets_repository,  # check type
         asset_status_in: Optional[List[AssetStatusT]],
@@ -114,19 +114,17 @@ class MapperClassification:
         for i, cat in enumerate(class_list):
             self.cat2id[cat] = i
 
-        if self.input_type == InputType.Image:
+        if self.input_type == "IMAGE":
             # Check proper way to create folder
             os.makedirs(assets_repository, exist_ok=True)
 
             # Get list of image
-            self.data = download_project_images(
-                api_key, assets, project_id, output_folder=assets_repository
-            )
+            self.data = download_project_images(api_key, assets, output_folder=assets_repository)
             kili_print(f"Number of image recovered: {len(self.data)}")
 
-        elif self.input_type == InputType.Text:
+        elif self.input_type == "TEXT":
             # Get list of image
-            self.data = download_project_text(api_key, assets, project_id)
+            self.data = download_project_text(api_key, assets)
             kili_print(f"Number of text recovered: {len(self.data)}")
 
         else:
@@ -189,7 +187,7 @@ class MapperClassification:
         # Cretae custom tooltip (to be put in custom_tooltip_picture function)
         tooltip_s = self._get_custom_tooltip()
 
-        if self.input_type == InputType.Text:
+        if self.input_type == "TEXT":
             kili_print("Compute document topic score from list of topic")
             list_text = [downloaded_text.content for downloaded_text in self.data]  # type: ignore
             self.lens = np.column_stack((self.lens, topic_score(list_text)))
@@ -211,11 +209,11 @@ class MapperClassification:
         return Mapper_kili
 
     def _get_embeddings(self) -> np.ndarray:
-        if self.input_type == InputType.Image:
+        if self.input_type == "IMAGE":
             pil_images = [image.image for image in self.data]  # type: ignore
             return embeddings_images(pil_images)
 
-        elif self.input_type == InputType.Text:
+        elif self.input_type == "TEXT":
             list_text = [downloaded_text.content for downloaded_text in self.data]  # type: ignore
             return embeddings_text(list_text)
 
@@ -318,7 +316,7 @@ class MapperClassification:
 
     def _get_custom_tooltip(self) -> np.ndarray:
 
-        if self.input_type == InputType.Image:
+        if self.input_type == "IMAGE":
             # with labels available
             if len(self.lens_names) == 5:
                 return custom_tooltip_picture(
@@ -334,7 +332,7 @@ class MapperClassification:
                     image_list=self.data,
                 )
 
-        elif self.input_type == InputType.Text:
+        elif self.input_type == "TEXT":
             # with labels available
             if len(self.lens_names) == 5:
                 return custom_tooltip_text(
