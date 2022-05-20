@@ -10,13 +10,12 @@ from typing import Dict, List, Optional
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from kili.client import Kili
-from tqdm.auto import tqdm
 
 from kiliautoml.utils.constants import ModelFrameworkT
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helpers import categories_from_job, kili_print
+from kiliautoml.utils.helpers import categories_from_job, get_assets, kili_print
 from kiliautoml.utils.path import ModelRepositoryDirT
-from kiliautoml.utils.type import JobT
+from kiliautoml.utils.type import AssetStatusT, JobT
 from kiliautoml.utils.ultralytics.constants import ULTRALYTICS_REL_PATH, YOLOV5_REL_PATH
 
 env = Environment(
@@ -52,8 +51,8 @@ def yaml_preparation(
     number_classes: int,
     kili_api_key: str,
     project_id: str,
-    label_types: List[str],
     max_assets: Optional[int],
+    assets_status_in: Optional[List[AssetStatusT]],
 ):
 
     print("Downloading datasets from Kili")
@@ -62,7 +61,9 @@ def yaml_preparation(
     if "/kili/" not in path:
         raise ValueError("'path' field in config must contain '/kili/'")
     kili = Kili(api_key=kili_api_key)
-    assets = get_assets_object_detection(project_id, label_types, max_assets, kili)
+    assets = get_assets_object_detection(
+        project_id=project_id, status_in=assets_status_in, max_assets=max_assets, kili=kili
+    )
     n_train_assets = math.floor(len(assets) * train_val_proportions[0])
     n_val_assets = math.floor(len(assets) * train_val_proportions[1])
     assets_splits = {
@@ -116,44 +117,13 @@ def save_annotations_to_yolo_format(names, handler, job):
         handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")  # type: ignore
 
 
-def get_assets_object_detection(project_id, label_types, max_assets: Optional[int], kili):
-    total = max_assets if max_assets is not None else kili.count_assets(project_id=project_id)
-    if total == 0:
-        raise Exception("No asset in project. Exiting...")
-    first = 100
-    assets = []
-    for skip in tqdm(range(0, total, first)):
-        assets += kili.assets(
-            project_id=project_id,
-            first=first,
-            skip=skip,
-            disable_tqdm=True,
-            fields=[
-                "id",
-                "externalId",
-                "content",
-                "labels.createdAt",
-                "labels.jsonResponse",
-                "labels.labelType",
-            ],
-        )
-    assets = [
-        {
-            **a,
-            "labels": [
-                label
-                for label in sorted(a["labels"], key=lambda l: l["createdAt"])
-                if label["labelType"] in [label_type for label_type in label_types]  # ??
-            ][-1:],
-        }
-        for a in assets
-    ]
+def get_assets_object_detection(
+    *, kili, project_id, max_assets: Optional[int], status_in: Optional[List[AssetStatusT]]
+):
+    assets = get_assets(kili, project_id, status_in, max_assets)
     assets = [a for a in assets if len(a["labels"]) > 0]
-
-    import json
-
-    with open("assets.json", "w") as handler:
-        json.dump(assets, handler)
+    # even if there is no bbox on the image, len(a["labels"]) > 0
+    # So there is no biais
 
     return assets  # type: ignore
 
@@ -168,7 +138,7 @@ def ultralytics_train_yolov5(
     project_id: str,
     epochs: int,
     model_framework: ModelFrameworkT,
-    label_types: List[str],
+    asset_status_in: List[AssetStatusT],
     title: str,
     disable_wandb: bool,
     clear_dataset_cache: bool,
@@ -194,8 +164,8 @@ def ultralytics_train_yolov5(
         len(class_names),
         kili_api_key=api_key,
         project_id=project_id,
-        label_types=label_types,
         max_assets=max_assets,
+        assets_status_in=asset_status_in,
     )
 
     with open(config_data_path, "w") as f:
@@ -206,7 +176,7 @@ def ultralytics_train_yolov5(
                 number_classes=len(class_names),
                 kili_api_key=api_key,
                 project_id=project_id,
-                label_types=label_types,
+                asset_status_in=asset_status_in,
                 max_assets=max_assets,
             )
         )

@@ -24,7 +24,7 @@ def mocked__download_asset_binary(api_key, asset_content):
     return asset_data
 
 
-def mocked__get_assets_object_detection(project_id, label_types, max_assets, kili):
+def mocked__get_assets_object_detection(project_id, status_in, max_assets, kili):
     return json.load(open("tests/e2e/fixtures/object_detection_get_assets_object_detection.json"))
 
 

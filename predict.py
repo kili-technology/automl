@@ -19,7 +19,7 @@ from kiliautoml.utils.helpers import (
     get_project,
     kili_print,
 )
-from kiliautoml.utils.type import AssetT, LabelTypeT
+from kiliautoml.utils.type import AssetStatusT, AssetT
 
 
 def predict_object_detection(
@@ -172,11 +172,11 @@ def predict_one_job(
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
 @click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
-    "--label-types",
-    default="DEFAULT,REVIEW",
+    "--asset-status-in",
+    default=["TODO", "ONGOING"],
     help=(
-        "Comma separated list Kili specific label types to select (among DEFAULT,"
-        " REVIEW, PREDICTION), defaults to 'DEFAULT,REVIEW'"
+        "Comma separated list of Kili asset status to select (among"
+        " 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED')"
     ),
 )
 @click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
@@ -228,7 +228,7 @@ def main(
     api_endpoint: str,
     api_key: str,
     project_id: str,
-    label_types: str,
+    asset_status_in: List[AssetStatusT],
     target_job: List[str],
     dry_run: bool,
     from_model: Optional[ModelFrameworkT],
@@ -240,8 +240,8 @@ def main(
 ):
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
-    label_type_in: List[LabelTypeT] = label_types.split(",")  # type: ignore
-    assets = get_assets(kili, project_id, label_type_in, max_assets=max_assets)
+    assets = get_assets(kili, project_id, asset_status_in, max_assets=max_assets)
+
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:
             continue

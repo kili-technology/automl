@@ -17,11 +17,10 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_project,
     kili_print,
-    parse_label_types,
     upload_errors_to_kili,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
-from kiliautoml.utils.type import LabelTypeT
+from kiliautoml.utils.type import AssetStatusT
 
 
 @click.command()
@@ -69,11 +68,11 @@ from kiliautoml.utils.type import LabelTypeT
     help="Number of epochs to train each CV fold",
 )
 @click.option(
-    "--label-types",
-    default="DEFAULT",
+    "--asset-status-in",
+    default=["LABELED", "TO_REVIEW", "REVIEWED"],
     help=(
-        "Comma separated list Kili specific label types to select (among DEFAULT,"
-        " REVIEW, PREDICTION)"
+        "Comma separated list of Kili asset status to select(among "
+        "'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED')"
     ),
 )
 @click.option("--max-assets", default=None, type=int, help="Maximum number of assets to consider")
@@ -99,7 +98,7 @@ def main(
     model_repository: ModelRepositoryT,
     dry_run: bool,
     epochs: int,
-    label_types: LabelTypeT,
+    asset_status_in: List[AssetStatusT],
     max_assets: int,
     model_name: ModelNameT,
     project_id: str,
@@ -138,8 +137,7 @@ def main(
             assets = get_assets(
                 kili,
                 project_id,
-                parse_label_types(label_types),
-                labeling_statuses=["LABELED"],
+                asset_status_in,
                 max_assets=max_assets,
             )
 
