@@ -4,7 +4,6 @@ from typing import List, Optional
 import click
 from kili.client import Kili
 
-from kiliautoml.utils.constants import ContentInput, MLTask, MLTaskT
 from kiliautoml.utils.helpers import get_assets, get_project, kili_print
 from kiliautoml.utils.mapper.create import MapperClassification
 from kiliautoml.utils.type import AssetStatusT
@@ -87,13 +86,13 @@ def main(
         kili_print(f"Create Mapper for job: {job_name}")
 
         content_input = job.get("content", {}).get("input")
-        ml_task: MLTaskT = job.get("mlTask")
-        if content_input == ContentInput.Radio and ml_task == MLTask.Classification:
+        ml_task = job.get("mlTask")
+        if content_input == "radio" and ml_task == "CLASSIFICATION":
             # Get assets
             assets = get_assets(
                 kili,
                 project_id,
-                asset_status_in=asset_status_in,
+                status_in=asset_status_in,
                 max_assets=max_assets,
             )
 
