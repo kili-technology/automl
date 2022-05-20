@@ -128,7 +128,14 @@ def get_assets_object_detection(project_id, label_types, max_assets: Optional[in
             first=first,
             skip=skip,
             disable_tqdm=True,
-            fields=["id", "content", "labels.createdAt", "labels.jsonResponse", "labels.labelType"],
+            fields=[
+                "id",
+                "externalId",
+                "content",
+                "labels.createdAt",
+                "labels.jsonResponse",
+                "labels.labelType",
+            ],
         )
     assets = [
         {
@@ -142,6 +149,12 @@ def get_assets_object_detection(project_id, label_types, max_assets: Optional[in
         for a in assets
     ]
     assets = [a for a in assets if len(a["labels"]) > 0]
+
+    import json
+
+    with open("assets.json", "w") as handler:
+        json.dump(assets, handler)
+
     return assets  # type: ignore
 
 
