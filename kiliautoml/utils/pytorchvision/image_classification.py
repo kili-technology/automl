@@ -63,6 +63,7 @@ def get_trained_model_image_classif(
 
 
 def initialize_model_img_class(model_name: ModelNameT, class_names):
+    print("Initialization of the model with N={} classes".format(len(class_names)))
     if model_name == "efficientnet_b0":
         model = models.efficientnet_b0(pretrained=True)
         num_ftrs = model.classifier[1].in_features

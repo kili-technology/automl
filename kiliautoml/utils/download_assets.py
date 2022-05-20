@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 from dataclasses import dataclass
 from io import BytesIO
@@ -38,6 +39,7 @@ def download_asset_binary(api_key, asset_content):
     )
     assert response.status_code == 200
     asset_data = response.content
+
     return asset_data
 
 
@@ -77,7 +79,7 @@ def download_project_images(
     assets,
     output_folder: Optional[str] = None,
 ) -> List[DownloadedImages]:
-    kili_print("Downloading project images...")
+    kili_print("Downloading images to folder {}".format(output_folder))
     downloaded_images = []
     for asset in tqdm(assets):
         image = download_image(api_key, asset["content"])
@@ -86,7 +88,7 @@ def download_project_images(
         filename = ""
         if output_folder:
             filename = os.path.join(output_folder, asset["id"] + "." + format.lower())
-
+            os.makedirs(output_folder, exist_ok=True)
             with open(filename, "wb") as fp:
                 image.save(fp, format)  # type: ignore
 
@@ -143,6 +145,8 @@ def download_project_image_clean_lab(*, assets, api_key, data_path, job_name):
     Download assets that are stored in Kili and save them to folders depending on their
     label category
     """
+    shutil.rmtree(data_path, ignore_errors=True)
+
     for asset in tqdm(assets):
         img_data = download_asset_binary(api_key, asset["content"])
         img_name = asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]

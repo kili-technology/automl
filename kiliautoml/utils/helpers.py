@@ -81,13 +81,13 @@ def get_asset_memoized(
     *,
     kili,
     project_id,
-    first,
+    total,
     skip,
     status_in: Optional[List[AssetStatusT]] = None,
 ) -> List[AssetT]:
     return kili.assets(
         project_id=project_id,
-        first=first,
+        first=total,
         skip=skip,
         fields=[
             "id",
@@ -122,10 +122,15 @@ def get_assets(
     assets = get_asset_memoized(
         kili=kili,
         project_id=project_id,
-        first=max_assets,
+        total=None,
         skip=0,
         status_in=status_in,
     )
+
+    # In order to obtain a mix of all assets, we need to shuffle the list
+    random.shuffle(assets)
+
+    assets = assets[:max_assets]
 
     if len(assets) == 0:
         kili_print(f"No {status_in} assets found in project {project_id}.")
