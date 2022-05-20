@@ -89,7 +89,7 @@ def download_project_images(
         if output_folder:
             filename = os.path.join(output_folder, asset["id"] + "." + format.lower())
             os.makedirs(output_folder, exist_ok=True)
-            with open(filename, "w") as fp:
+            with open(filename, "wb") as fp:
                 image.save(fp, format)  # type: ignore
 
         downloaded_images.append(

@@ -114,8 +114,6 @@ def get_assets(
             if not (status in AssetStatusT.__args__):  # type: ignore
                 raise Exception(f"{status} is not a valid asset status.")
 
-    total = kili.count_assets(project_id=project_id)
-
     if status_in is not None:
         kili_print(f"Downloading assets with status in {status_in} from Kili project")
     else:
@@ -124,7 +122,7 @@ def get_assets(
     assets = get_asset_memoized(
         kili=kili,
         project_id=project_id,
-        total=max_assets,
+        total=None,
         skip=0,
         status_in=status_in,
     )
@@ -132,8 +130,7 @@ def get_assets(
     # In order to obtain a mix of all assets, we need to shuffle the list
     random.shuffle(assets)
 
-    total = total if max_assets is None else min(total, max_assets)
-    assets = assets[:total]
+    assets = assets[:max_assets]
 
     if len(assets) == 0:
         kili_print(f"No {status_in} assets found in project {project_id}.")

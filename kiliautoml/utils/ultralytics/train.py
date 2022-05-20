@@ -142,6 +142,7 @@ def ultralytics_train_yolov5(
     title: str,
     disable_wandb: bool,
     clear_dataset_cache: bool,
+    batch_size=2,
 ) -> float:
     yolov5_path = os.path.join(os.getcwd(), YOLOV5_REL_PATH)
 
@@ -201,7 +202,7 @@ def ultralytics_train_yolov5(
             "--weights",
             "yolov5n.pt",
             "--batch",
-            "2",
+            str(batch_size),
             *args_from_json,
         ]
         print("Executing Yolo with command line:", " ".join(args))
