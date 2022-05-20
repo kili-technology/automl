@@ -106,7 +106,6 @@ def download_project_images(
 def download_project_text(
     api_key: str,
     assets,
-<<<<<<< HEAD
 ) -> List[DownloadedText]:
     kili_print("Downloading project text...")
     downloaded_text = []
@@ -124,30 +123,6 @@ def download_project_text(
             except Exception:
                 time.sleep(1)
                 n_try += 1
-=======
-    project_id,
-) -> List[DownloadedText]:
-    kili_print("Downloading project text...")
-    downloaded_text = []
-
-    throttling_per_call = 60.0 / 250  # Kili API calls are limited to 250 per minute
-
-    for asset in tqdm(assets):
-<<<<<<< HEAD
-        content = download_asset_unicode(api_key, asset["content"], project_id)
->>>>>>> b18ff6f (Update Mapper branch with Text Classification)
-=======
-        tic = time.time()
-        n_try = 0
-        content = ""
-        while n_try < 20:
-            try:
-                content = download_asset_unicode(api_key, asset["content"], project_id)
-                break
-            except Exception:
-                time.sleep(1)
-                n_try += 1
->>>>>>> f970cc4 (correct various mistakes)
 
         downloaded_text.append(
             DownloadedText(
@@ -156,29 +131,16 @@ def download_project_text(
                 content=content,
             )
         )
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> f970cc4 (correct various mistakes)
 
         toc = time.time() - tic
 
         if toc < throttling_per_call:
             time.sleep(throttling_per_call - toc)
 
-<<<<<<< HEAD
     return downloaded_text
 
 
 def download_project_image_clean_lab(*, assets, api_key, data_path, job_name):
-=======
-=======
->>>>>>> f970cc4 (correct various mistakes)
-    return downloaded_text
-
-
-def download_project_image_clean_lab(*, assets, api_key, data_path, job_name, project_id):
->>>>>>> b18ff6f (Update Mapper branch with Text Classification)
     """
     Download assets that are stored in Kili and save them to folders depending on their
     label category
