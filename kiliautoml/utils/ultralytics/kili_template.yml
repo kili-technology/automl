@@ -52,7 +52,7 @@ download: |
           first=first,
           skip=skip,
           disable_tqdm=True,
-          status_in = asset_status_in
+          status_in = {{ asset_status_in }},
           fields=[
               'id',
               'content',
