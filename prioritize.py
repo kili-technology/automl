@@ -315,7 +315,7 @@ def embedding_text(
     help=(
         "Comma separated (without space) list of Kili asset status to select "
         "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
-        "Example: python train.py --asset-status-in TO_REVIEW,REVIEWED "
+        "Example: python prioritize.py --asset-status-in TO_REVIEW,REVIEWED "
     ),
 )
 @click.option(
