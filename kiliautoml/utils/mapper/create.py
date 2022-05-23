@@ -141,7 +141,7 @@ class MapperClassification:
 
         self.assignments: List[List[int]]
         self.lens_names: List[str]
-        self.lens: np.ndarray
+        self.lens: np.ndarray  # type: ignore
 
         self._get_assignments_and_lens(embeddings, cv_folds)
 
