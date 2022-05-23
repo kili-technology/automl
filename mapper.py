@@ -16,6 +16,7 @@ from kiliautoml.utils.type import AssetStatusT
     help="Kili Endpoint",
 )
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY", ""), help="Kili API Key")
+@click.option("--project-id", default=None, required=True, help="Kili project ID")
 @click.option(
     "--target-job",
     default=None,
@@ -28,10 +29,12 @@ from kiliautoml.utils.type import AssetStatusT
 )
 @click.option(
     "--asset-status-in",
-    default=["TODO", "ONGOING"],
+    default=None,
+    callback=lambda _, __, x: x.upper().split(",") if x else [],
     help=(
-        "Comma separated list of Kili asset status to select(among "
-        "'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED')"
+        "Comma separated (without space) list of Kili asset status to select "
+        "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
+        "Example: python mapper.py --asset-status-in TO_REVIEW,REVIEWED "
     ),
 )
 @click.option(
@@ -41,7 +44,6 @@ from kiliautoml.utils.type import AssetStatusT
     help="Maximum number of assets to consider",
 )
 @click.option("--assets-repository", default=None, help="Asset repository (eg. /content/assets/)")
-@click.option("--project-id", default=None, required=True, help="Kili project ID")
 @click.option(
     "--cv-folds",
     default=4,
@@ -52,7 +54,6 @@ from kiliautoml.utils.type import AssetStatusT
 @click.option(
     "--focus-class",
     default=None,
-    type=Optional[List[str]],
     show_default=True,
     help="Only display selected class in Mapper graph",
 )
@@ -113,3 +114,7 @@ def main(
 
         else:
             raise NotImplementedError
+
+
+if __name__ == "__main__":
+    main()
