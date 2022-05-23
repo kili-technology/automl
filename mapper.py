@@ -9,6 +9,7 @@ from kiliautoml.utils.mapper.create import MapperClassification
 from kiliautoml.utils.type import AssetStatusT
 
 
+@click.command()
 @click.option(
     "--api-endpoint",
     default="https://cloud.kili-technology.com/api/label/v2/graphql",

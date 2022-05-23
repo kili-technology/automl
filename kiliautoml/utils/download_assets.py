@@ -81,25 +81,41 @@ def download_project_images(
 ) -> List[DownloadedImages]:
     kili_print("Downloading images to folder {}".format(output_folder))
     downloaded_images = []
+
+    throttling_per_call = 60.0 / 250  # Kili API calls are limited to 250 per minute
+
     for asset in tqdm(assets):
-        image = download_image(api_key, asset["content"])
-        format = str(image.format or "")
+        tic = time.time()
+        n_try = 0
 
-        filename = ""
-        if output_folder:
-            filename = os.path.join(output_folder, asset["id"] + "." + format.lower())
-            os.makedirs(output_folder, exist_ok=True)
-            with open(filename, "wb") as fp:
-                image.save(fp, format)  # type: ignore
+        while n_try < 20:
+            try:
+                image = download_image(api_key, asset["content"])
+                format = str(image.format or "")
+                filename = ""
+                if output_folder:
+                    filename = os.path.join(output_folder, asset["id"] + "." + format.lower())
+                    os.makedirs(output_folder, exist_ok=True)
+                    with open(filename, "wb") as fp:
+                        image.save(fp, format)  # type: ignore
+                downloaded_images.append(
+                    DownloadedImages(
+                        id=asset["id"],
+                        externalId=asset["externalId"],
+                        filename=filename or "",
+                        image=image,
+                    )
+                )
+                break
+            except Exception:
+                time.sleep(1)
+                n_try += 1
 
-        downloaded_images.append(
-            DownloadedImages(
-                id=asset["id"],
-                externalId=asset["externalId"],
-                filename=filename or "",
-                image=image,
-            )
-        )
+        toc = time.time() - tic
+
+        if toc < throttling_per_call:
+            time.sleep(throttling_per_call - toc)
+
     return downloaded_images
 
 
