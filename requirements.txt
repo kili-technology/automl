@@ -18,5 +18,5 @@ typing_extensions
 wandb==0.12.10
 kmapper
 matplotlib
-skimage
+scikit-image
 networkx
