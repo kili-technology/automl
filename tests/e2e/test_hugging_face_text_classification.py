@@ -13,8 +13,7 @@ def mocked__get_text_from(asset_url):
     return text_content[asset_url]
 
 
-def mocked__get_assets(*_, max_assets=None, labeling_statuses=None):
-    _ = labeling_statuses
+def mocked__get_assets(*_, max_assets=10, status_in=None, randomize=True):
     return json.load(open("tests/e2e/fixtures/text_assets_fixture.json"))[:max_assets]
 
 
