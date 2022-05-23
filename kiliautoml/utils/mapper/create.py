@@ -35,7 +35,7 @@ from kiliautoml.utils.mapper.gudhi_mapper import (
 from kiliautoml.utils.type import AssetStatusT, JobT
 
 
-def embeddings_text(list_text: List[str]) -> np.ndarray:
+def embeddings_text(list_text: List[str]):
 
     ds = datasets.Dataset.from_pandas(pd.DataFrame({"content": list_text}))  # type: ignore
 
@@ -77,7 +77,7 @@ def embeddings_text(list_text: List[str]) -> np.ndarray:
     return np.concatenate((embedings), axis=0)
 
 
-def embeddings_images(images: List[PILImage], batch_size=4) -> np.ndarray:
+def embeddings_images(images: List[PILImage], batch_size=4):
     """Get the embeddings of the images using a generic model trained on ImageNet."""
     color_images = [im.convert("RGB") for im in images]
     img2vec = Img2Vec(cuda=torch.cuda.is_available(), model="efficientnet_b7")
@@ -208,7 +208,7 @@ class MapperClassification:
         )
         return Mapper_kili
 
-    def _get_embeddings(self) -> np.ndarray:
+    def _get_embeddings(self):
         if self.input_type == "IMAGE":
             pil_images = [image.image for image in self.data]  # type: ignore
             return embeddings_images(pil_images)
@@ -220,7 +220,7 @@ class MapperClassification:
         else:
             raise NotImplementedError
 
-    def _get_assignments_and_lens(self, embeddings: np.ndarray, cv_folds: int):
+    def _get_assignments_and_lens(self, embeddings, cv_folds: int):
 
         if (
             (self.asset_status_in is None)
@@ -231,7 +231,7 @@ class MapperClassification:
         else:  # TODO modify when asset type changed
             self._get_assignments_and_lens_with_labels(embeddings, cv_folds)
 
-    def _get_assignments_and_lens_with_labels(self, embeddings: np.ndarray, cv_folds: int):
+    def _get_assignments_and_lens_with_labels(self, embeddings, cv_folds: int):
 
         # Get labels (as string and number_id)
         labels = [
@@ -276,7 +276,7 @@ class MapperClassification:
             "prediction_error",
         ]
 
-    def _get_assignments_and_lens_without_labels(self, embeddings: np.ndarray):
+    def _get_assignments_and_lens_without_labels(self, embeddings):
 
         idx_labeled_assets = [
             idx for idx, asset in enumerate(self.assets) if len(asset["labels"]) > 0
@@ -314,7 +314,7 @@ class MapperClassification:
             "alt_predicted_class",
         ]
 
-    def _get_custom_tooltip(self) -> np.ndarray:
+    def _get_custom_tooltip(self):
 
         if self.input_type == "IMAGE":
             # with labels available
@@ -349,7 +349,7 @@ class MapperClassification:
             raise NotImplementedError
 
 
-def topic_score(list_text: List[str]) -> np.ndarray:
+def topic_score(list_text: List[str]):
     import nltk
 
     nltk.download("wordnet")

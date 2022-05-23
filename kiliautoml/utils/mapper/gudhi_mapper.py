@@ -608,8 +608,8 @@ def display_pic_from_mapper_node(
             raise ValueError("pict_dataset must be a pandas dataframe")
         if pict_size is None:
             pict_size = [
-                int((pict_dataset.shape[1]) ** (1 / 2)),
-                int((pict_dataset.shape[1]) ** (1 / 2)),
+                int((pict_dataset.shape[1]) ** (1 / 2)),  # type: ignore
+                int((pict_dataset.shape[1]) ** (1 / 2)),  # type: ignore
             ]
         # Initialize picture
         nb_display = min(
@@ -619,7 +619,7 @@ def display_pic_from_mapper_node(
 
         testImage = np.concatenate(
             (
-                pict_dataset.to_numpy()[
+                pict_dataset.to_numpy()[  # type: ignore
                     [
                         np.random.choice(
                             mapper_cover_complex.node_info[id2name[node_id]]["indices"],
@@ -646,7 +646,7 @@ def display_pic_from_mapper_node(
         if not (isinstance(pict_folder, str)) or not (isinstance(pict_file_names, pd.Series)):
             raise ValueError("pict_folder must be a path and pict_file_names a pandas series")
 
-        list_pict = pict_file_names.to_numpy()[
+        list_pict = pict_file_names.to_numpy()[  # type: ignore
             np.random.choice(
                 mapper_cover_complex.node_info[id2name[node_id]]["indices"],
                 nb_display,
@@ -722,11 +722,11 @@ def custom_tooltip_picture(
             raise ValueError("pict_dataset must be a pandas dataframe")
         if pict_size is None:
             pict_size = [
-                int((pict_dataset.shape[1]) ** (1 / 2)),
-                int((pict_dataset.shape[1]) ** (1 / 2)),
+                int((pict_dataset.shape[1]) ** (1 / 2)),  # type: ignore
+                int((pict_dataset.shape[1]) ** (1 / 2)),  # type: ignore
             ]
 
-        for ys, image_data in zip(label, pict_dataset.to_numpy()):
+        for ys, image_data in zip(label, pict_dataset.to_numpy()):  # type: ignore
             output = io.BytesIO()
             # Data was a flat row of "pixels".
             _image_data = img_as_ubyte(image_data.reshape(pict_size))
@@ -752,7 +752,7 @@ def custom_tooltip_picture(
     if pict_data_type == "img_link":
         if not (isinstance(pict_folder, str)) or not (isinstance(pict_file_names, pd.Series)):
             raise ValueError("pict_folder must be a path and pict_file_names a pandas series")
-        for ys, image_data in zip(label, pict_file_names.to_numpy()):
+        for ys, image_data in zip(label, pict_file_names.to_numpy()):  # type: ignore
             output = io.BytesIO()
             # Data was a flat row of "pixels".
             img = Image.open(os.path.join(pict_folder, image_data)).resize((64, 64))
