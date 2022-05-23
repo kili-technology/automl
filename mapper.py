@@ -30,7 +30,7 @@ from kiliautoml.utils.type import AssetStatusT
 @click.option(
     "--asset-status-in",
     default=None,
-    callback=lambda _, __, x: x.upper().split(",") if x else [],
+    callback=lambda _, __, x: x.upper().split(",") if x else None,
     help=(
         "Comma separated (without space) list of Kili asset status to select "
         "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
