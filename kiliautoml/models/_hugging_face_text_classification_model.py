@@ -26,7 +26,7 @@ from kiliautoml.utils.helpers import (
     ensure_dir,
     kili_print,
 )
-from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
+from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import AssetT, JobT, TrainingArgsT
 
 
@@ -64,21 +64,62 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         nltk.download("punkt")
 
-        path = Path.model_repository_dir(
+        model_repository_dir = Path.model_repository_dir(
             HOME, self.project_id, self.job_name, self.model_repository
         )
 
-        # TODO: delete auxiliary method
-        return self._train(
-            assets,
-            self.job,
-            self.job_name,
-            path,
-            clear_dataset_cache,
-            epochs,
-            training_args,
-            disable_wandb,
+        model_name: ModelNameT = self.model_name  # type: ignore
+        training_args = training_args or {}
+
+        kili_print(self.job_name)
+        path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
+        kili_print(f"Downloading data to {path_dataset}")
+        if os.path.exists(path_dataset) and clear_dataset_cache:
+            os.remove(path_dataset)
+        job_categories = categories_from_job(self.job)
+        if not os.path.exists(path_dataset):
+            self._write_dataset(assets, self.job_name, path_dataset, job_categories)
+        raw_datasets = datasets.load_dataset(  # type: ignore
+            "json",
+            data_files=path_dataset,
+            features=datasets.features.features.Features(  # type: ignore
+                {
+                    "label": datasets.ClassLabel(names=job_categories),  # type: ignore
+                    "text": datasets.Value(dtype="string"),  # type: ignore
+                }
+            ),
         )
+        tokenizer, model = self._get_tokenizer_and_model_from_name(
+            model_name, self.model_framework, job_categories, self.ml_task
+        )
+
+        def tokenize_function(examples):
+            return tokenizer(examples["text"], padding="max_length", truncation=True)
+
+        tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
+        train_dataset = tokenized_datasets["train"]  # type: ignore
+
+        path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
+
+        training_arguments = self._get_training_args(
+            path_model,
+            model_name,
+            disable_wandb=disable_wandb,
+            epochs=epochs,
+            batch_size=batch_size,
+            additional_args=training_args,
+        )
+
+        trainer = Trainer(
+            model=model,
+            args=training_arguments,
+            train_dataset=train_dataset,  # type: ignore
+            tokenizer=tokenizer,
+        )
+        output = trainer.train()
+        kili_print(f"Saving model to {path_model}")
+        trainer.save_model(ensure_dir(path_model))
+        return output.training_loss
 
     def predict(
         self,
@@ -89,6 +130,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         verbose: int = 0,
         clear_dataset_cache: bool = False,
     ) -> JobPredictions:
+        print("Warning, this model does not support custom batch_size ", batch_size)
 
         model_path_res, _, self.model_framework = self._extract_model_info(
             self.job_name, self.project_id, model_path, from_project
@@ -126,65 +168,6 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         return job_predictions
-
-    def _train(
-        self,
-        assets: List[AssetT],
-        job: JobT,
-        job_name: str,
-        model_repository_dir: ModelRepositoryDirT,
-        clear_dataset_cache: bool,
-        epochs: int,
-        training_args: TrainingArgsT,
-        disable_wandb: bool,
-    ) -> float:
-        model_name: ModelNameT = self.model_name  # type: ignore
-        training_args = training_args or {}
-
-        kili_print(job_name)
-        path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
-        kili_print(f"Downloading data to {path_dataset}")
-        if os.path.exists(path_dataset) and clear_dataset_cache:
-            os.remove(path_dataset)
-        job_categories = categories_from_job(job)
-        if not os.path.exists(path_dataset):
-            self._write_dataset(assets, job_name, path_dataset, job_categories)
-        raw_datasets = datasets.load_dataset(  # type: ignore
-            "json",
-            data_files=path_dataset,
-            features=datasets.features.features.Features(  # type: ignore
-                {
-                    "label": datasets.ClassLabel(names=job_categories),  # type: ignore
-                    "text": datasets.Value(dtype="string"),  # type: ignore
-                }
-            ),
-        )
-        tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.model_framework, job_categories, self.ml_task
-        )
-
-        def tokenize_function(examples):
-            return tokenizer(examples["text"], padding="max_length", truncation=True)
-
-        tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
-        train_dataset = tokenized_datasets["train"]  # type: ignore
-
-        path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
-
-        training_arguments = self._get_training_args(
-            path_model, model_name, disable_wandb=disable_wandb, epochs=epochs, **training_args
-        )
-
-        trainer = Trainer(
-            model=model,
-            args=training_arguments,
-            train_dataset=train_dataset,  # type: ignore
-            tokenizer=tokenizer,
-        )
-        output = trainer.train()
-        kili_print(f"Saving model to {path_model}")
-        trainer.save_model(ensure_dir(path_model))
-        return output.training_loss
 
     def _write_dataset(self, assets, job_name, path_dataset, job_categories):
         with open(ensure_dir(path_dataset), "w") as handler:

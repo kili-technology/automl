@@ -2,7 +2,7 @@
 import os
 from abc import ABCMeta
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from transformers import (
     AutoModelForSequenceClassification,
@@ -109,17 +109,25 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         return model_path_res, cls.model_repository, model_framework
 
     @staticmethod
-    def _get_training_args(path_model, model_name, epochs: int, disable_wandb: bool, **kwargs):
+    def _get_training_args(
+        path_model,
+        model_name,
+        epochs: int,
+        disable_wandb: bool,
+        batch_size: int,
+        additional_args: Dict[Any, Any],
+    ):
         date = datetime.now().strftime("%Y-%m-%d_%H:%M")
         default_args = {
             "report_to": "wandb" if not disable_wandb else "none",
             "run_name": model_name + "_" + date,
         }
-        default_args.update(kwargs)
+        default_args.update(additional_args)
         training_args = TrainingArguments(
             PathHF.append_training_args_dir(path_model),
             num_train_epochs=epochs,
-            per_device_train_batch_size=2,
+            per_device_train_batch_size=batch_size,
+            per_device_eval_batch_size=batch_size,
             **default_args,
         )
         return training_args
