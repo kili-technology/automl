@@ -813,7 +813,7 @@ def custom_tooltip_picture(
 
 def custom_tooltip_text(
     label,
-    list_text=None,
+    data,
 ):
     """Create numpy array with term frequency-inverse document frequency
         most relevqnt words to be used as custom_tooltips in KepplerMapper.visualize
@@ -824,6 +824,8 @@ def custom_tooltip_text(
         List of string: ready to use for visualization
     """
     tooltip_s = []
+
+    list_text = [downloaded_text.content for downloaded_text in data]
 
     ds = datasets.Dataset.from_pandas(pd.DataFrame({"content": list_text}))  # type: ignore
 
@@ -845,7 +847,7 @@ def custom_tooltip_text(
         raise ValueError("list_text must be a list")
     for ys, terms in zip(label, most_significant_terms):
         # Data was a flat row of "pixels".
-        txt_tag = str(int(ys)) + ": " + "-".join(terms)
+        txt_tag = np.array2string(ys, separator=",") + " - " + "-".join(terms)
         tooltip_s.append(txt_tag)
 
     tooltip_s = np.array(tooltip_s)
