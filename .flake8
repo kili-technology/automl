@@ -1,5 +1,11 @@
 [flake8]
 ; Whitespace before ':' (E203)
 ; Line break occurred before a binary operator (W503)
-ignore = E203, W503
+; U101 - An unused argument starting with an underscore
+; B006 Do not use mutable data structures for argument defaults
+ignore = E203, W503, U101, B006
 max-line-length = 100
+exclude = tests,kiliautoml/utils/ultralytics/yolov5
+
+unused-arguments-ignore-abstract-functions = True
+unused-arguments-ignore-stub-functions = True

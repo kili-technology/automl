@@ -14,10 +14,12 @@ def mocked__get_text_from(asset_url):
 
 
 def mocked__get_assets(*_, max_assets=None, labeling_statuses=None):
+    _ = labeling_statuses
     return json.load(open("tests/e2e/fixtures/text_assets_fixture.json"))[:max_assets]
 
 
 def mocked__projects(*_, project_id, fields):
+    _ = project_id, fields
     return json.load(open("tests/e2e/fixtures/text_project_fixture.json"))
 
 

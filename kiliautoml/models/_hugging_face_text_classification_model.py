@@ -217,3 +217,14 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         predicted_label = model.config.id2label[predicted_id]
 
         return {"categories": [{"name": predicted_label, "confidence": int(probas * 100)}]}
+
+    def find_errors(
+        self,
+        assets: List[AssetT],
+        cv_n_folds: int,
+        epochs: int,
+        batch_size: int,
+        verbose: int = 0,
+        clear_dataset_cache: bool = False,
+    ):
+        raise NotImplementedError("This model does not support find_errors yet")

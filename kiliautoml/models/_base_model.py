@@ -50,3 +50,15 @@ class BaseModel(metaclass=ABCMeta):
         clear_dataset_cache: bool = False,
     ) -> JobPredictions:
         pass
+
+    @abstractmethod
+    def find_errors(
+        self,
+        assets: List[AssetT],
+        cv_n_folds: int,
+        epochs: int,
+        batch_size: int,
+        verbose: int = 0,
+        clear_dataset_cache: bool = False,
+    ):
+        pass

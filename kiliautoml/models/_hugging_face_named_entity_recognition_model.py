@@ -411,3 +411,14 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             offset_in_sentence += len(token)
 
         return kili_annotations
+
+    def find_errors(
+        self,
+        assets: List[AssetT],
+        cv_n_folds: int,
+        epochs: int,
+        batch_size: int,
+        verbose: int = 0,
+        clear_dataset_cache: bool = False,
+    ):
+        raise NotImplementedError("This model does not support find_errors yet")

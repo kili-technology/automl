@@ -68,6 +68,12 @@ from kiliautoml.utils.type import AssetStatusT
     help="Number of epochs to train each CV fold",
 )
 @click.option(
+    "--batch-size",
+    default=8,
+    type=int,
+    help="Maximum number of assets to consider",
+)
+@click.option(
     "--asset-status-in",
     default=["LABELED", "TO_REVIEW", "REVIEWED"],
     callback=lambda _, __, x: x.upper().split(",") if x else [],
@@ -102,6 +108,7 @@ def main(
     epochs: int,
     asset_status_in: List[AssetStatusT],
     max_assets: int,
+    batch_size: int,
     model_name: ModelNameT,
     project_id: str,
     verbose: int,
@@ -144,7 +151,7 @@ def main(
             )
 
             image_classification_model = PyTorchVisionImageClassificationModel(
-                assets=assets,
+                assets=assets,  # TODO remove assets
                 model_repository=model_repository,
                 model_name=model_name,
                 job_name=job_name,
@@ -154,7 +161,9 @@ def main(
                 api_key=api_key,
             )
 
-            found_errors = image_classification_model.find_errors(cv_folds, epochs, verbose)
+            found_errors = image_classification_model.find_errors(
+                assets, cv_folds, epochs, verbose, batch_size
+            )
 
             print()
             kili_print("Number of wrong labels found: ", len(found_errors))

@@ -107,11 +107,12 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         prepare_image_dataset(train_idx, val_idx, image_datasets)
         _, loss = get_trained_model_image_classif(
-            epochs,
-            self.model_name,  # type: ignore
-            verbose,
-            self.class_names,
-            image_datasets,
+            epochs=epochs,
+            model_name=self.model_name,  # type: ignore
+            batch_size=batch_size,
+            verbose=verbose,
+            class_names=self.class_names,
+            image_datasets=image_datasets,
             save_model_path=self.model_path,
         )
         return loss
@@ -131,7 +132,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         model.load_state_dict(torch.load(self.model_path))
         loader = torch_Data.DataLoader(
-            self.original_image_datasets["val"], batch_size=1, shuffle=False, num_workers=1
+            self.original_image_datasets["val"], batch_size=batch_size, shuffle=False, num_workers=1
         )
         probs = predict_probabilities(loader, model, verbose=verbose)
 
@@ -144,7 +145,15 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         return job_predictions
 
-    def find_errors(self, cv_n_folds, epochs, verbose):
+    def find_errors(
+        self,
+        assets: List[AssetT],
+        cv_n_folds: int,
+        epochs: int,
+        batch_size: int,
+        verbose: int = 0,
+        clear_dataset_cache: bool = False,
+    ) -> Any:
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
         for cv_fold in tqdm(range(cv_n_folds)):
             # Split train into train and holdout for particular cv_fold.
@@ -162,17 +171,17 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             )
 
             model, _ = get_trained_model_image_classif(
-                epochs,
-                self.model_name,  # type: ignore
-                verbose,
-                self.class_names,
-                image_datasets,
+                model_name=self.model_name,  # type: ignore
+                batch_size=batch_size,
+                verbose=verbose,
+                class_names=self.class_names,
+                image_datasets=image_datasets,
                 save_model_path=None,
             )
 
             holdout_loader = torch_Data.DataLoader(
                 holdout_dataset,
-                batch_size=64,
+                batch_size=batch_size,
                 shuffle=False,
                 pin_memory=True,
             )

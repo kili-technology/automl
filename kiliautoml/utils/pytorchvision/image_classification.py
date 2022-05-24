@@ -35,15 +35,19 @@ def set_model_repository_image_classification(model_repository) -> ModelReposito
 
 
 def get_trained_model_image_classif(
+    *,
     epochs: int,
     model_name: ModelNameT,
+    batch_size: int,
     verbose: int,
     class_names: List[str],
     image_datasets: dict,  # type: ignore
     save_model_path: Optional[ModelPathT] = None,
 ):
     dataloaders = {
-        x: torch_Data.DataLoader(image_datasets[x], batch_size=10, shuffle=True, num_workers=1)
+        x: torch_Data.DataLoader(
+            image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=1
+        )
         for x in ["train", "val"]
     }
 

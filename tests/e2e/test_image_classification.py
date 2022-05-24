@@ -9,14 +9,17 @@ from tests.e2e.utils_test_e2e import debug_subprocess_pytest
 
 
 def mocked__get_assets(*_, max_assets=None, labeling_statuses=None):
+    _ = labeling_statuses
     return json.load(open("tests/e2e/fixtures/img_class_get_assets_fixture.json"))[:max_assets]
 
 
 def mocked__projects(*_, project_id, fields):
+    _ = project_id, fields
     return json.load(open("tests/e2e/fixtures/img_class_project_fixture.json"))
 
 
 def mocked__download_asset_binary(api_key, asset_content):
+    _ = api_key
     import pickle
 
     id = asset_content.split("label/v2/files?id=")[-1]
