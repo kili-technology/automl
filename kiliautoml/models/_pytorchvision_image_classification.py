@@ -105,6 +105,8 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         verbose: int = 1,
         api_key: str = "",
     ):
+        _ = clear_dataset_cache
+
         if disable_wandb is False:
             raise NotImplementedError("Wandb is not supported for this model.")
         original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
@@ -134,6 +136,8 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         clear_dataset_cache: bool,
         api_key: str = "",
     ):
+        _ = clear_dataset_cache
+
         original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
         _ = labels
 
@@ -188,6 +192,8 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         clear_dataset_cache: bool = False,
         api_key: str = "",
     ) -> Any:
+        _ = clear_dataset_cache
+
         original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
         for cv_fold in tqdm(range(cv_n_folds)):

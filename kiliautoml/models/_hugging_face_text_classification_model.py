@@ -133,6 +133,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         clear_dataset_cache: bool,
     ) -> JobPredictions:
         print("Warning, this model does not support custom batch_size ", batch_size)
+        _ = clear_dataset_cache
 
         model_path_res, _, self.model_framework = self._extract_model_info(
             self.job_name, self.project_id, model_path, from_project

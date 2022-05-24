@@ -175,6 +175,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         verbose: int,
         clear_dataset_cache: bool,
     ) -> JobPredictions:
+        _ = clear_dataset_cache
         print("Warning, this method does not support custom batch_size")
         _ = batch_size
         model_path_res, _, self.model_framework = self._extract_model_info(
