@@ -338,13 +338,13 @@ class MapperClassification:
             if len(self.lens_names) == 5:
                 return custom_tooltip_text(
                     np.column_stack((self.lens[:, 1], self.lens[:, 3])),
-                    list_text=self.data,
+                    data=self.data,
                 )
             # without labels available
             else:
                 return custom_tooltip_text(
                     self.lens[:, 1],
-                    list_text=self.data,
+                    data=self.data,
                 )
         else:
             raise NotImplementedError
