@@ -120,6 +120,7 @@ AutoML currently supports the following tasks:
   - Text Classification
 - Image
   - Object detection
+  - Image Classification
 
 ## Disclaimer
 
