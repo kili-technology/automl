@@ -31,6 +31,7 @@ from kiliautoml.utils.mapper.gudhi_mapper import (
     custom_tooltip_text,
     data_index_in_mapper,
     gudhi_to_KM,
+    topic_score,
 )
 from kiliautoml.utils.type import AssetStatusT, JobT
 
@@ -347,50 +348,3 @@ class MapperClassification:
                 )
         else:
             raise NotImplementedError
-
-
-def topic_score(list_text: List[str]):
-    import nltk
-
-    nltk.download("wordnet")
-    from nltk.stem import SnowballStemmer, WordNetLemmatizer
-
-    stemmer = SnowballStemmer("english")
-    import gensim  # type: ignore
-
-    ds = datasets.Dataset.from_pandas(pd.DataFrame({"content": list_text}))  # type: ignore
-
-    def lemmatize_stemming(text: str):
-        return stemmer.stem(WordNetLemmatizer().lemmatize(text, pos="v"))
-
-    # Tokenize and lemmatize
-    def preprocess(doc):
-        result = []
-        for token in gensim.utils.simple_preprocess(doc["content"]):
-            if token not in gensim.parsing.preprocessing.STOPWORDS and len(token) > 3:
-                result.append(lemmatize_stemming(token))
-        doc["lemmatized"] = result
-        return doc
-
-    ds = ds.map(preprocess)
-
-    dictionary = gensim.corpora.Dictionary([doc["lemmatized"] for doc in ds])  # type: ignore
-    dictionary.filter_extremes(no_below=10, no_above=0.1, keep_n=10000)
-
-    bow_corpus = [dictionary.doc2bow(doc["lemmatized"]) for doc in ds]  # type: ignore
-
-    lda_model = gensim.models.LdaMulticore(
-        bow_corpus,
-        num_topics=10,
-        id2word=dictionary,
-        passes=50,
-    )
-
-    output = np.zeros((len(list_text), 10))
-
-    for i, doc in tqdm(enumerate(ds)):
-        scores = lda_model.get_document_topics(dictionary.doc2bow(doc["lemmatized"]))
-        for topic, score in scores:
-            output[i, topic] = score
-
-    return output
