@@ -91,12 +91,6 @@ from kiliautoml.utils.type import AssetStatusT
 )
 @click.option("--project-id", default=None, required=True, help="Kili project ID")
 @click.option("--verbose", default=0, type=int, help="Verbose level")
-@click.option(
-    "--disable-wandb",
-    default=True,
-    is_flag=True,
-    help="Tells if wandb is disabled",
-)
 def main(
     api_endpoint: str,
     api_key: str,
@@ -112,7 +106,6 @@ def main(
     model_name: ModelNameT,
     project_id: str,
     verbose: int,
-    disable_wandb: bool,
     cv_folds: int,
 ):
     """
@@ -122,7 +115,6 @@ def main(
     stored in a file, but also a metadata (labeling_error: true) is uploaded to Kili to
     easily filter them later in the app.
     """
-
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
 
@@ -151,18 +143,19 @@ def main(
             )
 
             image_classification_model = PyTorchVisionImageClassificationModel(
-                assets=assets,  # TODO remove assets
                 model_repository=model_repository,
                 model_name=model_name,
                 job_name=job_name,
                 job=job,
                 model_framework=model_framework,
                 project_id=project_id,
-                api_key=api_key,
             )
-
             found_errors = image_classification_model.find_errors(
-                assets, cv_folds, epochs, verbose, batch_size
+                assets=assets,
+                cv_n_folds=cv_folds,
+                epochs=epochs,
+                batch_size=batch_size,
+                verbose=verbose,
             )
 
             print()

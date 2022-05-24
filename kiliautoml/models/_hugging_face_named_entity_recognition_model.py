@@ -65,8 +65,8 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[AssetT],
         epochs: int,
         batch_size: int,
-        clear_dataset_cache: bool = False,
-        disable_wandb: bool = False,
+        clear_dataset_cache: bool,
+        disable_wandb: bool,
         additional_args: TrainingArgsT = {},
     ):
         """
@@ -167,11 +167,11 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     def predict(
         self,
         assets: List[AssetT],
-        model_path: str,
+        model_path: Optional[str],
         from_project: Optional[str],
         batch_size: int,
-        verbose: int = 0,
-        clear_dataset_cache: bool = False,
+        verbose: int,
+        clear_dataset_cache: bool,
     ) -> JobPredictions:
         print("Warning, this method does not support custom batch_size")
         _ = batch_size

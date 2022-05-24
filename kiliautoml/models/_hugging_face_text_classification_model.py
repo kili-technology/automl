@@ -124,11 +124,11 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     def predict(
         self,
         assets: List[AssetT],
-        model_path: str,
+        model_path: Optional[str],
         from_project: Optional[str],
         batch_size: int,
-        verbose: int = 0,
-        clear_dataset_cache: bool = False,
+        verbose: int,
+        clear_dataset_cache: bool,
     ) -> JobPredictions:
         print("Warning, this model does not support custom batch_size ", batch_size)
 

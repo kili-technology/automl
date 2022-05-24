@@ -1,5 +1,6 @@
 import copy
 import os
+import shutil
 from typing import Any, List, Optional
 
 import numpy as np
@@ -42,8 +43,6 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self,
         *,
         project_id: str,
-        api_key: str,
-        assets: List[Any],
         model_repository: Optional[ModelRepositoryT],
         job: JobT,
         job_name: str,
@@ -59,12 +58,6 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         model_dir = PathPytorchVision.append_model_dir(model_repository_dir)
         model_path = PathPytorchVision.append_model_path(model_repository_dir, model_name)
         data_dir = os.path.join(model_repository_dir, "data")
-        download_project_image_clean_lab(
-            assets=assets,
-            api_key=api_key,
-            data_path=data_dir,
-            job_name=job_name,
-        )
 
         # To set to False if the input size varies a lot and you see that the training takes
         # too much time
@@ -91,17 +84,33 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self.class_names = class_names
         self.labels = labels
 
+    def prepare_dataset(
+        self,
+        assets: List[AssetT],
+        api_key,
+    ):
+        shutil.rmtree(self.data_dir, ignore_errors=True)
+        download_project_image_clean_lab(
+            assets=assets,
+            api_key=api_key,
+            data_path=self.data_dir,
+            job_name=self.job_name,
+        )
+
     def train(
         self,
         assets: List[AssetT],
         epochs: int,
         batch_size: int,
-        clear_dataset_cache: bool = False,
-        disable_wandb: bool = False,
-        verbose: int = 0,
+        clear_dataset_cache: bool,
+        disable_wandb: bool,
+        verbose: int = 1,
+        api_key: str = "",
     ):
         if disable_wandb is False:
             raise NotImplementedError("Wandb is not supported for this model.")
+        self.prepare_dataset(assets, api_key)
+
         image_datasets = copy.deepcopy(self.original_image_datasets)
         train_idx, val_idx = train_test_split(
             range(len(self.labels)), test_size=0.2, random_state=42
@@ -121,17 +130,24 @@ class PyTorchVisionImageClassificationModel(BaseModel):
     def predict(
         self,
         assets: List[AssetT],
-        model_path: str,
+        model_path: Optional[str],
         from_project: Optional[str],
         batch_size: int,
-        verbose: int = 0,
-        clear_dataset_cache: bool = False,
+        verbose: int,
+        clear_dataset_cache: bool,
+        api_key: str = "",
     ):
+        self.prepare_dataset(assets, api_key)
+
         model = initialize_model_img_class(
             self.model_name,  # type: ignore
             self.class_names,
         )
-        model.load_state_dict(torch.load(self.model_path))
+
+        # Priorité :
+        # model_path > from_project
+        # Faire le truc dans base class
+        model.load_state_dict(torch.load(model_path if model_path else self.model_path))
         loader = torch_Data.DataLoader(
             self.original_image_datasets["val"], batch_size=batch_size, shuffle=False, num_workers=1
         )
@@ -154,7 +170,9 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         batch_size: int,
         verbose: int = 0,
         clear_dataset_cache: bool = False,
+        api_key: str = "",
     ) -> Any:
+        self.prepare_dataset(assets, api_key)
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
         for cv_fold in tqdm(range(cv_n_folds)):
             # Split train into train and holdout for particular cv_fold.
@@ -171,6 +189,8 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 cv_holdout_idx,
             )
             model_name: ModelNameT = self.model_name  # type: ignore
+            print("batch size1 ", batch_size)
+
             model, _ = get_trained_model_image_classif(
                 model_name=model_name,
                 batch_size=batch_size,
@@ -180,6 +200,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 image_datasets=image_datasets,
                 save_model_path=None,
             )
+            print("batch size 2", batch_size)
 
             holdout_loader = torch_Data.DataLoader(
                 holdout_dataset,

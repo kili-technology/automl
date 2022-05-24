@@ -285,14 +285,12 @@ def main(
             )
 
             image_classification_model = PyTorchVisionImageClassificationModel(
-                assets=assets,
                 model_repository=model_repository,
                 model_name=model_name,
                 job=job,
                 model_framework=model_framework,
                 job_name=job_name,
                 project_id=project_id,
-                api_key=api_key,
             )
 
             training_loss = image_classification_model.train(
@@ -300,6 +298,8 @@ def main(
                 verbose=verbose,
                 batch_size=batch_size,
                 epochs=epochs,
+                clear_dataset_cache=clear_dataset_cache,
+                disable_wandb=disable_wandb,
             )
 
         else:

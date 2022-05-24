@@ -100,6 +100,7 @@ def predict_one_job(
     tools,
     prioritization,
     job,
+    clear_dataset_cache,
 ) -> JobPredictions:
     if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
         model = HuggingFaceTextClassificationModel(
@@ -116,6 +117,7 @@ def predict_one_job(
             batch_size=batch_size,
             verbose=verbose,
             from_project=from_project,
+            clear_dataset_cache=clear_dataset_cache,
         )
 
     elif (
@@ -137,6 +139,7 @@ def predict_one_job(
             batch_size=batch_size,
             verbose=verbose,
             from_project=from_project,
+            clear_dataset_cache=clear_dataset_cache,
         )
 
     elif (
@@ -157,14 +160,12 @@ def predict_one_job(
         )
     elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
         image_classification_model = PyTorchVisionImageClassificationModel(
-            assets=assets,
             model_repository=model_repository,
             job=job,
             model_framework=model_framework,
             model_name=model_name,
             job_name=job_name,
             project_id=project_id,
-            api_key=api_key,
         )
 
         job_predictions = image_classification_model.predict(
@@ -173,6 +174,8 @@ def predict_one_job(
             model_path=from_model,
             from_project=from_project,
             batch_size=batch_size,
+            clear_dataset_cache=clear_dataset_cache,
+            api_key=api_key,
         )
 
     else:
@@ -252,6 +255,12 @@ def predict_one_job(
     type=int,
     help="Maximum number of assets to consider",
 )
+@click.option(
+    "--clear-dataset-cache",
+    default=False,
+    is_flag=True,
+    help="Tells if the dataset cache must be cleared",
+)
 def main(
     api_endpoint: str,
     api_key: str,
@@ -267,6 +276,7 @@ def main(
     model_repository: Optional[str],
     model_framework: ModelFrameworkT,
     batch_size: int,
+    clear_dataset_cache: bool,
 ):
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
@@ -299,6 +309,7 @@ def main(
             ml_task=ml_task,
             tools=tools,
             prioritization=False,
+            clear_dataset_cache=clear_dataset_cache,
         )
 
         if not dry_run and job_predictions.external_id_array:

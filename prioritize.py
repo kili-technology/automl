@@ -456,6 +456,7 @@ def main(
         tools=tools,
         prioritization=True,
         from_project=from_project,
+        clear_dataset_cache=clear_dataset_cache,
     )
 
     if input_type == "IMAGE":
