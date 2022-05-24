@@ -1,6 +1,7 @@
 import copy
 import os
 import shutil
+import warnings
 from typing import Any, List, Optional
 
 import numpy as np
@@ -108,7 +109,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         _ = clear_dataset_cache
 
         if disable_wandb is False:
-            raise NotImplementedError("Wandb is not supported for this model.")
+            warnings.warn("Wandb is not supported for this model.")
         original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
 
         image_datasets = copy.deepcopy(original_image_datasets)
@@ -138,8 +139,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
     ):
         _ = clear_dataset_cache
 
-        original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
-        _ = labels
+        original_image_datasets, _, class_names = self.prepare_dataset(assets, api_key)
 
         model = initialize_model_img_class(
             self.model_name,  # type: ignore

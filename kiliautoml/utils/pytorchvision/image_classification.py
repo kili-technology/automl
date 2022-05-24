@@ -44,7 +44,6 @@ def get_trained_model_image_classif(
     image_datasets: dict,  # type: ignore
     save_model_path: Optional[ModelPathT] = None,
 ):
-    print("batch_size4", batch_size)
     dataloaders = {
         x: torch_Data.DataLoader(
             image_datasets[x], batch_size=batch_size, shuffle=True, num_workers=1

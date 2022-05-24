@@ -48,7 +48,6 @@ def get_output_path_bbox(title: str, path: str, model_framework: str) -> str:
 def yaml_preparation(
     data_path: str,
     class_names: List[str],
-    number_classes: int,
     kili_api_key: str,
     project_id: str,
     max_assets: Optional[int],
@@ -162,7 +161,6 @@ def ultralytics_train_yolov5(
     yaml_preparation(
         data_path,
         class_names,
-        len(class_names),
         kili_api_key=api_key,
         project_id=project_id,
         max_assets=max_assets,

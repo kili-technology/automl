@@ -1,6 +1,7 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
+import warnings
 from typing import Any, List, Optional
 from warnings import warn
 
@@ -176,7 +177,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         clear_dataset_cache: bool,
     ) -> JobPredictions:
         _ = clear_dataset_cache
-        print("Warning, this method does not support custom batch_size")
+        warnings.warn("Warning, this method does not support custom batch_size")
         _ = batch_size
         model_path_res, _, self.model_framework = self._extract_model_info(
             self.job_name,

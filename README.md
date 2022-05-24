@@ -126,23 +126,3 @@ AutoML currently supports the following tasks:
 AutoML is a utility library that trains and serves models. It is your responsibility to determine whether the model performance is high enough or not.
 
 Don't hesitate to contribute!
-
-
-
-
-
-Ce qui est lourd = les assets
-Le reste n’est pas lourd.
-
-Donc à partir du moment ou on memoize les assets, pas besoin de sauvegarder dans le dur le reste, ou tout du moins, tout le reste peut être reconstitué à partir des assets memoizés.
-
-Donc je propose le flow suivant:
-
-ki.chce/automl/id_project/:
-- joblib
-- models
-- tmp
-
-
-Clear_dataset_cahce train: supprime joblib et models
-Clear_dataset_cahce predict: supprime joblib
