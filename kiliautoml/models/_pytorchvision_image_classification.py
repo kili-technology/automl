@@ -100,7 +100,8 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         disable_wandb: bool = False,
         verbose: int = 0,
     ):
-
+        if disable_wandb is False:
+            raise NotImplementedError("Wandb is not supported for this model.")
         image_datasets = copy.deepcopy(self.original_image_datasets)
         train_idx, val_idx = train_test_split(
             range(len(self.labels)), test_size=0.2, random_state=42
@@ -169,12 +170,13 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 cv_train_idx,
                 cv_holdout_idx,
             )
-
+            model_name: ModelNameT = self.model_name  # type: ignore
             model, _ = get_trained_model_image_classif(
-                model_name=self.model_name,  # type: ignore
+                model_name=model_name,
                 batch_size=batch_size,
                 verbose=verbose,
                 class_names=self.class_names,
+                epochs=epochs,
                 image_datasets=image_datasets,
                 save_model_path=None,
             )
