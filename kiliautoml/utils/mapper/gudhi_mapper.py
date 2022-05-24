@@ -3,17 +3,26 @@ import io
 import itertools
 import os
 from collections import defaultdict
+from typing import List
 
+import datasets
+import gensim  # type: ignore
 import matplotlib.pyplot as plt
+import nltk
 import numpy as np
 import pandas as pd
 from gudhi import SimplexTree  # type: ignore
+from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from PIL import Image
 from scipy.spatial.distance import directed_hausdorff
 from skimage.util import img_as_ubyte
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.cluster import DBSCAN, AgglomerativeClustering
 from sklearn.metrics import pairwise_distances
+from tqdm import tqdm
+
+nltk.download("wordnet")
+stemmer = SnowballStemmer("english")
 
 
 class _MapperComplex(BaseEstimator, TransformerMixin):
@@ -806,35 +815,88 @@ def custom_tooltip_text(
     label,
     list_text=None,
 ):
-    """Create numpy array with picture to be used as custom_tooltips in KepplerMapper.visualize
+    """Create numpy array with term frequency-inverse document frequency
+        most relevqnt words to be used as custom_tooltips in KepplerMapper.visualize
     Args:
         label (numpy array): label to be display with picture in visualization
-        pict_data_type (str): either "pandas_df", "img_link", or "img_list"
-        pict_size (tuple): picture size (only required if pict_data_type == "pandas_df")
-        pict_dataset (pandas dataframe): dataframe where picture data are stored
-            (only required if pict_data_type == "pandas_df")
-        pict_folder (str): folder where picture are stored
-            (only required if pict_data_type == "img_link")
-        pict_file_names (pandas dataframe): dataframe column where picture file names are stored
-            (only required if pict_data_type == "img_link")
-        image_list (list of DownloadedImages): list of downloaded image from a Kili dataset
-            (only required if pict_data_type == "img_list")
+        list_text ([str]): list of string
     Returns:
-        Numpy array: ready to use for visualization
+        List of string: ready to use for visualization
     """
     tooltip_s = []
+
+    ds = datasets.Dataset.from_pandas(pd.DataFrame({"content": list_text}))  # type: ignore
+
+    dictionary, bow_corpus = create_corpus_and_dic(ds)
+
+    # Create our gensim TF-IDF model
+    model_TF_IDF = gensim.models.TfidfModel(bow_corpus)
+
+    corpus_tfidf = model_TF_IDF[bow_corpus]
+
+    def Sort(tfidf_tuples):
+        "This sorts based on the second value in our tuple, the tf-idf score"
+        tfidf_tuples.sort(key=lambda x: x[1], reverse=True)
+        return tfidf_tuples
+
+    most_significant_terms = [[dictionary[id] for id, _ in Sort(doc)[:5]] for doc in corpus_tfidf]
+
     if not (isinstance(list_text, list)):
         raise ValueError("list_text must be a list")
-    for ys, downloaded_text in zip(label, list_text):
-        output = io.BytesIO()
+    for ys, terms in zip(label, most_significant_terms):
         # Data was a flat row of "pixels".
-        txt_tag = str(ys) + downloaded_text.content[:100]
+        txt_tag = str(int(ys)) + ": " + "-".join(terms)
         tooltip_s.append(txt_tag)
-        output.close()
 
     tooltip_s = np.array(tooltip_s)
 
     return tooltip_s
+
+
+def create_corpus_and_dic(ds):
+    def lemmatize_stemming(text: str):
+        return stemmer.stem(WordNetLemmatizer().lemmatize(text, pos="v"))
+
+    # Tokenize and lemmatize
+    def preprocess(doc):
+        result = []
+        for token in gensim.utils.simple_preprocess(doc["content"]):
+            if token not in gensim.parsing.preprocessing.STOPWORDS and len(token) > 3:
+                result.append(lemmatize_stemming(token))
+        doc["lemmatized"] = result
+        return doc
+
+    ds = ds.map(preprocess)
+
+    dictionary = gensim.corpora.Dictionary([doc["lemmatized"] for doc in ds])  # type: ignore
+    dictionary.filter_extremes(no_below=10, no_above=0.1, keep_n=10000)
+
+    bow_corpus = [dictionary.doc2bow(doc["lemmatized"]) for doc in ds]  # type: ignore
+
+    return dictionary, bow_corpus
+
+
+def topic_score(list_text: List[str]):
+
+    ds = datasets.Dataset.from_pandas(pd.DataFrame({"content": list_text}))  # type: ignore
+
+    dictionary, bow_corpus = create_corpus_and_dic(ds)
+
+    lda_model = gensim.models.LdaMulticore(
+        bow_corpus,
+        num_topics=10,
+        id2word=dictionary,
+        passes=50,
+    )
+
+    output = np.zeros((len(list_text), 10))
+
+    for i, doc in tqdm(enumerate(ds)):
+        scores = lda_model.get_document_topics(dictionary.doc2bow(doc["lemmatized"]))
+        for topic, score in scores:
+            output[i, topic] = score
+
+    return output
 
 
 def confusion_filter(
