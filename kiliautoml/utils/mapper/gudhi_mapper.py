@@ -829,7 +829,7 @@ def custom_tooltip_text(
 
     ds = datasets.Dataset.from_pandas(pd.DataFrame({"content": list_text}))  # type: ignore
 
-    dictionary, bow_corpus = create_corpus_and_dic(ds)
+    ds, dictionary, bow_corpus = create_corpus_and_dic(ds)
 
     # Create our gensim TF-IDF model
     model_TF_IDF = gensim.models.TfidfModel(bow_corpus)
@@ -875,14 +875,14 @@ def create_corpus_and_dic(ds):
 
     bow_corpus = [dictionary.doc2bow(doc["lemmatized"]) for doc in ds]  # type: ignore
 
-    return dictionary, bow_corpus
+    return ds, dictionary, bow_corpus
 
 
 def topic_score(list_text: List[str]):
 
     ds = datasets.Dataset.from_pandas(pd.DataFrame({"content": list_text}))  # type: ignore
 
-    dictionary, bow_corpus = create_corpus_and_dic(ds)
+    ds, dictionary, bow_corpus = create_corpus_and_dic(ds)
 
     lda_model = gensim.models.LdaMulticore(
         bow_corpus,
