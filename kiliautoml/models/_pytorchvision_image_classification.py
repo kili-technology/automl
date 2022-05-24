@@ -142,10 +142,9 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             class_names,
         )
 
-        # Priorité :
-        # model_path > from_project
-        # Faire le truc dans base class
-        model.load_state_dict(torch.load(model_path if model_path else self.model_path))
+        model_path = self.get_model_path(model_path, from_project)
+
+        model.load_state_dict(torch.load(model_path))
         loader = torch_Data.DataLoader(
             original_image_datasets["val"], batch_size=batch_size, shuffle=False, num_workers=1
         )
@@ -159,6 +158,24 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             predictions_probability=list(np.max(probs, axis=1)),
         )
         return job_predictions
+
+    def get_model_path(self, model_path, from_project):
+        model_name: ModelNameT = self.model_name  # type: ignore
+
+        if model_path is not None:
+            model_path_set = model_path
+        elif from_project is not None:
+            model_path_repository_dir = Path.model_repository_dir(
+                HOME, from_project, self.job_name, self.model_repository
+            )
+
+            model_path_from_project = PathPytorchVision.append_model_path(
+                model_path_repository_dir, model_name
+            )
+            model_path_set = model_path_from_project
+        else:
+            model_path_set = self.model_path
+        return model_path_set
 
     def find_errors(
         self,
@@ -186,7 +203,6 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 cv_holdout_idx,
             )
             model_name: ModelNameT = self.model_name  # type: ignore
-            print("batch size1 ", batch_size)
 
             model, _ = get_trained_model_image_classif(
                 model_name=model_name,
@@ -197,7 +213,6 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 image_datasets=image_datasets,
                 save_model_path=None,
             )
-            print("batch size 2", batch_size)
 
             holdout_loader = torch_Data.DataLoader(
                 holdout_dataset,
@@ -207,7 +222,6 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             )
 
             probs = predict_probabilities(holdout_loader, model, verbose=verbose)
-            print("probs", probs)
             probs_path = os.path.join(self.model_dir, "model_fold_{}__probs.npy".format(cv_fold))
             np.save(probs_path, probs)
 
