@@ -91,25 +91,31 @@ def predict_one_job(
     input_type,
     assets,
     job_name,
+    batch_size,
     content_input,
     ml_task,
     model_repository,
+    model_framework,
     model_name,
     tools,
     prioritization,
+    job,
 ) -> JobPredictions:
     if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
-        job_predictions = HuggingFaceTextClassificationModel(
+        model = HuggingFaceTextClassificationModel(
             project_id,
             api_key,
             api_endpoint,
             model_name=model_name,
-        ).predict(
-            assets=assets,
             job_name=job_name,
-            model_path=from_model,  # TODO: rename from_model to model_path
-            from_project=from_project,
+            job=job,
+        )
+        job_predictions = model.predict(
+            assets=assets,
+            model_path=from_model,
+            batch_size=batch_size,
             verbose=verbose,
+            from_project=from_project,
         )
 
     elif (
@@ -117,15 +123,18 @@ def predict_one_job(
         and input_type == "TEXT"
         and ml_task == "NAMED_ENTITIES_RECOGNITION"
     ):
-        job_predictions = HuggingFaceNamedEntityRecognitionModel(
+        model = HuggingFaceNamedEntityRecognitionModel(
             project_id,
             api_key,
             api_endpoint,
             model_name=model_name,
-        ).predict(
-            assets=assets,
             job_name=job_name,
+            job=job,
+        )
+        job_predictions = model.predict(
+            assets=assets,
             model_path=from_model,
+            batch_size=batch_size,
             verbose=verbose,
             from_project=from_project,
         )
@@ -150,13 +159,21 @@ def predict_one_job(
         image_classification_model = PyTorchVisionImageClassificationModel(
             assets=assets,
             model_repository=model_repository,
+            job=job,
+            model_framework=model_framework,
             model_name=model_name,
             job_name=job_name,
             project_id=project_id,
             api_key=api_key,
         )
 
-        job_predictions = image_classification_model.predict(verbose, assets, job_name)
+        job_predictions = image_classification_model.predict(
+            verbose=verbose,
+            assets=assets,
+            model_path=from_model,
+            from_project=from_project,
+            batch_size=batch_size,
+        )
 
     else:
         raise NotImplementedError
@@ -182,6 +199,9 @@ def predict_one_job(
     ),
 )
 @click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
+@click.option(
+    "--model-framework", default="pytorch", help="Model framework (eg. pytorch, tensorflow)"
+)
 @click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
 @click.option(
     "--target-job",
@@ -226,6 +246,12 @@ def predict_one_job(
         "This argument is ignored if --from-model is used."
     ),
 )
+@click.option(
+    "--batch-size",
+    default=8,
+    type=int,
+    help="Maximum number of assets to consider",
+)
 def main(
     api_endpoint: str,
     api_key: str,
@@ -239,6 +265,8 @@ def main(
     from_project: Optional[str],
     model_name: Optional[str],
     model_repository: Optional[str],
+    model_framework: ModelFrameworkT,
+    batch_size: int,
 ):
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
@@ -258,12 +286,15 @@ def main(
             project_id=project_id,
             from_model=from_model,
             verbose=verbose,
+            job=job,
             input_type=input_type,
             assets=assets,
+            batch_size=batch_size,
             job_name=job_name,
             content_input=content_input,
             model_repository=model_repository,
             model_name=model_name,
+            model_framework=model_framework,
             from_project=from_project,
             ml_task=ml_task,
             tools=tools,

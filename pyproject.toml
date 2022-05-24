@@ -19,13 +19,28 @@ exclude = [
     "**/__pycache__",
 ]
 
-reportMissingImports = true
-reportMissingTypeStubs = false
-
 pythonVersion = "3.7"
 typeCheckingMode = "basic"
-reportMissingTypeArgument = true
 
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportMissingTypeArgument = true
+reportMissingSuperCall = false
+reportIncompatibleMethodOverride = true
+reportUnusedImport = true
+reportUntypedBaseClass = true
+reportUntypedNamedTuple = true
+reportConstantRedefinition = true
+reportIncompatibleVariableOverride = true
+reportOverlappingOverload = true
+reportUnnecessaryCast = true
+reportUnusedCallResult = false
+reportUninitializedInstanceVariable = true
+reportUnusedExpression = true
+reportUnusedVariable = true
+reportImportCycles = true
+reportUnknownVariableType = false
+reportUnknownParameterType = false
 
 
 [tool.isort]

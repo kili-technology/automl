@@ -1,6 +1,6 @@
 {
   "python.formatting.provider": "black",
-  "python.linting.mypyEnabled": true,
+  "python.linting.mypyEnabled": false,
   "python.linting.enabled": true,
   "python.formatting.blackArgs": ["--preview"],
   "python.testing.unittestEnabled": false,

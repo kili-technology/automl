@@ -148,6 +148,8 @@ def main(
                 model_repository=model_repository,
                 model_name=model_name,
                 job_name=job_name,
+                job=job,
+                model_framework=model_framework,
                 project_id=project_id,
                 api_key=api_key,
             )

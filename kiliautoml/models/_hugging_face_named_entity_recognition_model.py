@@ -9,7 +9,7 @@ import nltk
 import numpy as np
 from tqdm.auto import tqdm
 from transformers import DataCollatorForTokenClassification, Trainer
-from typing_extensions import TypedDict
+from typing_extensions import Literal, TypedDict
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
@@ -21,7 +21,7 @@ from kiliautoml.utils.constants import (
     ModelNameT,
     ModelRepositoryT,
 )
-from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print, set_default
+from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print
 from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
 from kiliautoml.utils.type import AssetT, JobT, TrainingArgsT
 
@@ -43,48 +43,42 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         project_id: str,
         api_key: str,
         api_endpoint: str,
-        model_name: ModelNameT = "bert-base-multilingual-cased",
+        job: JobT,
+        job_name: str,
+        model_name: Literal[
+            "bert-base-multilingual-cased", "distilbert-base-cased"
+        ] = "bert-base-multilingual-cased",
+        model_framework: ModelFrameworkT = "pytorch",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
-        BaseModel.__init__(self)
 
-        model_name_setted: ModelNameT = set_default(
-            model_name,
-            "bert-base-multilingual-cased",
-            "model_name",
-            [
-                "bert-base-multilingual-cased",
-                "distilbert-base-cased",
-            ],
+        BaseModel.__init__(
+            self,
+            job=job,
+            job_name=job_name,
+            model_name=model_name,
+            model_framework=model_framework,
         )
-        self.model_name: ModelNameT = model_name_setted
 
     def train(
         self,
         assets: List[AssetT],
-        job: JobT,
-        job_name: str,
         epochs: int,
-        model_framework: Optional[ModelFrameworkT] = None,
+        batch_size: int,
         clear_dataset_cache: bool = False,
-        training_args: TrainingArgsT = {},
         disable_wandb: bool = False,
+        training_args: TrainingArgsT = {},
     ):
         nltk.download("punkt")
 
-        path = Path.model_repository_dir(HOME, self.project_id, job_name, self.model_repository)
-
-        self.model_framework = set_default(  # type: ignore
-            model_framework,
-            "pytorch",
-            "model_framework",
-            ["pytorch", "tensorflow"],
+        path = Path.model_repository_dir(
+            HOME, self.project_id, self.job_name, self.model_repository
         )
 
         return self._train(
             assets,
-            job,
-            job_name,
+            self.job,
+            self.job_name,
             epochs,
             path,
             clear_dataset_cache,
@@ -97,11 +91,12 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[AssetT],
         model_path: str,
         from_project: Optional[str],
-        job_name: str,
+        batch_size: int,
         verbose: int = 0,
+        clear_dataset_cache: bool = False,
     ) -> JobPredictions:
         model_path_res, _, self.model_framework = self._extract_model_info(
-            job_name,
+            self.job_name,
             self.project_id,
             model_path,
             from_project,
@@ -133,7 +128,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
                 predictions_asset.extend(predictions_sentence)  # type:ignore
 
-            predictions.append({job_name: {"annotations": predictions_asset}})
+            predictions.append({self.job_name: {"annotations": predictions_asset}})
             proba_assets.append(min(probas_asset))
 
             if verbose:
@@ -145,7 +140,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
-            job_name=job_name,
+            job_name=self.job_name,
             external_id_array=[a["externalId"] for a in assets],  # type:ignore
             json_response_array=predictions,
             model_name_array=["Kili AutoML"] * len(assets),
@@ -171,7 +166,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
         - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
         """
-        model_name = self.model_name
+        model_name: ModelNameT = self.model_name  # type: ignore
         kili_print(f"Job Name: {job_name}")
         kili_print(f"Base model: {model_name}")
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
@@ -194,7 +189,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            self.model_name, self.model_framework, label_list, self.ml_task
+            model_name, self.model_framework, label_list, self.ml_task
         )
 
         label_all_tokens = True

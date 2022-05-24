@@ -5,8 +5,10 @@ from typing import List, Optional
 from warnings import warn
 
 import datasets
+import nltk
 import numpy as np
 from transformers import Trainer
+from typing_extensions import Literal
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
@@ -23,7 +25,6 @@ from kiliautoml.utils.helpers import (
     categories_from_job,
     ensure_dir,
     kili_print,
-    set_default,
 )
 from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
 from kiliautoml.utils.type import AssetT, JobT, TrainingArgsT
@@ -39,53 +40,40 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         project_id: str,
         api_key: str,
         api_endpoint: str,
-        model_name: ModelNameT = "bert-base-multilingual-cased",
+        job_name: str,
+        job: JobT,
+        model_name: Literal[
+            "bert-base-multilingual-cased", "distilbert-base-cased"
+        ] = "bert-base-multilingual-cased",
+        model_framework: ModelFrameworkT = "pytorch",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
-        BaseModel.__init__(self)
-
-        model_name_set: ModelNameT = set_default(
-            model_name,
-            "bert-base-multilingual-cased",
-            "model_name",
-            ["bert-base-multilingual-cased", "distilbert-base-cased"],
+        BaseModel.__init__(
+            self, job=job, job_name=job_name, model_name=model_name, model_framework=model_framework
         )
-        self.model_name: ModelNameT = model_name_set
 
     def train(
         self,
         assets: List[AssetT],
-        job: JobT,
-        job_name: str,
         epochs: int,
-        model_framework: Optional[ModelFrameworkT] = None,
+        batch_size: int,
         clear_dataset_cache: bool = False,
-        training_args: TrainingArgsT = {},
         disable_wandb: bool = False,
+        training_args: TrainingArgsT = {},
     ) -> float:
-
-        import nltk
 
         nltk.download("punkt")
 
-        training_args["report_to"] = "none" if disable_wandb else "wandb"
-
-        model_repository_dir = Path.model_repository_dir(
-            HOME, self.project_id, job_name, self.model_repository
+        path = Path.model_repository_dir(
+            HOME, self.project_id, self.job_name, self.model_repository
         )
 
-        self.model_framework = set_default(  # type: ignore
-            model_framework,
-            "pytorch",
-            "model_framework",
-            ["pytorch", "tensorflow"],
-        )
-
+        # TODO: delete auxiliary method
         return self._train(
             assets,
-            job,
-            job_name,
-            model_repository_dir,
+            self.job,
+            self.job_name,
+            path,
             clear_dataset_cache,
             epochs,
             training_args,
@@ -95,14 +83,15 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     def predict(
         self,
         assets: List[AssetT],
-        model_path: Optional[str],
+        model_path: str,
         from_project: Optional[str],
-        job_name: str,
+        batch_size: int,
         verbose: int = 0,
+        clear_dataset_cache: bool = False,
     ) -> JobPredictions:
 
         model_path_res, _, self.model_framework = self._extract_model_info(
-            job_name, self.project_id, model_path, from_project
+            self.job_name, self.project_id, model_path, from_project
         )
 
         predictions = []
@@ -119,7 +108,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                 self.model_framework, tokenizer, model, text
             )
 
-            predictions.append({job_name: predictions_asset})
+            predictions.append({self.job_name: predictions_asset})
             proba_assets.append(predictions_asset["categories"][0]["confidence"])
 
             if verbose:
@@ -129,7 +118,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
-            job_name=job_name,
+            job_name=self.job_name,
             external_id_array=[a["externalId"] for a in assets],
             json_response_array=predictions,
             model_name_array=["Kili AutoML"] * len(assets),
@@ -149,8 +138,8 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         training_args: TrainingArgsT,
         disable_wandb: bool,
     ) -> float:
+        model_name: ModelNameT = self.model_name  # type: ignore
         training_args = training_args or {}
-        model_name = self.model_name
 
         kili_print(job_name)
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")

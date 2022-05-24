@@ -18,7 +18,12 @@ from kiliautoml.utils.cleanlab.datasets import (
     separe_holdout_datasets,
 )
 from kiliautoml.utils.cleanlab.train_cleanlab import combine_folds
-from kiliautoml.utils.constants import HOME, ModelNameT, ModelRepositoryT
+from kiliautoml.utils.constants import (
+    HOME,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+)
 from kiliautoml.utils.download_assets import download_project_image_clean_lab
 from kiliautoml.utils.helpers import JobPredictions
 from kiliautoml.utils.path import Path, PathPytorchVision
@@ -29,6 +34,7 @@ from kiliautoml.utils.pytorchvision.image_classification import (
     set_model_name_image_classification,
     set_model_repository_image_classification,
 )
+from kiliautoml.utils.type import AssetT, JobT
 
 
 class PyTorchVisionImageClassificationModel(BaseModel):
@@ -38,11 +44,12 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         project_id: str,
         api_key: str,
         assets: List[Any],
-        job_name: str,
         model_repository: Optional[ModelRepositoryT],
-        model_name: Optional[ModelNameT],
+        job: JobT,
+        job_name: str,
+        model_name: ModelNameT,
+        model_framework: ModelFrameworkT,
     ):
-
         model_repository = set_model_repository_image_classification(model_repository)
         model_name = set_model_name_image_classification(model_name)
         model_repository_dir = Path.model_repository_dir(
@@ -66,10 +73,17 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         original_image_datasets = get_original_image_dataset(data_dir)
 
         class_names = original_image_datasets["train"].classes  # type: ignore
-        labels = [label for img, label in datasets.ImageFolder(data_dir).imgs]
+        labels = [label for _, label in datasets.ImageFolder(data_dir).imgs]
         assert len(class_names) > 1, "There should be at least 2 classes in the dataset."
 
-        self.model_name: ModelNameT = model_name
+        BaseModel.__init__(
+            self,
+            job=job,
+            job_name=job_name,
+            model_name=model_name,
+            model_framework=model_framework,
+        )
+
         self.model_dir = model_dir
         self.model_path = model_path
         self.data_dir = data_dir
@@ -77,16 +91,24 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self.class_names = class_names
         self.labels = labels
 
-    def train(self, epochs, verbose):
+    def train(
+        self,
+        assets: List[AssetT],
+        epochs: int,
+        batch_size: int,
+        clear_dataset_cache: bool = False,
+        disable_wandb: bool = False,
+        verbose: int = 0,
+    ):
 
         image_datasets = copy.deepcopy(self.original_image_datasets)
         train_idx, val_idx = train_test_split(
             range(len(self.labels)), test_size=0.2, random_state=42
         )
         prepare_image_dataset(train_idx, val_idx, image_datasets)
-        model, loss = get_trained_model_image_classif(
+        _, loss = get_trained_model_image_classif(
             epochs,
-            self.model_name,
+            self.model_name,  # type: ignore
             verbose,
             self.class_names,
             image_datasets,
@@ -94,8 +116,19 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         return loss
 
-    def predict(self, verbose: int, assets, job_name):
-        model = initialize_model_img_class(self.model_name, self.class_names)
+    def predict(
+        self,
+        assets: List[AssetT],
+        model_path: str,
+        from_project: Optional[str],
+        batch_size: int,
+        verbose: int = 0,
+        clear_dataset_cache: bool = False,
+    ):
+        model = initialize_model_img_class(
+            self.model_name,  # type: ignore
+            self.class_names,
+        )
         model.load_state_dict(torch.load(self.model_path))
         loader = torch_Data.DataLoader(
             self.original_image_datasets["val"], batch_size=1, shuffle=False, num_workers=1
@@ -103,7 +136,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         probs = predict_probabilities(loader, model, verbose=verbose)
 
         job_predictions = JobPredictions(
-            job_name=job_name,
+            job_name=self.job_name,
             external_id_array=[asset["externalId"] for asset in assets],
             model_name_array=[self.model_name] * len(assets),
             json_response_array=[asset["labels"][0]["jsonResponse"] for asset in assets],
@@ -128,9 +161,9 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 cv_holdout_idx,
             )
 
-            model, loss = get_trained_model_image_classif(
+            model, _ = get_trained_model_image_classif(
                 epochs,
-                self.model_name,
+                self.model_name,  # type: ignore
                 verbose,
                 self.class_names,
                 image_datasets,
