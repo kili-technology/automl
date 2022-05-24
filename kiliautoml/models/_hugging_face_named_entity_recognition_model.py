@@ -62,6 +62,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def train(
         self,
+        *,
         assets: List[AssetT],
         epochs: int,
         batch_size: int,
@@ -166,6 +167,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def predict(
         self,
+        *,
         assets: List[AssetT],
         model_path: Optional[str],
         from_project: Optional[str],
@@ -415,6 +417,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def find_errors(
         self,
+        *,
         assets: List[AssetT],
         cv_n_folds: int,
         epochs: int,

@@ -57,17 +57,11 @@ class PyTorchVisionImageClassificationModel(BaseModel):
 
         model_dir = PathPytorchVision.append_model_dir(model_repository_dir)
         model_path = PathPytorchVision.append_model_path(model_repository_dir, model_name)
-        data_dir = os.path.join(model_repository_dir, "data")
+        data_dir = PathPytorchVision.append_data_dir(model_repository_dir)
 
         # To set to False if the input size varies a lot and you see that the training takes
         # too much time
         cudnn.benchmark = True
-
-        original_image_datasets = get_original_image_dataset(data_dir)
-
-        class_names = original_image_datasets["train"].classes  # type: ignore
-        labels = [label for _, label in datasets.ImageFolder(data_dir).imgs]
-        assert len(class_names) > 1, "There should be at least 2 classes in the dataset."
 
         BaseModel.__init__(
             self,
@@ -80,9 +74,6 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self.model_dir = model_dir
         self.model_path = model_path
         self.data_dir = data_dir
-        self.original_image_datasets = original_image_datasets
-        self.class_names = class_names
-        self.labels = labels
 
     def prepare_dataset(
         self,
@@ -96,9 +87,16 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             data_path=self.data_dir,
             job_name=self.job_name,
         )
+        original_image_datasets = get_original_image_dataset(self.data_dir)
+
+        class_names = original_image_datasets["train"].classes  # type: ignore
+        labels = [label for _, label in datasets.ImageFolder(self.data_dir).imgs]
+        assert len(class_names) > 1, "There should be at least 2 classes in the dataset."
+        return original_image_datasets, labels, class_names
 
     def train(
         self,
+        *,
         assets: List[AssetT],
         epochs: int,
         batch_size: int,
@@ -109,19 +107,17 @@ class PyTorchVisionImageClassificationModel(BaseModel):
     ):
         if disable_wandb is False:
             raise NotImplementedError("Wandb is not supported for this model.")
-        self.prepare_dataset(assets, api_key)
+        original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
 
-        image_datasets = copy.deepcopy(self.original_image_datasets)
-        train_idx, val_idx = train_test_split(
-            range(len(self.labels)), test_size=0.2, random_state=42
-        )
+        image_datasets = copy.deepcopy(original_image_datasets)
+        train_idx, val_idx = train_test_split(range(len(labels)), test_size=0.2, random_state=42)
         prepare_image_dataset(train_idx, val_idx, image_datasets)
         _, loss = get_trained_model_image_classif(
             epochs=epochs,
             model_name=self.model_name,  # type: ignore
             batch_size=batch_size,
             verbose=verbose,
-            class_names=self.class_names,
+            class_names=class_names,
             image_datasets=image_datasets,
             save_model_path=self.model_path,
         )
@@ -129,6 +125,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
 
     def predict(
         self,
+        *,
         assets: List[AssetT],
         model_path: Optional[str],
         from_project: Optional[str],
@@ -137,11 +134,12 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         clear_dataset_cache: bool,
         api_key: str = "",
     ):
-        self.prepare_dataset(assets, api_key)
+        original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
+        _ = labels
 
         model = initialize_model_img_class(
             self.model_name,  # type: ignore
-            self.class_names,
+            class_names,
         )
 
         # Priorité :
@@ -149,7 +147,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         # Faire le truc dans base class
         model.load_state_dict(torch.load(model_path if model_path else self.model_path))
         loader = torch_Data.DataLoader(
-            self.original_image_datasets["val"], batch_size=batch_size, shuffle=False, num_workers=1
+            original_image_datasets["val"], batch_size=batch_size, shuffle=False, num_workers=1
         )
         probs = predict_probabilities(loader, model, verbose=verbose)
 
@@ -164,6 +162,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
 
     def find_errors(
         self,
+        *,
         assets: List[AssetT],
         cv_n_folds: int,
         epochs: int,
@@ -172,18 +171,16 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         clear_dataset_cache: bool = False,
         api_key: str = "",
     ) -> Any:
-        self.prepare_dataset(assets, api_key)
+        original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
         for cv_fold in tqdm(range(cv_n_folds)):
             # Split train into train and holdout for particular cv_fold.
-            cv_train_idx, cv_holdout_idx = list(kf.split(range(len(self.labels)), self.labels))[
-                cv_fold
-            ]
+            cv_train_idx, cv_holdout_idx = list(kf.split(range(len(labels)), labels))[cv_fold]
 
             image_datasets, holdout_dataset = separe_holdout_datasets(
                 cv_n_folds,
                 verbose,
-                self.original_image_datasets,
+                original_image_datasets,
                 cv_fold,
                 cv_train_idx,
                 cv_holdout_idx,
@@ -195,7 +192,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 model_name=model_name,
                 batch_size=batch_size,
                 verbose=verbose,
-                class_names=self.class_names,
+                class_names=class_names,
                 epochs=epochs,
                 image_datasets=image_datasets,
                 save_model_path=None,
@@ -217,16 +214,14 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         psx_path = combine_folds(
             data_dir=self.data_dir,
             model_dir=self.model_dir,
-            num_classes=len(self.class_names),
+            num_classes=len(class_names),
             verbose=verbose,
         )
 
         psx = np.load(psx_path)
         train_imgs = datasets.ImageFolder(self.data_dir).imgs
 
-        noise_indices = find_label_issues(
-            self.labels, psx, return_indices_ranked_by="normalized_margin"
-        )
+        noise_indices = find_label_issues(labels, psx, return_indices_ranked_by="normalized_margin")
 
         noise_paths = []
         for idx in noise_indices:

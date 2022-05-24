@@ -30,6 +30,7 @@ class BaseModel(metaclass=ABCMeta):
     @abstractmethod
     def train(
         self,
+        *,
         assets: List[AssetT],
         epochs: int,
         batch_size: int,
@@ -42,6 +43,7 @@ class BaseModel(metaclass=ABCMeta):
     @abstractmethod
     def predict(
         self,
+        *,
         assets: List[AssetT],
         model_path: Optional[str],
         from_project: Optional[str],
@@ -54,6 +56,7 @@ class BaseModel(metaclass=ABCMeta):
     @abstractmethod
     def find_errors(
         self,
+        *,
         assets: List[AssetT],
         cv_n_folds: int,
         epochs: int,

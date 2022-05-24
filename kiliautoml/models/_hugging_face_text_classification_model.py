@@ -54,6 +54,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def train(
         self,
+        *,
         assets: List[AssetT],
         epochs: int,
         batch_size: int,
@@ -123,6 +124,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def predict(
         self,
+        *,
         assets: List[AssetT],
         model_path: Optional[str],
         from_project: Optional[str],
@@ -220,6 +222,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def find_errors(
         self,
+        *,
         assets: List[AssetT],
         cv_n_folds: int,
         epochs: int,
