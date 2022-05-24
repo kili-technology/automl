@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
+    HOME,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
@@ -14,6 +15,7 @@ from kiliautoml.utils.helpers import (
     get_last_trained_model_path,
     kili_print,
 )
+from kiliautoml.utils.path import Path
 from kiliautoml.utils.type import AssetT, JobT
 from kiliautoml.utils.ultralytics.train import ultralytics_train_yolov5
 
@@ -102,9 +104,13 @@ class UltralyticsObjectDetectionModel(BaseModel):
     ):
         _ = verbose
 
+        model_repository_dir = Path.model_repository_dir(
+            HOME, self.project_id, self.job_name, self.model_repository
+        )
+
         return ultralytics_train_yolov5(
             api_key=api_key,
-            model_repository_dir="ultralytics/yolov",
+            model_repository_dir=model_repository_dir,
             job=self.job,
             assets=assets,
             json_args=args_dict,

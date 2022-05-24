@@ -1,5 +1,6 @@
 import os
 import shutil
+import warnings
 from glob import glob
 from typing import Any, Dict, List, Tuple
 
@@ -25,6 +26,9 @@ def ultralytics_predict_object_detection(
     batch_size: int,
     prioritization: bool,
 ) -> JobPredictions:
+    _ = batch_size
+
+    warnings.warn("This function does not support custom batch_size")
 
     if model_framework == "pytorch":
         filename_weights = "best.pt"
@@ -57,10 +61,11 @@ def ultralytics_predict_object_detection(
         + f'--weights "{model_weights}" '
         + "--save-txt --save-conf --nosave --exist-ok "
         + f'--source "{inference_path}" --project "{inference_path}" '
-        + f"--batch-size {batch_size}"
         + prioritizer_args
     )
-    os.system("cd " + YOLOV5_REL_PATH + " && " + cmd)
+    os.system(
+        "cd " + YOLOV5_REL_PATH + " && " + cmd
+    )  # TODO: Use instead subcommand and catch errors
 
     inference_files = glob(os.path.join(inference_path, "exp", "labels", "*.txt"))
     inference_files_by_id = {get_id_from_path(pf): pf for pf in inference_files}
