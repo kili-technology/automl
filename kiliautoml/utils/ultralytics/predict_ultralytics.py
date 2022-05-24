@@ -21,8 +21,9 @@ def ultralytics_predict_object_detection(
     model_framework: ModelFrameworkT,
     model_path: str,
     job_name: str,
-    verbose: int = 0,
-    prioritization: bool = False,
+    verbose: int,
+    batch_size: int,
+    prioritization: bool,
 ) -> JobPredictions:
 
     if model_framework == "pytorch":
@@ -56,6 +57,7 @@ def ultralytics_predict_object_detection(
         + f'--weights "{model_weights}" '
         + "--save-txt --save-conf --nosave --exist-ok "
         + f'--source "{inference_path}" --project "{inference_path}" '
+        + f"--batch-size {batch_size}"
         + prioritizer_args
     )
     os.system("cd " + YOLOV5_REL_PATH + " && " + cmd)

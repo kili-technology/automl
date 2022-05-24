@@ -454,7 +454,6 @@ def main(
         model_name=model_name,
         ml_task=ml_task,
         tools=tools,
-        prioritization=True,
         from_project=from_project,
         clear_dataset_cache=clear_dataset_cache,
     )

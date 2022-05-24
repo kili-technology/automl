@@ -7,77 +7,12 @@ from kili.client import Kili
 from kiliautoml.models import (
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
-)
-from kiliautoml.models._pytorchvision_image_classification import (
     PyTorchVisionImageClassificationModel,
+    UltralyticsObjectDetectionModel,
 )
 from kiliautoml.utils.constants import ModelFrameworkT
-from kiliautoml.utils.helpers import (
-    JobPredictions,
-    get_assets,
-    get_last_trained_model_path,
-    get_project,
-    kili_print,
-)
-from kiliautoml.utils.type import AssetStatusT, AssetT
-
-
-def predict_object_detection(
-    *,
-    api_key: str,
-    assets: List[AssetT],
-    job_name: str,
-    project_id: str,
-    model_path: Optional[str],
-    verbose: int,
-    prioritization: bool,
-    from_project: Optional[str],
-) -> JobPredictions:
-    from kiliautoml.utils.ultralytics.predict_ultralytics import (
-        ultralytics_predict_object_detection,
-    )
-
-    model_path_res = get_last_trained_model_path(
-        project_id=project_id if from_project is None else from_project,
-        job_name=job_name,
-        project_path_wildcard=[
-            "*",  # ultralytics or huggingface
-            "model",
-            "*",  # pytorch or tensorflow
-            "*",  # date and time
-            "*",  # title of the project, but already specified by project_id
-            "exp",
-            "weights",
-        ],
-        weights_filename="best.pt",
-        model_path=model_path,
-    )
-    split_path = os.path.normpath(model_path_res).split(os.path.sep)
-    model_repository = split_path[-7]
-    kili_print(f"Model base repository: {model_repository}")
-    if model_repository not in ["ultralytics"]:
-        raise ValueError(f"Unknown model base repository: {model_repository}")
-
-    model_framework: ModelFrameworkT = split_path[-5]  # type: ignore
-    kili_print(f"Model framework: {model_framework}")
-    if model_framework not in ["pytorch", "tensorflow"]:
-        raise ValueError(f"Unknown model framework: {model_framework}")
-
-    if model_repository == "ultralytics":
-        job_predictions = ultralytics_predict_object_detection(
-            api_key,
-            assets,
-            project_id,
-            model_framework,
-            model_path_res,
-            job_name,
-            verbose,
-            prioritization,
-        )
-    else:
-        raise NotImplementedError
-
-    return job_predictions
+from kiliautoml.utils.helpers import JobPredictions, get_assets, get_project, kili_print
+from kiliautoml.utils.type import AssetStatusT
 
 
 def predict_one_job(
@@ -98,7 +33,6 @@ def predict_one_job(
     model_framework,
     model_name,
     tools,
-    prioritization,
     job,
     clear_dataset_cache,
 ) -> JobPredictions:
@@ -148,15 +82,23 @@ def predict_one_job(
         and ml_task == "OBJECT_DETECTION"
         and "rectangle" in tools
     ):
-        job_predictions = predict_object_detection(
-            api_key=api_key,
-            assets=assets,
+        image_classification_model = UltralyticsObjectDetectionModel(
+            model_repository=model_repository,
+            job=job,
+            model_framework=model_framework,
+            model_name=model_name,
             job_name=job_name,
             project_id=project_id,
-            model_path=from_model,
+        )
+
+        job_predictions = image_classification_model.predict(
             verbose=verbose,
-            prioritization=prioritization,
+            assets=assets,
+            model_path=from_model,
             from_project=from_project,
+            batch_size=batch_size,
+            clear_dataset_cache=clear_dataset_cache,
+            api_key=api_key,
         )
     elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
         image_classification_model = PyTorchVisionImageClassificationModel(
@@ -308,7 +250,6 @@ def main(
             from_project=from_project,
             ml_task=ml_task,
             tools=tools,
-            prioritization=False,
             clear_dataset_cache=clear_dataset_cache,
         )
 

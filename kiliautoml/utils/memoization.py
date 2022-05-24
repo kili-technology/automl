@@ -5,7 +5,7 @@ The following elements are memoïzed:
     - kili_project_memoizer: get_asset_memoized
     - kili_memoizer: download_image
 - models:
-    - get_last_trained_model_path
+    - get_last_trained_model_path # TODO: delete
 - predictions: saved into
 
 
