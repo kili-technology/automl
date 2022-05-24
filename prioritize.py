@@ -35,6 +35,7 @@ class PriorityQueue:
     """
 
     def __init__(self, priorities: Priorities):
+
         self.queue = list(np.argsort(priorities)[::-1].tolist())
         # example queue[0] is the index of the highest priority asset
         self.check_queue_validity()
@@ -331,6 +332,9 @@ def embedding_text(
     help="Diversity sampling proportion",
 )
 @click.option(
+    "--model-framework", default="pytorch", help="Model framework (eg. pytorch, tensorflow)"
+)
+@click.option(
     "--uncertainty-sampling",
     default=0.4,
     type=float,
@@ -369,6 +373,12 @@ def embedding_text(
         "This argument is ignored if --from-model is used."
     ),
 )
+@click.option(
+    "--batch-size",
+    default=8,
+    type=int,
+    help="Maximum number of assets to consider",
+)
 def main(
     api_endpoint: str,
     api_key: str,
@@ -384,6 +394,8 @@ def main(
     from_project: Optional[str],
     model_name: Optional[str],
     model_repository: Optional[str],
+    model_framework: str,
+    batch_size: int,
 ):
     """
     Prioritize assets in a Kili project.
@@ -433,14 +445,18 @@ def main(
         verbose=verbose,
         input_type=input_type,
         assets=unlabeled_assets,
+        batch_size=batch_size,
         job_name=job_name,
+        job=job,
         content_input=content_input,
         model_repository=model_repository,
+        model_framework=model_framework,
         model_name=model_name,
         ml_task=ml_task,
         tools=tools,
         prioritization=True,
         from_project=from_project,
+        clear_dataset_cache=clear_dataset_cache,
     )
 
     if input_type == "IMAGE":

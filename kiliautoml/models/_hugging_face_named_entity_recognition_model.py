@@ -1,6 +1,7 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
+import warnings
 from typing import Any, List, Optional
 from warnings import warn
 
@@ -9,7 +10,7 @@ import nltk
 import numpy as np
 from tqdm.auto import tqdm
 from transformers import DataCollatorForTokenClassification, Trainer
-from typing_extensions import TypedDict
+from typing_extensions import Literal, TypedDict
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
@@ -21,8 +22,8 @@ from kiliautoml.utils.constants import (
     ModelNameT,
     ModelRepositoryT,
 )
-from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print, set_default
-from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
+from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print
+from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import AssetT, JobT, TrainingArgsT
 
 
@@ -43,141 +44,52 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         project_id: str,
         api_key: str,
         api_endpoint: str,
-        model_name: ModelNameT = "bert-base-multilingual-cased",
+        job: JobT,
+        job_name: str,
+        model_name: Literal[
+            "bert-base-multilingual-cased", "distilbert-base-cased"
+        ] = "bert-base-multilingual-cased",
+        model_framework: ModelFrameworkT = "pytorch",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
-        BaseModel.__init__(self)
 
-        model_name_setted: ModelNameT = set_default(
-            model_name,
-            "bert-base-multilingual-cased",
-            "model_name",
-            [
-                "bert-base-multilingual-cased",
-                "distilbert-base-cased",
-            ],
+        BaseModel.__init__(
+            self,
+            job=job,
+            job_name=job_name,
+            model_name=model_name,
+            model_framework=model_framework,
         )
-        self.model_name: ModelNameT = model_name_setted
 
     def train(
         self,
+        *,
         assets: List[AssetT],
-        job: JobT,
-        job_name: str,
         epochs: int,
-        model_framework: Optional[ModelFrameworkT] = None,
-        clear_dataset_cache: bool = False,
-        training_args: TrainingArgsT = {},
-        disable_wandb: bool = False,
-    ):
-        nltk.download("punkt")
-
-        path = Path.model_repository_dir(HOME, self.project_id, job_name, self.model_repository)
-
-        self.model_framework = set_default(  # type: ignore
-            model_framework,
-            "pytorch",
-            "model_framework",
-            ["pytorch", "tensorflow"],
-        )
-
-        return self._train(
-            assets,
-            job,
-            job_name,
-            epochs,
-            path,
-            clear_dataset_cache,
-            training_args,
-            disable_wandb,
-        )
-
-    def predict(
-        self,
-        assets: List[AssetT],
-        model_path: str,
-        from_project: Optional[str],
-        job_name: str,
-        verbose: int = 0,
-    ) -> JobPredictions:
-        model_path_res, _, self.model_framework = self._extract_model_info(
-            job_name,
-            self.project_id,
-            model_path,
-            from_project,
-        )
-
-        tokenizer, model = self._get_tokenizer_and_model(
-            self.model_framework, model_path_res, self.ml_task
-        )
-
-        predictions = []
-        proba_assets = []
-        for asset in assets:
-            text = self._get_text_from(asset["content"])  # type: ignore
-
-            offset = 0
-            predictions_asset: List[dict] = []  # type: ignore
-
-            probas_asset = []
-            for sentence in nltk.sent_tokenize(text):
-                offset_inc = text[offset:].find(sentence)
-                if offset_inc == -1:
-                    raise Exception(f"Sentence {sentence} not found in text!")
-                offset += offset_inc
-
-                predictions_sentence, probas = self._compute_sentence_predictions(
-                    self.model_framework, tokenizer, model, sentence, offset
-                )
-                probas_asset.append(min(probas))
-
-                predictions_asset.extend(predictions_sentence)  # type:ignore
-
-            predictions.append({job_name: {"annotations": predictions_asset}})
-            proba_assets.append(min(probas_asset))
-
-            if verbose:
-                if len(predictions_asset):
-                    for p in predictions_asset:
-                        print(p)
-                else:
-                    print("No prediction")
-
-        # Warning: the granularity of proba_assets is the whole document
-        job_predictions = JobPredictions(
-            job_name=job_name,
-            external_id_array=[a["externalId"] for a in assets],  # type:ignore
-            json_response_array=predictions,
-            model_name_array=["Kili AutoML"] * len(assets),
-            predictions_probability=proba_assets,
-        )
-
-        return job_predictions
-
-    def _train(
-        self,
-        assets: List[AssetT],
-        job: JobT,
-        job_name: str,
-        epochs: int,
-        model_repository_dir: ModelRepositoryDirT,
+        batch_size: int,
         clear_dataset_cache: bool,
-        training_args: TrainingArgsT,
         disable_wandb: bool,
-    ) -> float:
+        additional_args: TrainingArgsT = {},
+    ):
         """
         Sources:
         - https://huggingface.co/transformers/v2.4.0/examples.html#named-entity-recognition
         - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
         - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
         """
-        model_name = self.model_name
-        kili_print(f"Job Name: {job_name}")
+        nltk.download("punkt")
+
+        model_repository_dir = Path.model_repository_dir(
+            HOME, self.project_id, self.job_name, self.model_repository
+        )
+
+        model_name: ModelNameT = self.model_name  # type: ignore
+        kili_print(f"Job Name: {self.job_name}")
         kili_print(f"Base model: {model_name}")
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
 
         label_list = self._kili_assets_to_hf_ner_dataset(
-            job, job_name, path_dataset, assets, clear_dataset_cache
+            self.job, self.job_name, path_dataset, assets, clear_dataset_cache
         )
 
         raw_datasets = datasets.load_dataset(  # type: ignore
@@ -194,7 +106,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            self.model_name, self.model_framework, label_list, self.ml_task
+            model_name, self.model_framework, label_list, self.ml_task
         )
 
         label_all_tokens = True
@@ -234,7 +146,12 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
         training_arguments = self._get_training_args(
-            path_model, model_name, disable_wandb=disable_wandb, epochs=epochs, **training_args
+            path_model,
+            model_name,
+            disable_wandb=disable_wandb,
+            epochs=epochs,
+            batch_size=batch_size,
+            additional_args=additional_args,
         )
         data_collator = DataCollatorForTokenClassification(tokenizer)
         trainer = Trainer(
@@ -248,6 +165,73 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
         return output.training_loss
+
+    def predict(
+        self,
+        *,
+        assets: List[AssetT],
+        model_path: Optional[str],
+        from_project: Optional[str],
+        batch_size: int,
+        verbose: int,
+        clear_dataset_cache: bool,
+    ) -> JobPredictions:
+        _ = clear_dataset_cache
+        warnings.warn("Warning, this method does not support custom batch_size")
+        _ = batch_size
+        model_path_res, _, self.model_framework = self._extract_model_info(
+            self.job_name,
+            self.project_id,
+            model_path,
+            from_project,
+        )
+
+        tokenizer, model = self._get_tokenizer_and_model(
+            self.model_framework, model_path_res, self.ml_task
+        )
+
+        predictions = []
+        proba_assets = []
+        for asset in assets:
+            text = self._get_text_from(asset["content"])  # type: ignore
+
+            offset = 0
+            predictions_asset: List[dict] = []  # type: ignore
+
+            probas_asset = []
+            for sentence in nltk.sent_tokenize(text):
+                offset_inc = text[offset:].find(sentence)
+                if offset_inc == -1:
+                    raise Exception(f"Sentence {sentence} not found in text!")
+                offset += offset_inc
+
+                predictions_sentence, probas = self._compute_sentence_predictions(
+                    self.model_framework, tokenizer, model, sentence, offset
+                )
+                probas_asset.append(min(probas))
+
+                predictions_asset.extend(predictions_sentence)  # type:ignore
+
+            predictions.append({self.job_name: {"annotations": predictions_asset}})
+            proba_assets.append(min(probas_asset))
+
+            if verbose:
+                if len(predictions_asset):
+                    for p in predictions_asset:
+                        print(p)
+                else:
+                    print("No prediction")
+
+        # Warning: the granularity of proba_assets is the whole document
+        job_predictions = JobPredictions(
+            job_name=self.job_name,
+            external_id_array=[a["externalId"] for a in assets],  # type:ignore
+            json_response_array=predictions,
+            model_name_array=["Kili AutoML"] * len(assets),
+            predictions_probability=proba_assets,
+        )
+
+        return job_predictions
 
     def _kili_assets_to_hf_ner_dataset(
         self,
@@ -432,3 +416,15 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             offset_in_sentence += len(token)
 
         return kili_annotations
+
+    def find_errors(
+        self,
+        *,
+        assets: List[AssetT],
+        cv_n_folds: int,
+        epochs: int,
+        batch_size: int,
+        verbose: int = 0,
+        clear_dataset_cache: bool = False,
+    ):
+        raise NotImplementedError("This model does not support find_errors yet")

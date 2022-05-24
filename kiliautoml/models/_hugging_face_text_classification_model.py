@@ -5,8 +5,10 @@ from typing import List, Optional
 from warnings import warn
 
 import datasets
+import nltk
 import numpy as np
 from transformers import Trainer
+from typing_extensions import Literal
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
@@ -23,9 +25,8 @@ from kiliautoml.utils.helpers import (
     categories_from_job,
     ensure_dir,
     kili_print,
-    set_default,
 )
-from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
+from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import AssetT, JobT, TrainingArgsT
 
 
@@ -39,127 +40,46 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         project_id: str,
         api_key: str,
         api_endpoint: str,
-        model_name: ModelNameT = "bert-base-multilingual-cased",
+        job_name: str,
+        job: JobT,
+        model_name: Literal[
+            "bert-base-multilingual-cased", "distilbert-base-cased"
+        ] = "bert-base-multilingual-cased",
+        model_framework: ModelFrameworkT = "pytorch",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
-        BaseModel.__init__(self)
-
-        model_name_set: ModelNameT = set_default(
-            model_name,
-            "bert-base-multilingual-cased",
-            "model_name",
-            ["bert-base-multilingual-cased", "distilbert-base-cased"],
+        BaseModel.__init__(
+            self, job=job, job_name=job_name, model_name=model_name, model_framework=model_framework
         )
-        self.model_name: ModelNameT = model_name_set
 
     def train(
         self,
+        *,
         assets: List[AssetT],
-        job: JobT,
-        job_name: str,
         epochs: int,
-        model_framework: Optional[ModelFrameworkT] = None,
+        batch_size: int,
         clear_dataset_cache: bool = False,
-        training_args: TrainingArgsT = {},
         disable_wandb: bool = False,
+        training_args: TrainingArgsT = {},
     ) -> float:
-
-        import nltk
 
         nltk.download("punkt")
 
-        training_args["report_to"] = "none" if disable_wandb else "wandb"
-
         model_repository_dir = Path.model_repository_dir(
-            HOME, self.project_id, job_name, self.model_repository
+            HOME, self.project_id, self.job_name, self.model_repository
         )
 
-        self.model_framework = set_default(  # type: ignore
-            model_framework,
-            "pytorch",
-            "model_framework",
-            ["pytorch", "tensorflow"],
-        )
-
-        return self._train(
-            assets,
-            job,
-            job_name,
-            model_repository_dir,
-            clear_dataset_cache,
-            epochs,
-            training_args,
-            disable_wandb,
-        )
-
-    def predict(
-        self,
-        assets: List[AssetT],
-        model_path: Optional[str],
-        from_project: Optional[str],
-        job_name: str,
-        verbose: int = 0,
-    ) -> JobPredictions:
-
-        model_path_res, _, self.model_framework = self._extract_model_info(
-            job_name, self.project_id, model_path, from_project
-        )
-
-        predictions = []
-        proba_assets = []
-
-        tokenizer, model = self._get_tokenizer_and_model(
-            self.model_framework, model_path_res, self.ml_task
-        )
-
-        for asset in assets:
-            text = self._get_text_from(asset["content"])
-
-            predictions_asset = self._compute_asset_classification(
-                self.model_framework, tokenizer, model, text
-            )
-
-            predictions.append({job_name: predictions_asset})
-            proba_assets.append(predictions_asset["categories"][0]["confidence"])
-
-            if verbose:
-                print("----------")
-                print(text)
-                print(predictions_asset)
-
-        # Warning: the granularity of proba_assets is the whole document
-        job_predictions = JobPredictions(
-            job_name=job_name,
-            external_id_array=[a["externalId"] for a in assets],
-            json_response_array=predictions,
-            model_name_array=["Kili AutoML"] * len(assets),
-            predictions_probability=proba_assets,
-        )
-
-        return job_predictions
-
-    def _train(
-        self,
-        assets: List[AssetT],
-        job: JobT,
-        job_name: str,
-        model_repository_dir: ModelRepositoryDirT,
-        clear_dataset_cache: bool,
-        epochs: int,
-        training_args: TrainingArgsT,
-        disable_wandb: bool,
-    ) -> float:
+        model_name: ModelNameT = self.model_name  # type: ignore
         training_args = training_args or {}
-        model_name = self.model_name
 
-        kili_print(job_name)
+        kili_print(self.job_name)
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
         kili_print(f"Downloading data to {path_dataset}")
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
-        job_categories = categories_from_job(job)
+        job_categories = categories_from_job(self.job)
         if not os.path.exists(path_dataset):
-            self._write_dataset(assets, job_name, path_dataset, job_categories)
+            self._write_dataset(assets, self.job_name, path_dataset, job_categories)
         raw_datasets = datasets.load_dataset(  # type: ignore
             "json",
             data_files=path_dataset,
@@ -183,7 +103,12 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
         training_arguments = self._get_training_args(
-            path_model, model_name, disable_wandb=disable_wandb, epochs=epochs, **training_args
+            path_model,
+            model_name,
+            disable_wandb=disable_wandb,
+            epochs=epochs,
+            batch_size=batch_size,
+            additional_args=training_args,
         )
 
         trainer = Trainer(
@@ -196,6 +121,56 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
         return output.training_loss
+
+    def predict(
+        self,
+        *,
+        assets: List[AssetT],
+        model_path: Optional[str],
+        from_project: Optional[str],
+        batch_size: int,
+        verbose: int,
+        clear_dataset_cache: bool,
+    ) -> JobPredictions:
+        print("Warning, this model does not support custom batch_size ", batch_size)
+        _ = clear_dataset_cache
+
+        model_path_res, _, self.model_framework = self._extract_model_info(
+            self.job_name, self.project_id, model_path, from_project
+        )
+
+        predictions = []
+        proba_assets = []
+
+        tokenizer, model = self._get_tokenizer_and_model(
+            self.model_framework, model_path_res, self.ml_task
+        )
+
+        for asset in assets:
+            text = self._get_text_from(asset["content"])
+
+            predictions_asset = self._compute_asset_classification(
+                self.model_framework, tokenizer, model, text
+            )
+
+            predictions.append({self.job_name: predictions_asset})
+            proba_assets.append(predictions_asset["categories"][0]["confidence"])
+
+            if verbose:
+                print("----------")
+                print(text)
+                print(predictions_asset)
+
+        # Warning: the granularity of proba_assets is the whole document
+        job_predictions = JobPredictions(
+            job_name=self.job_name,
+            external_id_array=[a["externalId"] for a in assets],
+            json_response_array=predictions,
+            model_name_array=["Kili AutoML"] * len(assets),
+            predictions_probability=proba_assets,
+        )
+
+        return job_predictions
 
     def _write_dataset(self, assets, job_name, path_dataset, job_categories):
         with open(ensure_dir(path_dataset), "w") as handler:
@@ -245,3 +220,15 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         predicted_label = model.config.id2label[predicted_id]
 
         return {"categories": [{"name": predicted_label, "confidence": int(probas * 100)}]}
+
+    def find_errors(
+        self,
+        *,
+        assets: List[AssetT],
+        cv_n_folds: int,
+        epochs: int,
+        batch_size: int,
+        verbose: int = 0,
+        clear_dataset_cache: bool = False,
+    ):
+        raise NotImplementedError("This model does not support find_errors yet")

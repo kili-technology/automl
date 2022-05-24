@@ -14,6 +14,7 @@ def mocked__get_text_from(asset_url):
 
 
 def mocked__get_assets(*_, max_assets=None, labeling_statuses=None):
+    _ = labeling_statuses
     res = json.load(open("tests/e2e/fixtures/text_assets_fixture.json"))
     tot = min(20, max_assets) if max_assets is not None else 20
 
@@ -25,6 +26,7 @@ def mocked__get_assets(*_, max_assets=None, labeling_statuses=None):
 
 
 def mocked__projects(*_, project_id, fields):
+    _ = project_id, fields
     return json.load(open("tests/e2e/fixtures/text_project_fixture.json"))
 
 
@@ -55,6 +57,8 @@ def test_hugging_face_text_classification(mocker):
             "--clear-dataset-cache",
             "--epochs",
             "1",
+            "--batch-size",
+            "2",
         ],
     )
     debug_subprocess_pytest(result)
@@ -71,6 +75,8 @@ def test_hugging_face_text_classification(mocker):
             "CLASSIFICATION_JOB_0",
             "--project-id",
             "abcdefgh",
+            "--batch-size",
+            "2",
         ],
     )
     debug_subprocess_pytest(result)

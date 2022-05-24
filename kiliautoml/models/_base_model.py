@@ -1,35 +1,67 @@
 from abc import ABCMeta, abstractmethod
 from typing import List, Optional
 
-from kiliautoml.utils.constants import ModelFrameworkT, ModelNameT
+from kiliautoml.utils.constants import (
+    MLTaskT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+)
 from kiliautoml.utils.helpers import JobPredictions
 from kiliautoml.utils.type import AssetT, JobT
 
 
 class BaseModel(metaclass=ABCMeta):
-    def __init__(self) -> None:
-        # internal state attributes
-        self.model_framework: ModelFrameworkT = "pytorch"
+    ml_task: MLTaskT  # type: ignore
+    model_repository: ModelRepositoryT  # type: ignore
+
+    def __init__(
+        self,
+        job: JobT,
+        job_name: str,
+        model_name: ModelNameT,
+        model_framework: ModelFrameworkT,
+    ) -> None:
+        self.job = job
+        self.job_name = job_name
+        self.model_name = model_name
+        self.model_framework: ModelFrameworkT = model_framework
 
     @abstractmethod
     def train(
         self,
+        *,
         assets: List[AssetT],
-        job: JobT,
-        job_name: str,
-        model_name: Optional[ModelNameT],
-        clear_dataset_cache: bool = False,
-        disable_wandb: bool = False,
-    ):
+        epochs: int,
+        batch_size: int,
+        clear_dataset_cache: bool,
+        disable_wandb: bool,
+        # verbose: int ,
+    ) -> float:
         pass
 
     @abstractmethod
     def predict(
         self,
+        *,
         assets: List[AssetT],
         model_path: Optional[str],
         from_project: Optional[str],
-        job_name: str,
-        verbose: int = 0,
+        batch_size: int,
+        verbose: int,
+        clear_dataset_cache: bool,
     ) -> JobPredictions:
+        pass
+
+    @abstractmethod
+    def find_errors(
+        self,
+        *,
+        assets: List[AssetT],
+        cv_n_folds: int,
+        epochs: int,
+        batch_size: int,
+        verbose: int,
+        clear_dataset_cache: bool,
+    ):
         pass

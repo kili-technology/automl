@@ -91,7 +91,9 @@ def train_image_bounding_box(
     help="Kili Endpoint",
 )
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY", ""), help="Kili API Key")
-@click.option("--model-framework", default=None, help="Model framework (eg. pytorch, tensorflow)")
+@click.option(
+    "--model-framework", default="pytorch", help="Model framework (eg. pytorch, tensorflow)"
+)
 @click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
 @click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
 @click.option("--project-id", required=True, help="Kili project ID")
@@ -149,6 +151,12 @@ def train_image_bounding_box(
     is_flag=True,
     help="Tells if wandb is disabled",
 )
+@click.option(
+    "--batch-size",
+    default=8,
+    type=int,
+    help="Maximum number of assets to consider",
+)
 @click.option("--verbose", default=0, type=int, help="Verbose level")
 def main(
     api_endpoint: str,
@@ -165,6 +173,7 @@ def main(
     clear_dataset_cache: bool,
     disable_wandb: bool,
     verbose: int,
+    batch_size: int,
 ):
     """ """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
@@ -197,13 +206,19 @@ def main(
                 asset_status_in,
                 max_assets=max_assets,
             )
-            training_loss = HuggingFaceTextClassificationModel(
-                project_id, api_key, api_endpoint
-            ).train(
-                assets=assets,
+
+            model = HuggingFaceTextClassificationModel(
+                project_id,
+                api_key,
+                api_endpoint,
                 job=job,
                 job_name=job_name,
                 model_framework=model_framework,
+            )
+
+            training_loss = model.train(
+                assets=assets,
+                batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
                 disable_wandb=disable_wandb,
@@ -221,13 +236,18 @@ def main(
                 max_assets,
             )
 
-            training_loss = HuggingFaceNamedEntityRecognitionModel(
-                project_id, api_key, api_endpoint
-            ).train(
-                assets=assets,
+            model = HuggingFaceNamedEntityRecognitionModel(
+                project_id,
+                api_key,
+                api_endpoint,
                 job=job,
                 job_name=job_name,
                 model_framework=model_framework,
+            )
+
+            training_loss = model.train(
+                assets=assets,
+                batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
                 disable_wandb=disable_wandb,
@@ -265,15 +285,22 @@ def main(
             )
 
             image_classification_model = PyTorchVisionImageClassificationModel(
-                assets=assets,
                 model_repository=model_repository,
                 model_name=model_name,
+                job=job,
+                model_framework=model_framework,
                 job_name=job_name,
                 project_id=project_id,
-                api_key=api_key,
             )
 
-            training_loss = image_classification_model.train(epochs, verbose)
+            training_loss = image_classification_model.train(
+                assets=assets,
+                verbose=verbose,
+                batch_size=batch_size,
+                epochs=epochs,
+                clear_dataset_cache=clear_dataset_cache,
+                disable_wandb=disable_wandb,
+            )
 
         else:
             kili_print("not implemented yet")

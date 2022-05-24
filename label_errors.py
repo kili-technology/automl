@@ -68,6 +68,12 @@ from kiliautoml.utils.type import AssetStatusT
     help="Number of epochs to train each CV fold",
 )
 @click.option(
+    "--batch-size",
+    default=8,
+    type=int,
+    help="Maximum number of assets to consider",
+)
+@click.option(
     "--asset-status-in",
     default=["LABELED", "TO_REVIEW", "REVIEWED"],
     callback=lambda _, __, x: x.upper().split(",") if x else [],
@@ -85,12 +91,6 @@ from kiliautoml.utils.type import AssetStatusT
 )
 @click.option("--project-id", default=None, required=True, help="Kili project ID")
 @click.option("--verbose", default=0, type=int, help="Verbose level")
-@click.option(
-    "--disable-wandb",
-    default=True,
-    is_flag=True,
-    help="Tells if wandb is disabled",
-)
 def main(
     api_endpoint: str,
     api_key: str,
@@ -102,10 +102,10 @@ def main(
     epochs: int,
     asset_status_in: List[AssetStatusT],
     max_assets: int,
+    batch_size: int,
     model_name: ModelNameT,
     project_id: str,
     verbose: int,
-    disable_wandb: bool,
     cv_folds: int,
 ):
     """
@@ -115,7 +115,6 @@ def main(
     stored in a file, but also a metadata (labeling_error: true) is uploaded to Kili to
     easily filter them later in the app.
     """
-
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
 
@@ -144,15 +143,20 @@ def main(
             )
 
             image_classification_model = PyTorchVisionImageClassificationModel(
-                assets=assets,
                 model_repository=model_repository,
                 model_name=model_name,
                 job_name=job_name,
+                job=job,
+                model_framework=model_framework,
                 project_id=project_id,
-                api_key=api_key,
             )
-
-            found_errors = image_classification_model.find_errors(cv_folds, epochs, verbose)
+            found_errors = image_classification_model.find_errors(
+                assets=assets,
+                cv_n_folds=cv_folds,
+                epochs=epochs,
+                batch_size=batch_size,
+                verbose=verbose,
+            )
 
             print()
             kili_print("Number of wrong labels found: ", len(found_errors))

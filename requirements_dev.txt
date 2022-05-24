@@ -7,3 +7,4 @@ pytest-mock
 mypy
 types-termcolor
 types-requests
+flake8-unused-arguments

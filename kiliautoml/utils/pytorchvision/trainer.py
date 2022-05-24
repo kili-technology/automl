@@ -16,8 +16,8 @@ def train_model_pytorch(
     *,
     model: nn.Module,
     dataloaders,
+    epochs,
     verbose=0,
-    epochs=10,
 ) -> Tuple[nn.Module, float]:
     """
     Method that trains the given model and return the best one found in the given epochs
