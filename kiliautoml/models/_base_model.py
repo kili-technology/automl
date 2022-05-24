@@ -36,7 +36,8 @@ class BaseModel(metaclass=ABCMeta):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        # verbose: int ,
+        verbose: int,
+        **kwargs,
     ) -> float:
         pass
 

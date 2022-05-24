@@ -69,6 +69,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
+        verbose: int,
         additional_args: TrainingArgsT = {},
     ):
         """
@@ -77,6 +78,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
         - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
         """
+        _ = verbose
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(
