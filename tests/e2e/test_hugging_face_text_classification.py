@@ -49,6 +49,8 @@ def test_hugging_face_text_classification(mocker):
             "--disable-wandb",
             "--epochs",
             "1",
+            "--batch-size",
+            "2",
         ],
     )
     debug_subprocess_pytest(result)
@@ -63,6 +65,8 @@ def test_hugging_face_text_classification(mocker):
             "10",
             "--target-job",
             "CLASSIFICATION_JOB_0",
+            "--batch-size",
+            "2",
         ],
     )
     debug_subprocess_pytest(result)
@@ -85,6 +89,8 @@ def test_hugging_face_text_classification(mocker):
             "--dry-run",
             "--verbose",
             "1",
+            "--batch-size",
+            "2",
         ],
     )
     debug_subprocess_pytest(result)

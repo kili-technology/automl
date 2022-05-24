@@ -57,6 +57,8 @@ def test_hugging_face_text_classification(mocker):
             "--clear-dataset-cache",
             "--epochs",
             "1",
+            "--batch-size",
+            "2",
         ],
     )
     debug_subprocess_pytest(result)
@@ -73,6 +75,8 @@ def test_hugging_face_text_classification(mocker):
             "CLASSIFICATION_JOB_0",
             "--project-id",
             "abcdefgh",
+            "--batch-size",
+            "2",
         ],
     )
     debug_subprocess_pytest(result)

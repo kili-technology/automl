@@ -55,6 +55,8 @@ def test_image_classification(mocker):
             "--disable-wandb",
             "--epochs",
             "1",
+            "--batch-size",
+            "2",
         ],
     )
     debug_subprocess_pytest(result)
@@ -68,6 +70,8 @@ def test_image_classification(mocker):
             "cl2fy98y3004p0m0y8klq62co",
             "--max-assets",
             "300",
+            "--batch-size",
+            "2",
         ],
     )
     debug_subprocess_pytest(result)
@@ -84,6 +88,8 @@ def test_image_classification(mocker):
             "300",
             "--epochs",
             "1",
+            "--batch-size",
+            "2",
         ],
     )
     debug_subprocess_pytest(result)
