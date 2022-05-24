@@ -119,6 +119,13 @@ def main(
     input_type, jobs, title = get_project(kili, project_id)
 
     training_losses = []
+
+    assets = get_assets(
+        kili,
+        project_id,
+        asset_status_in,
+        max_assets=max_assets,
+    )
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:
             continue
@@ -137,14 +144,8 @@ def main(
         ml_task = job.get("mlTask")
         tools: List[ToolT] = job.get("tools")  # type: ignore
         training_loss = None
-        if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
 
-            assets = get_assets(
-                kili,
-                project_id,
-                asset_status_in,
-                max_assets=max_assets,
-            )
+        if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
 
             model = HuggingFaceTextClassificationModel(
                 project_id,
@@ -169,12 +170,6 @@ def main(
             and input_type == "TEXT"
             and ml_task == "NAMED_ENTITIES_RECOGNITION"
         ):
-            assets = get_assets(
-                kili,
-                project_id,
-                asset_status_in,
-                max_assets,
-            )
 
             model = HuggingFaceNamedEntityRecognitionModel(
                 project_id,
@@ -199,12 +194,6 @@ def main(
             and ml_task == "OBJECT_DETECTION"
             and "rectangle" in tools
         ):
-            assets = get_assets(
-                kili,
-                project_id,
-                asset_status_in,
-                max_assets,
-            )
 
             model = UltralyticsObjectDetectionModel(
                 project_id=project_id,
@@ -212,7 +201,6 @@ def main(
                 job_name=job_name,
                 model_framework=model_framework,
                 model_name=model_name,
-                model_repository=model_repository,
             )
             training_loss = model.train(
                 assets=assets,
@@ -226,13 +214,6 @@ def main(
                 verbose=verbose,
             )
         elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
-
-            assets = get_assets(
-                kili,
-                project_id,
-                asset_status_in,
-                max_assets=max_assets,
-            )
 
             image_classification_model = PyTorchVisionImageClassificationModel(
                 model_repository=model_repository,

@@ -83,7 +83,6 @@ def predict_one_job(
         and "rectangle" in tools
     ):
         image_classification_model = UltralyticsObjectDetectionModel(
-            model_repository=model_repository,
             job=job,
             model_framework=model_framework,
             model_name=model_name,
