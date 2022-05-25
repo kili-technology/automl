@@ -85,6 +85,12 @@ from kiliautoml.utils.type import AssetStatusT
 )
 @click.option("--max-assets", default=None, type=int, help="Maximum number of assets to consider")
 @click.option(
+    "--randomize-assets",
+    default=True,
+    type=bool,
+    help="Wether or not to fetch assets from Kili randomized",
+)
+@click.option(
     "--model-name",
     default=None,
     help="Model name (one of efficientnet_b0, resnet50)",
@@ -102,6 +108,7 @@ def main(
     epochs: int,
     asset_status_in: List[AssetStatusT],
     max_assets: int,
+    randomize_assets: bool,
     batch_size: int,
     model_name: ModelNameT,
     project_id: str,
@@ -140,6 +147,7 @@ def main(
                 project_id,
                 asset_status_in,
                 max_assets=max_assets,
+                randomize=randomize_assets,
             )
 
             image_classification_model = PyTorchVisionImageClassificationModel(

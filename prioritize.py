@@ -326,6 +326,12 @@ def embedding_text(
     help="Maximum number of assets to consider",
 )
 @click.option(
+    "--randomize-assets",
+    default=False,
+    type=bool,
+    help="Wether or not to fetch assets from Kili randomized",
+)
+@click.option(
     "--diversity-sampling",
     default=0.3,
     type=float,
@@ -385,6 +391,7 @@ def main(
     project_id: str,
     asset_status_in: List[AssetStatusT],
     max_assets: Optional[int],
+    randomize_assets: bool,
     diversity_sampling: float,
     uncertainty_sampling: float,
     dry_run: bool,
@@ -430,10 +437,11 @@ def main(
         )
 
     unlabeled_assets = get_assets(
-        kili,
-        project_id,
-        asset_status_in,
-        max_assets,
+        kili=kili,
+        project_id=project_id,
+        status_in=asset_status_in,
+        max_assets=max_assets,
+        randomize=randomize_assets,
     )
 
     # TODO: useless if uncertainty_sampling == 0

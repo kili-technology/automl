@@ -70,6 +70,12 @@ from kiliautoml.utils.type import AssetStatusT
     help="Maximum number of assets to consider",
 )
 @click.option(
+    "--randomize-assets",
+    default=True,
+    type=bool,
+    help="Wether or not to fetch assets from Kili randomized",
+)
+@click.option(
     "--json-args",
     default=None,
     type=str,
@@ -108,6 +114,7 @@ def main(
     asset_status_in: List[AssetStatusT],
     target_job: List[str],
     max_assets: int,
+    randomize_assets: bool,
     json_args: str,
     clear_dataset_cache: bool,
     disable_wandb: bool,
@@ -121,10 +128,7 @@ def main(
     training_losses = []
 
     assets = get_assets(
-        kili,
-        project_id,
-        asset_status_in,
-        max_assets=max_assets,
+        kili, project_id, asset_status_in, max_assets=max_assets, randomize=randomize_assets
     )
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:

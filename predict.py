@@ -180,6 +180,12 @@ def predict_one_job(
     help="Maximum number of assets to consider",
 )
 @click.option(
+    "--randomize-assets",
+    default=False,
+    type=bool,
+    help="Wether or not to fetch assets from Kili randomized",
+)
+@click.option(
     "--from-project",
     default=None,
     type=str,
@@ -212,6 +218,7 @@ def main(
     from_model: Optional[ModelFrameworkT],
     verbose: bool,
     max_assets: Optional[int],
+    randomize_assets: bool,
     from_project: Optional[str],
     model_name: Optional[str],
     model_repository: Optional[str],
@@ -221,7 +228,9 @@ def main(
 ):
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
-    assets = get_assets(kili, project_id, asset_status_in, max_assets=max_assets)
+    assets = get_assets(
+        kili, project_id, asset_status_in, max_assets=max_assets, randomize=randomize_assets
+    )
 
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:

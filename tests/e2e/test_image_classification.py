@@ -8,8 +8,8 @@ import train
 from tests.e2e.utils_test_e2e import debug_subprocess_pytest
 
 
-def mocked__get_assets(*_, max_assets=None, labeling_statuses=None):
-    _ = labeling_statuses
+def mocked__get_assets(*_, max_assets=None, randomize=None):
+    _ = randomize
     return json.load(open("tests/e2e/fixtures/img_class_get_assets_fixture.json"))[:max_assets]
 
 

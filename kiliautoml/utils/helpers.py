@@ -107,6 +107,7 @@ def get_assets(
     project_id: str,
     status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
+    randomize: bool = False,
 ) -> List[AssetT]:
 
     if status_in is not None:
@@ -117,20 +118,27 @@ def get_assets(
     if status_in is not None:
         kili_print(f"Downloading assets with status in {status_in} from Kili project")
     else:
-        kili_print("Downloading all assets from Kili project")
+        kili_print("Downloading assets from Kili project")
 
-    assets = get_asset_memoized(
-        kili=kili,
-        project_id=project_id,
-        total=None,
-        skip=0,
-        status_in=status_in,
-    )
+    if randomize:
+        assets = get_asset_memoized(
+            kili=kili,
+            project_id=project_id,
+            total=None,
+            skip=0,
+            status_in=status_in,
+        )
+        random.shuffle(assets)
+        assets = assets[:max_assets]
 
-    # In order to obtain a mix of all assets, we need to shuffle the list
-    random.shuffle(assets)
-
-    assets = assets[:max_assets]
+    else:
+        assets = get_asset_memoized(
+            kili=kili,
+            project_id=project_id,
+            total=max_assets,
+            skip=0,
+            status_in=status_in,
+        )
 
     if len(assets) == 0:
         kili_print(f"No {status_in} assets found in project {project_id}.")
