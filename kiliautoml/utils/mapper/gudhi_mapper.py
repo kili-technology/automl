@@ -25,7 +25,7 @@ nltk.download("wordnet")
 stemmer = SnowballStemmer("english")
 
 
-class _MapperComplex(BaseEstimator, TransformerMixin):
+class _MapperComplex(BaseEstimator, TransformerMixin):  # type: ignore
     """
     This is a class for computing Mapper simplicial complexes on point clouds or
         distance matrices. Used internally.
@@ -303,7 +303,7 @@ class _MapperComplex(BaseEstimator, TransformerMixin):
         return self
 
 
-class CoverComplex(BaseEstimator, TransformerMixin):
+class CoverComplex(BaseEstimator, TransformerMixin):  # type: ignore
     """
     This class wraps Mapper, Nerve and Graph Induced complexes in a single interface.
     Graph Induced and Nerve complexes can still be called from the class NGIComplex
@@ -926,7 +926,7 @@ def confusion_filter(
     if cover_projection is None:
         cover_projection = np.array([[0, 0.5, 0.6, 0.7, 0.8], [0.55, 0.65, 0.75, 0.85, 1]])
     if cover_alt_projection is None:
-        cover_projection = np.array([[0, 0.15, 0.25, 0.35], [0.2, 0.3, 0.4, 0.5]])
+        cover_alt_projection = np.array([[0, 0.15, 0.25, 0.35], [0.2, 0.3, 0.4, 0.5]])
 
     (n_assets, n_classes) = predictions.shape
 

@@ -22,9 +22,9 @@ from kiliautoml.utils.type import AssetStatusT
     default=None,
     multiple=True,
     help=(
-        "Add a specific target job on which to train on "
+        "Add a specific target job on which to focus on "
         "(multiple can be passed if --target-job <job_name> is repeated) "
-        "Example: python train.py --target-job BBOX --target-job CLASSIFICATION"
+        "Example: python mapper.py --target-job CLASSIFICATION0 --target-job CLASSIFICATION1"
     ),
 )
 @click.option(
@@ -54,7 +54,7 @@ from kiliautoml.utils.type import AssetStatusT
 @click.option(
     "--focus-class",
     default=None,
-    show_default=True,
+    callback=lambda _, __, x: x.upper().split(",") if x else None,
     help="Only display selected class in Mapper graph",
 )
 def main(
