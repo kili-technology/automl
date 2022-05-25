@@ -239,7 +239,3 @@ def main(
         training_losses.append([job_name, training_loss])
     kili_print()
     print(tabulate(training_losses, headers=["job_name", "training_loss"]))
-
-
-if __name__ == "__main__":
-    main()

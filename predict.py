@@ -259,7 +259,3 @@ def main(
                 json_response_array=job_predictions.json_response_array,
                 model_name_array=job_predictions.model_name_array,
             )
-
-
-if __name__ == "__main__":
-    main()

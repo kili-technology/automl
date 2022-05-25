@@ -166,7 +166,3 @@ def main(
                     upload_errors_to_kili(found_errors, kili)
         else:
             raise NotImplementedError
-
-
-if __name__ == "__main__":
-    main()
