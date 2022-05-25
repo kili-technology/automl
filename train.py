@@ -9,79 +9,18 @@ from tabulate import tabulate
 from kiliautoml.models import (
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
-)
-from kiliautoml.models._pytorchvision_image_classification import (
     PyTorchVisionImageClassificationModel,
+    UltralyticsObjectDetectionModel,
 )
 from kiliautoml.utils.constants import (
-    HOME,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
     ToolT,
 )
-from kiliautoml.utils.helpers import get_assets, get_project, kili_print, set_default
+from kiliautoml.utils.helpers import get_assets, get_project, kili_print
 from kiliautoml.utils.memoization import clear_automl_cache
-from kiliautoml.utils.path import Path
 from kiliautoml.utils.type import AssetStatusT
-
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-
-def train_image_bounding_box(
-    *,
-    api_key,
-    job,
-    job_name,
-    max_assets,
-    args_dict,
-    epochs,
-    model_framework,
-    model_name,
-    model_repository: ModelRepositoryT,
-    project_id,
-    asset_status_in,
-    clear_dataset_cache,
-    title,
-    disable_wandb,
-):
-    from kiliautoml.utils.ultralytics.train import ultralytics_train_yolov5
-
-    model_repository_initialized: ModelRepositoryT = set_default(
-        model_repository,
-        "ultralytics",
-        "model_repository",
-        ["ultralytics"],
-    )
-    path_repository = Path.model_repository_dir(
-        HOME, project_id, job_name, model_repository_initialized
-    )
-    if model_repository_initialized == "ultralytics":
-        model_framework = set_default(
-            model_framework,
-            "pytorch",
-            "model_framework",
-            ["pytorch"],
-        )
-        model_name = set_default(
-            model_name, "ultralytics/yolov", "model_name", ["ultralytics/yolov"]
-        )
-        return ultralytics_train_yolov5(
-            api_key=api_key,
-            model_repository_dir=path_repository,
-            job=job,
-            max_assets=max_assets,
-            json_args=args_dict,
-            epochs=epochs,
-            project_id=project_id,
-            model_framework=model_framework,
-            asset_status_in=asset_status_in,
-            clear_dataset_cache=clear_dataset_cache,
-            title=title,
-            disable_wandb=disable_wandb,
-        )
-    else:
-        raise NotImplementedError
 
 
 @click.command()
@@ -180,6 +119,13 @@ def main(
     input_type, jobs, title = get_project(kili, project_id)
 
     training_losses = []
+
+    assets = get_assets(
+        kili,
+        project_id,
+        asset_status_in,
+        max_assets=max_assets,
+    )
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:
             continue
@@ -198,14 +144,8 @@ def main(
         ml_task = job.get("mlTask")
         tools: List[ToolT] = job.get("tools")  # type: ignore
         training_loss = None
-        if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
 
-            assets = get_assets(
-                kili,
-                project_id,
-                asset_status_in,
-                max_assets=max_assets,
-            )
+        if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
 
             model = HuggingFaceTextClassificationModel(
                 project_id,
@@ -222,6 +162,7 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
                 disable_wandb=disable_wandb,
+                verbose=verbose,
             )
 
         elif (
@@ -229,12 +170,6 @@ def main(
             and input_type == "TEXT"
             and ml_task == "NAMED_ENTITIES_RECOGNITION"
         ):
-            assets = get_assets(
-                kili,
-                project_id,
-                asset_status_in,
-                max_assets,
-            )
 
             model = HuggingFaceNamedEntityRecognitionModel(
                 project_id,
@@ -251,6 +186,7 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
                 disable_wandb=disable_wandb,
+                verbose=verbose,
             )
         elif (
             content_input == "radio"
@@ -258,31 +194,26 @@ def main(
             and ml_task == "OBJECT_DETECTION"
             and "rectangle" in tools
         ):
-            # no need to get_assets here because it's done in kili_template.yaml
-            training_loss = train_image_bounding_box(
-                api_key=api_key,
+
+            model = UltralyticsObjectDetectionModel(
+                project_id=project_id,
                 job=job,
                 job_name=job_name,
-                max_assets=max_assets,
-                args_dict=json.loads(json_args) if json_args is not None else {},
                 model_framework=model_framework,
                 model_name=model_name,
-                model_repository=model_repository,
-                project_id=project_id,
+            )
+            training_loss = model.train(
+                assets=assets,
                 epochs=epochs,
-                asset_status_in=asset_status_in,
+                batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
-                title=title,
                 disable_wandb=disable_wandb,
+                title=title,
+                json_args=json.loads(json_args) if json_args is not None else {},
+                api_key=api_key,
+                verbose=verbose,
             )
         elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
-
-            assets = get_assets(
-                kili,
-                project_id,
-                asset_status_in,
-                max_assets=max_assets,
-            )
 
             image_classification_model = PyTorchVisionImageClassificationModel(
                 model_repository=model_repository,
@@ -295,11 +226,12 @@ def main(
 
             training_loss = image_classification_model.train(
                 assets=assets,
-                verbose=verbose,
                 batch_size=batch_size,
                 epochs=epochs,
                 clear_dataset_cache=clear_dataset_cache,
                 disable_wandb=disable_wandb,
+                api_key=api_key,
+                verbose=verbose,
             )
 
         else:

@@ -60,8 +60,10 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         batch_size: int,
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
+        verbose: int,
         training_args: TrainingArgsT = {},
     ) -> float:
+        _ = verbose
 
         nltk.download("punkt")
 

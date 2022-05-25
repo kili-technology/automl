@@ -27,11 +27,6 @@ def mocked__download_asset_binary(api_key, asset_content):
     return asset_data
 
 
-def mocked__get_assets_object_detection(project_id, status_in, max_assets, kili):
-    _ = project_id, status_in, max_assets, kili
-    return json.load(open("tests/e2e/fixtures/object_detection_get_assets_object_detection.json"))
-
-
 def test_object_detection(mocker):
 
     mocker.patch("kili.client.Kili.__init__", return_value=None)
@@ -43,10 +38,6 @@ def test_object_detection(mocker):
     mocker.patch("train.get_assets", side_effect=mocked__get_assets)  # ?
     mocker.patch("predict.get_assets", side_effect=mocked__get_assets)
     mocker.patch("label_errors.get_assets", side_effect=mocked__get_assets)
-    mocker.patch(
-        "kiliautoml.utils.ultralytics.train.get_assets_object_detection",
-        side_effect=mocked__get_assets_object_detection,
-    )
     mocker.patch("label_errors.upload_errors_to_kili")
     mocker.patch("kili.client.Kili.create_predictions")
 

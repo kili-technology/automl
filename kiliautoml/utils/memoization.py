@@ -1,15 +1,3 @@
-"""
-The following elements are memoïzed:
-
-- long function calls:
-    - kili_project_memoizer: get_asset_memoized
-    - kili_memoizer: download_image
-- models:
-    - get_last_trained_model_path
-- predictions: saved into
-
-
-"""
 import os
 import shutil
 from typing import List, Optional
