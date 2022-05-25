@@ -2,7 +2,7 @@ import random
 
 import numpy as np
 
-from prioritize import Prioritizer, PriorityQueue
+from commands.prioritize import Prioritizer, PriorityQueue
 
 
 class TestQueue:

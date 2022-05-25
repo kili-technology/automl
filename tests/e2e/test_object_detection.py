@@ -2,8 +2,8 @@ import json
 
 from click.testing import CliRunner
 
-import predict
-import train
+import commands.predict as predict
+import commands.train as train
 from tests.e2e.utils_test_e2e import debug_subprocess_pytest
 
 

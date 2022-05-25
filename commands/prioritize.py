@@ -14,12 +14,12 @@ from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from tqdm import tqdm
 
+from commands.predict import predict_one_job
 from kiliautoml.utils.constants import MLTaskT, ModelFrameworkT, ToolT
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import get_assets, get_project, kili_print
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.type import AssetStatusT
-from predict import predict_one_job
 
 # Priorities
 Priorities = List[float]
