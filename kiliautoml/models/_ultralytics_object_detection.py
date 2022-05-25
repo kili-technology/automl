@@ -4,12 +4,16 @@ import os
 import re
 import shutil
 import subprocess
+import warnings
 from datetime import datetime
 from functools import reduce
-from typing import Any, Dict, List, Optional
+from glob import glob
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
+import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from typing_extensions import TypedDict
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
@@ -21,19 +25,16 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
+    JobPredictions,
     categories_from_job,
     get_last_trained_model_path,
     kili_print,
 )
-from kiliautoml.utils.path import Path
+from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import AssetT, JobT
-from kiliautoml.utils.ultralytics.constants import ULTRALYTICS_REL_PATH, YOLOV5_REL_PATH
-from kiliautoml.utils.ultralytics.predict_ultralytics import (
-    ultralytics_predict_object_detection,
-)
 
 env = Environment(
-    loader=FileSystemLoader(os.path.abspath(ULTRALYTICS_REL_PATH)),
+    loader=FileSystemLoader(os.path.abspath(PathUltralytics.ULTRALYTICS_REL_PATH)),
     autoescape=select_autoescape(),
 )
 
@@ -42,6 +43,23 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 class AutoMLYoloException(Exception):
     pass
+
+
+# TODO: Move to PathUltralytics
+def get_id_from_path(path_yolov5_inference: str) -> str:
+    return os.path.split(path_yolov5_inference)[-1].split(".")[0]
+
+
+class CategoryNameConfidence(TypedDict):
+    name: str
+    # confidence is a probability between 0 and 100.
+    confidence: int
+
+
+class BBoxAnnotation(TypedDict):
+    boundingPoly: Any
+    categories: List[CategoryNameConfidence]
+    type: str
 
 
 class UltralyticsObjectDetectionModel(BaseModel):
@@ -86,7 +104,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             HOME, self.project_id, self.job_name, self.model_repository
         )
 
-        yolov5_path = os.path.join(os.getcwd(), YOLOV5_REL_PATH)
+        yolov5_path = os.path.join(os.getcwd(), PathUltralytics.YOLOV5_REL_PATH)
 
         template = env.get_template("kili_template.yml")
         class_names = categories_from_job(self.job)
@@ -241,11 +259,122 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         project_id = from_project if from_project else self.project_id
 
+        model_path, model_framework = self._get_last_model_param(project_id, model_path)
+
+        return self._predict(
+            api_key,
+            assets,
+            project_id,
+            model_framework,
+            model_path,
+            self.job_name,
+            verbose,
+            batch_size,
+            prioritization=False,
+        )
+
+    def _predict(
+        self,
+        api_key: str,
+        assets: List[AssetT],
+        project_id: str,
+        model_framework: ModelFrameworkT,
+        model_path: ModelPathT,
+        job_name: str,
+        verbose: int,
+        batch_size: int,
+        prioritization: bool,
+    ) -> JobPredictions:
+        _ = batch_size
+
+        warnings.warn("This function does not support custom batch_size")
+
+        if model_framework == "pytorch":
+            filename_weights = "best.pt"
+        else:
+            raise NotImplementedError(
+                f"Predictions with model framework {model_framework} not implemented"
+            )
+
+        kili_print(f"Loading model {model_path}")
+        kili_print(f"for job {job_name}")
+        with open(os.path.join(model_path, "..", "..", "kili.yaml")) as f:
+            kili_data_dict = yaml.load(f, Loader=yaml.FullLoader)
+
+        inference_path = PathUltralytics.inference_dir(HOME, project_id, job_name, "ultralytics")
+        model_weights = os.path.join(model_path, filename_weights)
+
+        # path needs to be cleaned-up to avoid inferring unnecessary items.
+        if os.path.exists(inference_path) and os.path.isdir(inference_path):
+            shutil.rmtree(inference_path)
+        os.makedirs(inference_path)
+
+        downloaded_images = download_project_images(api_key, assets, output_folder=inference_path)
+        # https://github.com/ultralytics/yolov5/blob/master/detect.py
+        # default  --conf-thres=0.25, --iou-thres=0.45
+        prioritizer_args = " --conf-thres=0.01  --iou-thres=0.45 " if prioritization else ""
+
+        kili_print("Starting Ultralytics' YoloV5 inference...")
+        cmd = (
+            "python detect.py "
+            + f'--weights "{model_weights}" '
+            + "--save-txt --save-conf --nosave --exist-ok "
+            + f'--source "{inference_path}" --project "{inference_path}" '
+            + prioritizer_args
+        )
+        os.system(
+            "cd " + PathUltralytics.YOLOV5_REL_PATH + " && " + cmd
+        )  # TODO: Use instead subcommand and catch errors
+
+        inference_files = glob(os.path.join(inference_path, "exp", "labels", "*.txt"))
+        inference_files_by_id = {get_id_from_path(pf): pf for pf in inference_files}
+
+        kili_print("Converting Ultralytics' YoloV5 inference to Kili JSON format...")
+        id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
+
+        proba_list: List[float] = []
+        for image in downloaded_images:
+            if image.id in inference_files_by_id:
+                kili_predictions, probabilities = yolov5_to_kili_json(
+                    inference_files_by_id[image.id], kili_data_dict["names"]
+                )
+                proba_list.append(min(probabilities))
+                if verbose >= 1:
+                    print(f"Asset {image.externalId}: {kili_predictions}")
+                id_json_list.append(
+                    (image.externalId, {job_name: {"annotations": kili_predictions}})
+                )
+
+        # TODO: move this check in the prioritizer
+        if len(id_json_list) < len(downloaded_images):
+            kili_print(
+                "WARNING: Not enouth predictions. Missing prediction for"
+                f" {len(downloaded_images) - len(id_json_list)} assets."
+            )
+            if prioritization:
+                # TODO: Automatically tune the threshold
+                # TODO: Do not crash and put 0 probability for missing assets.
+                raise Exception(
+                    "Not enough predictions for prioritization. You should either train longer the"
+                    " model, or lower the --conf-thres "
+                )
+
+        job_predictions = JobPredictions(
+            job_name=job_name,
+            external_id_array=[a[0] for a in id_json_list],
+            json_response_array=[a[1] for a in id_json_list],
+            model_name_array=["Kili AutoML"] * len(id_json_list),
+            predictions_probability=proba_list,
+        )
+        print("predictions_probability", job_predictions.predictions_probability)
+        return job_predictions
+
+    def _get_last_model_param(self, project_id, model_path) -> Tuple[ModelPathT, ModelFrameworkT]:
         model_path = get_last_trained_model_path(
             project_id=project_id,
             job_name=self.job_name,
             project_path_wildcard=[
-                "*",  # ultralytics or huggingface # TODO: only ultralytics
+                "ultralytics",  # ultralytics or huggingface # TODO: only ultralytics
                 "model",
                 "*",  # pytorch or tensorflow
                 "*",  # date and time
@@ -258,32 +387,12 @@ class UltralyticsObjectDetectionModel(BaseModel):
         )
 
         split_path = os.path.normpath(model_path).split(os.path.sep)  # type: ignore
-        model_repository = split_path[-7]
-        kili_print(f"Model base repository: {model_repository}")
-        if model_repository not in ["ultralytics"]:
-            raise ValueError(f"Unknown model base repository: {model_repository}")
 
         model_framework: ModelFrameworkT = split_path[-5]  # type: ignore
         kili_print(f"Model framework: {model_framework}")
         if model_framework not in ["pytorch", "tensorflow"]:
             raise ValueError(f"Unknown model framework: {model_framework}")
-
-        if model_repository == "ultralytics":
-            job_predictions = ultralytics_predict_object_detection(
-                api_key,
-                assets,
-                project_id,
-                model_framework,
-                model_path,
-                self.job_name,
-                verbose,
-                batch_size,
-                prioritization=False,
-            )
-        else:
-            raise NotImplementedError
-
-        return job_predictions
+        return model_path, model_framework
 
     def find_errors(
         self,
@@ -319,3 +428,42 @@ def save_annotations_to_yolo_format(names, handler, job):
         _x_, _y_ = (x_max + x_min) / 2, (y_max + y_min) / 2
         _w_, _h_ = x_max - x_min, y_max - y_min
         handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")  # type: ignore
+
+
+def yolov5_to_kili_json(
+    path_yolov5_inference: str, ind_to_categories: List[str]
+) -> Tuple[List[BBoxAnnotation], List[int]]:
+    """Returns a list of annotations and of probabilities"""
+    annotations = []
+    probabilities = []
+    with open(path_yolov5_inference, "r") as f:
+        for line in f.readlines():
+            c_, x_, y_, w_, h_, p_ = line.split(" ")
+            x, y, w, h = float(x_), float(y_), float(w_), float(h_)
+            c = int(c_)
+            p = int(100.0 * float(p_))
+
+            category: CategoryNameConfidence = {
+                "name": ind_to_categories[c],
+                "confidence": p,
+            }
+            probabilities.append(p)
+
+            bbox_annotation: BBoxAnnotation = {
+                "boundingPoly": [
+                    {
+                        "normalizedVertices": [
+                            {"x": x - w / 2, "y": y + h / 2},
+                            {"x": x - w / 2, "y": y - h / 2},
+                            {"x": x + w / 2, "y": y - h / 2},
+                            {"x": x + w / 2, "y": y + h / 2},
+                        ]
+                    }
+                ],
+                "categories": [category],
+                "type": "rectangle",
+            }
+
+            annotations.append(bbox_annotation)
+
+    return (annotations, probabilities)
