@@ -180,7 +180,8 @@ class DensityMergeHierarchicalClustering(ClusterMixin, BaseEstimator):
         self : object
             Returns the fitted instance.
         """
-        X = self._validate_data(X, ensure_min_samples=2)
+        y = y
+        X = self._validate_data(X, ensure_min_samples=2)  # type: ignore
         return self._fit(X)
 
     def _fit(self, X):
@@ -234,10 +235,17 @@ class DensityMergeHierarchicalClustering(ClusterMixin, BaseEstimator):
             return_distance=return_distance,  # type: ignore
             **kwargs,
         )
-        (self.children_, self.n_connected_components_, self.n_leaves_, parents) = out[:4]
+        (
+            self.children_,  # type: ignore
+            self.n_connected_components_,  # type: ignore
+            self.n_leaves_,  # type: ignore
+            parents,  # type: ignore
+        ) = out[
+            :4
+        ]  # type: ignore
 
         if return_distance:
-            self.distances_ = out[-1]
+            self.distances_ = out[-1]  # type: ignore
 
         # We use the a method to automatically select the number of clusters
         if self.distance_threshold is None and self.n_clusters is None:
@@ -286,7 +294,7 @@ class DensityMergeHierarchicalClustering(ClusterMixin, BaseEstimator):
 
             n_clusters = np.count_nonzero(self.distances_ >= distance_threshold) + 1
             # Cut the tree
-            self.labels_ = _hc_cut(n_clusters, self.children_, self.n_leaves_)
+            self.labels_ = _hc_cut(n_clusters, self.children_, self.n_leaves_)  # type: ignore
 
         if self.distance_threshold is not None:  # distance_threshold is used
             self.n_clusters_ = np.count_nonzero(self.distances_ >= self.distance_threshold) + 1

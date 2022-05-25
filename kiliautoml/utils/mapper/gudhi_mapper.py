@@ -41,12 +41,14 @@ class _MapperComplex(BaseEstimator, TransformerMixin):
         resolutions,
         gains,
         inp="point cloud",
-        clustering=DBSCAN(),
+        clustering=None,
         mask=0,
         N=100,
         beta=0.0,
         C=10.0,
     ):
+        if clustering is None:
+            clustering = DBSCAN()
         (
             self.filters,
             self.filter_bnds,
@@ -122,11 +124,11 @@ class _MapperComplex(BaseEstimator, TransformerMixin):
 
         return delta, np.array(res)
 
-    def fit(self, X, y=None):
+    def fit(self, X, y=None):  # type: ignore
 
         # Initialize attributes
-        self.mapper_, self.node_info_ = SimplexTree(), {}
-
+        self.mapper_, self.node_info_ = SimplexTree(), {}  # type: ignore
+        y = y
         if self.cover_type == "precomputed":
 
             num_pts = len(self.assignments)
@@ -441,7 +443,7 @@ class CoverComplex(BaseEstimator, TransformerMixin):
             self.verbose,
         ) = (distance_matrix_name, input_name, cover_name, color_name, verbose)
 
-    def fit(self, X, y=None):
+    def fit(self, X, y=None):  # type: ignore
         """
         Fit the CoverComplex class on a point cloud or a distance matrix: compute the cover complex
         and store it in a simplex tree called simplex_tree.
@@ -450,7 +452,8 @@ class CoverComplex(BaseEstimator, TransformerMixin):
             (num_points) x (num_points) if distance matrix): input point cloud or distance matrix.
             y (n x 1 array): point labels (unused).
         """
-        self.data = X
+        y = y
+        self.data = X  # type: ignore
 
         if self.colors is None:
             if self.input_type == "point cloud":
@@ -471,7 +474,7 @@ class CoverComplex(BaseEstimator, TransformerMixin):
         if self.complex_type == "mapper":
 
             assert self.cover != "voronoi"
-            self.complex = _MapperComplex(
+            self.complex = _MapperComplex(  # type: ignore
                 self.cover,
                 self.assignments,
                 filters=self.filters,
@@ -487,8 +490,8 @@ class CoverComplex(BaseEstimator, TransformerMixin):
                 C=self.C,
             )
             self.complex.fit(X)
-            self.simplex_tree = self.complex.mapper_
-            self.node_info = self.complex.node_info_
+            self.simplex_tree = self.complex.mapper_  # type: ignore
+            self.node_info = self.complex.node_info_  # type: ignore
 
         return self
 
@@ -650,7 +653,7 @@ def display_pic_from_mapper_node(
         nb_display = min(
             nb_max_images, len(mapper_cover_complex.node_info[id2name[node_id]]["indices"])
         )
-        f, axarr = plt.subplots(1, nb_display, figsize=(nb_display * 3, 2))
+        f, axarr = plt.subplots(1, nb_display, figsize=(nb_display * 3, 2))  # type: ignore
 
         if not (isinstance(pict_folder, str)) or not (isinstance(pict_file_names, pd.Series)):
             raise ValueError("pict_folder must be a path and pict_file_names a pandas series")
@@ -904,8 +907,8 @@ def topic_score(list_text: List[str]):
 def confusion_filter(
     predictions,
     labels=None,
-    cover_projection=np.array([[0, 0.5, 0.6, 0.7, 0.8], [0.55, 0.65, 0.75, 0.85, 1]]),
-    cover_alt_projection=np.array([[0, 0.15, 0.25, 0.35], [0.2, 0.3, 0.4, 0.5]]),
+    cover_projection=None,
+    cover_alt_projection=None,
 ):
     """Create a custom filter for Mapper according to the confidence of the
         predictions and the true labels (if available)
@@ -920,6 +923,10 @@ def confusion_filter(
     Returns:
         list of list: each elements of the list is the list of cover element the asset belongs to
     """
+    if cover_projection is None:
+        cover_projection = np.array([[0, 0.5, 0.6, 0.7, 0.8], [0.55, 0.65, 0.75, 0.85, 1]])
+    if cover_alt_projection is None:
+        cover_projection = np.array([[0, 0.15, 0.25, 0.35], [0.2, 0.3, 0.4, 0.5]])
 
     (n_assets, n_classes) = predictions.shape
 

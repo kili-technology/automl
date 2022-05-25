@@ -100,7 +100,6 @@ def main(
 
             mapper_image_classification = MapperClassification(
                 api_key=api_key,
-                project_id=project_id,
                 input_type=input_type,
                 assets=assets,
                 job=job,

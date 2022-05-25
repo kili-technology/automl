@@ -94,7 +94,6 @@ class MapperClassification:
         self,
         *,
         api_key: str,
-        project_id: str,
         input_type: InputTypeT,
         assets: List[Any],
         job: JobT,
@@ -140,8 +139,8 @@ class MapperClassification:
         embeddings = self._get_embeddings()
         kili_print(f"Embeddings successfully computed with shape: {embeddings.shape}")
 
-        self.assignments: List[List[int]]
-        self.lens_names: List[str]
+        self.assignments: List[List[int]]  # type: ignore
+        self.lens_names: List[str]  # type: ignore
         self.lens: np.ndarray  # type: ignore
 
         self._get_assignments_and_lens(embeddings, cv_folds)
