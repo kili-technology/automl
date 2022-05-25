@@ -64,7 +64,7 @@ def aggregate_small_clusters(clustering, limit_size, input_data, method="shared"
         return new_clustering
 
 
-class DensityMergeHierarchicalClustering(ClusterMixin, BaseEstimator):
+class DensityMergeHierarchicalClustering(ClusterMixin, BaseEstimator):  # type: ignore
 
     """
     DensityMergeHierarchicalClustering.
