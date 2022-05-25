@@ -54,7 +54,7 @@ from kiliautoml.utils.type import AssetStatusT
 @click.option(
     "--focus-class",
     default=None,
-    callback=lambda _, __, x: x.upper().split(",") if x else None,
+    callback=lambda _, __, x: x.split(",") if x else None,
     help="Only display selected class in Mapper graph",
 )
 def main(
