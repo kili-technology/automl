@@ -146,8 +146,8 @@ def main(
                 kili,
                 project_id,
                 asset_status_in,
-                max_assets,
-                randomize_assets,
+                max_assets=max_assets,
+                randomize=randomize_assets,
             )
 
             image_classification_model = PyTorchVisionImageClassificationModel(
