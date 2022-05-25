@@ -127,12 +127,7 @@ def main(
 
     training_losses = []
 
-    assets = get_assets(
-        kili,
-        project_id,
-        asset_status_in,
-        max_assets=max_assets,
-    )
+    assets = get_assets(kili, project_id, asset_status_in, max_assets, randomize_assets)
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:
             continue
