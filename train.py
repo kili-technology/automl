@@ -97,8 +97,8 @@ def train_image_bounding_box(
 @click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--asset-status-in",
-    default=["LABELED", "TO_REVIEW", "REVIEWED"],
-    callback=lambda _, __, x: x.upper().split(",") if x else [],
+    default="LABELED,TO_REVIEW,REVIEWED",
+    callback=lambda _, __, x: x.upper().split(",") if x else None,
     help=(
         "Comma separated (without space) list of Kili asset status to select "
         "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
