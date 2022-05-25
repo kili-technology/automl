@@ -209,7 +209,7 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
                 disable_wandb=disable_wandb,
                 title=title,
-                args_dict=json.loads(json_args) if json_args is not None else {},
+                json_args=json.loads(json_args) if json_args is not None else {},
                 api_key=api_key,
                 verbose=verbose,
             )
