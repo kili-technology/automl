@@ -77,7 +77,7 @@ class Options:
         "--randomize-assets",
         default=True,
         type=bool,
-        help="Wether or not to fetch assets from Kili randomized",
+        help="Whether or not to fetch assets from Kili randomized",
     )
 
 
@@ -98,12 +98,11 @@ def asset_status_in(default: List[AssetStatusT]):
 class TrainOptions:
     epochs = click.option(
         "--epochs",
-        default=10,
+        default=50,
         type=int,
         show_default=True,
         help="Number of epochs to train for",
     )
-
     json_args = click.option(
         "--json-args",
         default=None,

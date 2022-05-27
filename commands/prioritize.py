@@ -328,7 +328,6 @@ def main(
     randomize_assets: bool,
     diversity_sampling: float,
     uncertainty_sampling: float,
-    # target_job
     dry_run: bool,
     from_model: ModelFrameworkT,
     verbose: bool,

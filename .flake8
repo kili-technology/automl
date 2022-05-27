@@ -11,5 +11,6 @@ unused-arguments-ignore-abstract-functions = True
 unused-arguments-ignore-stub-functions = True
 
 
+; Module level import not at top of file E402
 per-file-ignores =
     main.py:E402
