@@ -1,8 +1,9 @@
 import click
 
-from commands.label_errors import main as label_errors
-from commands.predict import main as predict
-from commands.train import main as train
+print("Loading KiliAutoML...")
+from commands.label_errors import main as label_errors  # noqa: E402
+from commands.predict import main as predict  # noqa: E402
+from commands.train import main as train  # noqa: E402
 
 
 @click.group()
