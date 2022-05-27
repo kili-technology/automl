@@ -9,3 +9,7 @@ exclude = tests,kiliautoml/utils/ultralytics/yolov5
 
 unused-arguments-ignore-abstract-functions = True
 unused-arguments-ignore-stub-functions = True
+
+
+per-file-ignores =
+    main.py:E402

@@ -24,6 +24,7 @@ from kiliautoml.utils.type import AssetStatusT
 
 
 @click.command()
+@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--api-endpoint",
     default="https://cloud.kili-technology.com/api/label/v2/graphql",
@@ -89,9 +90,9 @@ from kiliautoml.utils.type import AssetStatusT
     default=None,
     help="Model name (one of efficientnet_b0, resnet50)",
 )
-@click.option("--project-id", default=None, required=True, help="Kili project ID")
 @click.option("--verbose", default=0, type=int, help="Verbose level")
 def main(
+    project_id: str,
     api_endpoint: str,
     api_key: str,
     clear_dataset_cache: bool,
@@ -104,7 +105,6 @@ def main(
     max_assets: int,
     batch_size: int,
     model_name: ModelNameT,
-    project_id: str,
     verbose: int,
     cv_folds: int,
 ):

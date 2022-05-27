@@ -24,6 +24,7 @@ setup(
         "more-itertools",
         "typing_extensions",
         "wandb==0.12.10",
+        "ipython",
     ],
     entry_points={
         "console_scripts": [

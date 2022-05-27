@@ -302,13 +302,13 @@ def embedding_text(
 
 
 @click.command()
+@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--api-endpoint",
     default="https://cloud.kili-technology.com/api/label/v2/graphql",
     help="Kili Endpoint",
 )
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
-@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--asset-status-in",
     default=["TODO", "ONGOING"],
@@ -377,7 +377,7 @@ def embedding_text(
     "--batch-size",
     default=8,
     type=int,
-    help="Maximum number of assets to consider",
+    help="Batch size when comouting the embeddings and when predicting",
 )
 def main(
     api_endpoint: str,

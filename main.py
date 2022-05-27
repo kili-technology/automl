@@ -1,10 +1,16 @@
-import click
-
 print("Loading KiliAutoML...")
-from commands.label_errors import main as label_errors  # noqa: E402
-from commands.predict import main as predict  # noqa: E402
-from commands.prioritize import main as prioritize  # noqa: E402
-from commands.train import main as train  # noqa: E402
+
+import sys
+
+import click
+from IPython.core import ultratb
+
+from commands.label_errors import main as label_errors
+from commands.predict import main as predict
+from commands.prioritize import main as prioritize
+from commands.train import main as train
+
+sys.excepthook = ultratb.FormattedTB(mode="Verbose", color_scheme="Linux", call_pdb=False)
 
 
 @click.group()

@@ -125,13 +125,13 @@ def predict_one_job(
 
 
 @click.command()
+@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--api-endpoint",
     default="https://cloud.kili-technology.com/api/label/v2/graphql",
     help="Kili Endpoint",
 )
 @click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
-@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--asset-status-in",
     default=["TODO", "ONGOING"],
@@ -203,9 +203,9 @@ def predict_one_job(
     help="Tells if the dataset cache must be cleared",
 )
 def main(
+    project_id: str,
     api_endpoint: str,
     api_key: str,
-    project_id: str,
     asset_status_in: List[AssetStatusT],
     target_job: List[str],
     dry_run: bool,

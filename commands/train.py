@@ -24,6 +24,7 @@ from kiliautoml.utils.type import AssetStatusT
 
 
 @click.command()
+@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--api-endpoint",
     default="https://cloud.kili-technology.com/api/label/v2/graphql",
@@ -35,7 +36,6 @@ from kiliautoml.utils.type import AssetStatusT
 )
 @click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
 @click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
-@click.option("--project-id", required=True, help="Kili project ID")
 @click.option(
     "--asset-status-in",
     default=["LABELED", "TO_REVIEW", "REVIEWED"],
