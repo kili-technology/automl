@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from termcolor import colored
 from tqdm import tqdm
+from typing_extensions import get_args
 
 from kiliautoml.utils.constants import HOME, InputTypeT
 from kiliautoml.utils.memoization import kili_project_memoizer
@@ -111,9 +112,11 @@ def get_assets(
 
     if status_in is not None:
         for status in status_in:
-            if not (status in AssetStatusT.__args__):  # type: ignore
-                raise Exception(f"{status} is not a valid asset status.")
-
+            if status not in get_args(AssetStatusT):
+                raise Exception(
+                    f"{status} is not a valid asset status. Status must be in"
+                    f" {get_args(AssetStatusT)}"
+                )
     if status_in is not None:
         kili_print(f"Downloading assets with status in {status_in} from Kili project")
     else:
