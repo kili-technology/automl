@@ -5,12 +5,11 @@ import sys
 import click
 from IPython.core import ultratb
 
+sys.excepthook = ultratb.FormattedTB(mode="Verbose", color_scheme="Linux", call_pdb=False)
 from commands.label_errors import main as label_errors
 from commands.predict import main as predict
 from commands.prioritize import main as prioritize
 from commands.train import main as train
-
-sys.excepthook = ultratb.FormattedTB(mode="Verbose", color_scheme="Linux", call_pdb=False)
 
 
 @click.group()

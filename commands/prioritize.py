@@ -1,4 +1,3 @@
-import os
 from typing import List, Optional
 
 import click
@@ -14,6 +13,7 @@ from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from tqdm import tqdm
 
+from commands.common_args import Options, PredictOptions, PrioritizeOptions
 from commands.predict import predict_one_job
 from kiliautoml.utils.constants import MLTaskT, ModelFrameworkT, ToolT
 from kiliautoml.utils.download_assets import download_project_images
@@ -302,83 +302,22 @@ def embedding_text(
 
 
 @click.command()
-@click.option("--project-id", required=True, help="Kili project ID")
-@click.option(
-    "--api-endpoint",
-    default="https://cloud.kili-technology.com/api/label/v2/graphql",
-    help="Kili Endpoint",
-)
-@click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
-@click.option(
-    "--asset-status-in",
-    default=["TODO", "ONGOING"],
-    callback=lambda _, __, x: x.upper().split(",") if x else [],
-    help=(
-        "Comma separated (without space) list of Kili asset status to select "
-        "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
-        "Example: python train.py --asset-status-in TO_REVIEW,REVIEWED "
-    ),
-)
-@click.option(
-    "--max-assets",
-    default=None,
-    type=int,
-    help="Maximum number of assets to consider",
-)
-@click.option(
-    "--diversity-sampling",
-    default=0.3,
-    type=float,
-    help="Diversity sampling proportion",
-)
-@click.option(
-    "--model-framework", default="pytorch", help="Model framework (eg. pytorch, tensorflow)"
-)
-@click.option(
-    "--uncertainty-sampling",
-    default=0.4,
-    type=float,
-    help="Uncertainty sampling proportion",
-)
-@click.option(
-    "--dry-run",
-    default=None,
-    is_flag=True,
-    help="Runs the predictions but do not save them into the Kili project",
-)
-@click.option(
-    "--from-model",
-    default=None,
-    help="Runs the predictions using a specified model path",
-)
-@click.option(
-    "--verbose",
-    default=0,
-    help="Verbose level",
-)
-@click.option(
-    "--clear-dataset-cache",
-    default=False,
-    is_flag=True,
-    help="Tells if the dataset cache must be cleared",
-)
-@click.option(
-    "--from-project",
-    default=None,
-    type=str,
-    help=(
-        "Use a model trained of a different project to predict on project_id."
-        "This is usefull if you do not want to pollute the original project with "
-        "experimental predictions."
-        "This argument is ignored if --from-model is used."
-    ),
-)
-@click.option(
-    "--batch-size",
-    default=8,
-    type=int,
-    help="Batch size when comouting the embeddings and when predicting",
-)
+@Options.project_id
+@Options.api_endpoint
+@Options.api_key
+@Options.model_framework
+@Options.model_name
+@Options.model_repository
+@Options.target_job
+@Options.max_assets
+@Options.clear_dataset_cache
+@Options.batch_size
+@Options.verbose
+@PredictOptions.from_model
+@PredictOptions.from_project
+@PrioritizeOptions.diversity_sampling
+@PrioritizeOptions.uncertainty_sampling
+@PrioritizeOptions.asset_status_in
 def main(
     api_endpoint: str,
     api_key: str,
@@ -387,6 +326,7 @@ def main(
     max_assets: Optional[int],
     diversity_sampling: float,
     uncertainty_sampling: float,
+    # target_job
     dry_run: bool,
     from_model: ModelFrameworkT,
     verbose: bool,

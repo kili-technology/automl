@@ -131,12 +131,12 @@ def predict_one_job(
 @Options.model_framework
 @Options.model_name
 @Options.model_repository
-@Options.asset_status_in
 @Options.target_job
 @Options.max_assets
 @Options.clear_dataset_cache
 @Options.batch_size
 @Options.verbose
+@PredictOptions.asset_status_in
 @PredictOptions.from_model
 @PredictOptions.from_project
 @PredictOptions.dry_run

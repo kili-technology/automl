@@ -1,9 +1,11 @@
 import os
+from typing import List
 
 import click
 from typing_extensions import get_args
 
 from kiliautoml.utils.constants import ModelFrameworkT, ModelNameT
+from kiliautoml.utils.type import AssetStatusT
 
 
 class Options:
@@ -36,17 +38,6 @@ class Options:
 
     model_repository = click.option(
         "--model-repository", default=None, help="Model repository (eg. huggingface)"
-    )
-
-    asset_status_in = click.option(
-        "--asset-status-in",
-        default=["LABELED", "TO_REVIEW", "REVIEWED"],
-        callback=lambda _, __, x: x.upper().split(",") if x else [],
-        help=(
-            "Comma separated (without space) list of Kili asset status to select "
-            "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
-            "Example: python train.py --asset-status-in TO_REVIEW,REVIEWED "
-        ),
     )
 
     target_job = click.option(
@@ -83,6 +74,19 @@ class Options:
     verbose = click.option("--verbose", default=0, type=int, help="Verbose level")
 
 
+def asset_status_in(default: List[AssetStatusT]):
+    return click.option(
+        "--asset-status-in",
+        default=default,  # type: ignore
+        callback=lambda _, __, x: x.upper().split(",") if x else [],
+        help=(
+            "Comma separated (without space) list of Kili asset status to select "
+            "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
+            "Example: python train.py --asset-status-in TO_REVIEW,REVIEWED "
+        ),
+    )
+
+
 class TrainOptions:
     epochs = click.option(
         "--epochs",
@@ -109,6 +113,8 @@ class TrainOptions:
         help="Tells if wandb is disabled",
     )
 
+    asset_status_in = asset_status_in(["LABELED", "TO_REVIEW", "REVIEWED"])
+
 
 class PredictOptions:
 
@@ -134,3 +140,41 @@ class PredictOptions:
             "This argument is ignored if --from-model is used."
         ),
     )
+
+    asset_status_in = asset_status_in(["TODO", "ONGOING"])
+
+
+class LabelErrorOptions:
+
+    cv_folds = click.option(
+        "--cv-folds", default=4, type=int, show_default=True, help="Number of CV folds to use"
+    )
+    dry_run = click.option(
+        "--dry-run",
+        default=None,
+        is_flag=True,
+        help=(
+            "Get the labeling errors, save on the hard drive, but do not upload them into the Kili"
+            " project"
+        ),
+    )
+
+    asset_status_in = asset_status_in(["LABELED", "TO_REVIEW", "REVIEWED"])
+
+
+class PrioritizeOptions:
+
+    diversity_sampling = click.option(
+        "--diversity-sampling",
+        default=0.3,
+        type=float,
+        help="Diversity sampling proportion",
+    )
+    uncertainty_sampling = click.option(
+        "--uncertainty-sampling",
+        default=0.4,
+        type=float,
+        help="Uncertainty sampling proportion",
+    )
+
+    asset_status_in = asset_status_in(["TODO", "ONGOING"])
