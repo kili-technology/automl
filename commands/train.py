@@ -114,7 +114,11 @@ def main(
     verbose: int,
     batch_size: int,
 ):
-    """ """
+    """Train a model and then save the model in the cache.
+
+
+    If there are multiple jobs in your projects, a model will be trained on each job.
+    """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
 

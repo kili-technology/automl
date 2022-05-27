@@ -219,6 +219,8 @@ def main(
     batch_size: int,
     clear_dataset_cache: bool,
 ):
+    """After training, use this script to predict annotations suggestions
+    on your remaining assets."""
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
     assets = get_assets(kili, project_id, asset_status_in, max_assets=max_assets)
