@@ -26,7 +26,7 @@ def mocked__projects(*_, project_id, fields):
 def test_hugging_face_text_classification(mocker):
 
     mocker.patch("kili.client.Kili.__init__", return_value=None)
-    mocker.patch("train.get_assets", side_effect=mocked__get_assets)
+    mocker.patch("commands.train.get_assets", side_effect=mocked__get_assets)
     mocker.patch("kili.client.Kili.projects", side_effect=mocked__projects)
     mocker.patch(
         "kiliautoml.mixins._kili_text_project_mixin.KiliTextProjectMixin._get_text_from",
@@ -55,7 +55,7 @@ def test_hugging_face_text_classification(mocker):
     )
     debug_subprocess_pytest(result)
 
-    mocker.patch("predict.get_assets", side_effect=mocked__get_assets)
+    mocker.patch("commands.predict.get_assets", side_effect=mocked__get_assets)
     result = runner.invoke(
         predict.main,
         [

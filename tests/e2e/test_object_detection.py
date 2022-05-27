@@ -35,10 +35,10 @@ def test_object_detection(mocker):
         "kiliautoml.utils.download_assets.download_asset_binary",
         side_effect=mocked__download_asset_binary,
     )
-    mocker.patch("train.get_assets", side_effect=mocked__get_assets)  # ?
-    mocker.patch("predict.get_assets", side_effect=mocked__get_assets)
-    mocker.patch("label_errors.get_assets", side_effect=mocked__get_assets)
-    mocker.patch("label_errors.upload_errors_to_kili")
+    mocker.patch("commands.train.get_assets", side_effect=mocked__get_assets)  # ?
+    mocker.patch("commands.predict.get_assets", side_effect=mocked__get_assets)
+    mocker.patch("commands.label_errors.get_assets", side_effect=mocked__get_assets)
+    mocker.patch("commands.label_errors.upload_errors_to_kili")
     mocker.patch("kili.client.Kili.create_predictions")
 
     runner = CliRunner()
