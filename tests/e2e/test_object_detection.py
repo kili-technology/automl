@@ -42,13 +42,12 @@ def test_object_detection(mocker):
     mocker.patch("kili.client.Kili.create_predictions")
 
     runner = CliRunner()
+    project_id = "abcdefg"
     result = runner.invoke(
         train.main,
         [
-            "--api-endpoint",
-            "https://staging.cloud.kili-technology.com/api/label/v2/graphql",
             "--project-id",
-            "cl0wihlop3rwc0mtj9np28ti2",
+            project_id,
             "--max-assets",
             "300",
             "--disable-wandb",
@@ -61,10 +60,8 @@ def test_object_detection(mocker):
     result = runner.invoke(
         predict.main,
         [
-            "--api-endpoint",
-            "https://staging.cloud.kili-technology.com/api/label/v2/graphql",
             "--project-id",
-            "cl0wihlop3rwc0mtj9np28ti2",
+            project_id,
             "--max-assets",
             "300",
         ],
