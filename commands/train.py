@@ -33,6 +33,7 @@ from kiliautoml.utils.type import AssetStatusT
 @Options.model_repository
 @Options.target_job
 @Options.max_assets
+@Options.randomize_assets
 @Options.clear_dataset_cache
 @Options.batch_size
 @Options.verbose
@@ -51,6 +52,7 @@ def main(
     asset_status_in: List[AssetStatusT],
     target_job: List[str],
     max_assets: int,
+    randomize_assets: bool,
     json_args: str,
     clear_dataset_cache: bool,
     disable_wandb: bool,
@@ -68,10 +70,7 @@ def main(
     training_losses = []
 
     assets = get_assets(
-        kili,
-        project_id,
-        asset_status_in,
-        max_assets=max_assets,
+        kili, project_id, asset_status_in, max_assets=max_assets, randomize=randomize_assets
     )
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:

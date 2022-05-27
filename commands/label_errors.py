@@ -33,6 +33,7 @@ from kiliautoml.utils.type import AssetStatusT
 @Options.target_job
 @Options.max_assets
 @Options.clear_dataset_cache
+@Options.randomize_assets
 @Options.batch_size
 @Options.verbose
 @TrainOptions.epochs
@@ -51,6 +52,7 @@ def main(
     epochs: int,
     asset_status_in: List[AssetStatusT],
     max_assets: int,
+    randomize_assets: bool,
     batch_size: int,
     model_name: ModelNameT,
     verbose: int,
@@ -88,6 +90,7 @@ def main(
                 project_id,
                 asset_status_in,
                 max_assets=max_assets,
+                randomize=randomize_assets,
             )
 
             image_classification_model = PyTorchVisionImageClassificationModel(

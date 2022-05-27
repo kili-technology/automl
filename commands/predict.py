@@ -132,6 +132,7 @@ def predict_one_job(
 @Options.model_name
 @Options.model_repository
 @Options.target_job
+@Options.randomize_assets
 @Options.max_assets
 @Options.clear_dataset_cache
 @Options.batch_size
@@ -150,6 +151,7 @@ def main(
     from_model: Optional[ModelFrameworkT],
     verbose: bool,
     max_assets: Optional[int],
+    randomize_assets: bool,
     from_project: Optional[str],
     model_name: Optional[str],
     model_repository: Optional[str],
@@ -161,7 +163,9 @@ def main(
     on your remaining assets."""
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
-    assets = get_assets(kili, project_id, asset_status_in, max_assets=max_assets)
+    assets = get_assets(
+        kili, project_id, asset_status_in, max_assets=max_assets, randomize=randomize_assets
+    )
 
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:

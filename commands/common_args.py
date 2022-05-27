@@ -73,12 +73,20 @@ class Options:
 
     verbose = click.option("--verbose", default=0, type=int, help="Verbose level")
 
+    randomize_assets = click.option(
+        "--randomize-assets",
+        default=True,
+        type=bool,
+        help="Wether or not to fetch assets from Kili randomized",
+    )
+
 
 def asset_status_in(default: List[AssetStatusT]):
+    default_string = ",".join(default) if default else None
     return click.option(
         "--asset-status-in",
-        default=default,  # type: ignore
-        callback=lambda _, __, x: x.upper().split(",") if x else [],
+        default=default_string,  # type: ignore
+        callback=lambda _, __, x: x.upper().split(",") if x else None,
         help=(
             "Comma separated (without space) list of Kili asset status to select "
             "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"

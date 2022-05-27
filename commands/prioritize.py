@@ -311,6 +311,7 @@ def embedding_text(
 @Options.target_job
 @Options.max_assets
 @Options.clear_dataset_cache
+@Options.randomize_assets
 @Options.batch_size
 @Options.verbose
 @PredictOptions.from_model
@@ -324,6 +325,7 @@ def main(
     project_id: str,
     asset_status_in: List[AssetStatusT],
     max_assets: Optional[int],
+    randomize_assets: bool,
     diversity_sampling: float,
     uncertainty_sampling: float,
     # target_job
@@ -370,10 +372,11 @@ def main(
         )
 
     unlabeled_assets = get_assets(
-        kili,
-        project_id,
-        asset_status_in,
-        max_assets,
+        kili=kili,
+        project_id=project_id,
+        status_in=asset_status_in,
+        max_assets=max_assets,
+        randomize=randomize_assets,
     )
 
     # TODO: useless if uncertainty_sampling == 0
