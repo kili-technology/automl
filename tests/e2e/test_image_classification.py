@@ -2,9 +2,7 @@ import json
 
 from click.testing import CliRunner
 
-import commands.label_errors as label_errors
-import commands.predict as predict
-import commands.train as train
+import main
 from tests.e2e.utils_test_e2e import debug_subprocess_pytest
 
 
@@ -44,8 +42,9 @@ def test_image_classification(mocker):
 
     runner = CliRunner()
     result = runner.invoke(
-        train.main,
+        main.kiliautoml,
         [
+            "train",
             "--api-endpoint",
             "https://staging.cloud.kili-technology.com/api/label/v2/graphql",
             "--project-id",
@@ -62,8 +61,9 @@ def test_image_classification(mocker):
     debug_subprocess_pytest(result)
 
     result = runner.invoke(
-        predict.main,
+        main.kiliautoml,
         [
+            "predict",
             "--api-endpoint",
             "https://staging.cloud.kili-technology.com/api/label/v2/graphql",
             "--project-id",
@@ -76,10 +76,10 @@ def test_image_classification(mocker):
     )
     debug_subprocess_pytest(result)
 
-    # # TODO: slow: reduce CV
     result = runner.invoke(
-        label_errors.main,
+        main.kiliautoml,
         [
+            "label_errors",
             "--api-endpoint",
             "https://staging.cloud.kili-technology.com/api/label/v2/graphql",
             "--project-id",
@@ -89,6 +89,8 @@ def test_image_classification(mocker):
             "--epochs",
             "1",
             "--batch-size",
+            "2",
+            "--cv-folds",
             "2",
         ],
     )

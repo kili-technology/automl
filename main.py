@@ -13,15 +13,15 @@ from commands.train import main as train
 
 
 @click.group()
-def group():
+def kiliautoml():
     pass
 
 
-group.add_command(train, name="train")
-group.add_command(predict, name="predict")
-group.add_command(label_errors, name="label_errors")
-group.add_command(prioritize, name="prioritize")
+kiliautoml.add_command(train, name="train")
+kiliautoml.add_command(predict, name="predict")
+kiliautoml.add_command(label_errors, name="label_errors")
+kiliautoml.add_command(prioritize, name="prioritize")
 
 
 if __name__ == "__main__":
-    group()
+    kiliautoml()

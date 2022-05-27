@@ -28,7 +28,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "kiliautoml = main:group",
+            "kiliautoml = main:kiliautoml",
         ],
     },
 )

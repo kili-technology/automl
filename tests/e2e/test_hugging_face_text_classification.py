@@ -2,8 +2,7 @@ import json
 
 from click.testing import CliRunner
 
-import commands.predict as predict
-import commands.train as train
+import main
 from tests.e2e.utils_test_e2e import debug_subprocess_pytest
 
 text_content = json.load(open("tests/e2e/fixtures/text_content_fixture.json"))
@@ -36,8 +35,9 @@ def test_hugging_face_text_classification(mocker):
 
     runner = CliRunner()
     result = runner.invoke(
-        train.main,
+        main.kiliautoml,
         [
+            "train",
             "--project-id",
             "abcdefgh",
             "--max-assets",
@@ -57,8 +57,9 @@ def test_hugging_face_text_classification(mocker):
 
     mocker.patch("commands.predict.get_assets", side_effect=mocked__get_assets)
     result = runner.invoke(
-        predict.main,
+        main.kiliautoml,
         [
+            "predict",
             "--project-id",
             "abcdefgh",
             "--max-assets",
@@ -78,8 +79,9 @@ def test_hugging_face_text_classification(mocker):
 
     mock_create_predictions = mocker.patch("kili.client.Kili.create_predictions")
     result = runner.invoke(
-        predict.main,
+        main.kiliautoml,
         [
+            "predict",
             "--project-id",
             "abcdefgh",
             "--max-assets",

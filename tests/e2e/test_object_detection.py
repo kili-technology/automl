@@ -2,8 +2,7 @@ import json
 
 from click.testing import CliRunner
 
-import commands.predict as predict
-import commands.train as train
+import main
 from tests.e2e.utils_test_e2e import debug_subprocess_pytest
 
 
@@ -43,8 +42,9 @@ def test_object_detection(mocker):
 
     runner = CliRunner()
     result = runner.invoke(
-        train.main,
+        main.kiliautoml,
         [
+            "train",
             "--api-endpoint",
             "https://staging.cloud.kili-technology.com/api/label/v2/graphql",
             "--project-id",
@@ -59,8 +59,9 @@ def test_object_detection(mocker):
     debug_subprocess_pytest(result)
 
     result = runner.invoke(
-        predict.main,
+        main.kiliautoml,
         [
+            "predict",
             "--api-endpoint",
             "https://staging.cloud.kili-technology.com/api/label/v2/graphql",
             "--project-id",
