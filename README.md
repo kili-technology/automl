@@ -38,7 +38,7 @@ We made AutoML very simple to use. The following sections detail how to call the
 We train the model with the following command line:
 
 ```bash
-kiliautoml train.py \
+kiliautoml train \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID
 ```
@@ -69,7 +69,7 @@ Compute model loss to infer when you can stop labeling.
 Once trained, the models are used to predict the labels, add preannotations on the assets that have not yet been labeled by the annotators. The annotators can then validate or correct the preannotations in the Kili user interface.
 
 ```bash
-kiliautoml predict.py \
+kiliautoml predict \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID
 ```
@@ -80,7 +80,7 @@ Using trained models to push pre-annotations onto unlabeled assets typically spe
 
 You can also use a model coming from another project, if they have the same ontology:
 ```bash
-kiliautoml predict.py \
+kiliautoml predict \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID \
     --from-project $ANOTHER_KILI_PROJECT_ID
@@ -91,7 +91,7 @@ kiliautoml predict.py \
 Once roughly 10 percent of the assets in a project have been labeled, it is possible to prioritize the remaining assets to be labeled on the project in order to prioritize the assets that will best improve the performance of the model.
 
 ```bash
-kiliautoml prioritize.py \
+kiliautoml prioritize \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID
 ```
@@ -105,7 +105,7 @@ Note: for image classification projects only.
 The error is human, fortunately there are methods to detect potential annotation problems. `label_errors.py` allows to identify potential problems and create a 'potential_label_error' filter on the project's asset exploration view:
 
 ```bash
-kiliautoml label_errors.py \
+kiliautoml label_errors \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID
 ```
