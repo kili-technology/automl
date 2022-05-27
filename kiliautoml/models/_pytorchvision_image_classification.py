@@ -196,7 +196,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
 
         original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
-        for cv_fold in tqdm(range(cv_n_folds)):
+        for cv_fold in tqdm(range(cv_n_folds), desc="Training and predicting on several folds"):
             # Split train into train and holdout for particular cv_fold.
             cv_train_idx, cv_holdout_idx = list(kf.split(range(len(labels)), labels))[cv_fold]
 
