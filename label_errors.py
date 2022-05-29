@@ -164,6 +164,7 @@ def main(
                 epochs=epochs,
                 batch_size=batch_size,
                 verbose=verbose,
+                api_key=api_key,
             )
 
             print()
