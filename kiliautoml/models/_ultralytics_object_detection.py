@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from sklearn.model_selection import KFold, train_test_split
 from typing_extensions import TypedDict
 
 from kiliautoml.models._base_model import BaseModel
@@ -205,12 +206,79 @@ class UltralyticsObjectDetectionModel(BaseModel):
         return {"training_loss": train_loss}
 
     @staticmethod
+    def _label_errors_preparation(
+        cv_fold: int,
+        data_path: str,
+        n_folds: int,
+    ):
+        for type in ["images", "labels"]:
+            for folder in ["train", "val", "test"]:
+                shutil.rmtree(os.path.join(data_path, type, folder), ignore_errors=True)
+
+        path_all_images = os.path.join(data_path, "images", "all")
+        path_all_labels = os.path.join(data_path, "labels", "all")
+
+        images = [
+            f
+            for f in os.listdir(path_all_images)
+            if os.path.isfile(os.path.join(path_all_images, f)) and f.endswith(".jpeg")
+        ]
+        labels = [
+            f
+            for f in os.listdir(path_all_labels)
+            if os.path.isfile(os.path.join(path_all_labels, f)) and f.endswith(".txt")
+        ]
+
+        assert len(images) == len(labels)
+
+        kf = KFold(n_splits=n_folds, shuffle=True, random_state=42)
+
+        # Split train into train and holdout for particular cv_fold.
+        cv_train_idx, cv_holdout_idx = list(kf.split(range(len(images)), images))[cv_fold]
+        train_idx, val_idx = train_test_split(cv_train_idx, test_size=0.2)
+
+        train_images = [images[i] for i in train_idx]
+        val_images = [images[i] for i in val_idx]
+        test_images = [images[i] for i in cv_holdout_idx]
+
+        new_images = {
+            "train": train_images,
+            "val": val_images,
+            "test": test_images,
+        }
+
+        for name_split, assets_split in new_images.items():
+            split_dir = os.path.join(data_path, "images", name_split)
+            os.makedirs(split_dir)
+            for image in assets_split:
+                shutil.copy(os.path.join(path_all_images, image), os.path.join(split_dir, image))
+
+        train_labels = [labels[i] for i in train_idx]
+        val_labels = [labels[i] for i in val_idx]
+        test_labels = [labels[i] for i in cv_holdout_idx]
+
+        new_labels = {
+            "train": train_labels,
+            "val": val_labels,
+            "test": test_labels,
+        }
+
+        for name_split, assets_split in new_labels.items():
+            split_dir = os.path.join(data_path, "labels", name_split)
+            os.makedirs(split_dir)
+            for image in assets_split:
+                shutil.copy(os.path.join(path_all_labels, image), os.path.join(split_dir, image))
+
+    @staticmethod
     def _yaml_preparation(
         *,
         data_path: str,
         class_names: List[str],
         kili_api_key: str,
         assets,
+        job_name,
+        label_merge_strategy,
+        download_all: bool = False,
     ):
 
         kili_print("Downloading datasets from Kili")
@@ -221,14 +289,18 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         n_train_assets = math.floor(len(assets) * train_val_proportions[0])
         n_val_assets = math.floor(len(assets) * train_val_proportions[1])
-        assert (
-            n_val_assets > 0
-        ), "Validation set must contain at least 2 assets. max_asset should be > 9"
-        assets_splits = {
-            "train": assets[:n_train_assets],
-            "val": assets[n_train_assets : n_train_assets + n_val_assets],
-            "test": assets[n_train_assets + n_val_assets :],
-        }
+
+        if download_all:
+            assets_splits = {"all": assets}
+        else:
+            assert (
+                n_val_assets > 0
+            ), "Validation set must contain at least 2 assets. max_asset should be > 9"
+            assets_splits = {
+                "train": assets[:n_train_assets],
+                "val": assets[n_train_assets : n_train_assets + n_val_assets],
+                "test": assets[n_train_assets + n_val_assets :],
+            }
 
         for name_split, assets_split in assets_splits.items():
             if len(assets_split) == 0:
