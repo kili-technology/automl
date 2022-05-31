@@ -62,6 +62,16 @@ class BBoxAnnotation(TypedDict):
     type: str
 
 
+def inspect(e):
+    kili_print("Error while executing YoloV5:")
+    for k, v in e.__dict__.items():
+        print(k)
+        if isinstance(v, bytes):
+            print(v.decode("utf-8"))
+        else:
+            print(v)
+
+
 class UltralyticsObjectDetectionModel(BaseModel):
 
     ml_task: MLTaskT = "OBJECT_DETECTION"
@@ -163,15 +173,14 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 *args_from_json,
             ]
             print("Executing Yolo with command line:", " ".join(args))
-            subprocess.run(args, cwd=yolov5_path, env=yolo_env, capture_output=True, check=True)
+            res = subprocess.run(
+                args, cwd=yolov5_path, env=yolo_env, capture_output=True, check=True
+            )
+
+            inspect(res)
         except subprocess.CalledProcessError as e:
-            kili_print("Error while executing YoloV5:")
-            for k, v in e.__dict__.items():
-                print(k)
-                if isinstance(v, bytes):
-                    print(v.decode("utf-8"))
-                else:
-                    print(v)
+            inspect(e)
+
             raise AutoMLYoloException()
 
         shutil.copy(config_data_path, model_output_path)
