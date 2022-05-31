@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import warnings
 from datetime import datetime
 from functools import reduce
@@ -173,11 +174,24 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 *args_from_json,
             ]
             print("Executing Yolo with command line:", " ".join(args))
-            res = subprocess.run(
-                args, cwd=yolov5_path, env=yolo_env, capture_output=True, check=True
-            )
 
-            inspect(res)
+            with open("/tmp/test.log", "wb") as f:
+                process = subprocess.Popen(
+                    args,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    cwd=yolov5_path,
+                    env=yolo_env,
+                )
+                for line in iter(process.stdout.readline, b""):  # type:ignore
+                    sys.stdout.write(line.decode(sys.stdout.encoding))
+
+                print("process return code:", process.returncode)
+                output, error = process.communicate()
+                if process.returncode != 0:
+                    print(output)
+                    print(error)
+                    raise AutoMLYoloException()
         except subprocess.CalledProcessError as e:
             inspect(e)
 
