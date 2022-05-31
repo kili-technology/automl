@@ -15,7 +15,7 @@ class Options:
     api_endpoint = click.option(
         "--api-endpoint",
         default="https://cloud.kili-technology.com/api/label/v2/graphql",
-        help="Kili Endpoint. Usefull to access staging environment.",
+        help="Kili API endpoint. Can be used to specify 'on premise' environment",
     )
 
     api_key = click.option(
@@ -142,8 +142,6 @@ class PredictOptions:
         type=str,
         help=(
             "Use a model trained of a different project to predict on project_id."
-            "This is usefull if you do not want to pollute the original project with "
-            "experimental predictions."
             "This argument is ignored if --from-model is used."
         ),
     )
