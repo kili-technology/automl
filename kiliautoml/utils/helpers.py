@@ -3,6 +3,7 @@ import os
 import random
 from glob import glob
 from typing import Any, List, Optional, Tuple
+from warnings import warn
 
 import numpy as np
 import torch
@@ -12,7 +13,7 @@ from typing_extensions import get_args
 
 from kiliautoml.utils.constants import HOME, InputTypeT
 from kiliautoml.utils.memoization import kili_project_memoizer
-from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT
+from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeT
 
 
 def set_all_seeds(seed):
@@ -147,6 +148,40 @@ def get_assets(
         kili_print(f"No {status_in} assets found in project {project_id}.")
         raise Exception("There is no asset matching the query.")
     return assets
+
+
+def get_label(asset: AssetT, strategy: LabelMergeT):
+    def last_order(json_response):
+        type_order = {}
+        type_order["REVIEW"] = 4
+        type_order["DEFAULT"] = 3
+        type_order["PREDICTION"] = 2
+        type_order["INFERENCE"] = 1
+        type_order["AUTOSAVE"] = 0
+        type_value = type_order[json_response["labelType"]]
+        return (type_value, json_response["createdAt"])
+
+    def first_order(json_response):
+        type_order = {}
+        type_order["REVIEW"] = 0
+        type_order["DEFAULT"] = 1
+        type_order["PREDICTION"] = 2
+        type_order["INFERENCE"] = 3
+        type_order["AUTOSAVE"] = 4
+        type_value = type_order[json_response["labelType"]]
+        return (type_value, json_response["createdAt"])
+
+    labels = asset["labels"]
+    if len(labels) > 0:
+        if strategy == "first":
+            labels.sort(key=first_order)
+            return labels[0]
+        else:
+            labels.sort(key=last_order)
+            return labels[-1]
+    else:
+        warn(f"Asset {asset['id']} does not have any label available")
+        return None
 
 
 def get_project(kili, project_id: str) -> Tuple[InputTypeT, JobsT, str]:

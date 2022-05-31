@@ -24,10 +24,11 @@ from kiliautoml.utils.helpers import (
     JobPredictions,
     categories_from_job,
     ensure_dir,
+    get_label,
     kili_print,
 )
 from kiliautoml.utils.path import Path, PathHF
-from kiliautoml.utils.type import AssetT, JobT, TrainingArgsT
+from kiliautoml.utils.type import AssetT, JobT, LabelMergeT, TrainingArgsT
 
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
@@ -56,6 +57,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         self,
         *,
         assets: List[AssetT],
+        label_merge: LabelMergeT,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool = False,
@@ -81,7 +83,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             os.remove(path_dataset)
         job_categories = categories_from_job(self.job)
         if not os.path.exists(path_dataset):
-            self._write_dataset(assets, self.job_name, path_dataset, job_categories)
+            self._write_dataset(assets, self.job_name, path_dataset, job_categories, label_merge)
         raw_datasets = datasets.load_dataset(  # type: ignore
             "json",
             data_files=path_dataset,
@@ -174,13 +176,16 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         return job_predictions
 
-    def _write_dataset(self, assets, job_name, path_dataset, job_categories):
+    def _write_dataset(self, assets, job_name, path_dataset, job_categories, label_merge):
         with open(ensure_dir(path_dataset), "w") as handler:
             for asset in assets:
-                if job_name in asset["labels"][0]["jsonResponse"]:
-                    label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0][
-                        "name"
-                    ]
+                kili_label = get_label(asset, label_merge)
+                if (kili_label is None) or (job_name not in kili_label["jsonResponse"]):
+                    asset_id = asset["id"]
+                    warn(f"${asset_id}: No annotation for job ${job_name}")
+                    return
+                else:
+                    label_category = kili_label["jsonResponse"][job_name]["categories"][0]["name"]
                     handler.write(
                         json.dumps(
                             {
@@ -190,9 +195,6 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                         )
                         + "\n"
                     )
-                else:
-                    asset_id = asset["id"]
-                    warn(f"Asset {asset_id} does not have {job_name} annotation")
 
     @staticmethod
     def _compute_asset_classification(model_framework, tokenizer, model, asset):
