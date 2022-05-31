@@ -85,8 +85,6 @@ def test_image_classification(mocker):
             "1",
             "--batch-size",
             "2",
-            "--cv-folds",
-            "2",
         ],
     )
     debug_subprocess_pytest(result)

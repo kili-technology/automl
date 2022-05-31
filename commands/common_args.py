@@ -77,7 +77,7 @@ class Options:
         "--randomize-assets",
         default=True,
         type=bool,
-        help="Whether or not to fetch assets from Kili randomized",
+        help="Whether or not to shuffle Kili assets",
     )
 
 
