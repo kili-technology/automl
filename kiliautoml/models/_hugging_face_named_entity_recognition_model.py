@@ -259,7 +259,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             os.remove(path_dataset)
         if not os.path.exists(path_dataset):
             with open(ensure_dir(path_dataset), "w") as handler:
-                for asset in tqdm(assets):
+                for asset in tqdm(assets, desc="Converting assets to huggingface dataset"):
                     self._write_asset(job_name, labels_to_ids, handler, asset)
 
         return label_list

@@ -41,14 +41,13 @@ def test_image_classification(mocker):
     mocker.patch("kili.client.Kili.create_predictions")
 
     runner = CliRunner()
+    project_id = "abcdefg"
     result = runner.invoke(
         main.kiliautoml,
         [
             "train",
-            "--api-endpoint",
-            "https://staging.cloud.kili-technology.com/api/label/v2/graphql",
             "--project-id",
-            "cl2fy98y3004p0m0y8klq62co",
+            project_id,
             "--max-assets",
             "300",
             "--disable-wandb",
@@ -64,10 +63,8 @@ def test_image_classification(mocker):
         main.kiliautoml,
         [
             "predict",
-            "--api-endpoint",
-            "https://staging.cloud.kili-technology.com/api/label/v2/graphql",
             "--project-id",
-            "cl2fy98y3004p0m0y8klq62co",
+            project_id,
             "--max-assets",
             "300",
             "--batch-size",
@@ -80,10 +77,8 @@ def test_image_classification(mocker):
         main.kiliautoml,
         [
             "label_errors",
-            "--api-endpoint",
-            "https://staging.cloud.kili-technology.com/api/label/v2/graphql",
             "--project-id",
-            "cl2fy98y3004p0m0y8klq62co",
+            project_id,
             "--max-assets",
             "300",
             "--epochs",

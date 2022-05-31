@@ -211,7 +211,9 @@ def save_errors(found_errors, job_path: str):
 def upload_errors_to_kili(found_errors, kili):
     kili_print("Updating metadatas for the concerned assets")
     first = min(100, len(found_errors))
-    for skip in tqdm(range(0, len(found_errors), first)):
+    for skip in tqdm(
+        range(0, len(found_errors), first), desc="Updating asset metadata with labeling error flag"
+    ):
         error_assets = kili.assets(
             asset_id_in=found_errors[skip : skip + first], fields=["id", "metadata"]
         )

@@ -84,7 +84,7 @@ def download_project_images(
 
     throttling_per_call = 60.0 / 250  # Kili API calls are limited to 250 per minute
 
-    for asset in tqdm(assets):
+    for asset in tqdm(assets, desc="Downloading images"):
         tic = time.time()
         n_try = 0
 
@@ -128,7 +128,7 @@ def download_project_text(
 
     throttling_per_call = 60.0 / 250  # Kili API calls are limited to 250 per minute
 
-    for asset in tqdm(assets):
+    for asset in tqdm(assets, desc="Downloading text content"):
         tic = time.time()
         n_try = 0
         content = ""
@@ -163,7 +163,7 @@ def download_project_image_clean_lab(*, assets, api_key, data_path, job_name):
     """
     shutil.rmtree(data_path, ignore_errors=True)
 
-    for asset in tqdm(assets):
+    for asset in tqdm(assets, desc="Downloading images"):
         img_data = download_asset_binary(api_key, asset["content"])
         img_name = asset["labels"][0]["jsonResponse"][job_name]["categories"][0]["name"]
         img_path = os.path.join(data_path, img_name)

@@ -283,7 +283,7 @@ def embeddings_images(images: List[PILImage], batch_size=4) -> np.ndarray:  # ty
     color_images = [im.convert("RGB") for im in images]
     img2vec = Img2Vec(cuda=torch.cuda.is_available(), model="efficientnet_b7")
     vecs = []
-    for imgs in tqdm(list(chunked(color_images, batch_size))):
+    for imgs in tqdm(list(chunked(color_images, batch_size)), desc="Computing embeddings"):
         _ = np.array(img2vec.get_vec(imgs))
         vecs.append(_)
     return np.concatenate(vecs, axis=0)
