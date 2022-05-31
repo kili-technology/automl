@@ -25,6 +25,7 @@ setup(
         "typing_extensions",
         "wandb==0.12.10",
         "ipython",
+        "ratelimit",
     ],
     entry_points={
         "console_scripts": [
