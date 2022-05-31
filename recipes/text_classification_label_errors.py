@@ -70,6 +70,7 @@ def create_project_if_not_exists():
             },
             project_id=project_id,
         )
+    return project
 
 
 if __name__ == "__main__":
@@ -85,6 +86,7 @@ if __name__ == "__main__":
             continue
         prediction = np.argmax(pred_probs[i])
         external_id = f"test[{i}]"
+        print(external_id)
         project_id = project["id"]
         labels = kili.labels(
             asset_external_id_in=[external_id], project_id=project_id, fields=["createdAt", "id"]
