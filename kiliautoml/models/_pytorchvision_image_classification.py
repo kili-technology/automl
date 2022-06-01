@@ -167,7 +167,16 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             job_name=self.job_name,
             external_id_array=[asset["externalId"] for asset in assets],
             model_name_array=[self.model_name] * len(assets),
-            json_response_array=list(np.argmax(probs, axis=1)),
+            json_response_array=[
+                {
+                    "CLASSIFICATION_JOB": {
+                        "categories": [
+                            {"name": list(self.class_name_to_idx.keys())[np.argmax(prob)]}
+                        ]
+                    }
+                }
+                for prob in probs
+            ],
             predictions_probability=list(np.max(probs, axis=1)),
         )
         return job_predictions
