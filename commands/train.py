@@ -21,7 +21,7 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.helpers import get_assets, get_project, kili_print
 from kiliautoml.utils.memoization import clear_automl_cache
-from kiliautoml.utils.type import AssetStatusT, LabelMergeT
+from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 
 
 @click.command()
@@ -51,7 +51,7 @@ def main(
     project_id: str,
     epochs: int,
     asset_status_in: List[AssetStatusT],
-    label_merge: LabelMergeT,
+    label_merge_strategy: LabelMergeStrategyT,
     target_job: List[str],
     max_assets: int,
     randomize_assets: bool,
@@ -106,7 +106,7 @@ def main(
 
             training_loss = model.train(
                 assets=assets,
-                label_merge=label_merge,
+                label_merge_strategy=label_merge_strategy,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
@@ -131,7 +131,7 @@ def main(
 
             training_loss = model.train(
                 assets=assets,
-                label_merge=label_merge,
+                label_merge_strategy=label_merge_strategy,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
@@ -154,7 +154,7 @@ def main(
             )
             training_loss = model.train(
                 assets=assets,
-                label_merge=label_merge,
+                label_merge_strategy=label_merge_strategy,
                 epochs=epochs,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,

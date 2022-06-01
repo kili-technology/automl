@@ -13,7 +13,7 @@ from typing_extensions import get_args
 
 from kiliautoml.utils.constants import HOME, InputTypeT
 from kiliautoml.utils.memoization import kili_project_memoizer
-from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeT
+from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeStrategyT
 
 
 def set_all_seeds(seed):
@@ -150,7 +150,7 @@ def get_assets(
     return assets
 
 
-def get_label(asset: AssetT, strategy: LabelMergeT):
+def get_label(asset: AssetT, strategy: LabelMergeStrategyT):
     def last_order(json_response):
         type_order = {}
         type_order["REVIEW"] = 4

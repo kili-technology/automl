@@ -33,7 +33,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
-from kiliautoml.utils.type import AssetT, JobT, LabelMergeT
+from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT
 
 env = Environment(
     loader=FileSystemLoader(os.path.abspath(PathUltralytics.ULTRALYTICS_REL_PATH)),
@@ -101,7 +101,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         self,
         *,
         assets: List[AssetT],
-        label_merge: LabelMergeT,
+        label_merge_strategy: LabelMergeStrategyT,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -140,7 +140,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             kili_api_key=api_key,
             assets=assets,
             job_name=self.job_name,
-            label_merge=label_merge,
+            label_merge_strategy=label_merge_strategy,
         )
 
         with open(config_data_path, "w") as f:
@@ -209,7 +209,13 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
     @staticmethod
     def _yaml_preparation(
-        *, data_path: str, class_names: List[str], kili_api_key: str, assets, job_name, label_merge
+        *,
+        data_path: str,
+        class_names: List[str],
+        kili_api_key: str,
+        assets,
+        job_name,
+        label_merge_strategy,
     ):
 
         print("Downloading datasets from Kili")
@@ -242,15 +248,15 @@ class UltralyticsObjectDetectionModel(BaseModel):
             print(path_labels)
             os.makedirs(path_labels, exist_ok=True)
             for asset in assets_split:
-                kili_label = get_label(asset, label_merge)
-                if (kili_label is None) or (job_name not in kili_label["jsonResponse"]):
+                label = get_label(asset, label_merge_strategy)
+                if (label is None) or (job_name not in label["jsonResponse"]):
                     asset_id = asset["id"]
                     warnings.warn(f"${asset_id}: No annotation for job ${job_name}")
                     return
                 else:
                     asset_id = asset["id"] + ".txt"  # type: ignore
                     with open(os.path.join(path_labels, asset_id), "w") as handler:
-                        json_response = kili_label["jsonResponse"]
+                        json_response = label["jsonResponse"]
                         for job in json_response.values():
                             save_annotations_to_yolo_format(names, handler, job)
 
