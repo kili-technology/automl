@@ -8,11 +8,9 @@ import torch.backends.cudnn as cudnn
 import torch.utils.data as torch_Data
 from cleanlab.filter import find_label_issues
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from torchvision import datasets
 from tqdm import tqdm
 
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.cleanlab.train_cleanlab import combine_folds
 from kiliautoml.utils.constants import (
     HOME,
     ModelFrameworkT,
@@ -74,7 +72,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
 
         self.class_name_to_idx = {}
         for i, category in enumerate(job["content"]["categories"]):
-            self.class_name_to_idx[job["content"]["categories"][category]["name"]] = i
+            self.class_name_to_idx[category] = i
         self.class_names = list(self.class_name_to_idx.keys())
 
     def train(
@@ -227,6 +225,8 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 labels.append(kili_label["jsonResponse"][self.job_name]["categories"][0]["name"])
 
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
+        pyx = np.empty((len(labels), len(self.class_name_to_idx)))
+
         for cv_fold in tqdm(range(cv_n_folds), desc="Training and predicting on several folds"):
             # Split train into train and holdout for particular cv_fold.
             cv_train_idx, cv_holdout_idx = list(kf.split(range(len(labels)), labels))[cv_fold]
@@ -243,10 +243,8 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 )
                 for x in ["train", "val"]
             }
-            holdout_dataset = ClassificationTrainDataset(
+            holdout_dataset = ClassificationPredictDataset(
                 [images[i] for i in cv_holdout_idx],
-                [labels[i] for i in cv_holdout_idx],
-                self.class_name_to_idx,
                 data_transforms["val"],
             )
             if verbose >= 1:
@@ -276,22 +274,17 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             )
 
             probs = predict_probabilities(holdout_loader, model, verbose=verbose)
-            probs_path = os.path.join(self.model_dir, "model_fold_{}__probs.npy".format(cv_fold))
-            np.save(probs_path, probs)
+            pyx[cv_holdout_idx] = probs
 
-        psx_path = combine_folds(
-            data_dir=self.data_dir,
-            model_dir=self.model_dir,
-            num_classes=len(self.class_names),
-            verbose=verbose,
+        destination = os.path.join(self.model_dir, "train_model_intel_pyx.npy")
+        np.save(destination, pyx)
+
+        labels_idx = [self.class_name_to_idx[label] for label in labels]
+        noise_indices = find_label_issues(
+            labels_idx, pyx, return_indices_ranked_by="normalized_margin"
         )
-
-        psx = np.load(psx_path)
-        train_imgs = datasets.ImageFolder(self.data_dir).imgs
-
-        noise_indices = find_label_issues(labels, psx, return_indices_ranked_by="normalized_margin")
 
         noise_paths = []
         for idx in noise_indices:
-            noise_paths.append(os.path.basename(train_imgs[idx][0])[:-4])
+            noise_paths.append(images[idx].id)
         return noise_paths
