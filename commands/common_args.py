@@ -28,7 +28,6 @@ class Options:
         help="Model framework (eg. pytorch, tensorflow)",
         type=click.Choice(get_args(ModelFrameworkT)),
     )
-
     model_name = click.option(
         "--model-name",
         default=None,
@@ -120,7 +119,7 @@ class TrainOptions:
             "for one asset. AutoML always select the best type of label ('Review' then "
             "'Default'). When there are several labels for the highest priority label type, "
             "the user can specify if the last label is taken or the first one"
-        )
+        ),
     )
     disable_wandb = click.option(
         "--disable-wandb",
