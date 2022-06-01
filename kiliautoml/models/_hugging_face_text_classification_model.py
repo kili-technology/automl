@@ -231,6 +231,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         self,
         *,
         assets: List[AssetT],
+        label_merge: LabelMergeT,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,

@@ -20,7 +20,7 @@ from kiliautoml.utils.helpers import (
     upload_errors_to_kili,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
-from kiliautoml.utils.type import AssetStatusT
+from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 
 
 @click.command()
@@ -51,6 +51,7 @@ def main(
     dry_run: bool,
     epochs: int,
     asset_status_in: List[AssetStatusT],
+    label_merge_strategy: LabelMergeStrategyT,
     max_assets: int,
     randomize_assets: bool,
     batch_size: int,
@@ -103,6 +104,7 @@ def main(
             )
             found_errors = image_classification_model.find_errors(
                 assets=assets,
+                label_merge=label_merge_strategy,
                 cv_n_folds=cv_folds,
                 epochs=epochs,
                 batch_size=batch_size,

@@ -4,12 +4,87 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.utils.data as torch_Data
-from torchvision import models
+from torch.utils.data import Dataset
+from torchvision import models, transforms
 
 from kiliautoml.utils.constants import ModelNameT, ModelRepositoryT
 from kiliautoml.utils.helpers import set_default
 from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
+
+data_transforms = {
+    "train": transforms.Compose(
+        [
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ]
+    ),
+    "val": transforms.Compose(
+        [
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+        ]
+    ),
+}
+
+
+class ClassificationTrainDataset(Dataset):  # type: ignore
+    def __init__(self, images, labels, class_name_to_idx, transform=None):
+        """
+        Args:
+            Images (list of DownloadedImages)
+            Labels (list of string)
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.images = images
+        self.labels = labels
+        self.class_name_to_idx = class_name_to_idx
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        image = self.images[idx].image
+        image = image.convert("RGB")
+        label_idx = self.class_name_to_idx[self.labels[idx]]
+        if self.transform:
+            image = self.transform(image)
+        return image, label_idx
+
+
+class ClassificationPredictDataset(Dataset):  # type: ignore
+    def __init__(self, images, transform=None):
+        """
+        Args:
+            Images (list of DownloadedImages)
+            Labels (list of string)
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.images = images
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        image = self.images[idx].image
+        image = image.convert("RGB")
+        if self.transform:
+            image = self.transform(image)
+        return image
 
 
 def set_model_name_image_classification(model_name) -> ModelNameT:
@@ -93,17 +168,16 @@ def predict_probabilities(
     model.eval()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
-    n_total = len(loader.dataset.imgs) / float(loader.batch_size)  # type:ignore
+    n_total = len(loader.dataset) / float(loader.batch_size)  # type:ignore
     outputs = []
     if verbose >= 2:
         print("Computing probabilities for this fold")
     with torch.no_grad():
-        for i, (input, target) in enumerate(loader):
+        for i, input in enumerate(loader):
             if verbose >= 2:
                 print("\rComplete: {:.1%}".format(i / n_total), end="")
             if torch.cuda.is_available():
                 input = input.cuda(non_blocking=True)
-                target = target.cuda(non_blocking=True)
 
             # compute output
             outputs.append(model(input))

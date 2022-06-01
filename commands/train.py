@@ -177,6 +177,7 @@ def main(
 
             training_loss = image_classification_model.train(
                 assets=assets,
+                label_merge=label_merge,
                 batch_size=batch_size,
                 epochs=epochs,
                 clear_dataset_cache=clear_dataset_cache,

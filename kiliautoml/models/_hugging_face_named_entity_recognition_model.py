@@ -424,6 +424,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         self,
         *,
         assets: List[AssetT],
+        label_merge: LabelMergeT,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
