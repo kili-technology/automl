@@ -9,6 +9,7 @@ import requests
 from PIL import Image
 from PIL.Image import Image as PILImage
 from ratelimit import limits
+from requests import Response
 from tqdm import tqdm
 
 from kiliautoml.utils.helpers import kili_print
@@ -34,15 +35,19 @@ ONE_MINUTE = 60
 
 
 @limits(calls=250, period=ONE_MINUTE)
-def throttled_request(api_key, asset_content):
-    response = requests.get(
-        asset_content,
-        headers={
-            "Authorization": f"X-API-Key: {api_key}",
-        },
-    )
-    assert response.status_code == 200
-    return response
+def throttled_request(api_key, asset_content) -> Response:  # type: ignore
+    for _ in range(20):
+        try:
+            response = requests.get(
+                asset_content,
+                headers={
+                    "Authorization": f"X-API-Key: {api_key}",
+                },
+            )
+            assert response.status_code == 200
+            return response
+        except Exception:
+            time.sleep(1)
 
 
 @kili_memoizer
