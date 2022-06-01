@@ -1,7 +1,7 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-brightgreen.svg)](https://flake8.pycqa.org/)
-
+[![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
 
 # Kili AutoML
 
@@ -17,6 +17,12 @@ Iterate.
 Once you are satisfied with the performance, in one line of code, **serve** the model and monitor the performance keeping a human in the loop with [Kili](https://www.kili-technology.com).
 
 ## Installation
+Creating a new conda or virtualenv before cloning is recommended because we install a lot of packages:
+
+```bash
+conda create --name automl python=3.7
+conda activate automl
+```
 
 ```bash
 git clone https://github.com/kili-technology/automl.git
@@ -24,9 +30,11 @@ cd automl
 git submodule update --init
 ```
 
-then
+then install the requirements:
+
 ```bash
-pip install -r requirements.txt -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
+pip install -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
+pip install -e .
 ```
 
 ## Usage
