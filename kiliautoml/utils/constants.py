@@ -17,6 +17,7 @@ ModelFrameworkT = Literal["pytorch", "tensorflow"]
 
 ModelNameT = Literal[
     "bert-base-multilingual-cased",
+    "distilbert-base-uncased",
     "distilbert-base-cased",
     "efficientnet_b0",
     "resnet50",

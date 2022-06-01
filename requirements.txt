@@ -1,3 +1,4 @@
+# Do not forget to add in setup.py
 cleanlab>=2.0.0
 click
 datasets
@@ -16,3 +17,5 @@ img2vec-pytorch==1.0.1
 more-itertools
 typing_extensions
 wandb==0.12.10
+ipython
+ratelimit

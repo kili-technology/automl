@@ -2,8 +2,7 @@ import json
 
 from click.testing import CliRunner
 
-import predict
-import train
+import main
 from tests.e2e.utils_test_e2e import debug_subprocess_pytest
 
 
@@ -35,17 +34,18 @@ def test_object_detection(mocker):
         "kiliautoml.utils.download_assets.download_asset_binary",
         side_effect=mocked__download_asset_binary,
     )
-    mocker.patch("train.get_assets", side_effect=mocked__get_assets)  # ?
-    mocker.patch("predict.get_assets", side_effect=mocked__get_assets)
-    mocker.patch("label_errors.get_assets", side_effect=mocked__get_assets)
-    mocker.patch("label_errors.upload_errors_to_kili")
+    mocker.patch("commands.train.get_assets", side_effect=mocked__get_assets)  # ?
+    mocker.patch("commands.predict.get_assets", side_effect=mocked__get_assets)
+    mocker.patch("commands.label_errors.get_assets", side_effect=mocked__get_assets)
+    mocker.patch("commands.label_errors.upload_errors_to_kili")
     mocker.patch("kili.client.Kili.create_predictions")
 
     runner = CliRunner()
     project_id = "abcdefg"
     result = runner.invoke(
-        train.main,
+        main.kiliautoml,
         [
+            "train",
             "--project-id",
             project_id,
             "--max-assets",
@@ -58,8 +58,9 @@ def test_object_detection(mocker):
     debug_subprocess_pytest(result)
 
     result = runner.invoke(
-        predict.main,
+        main.kiliautoml,
         [
+            "predict",
             "--project-id",
             project_id,
             "--max-assets",

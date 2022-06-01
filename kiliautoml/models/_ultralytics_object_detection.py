@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import warnings
 from datetime import datetime
 from functools import reduce
@@ -60,6 +61,16 @@ class BBoxAnnotation(TypedDict):
     boundingPoly: Any
     categories: List[CategoryNameConfidence]
     type: str
+
+
+def inspect(e):
+    kili_print("Error while executing YoloV5:")
+    for k, v in e.__dict__.items():
+        print(k)
+        if isinstance(v, bytes):
+            print(v.decode("utf-8"))
+        else:
+            print(v)
 
 
 class UltralyticsObjectDetectionModel(BaseModel):
@@ -163,15 +174,27 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 *args_from_json,
             ]
             print("Executing Yolo with command line:", " ".join(args))
-            subprocess.run(args, cwd=yolov5_path, env=yolo_env, capture_output=True, check=True)
+
+            with open("/tmp/test.log", "wb") as f:
+                process = subprocess.Popen(
+                    args,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    cwd=yolov5_path,
+                    env=yolo_env,
+                )
+                for line in iter(process.stdout.readline, b""):  # type:ignore
+                    sys.stdout.write(line.decode(sys.stdout.encoding))
+
+                print("process return code:", process.returncode)
+                output, error = process.communicate()
+                if process.returncode != 0:
+                    print(output)
+                    print(error)
+                    raise AutoMLYoloException()
         except subprocess.CalledProcessError as e:
-            kili_print("Error while executing YoloV5:")
-            for k, v in e.__dict__.items():
-                print(k)
-                if isinstance(v, bytes):
-                    print(v.decode("utf-8"))
-                else:
-                    print(v)
+            inspect(e)
+
             raise AutoMLYoloException()
 
         shutil.copy(config_data_path, model_output_path)

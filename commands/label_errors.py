@@ -1,9 +1,9 @@
-import os
 from typing import List
 
 import click
 from kili.client import Kili
 
+from commands.common_args import LabelErrorOptions, Options, TrainOptions
 from kiliautoml.models._pytorchvision_image_classification import (
     PyTorchVisionImageClassificationModel,
 )
@@ -24,80 +24,24 @@ from kiliautoml.utils.type import AssetStatusT
 
 
 @click.command()
-@click.option(
-    "--api-endpoint",
-    default="https://cloud.kili-technology.com/api/label/v2/graphql",
-    help="Kili Endpoint",
-)
-@click.option("--api-key", default=os.environ.get("KILI_API_KEY"), help="Kili API Key")
-@click.option(
-    "--cv-folds", default=4, type=int, show_default=True, help="Number of CV folds to use"
-)
-@click.option("--model-framework", default=None, help="Model framework (eg. pytorch, tensorflow)")
-@click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
-@click.option(
-    "--clear-dataset-cache",
-    default=False,
-    is_flag=True,
-    help="Tells if the dataset cache must be cleared",
-)
-@click.option(
-    "--target-job",
-    default=None,
-    multiple=True,
-    help=(
-        "Add a specific target job for which to detect the errors "
-        "(multiple can be passed if --target-job <job_name> is repeated)"
-        "Example: python label_errors.py --target-job BBOX --target-job CLASSIFICATION"
-    ),
-)
-@click.option(
-    "--dry-run",
-    default=None,
-    is_flag=True,
-    help=(
-        "Get the labeling errors, save on the hard drive, but do not upload them into the Kili"
-        " project"
-    ),
-)
-@click.option(
-    "--epochs",
-    default=10,
-    type=int,
-    show_default=True,
-    help="Number of epochs to train each CV fold",
-)
-@click.option(
-    "--batch-size",
-    default=8,
-    type=int,
-    help="Maximum number of assets to consider",
-)
-@click.option(
-    "--asset-status-in",
-    default="LABELED,TO_REVIEW,REVIEWED",
-    callback=lambda _, __, x: x.upper().split(",") if x else None,
-    help=(
-        "Comma separated (without space) list of Kili asset status to select "
-        "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
-        "Example: python label_errors.py --asset-status-in TO_REVIEW,REVIEWED "
-    ),
-)
-@click.option("--max-assets", default=None, type=int, help="Maximum number of assets to consider")
-@click.option(
-    "--randomize-assets",
-    default=True,
-    type=bool,
-    help="Wether or not to fetch assets from Kili randomized",
-)
-@click.option(
-    "--model-name",
-    default=None,
-    help="Model name (one of efficientnet_b0, resnet50)",
-)
-@click.option("--project-id", default=None, required=True, help="Kili project ID")
-@click.option("--verbose", default=0, type=int, help="Verbose level")
+@Options.project_id
+@Options.api_endpoint
+@Options.api_key
+@Options.model_framework
+@Options.model_name
+@Options.model_repository
+@Options.target_job
+@Options.max_assets
+@Options.clear_dataset_cache
+@Options.randomize_assets
+@Options.batch_size
+@Options.verbose
+@TrainOptions.epochs
+@LabelErrorOptions.asset_status_in
+@LabelErrorOptions.cv_folds
+@LabelErrorOptions.dry_run
 def main(
+    project_id: str,
     api_endpoint: str,
     api_key: str,
     clear_dataset_cache: bool,
@@ -111,7 +55,6 @@ def main(
     randomize_assets: bool,
     batch_size: int,
     model_name: ModelNameT,
-    project_id: str,
     verbose: int,
     cv_folds: int,
 ):
@@ -175,7 +118,3 @@ def main(
                     upload_errors_to_kili(found_errors, kili)
         else:
             raise NotImplementedError
-
-
-if __name__ == "__main__":
-    main()

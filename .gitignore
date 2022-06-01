@@ -7,3 +7,4 @@ kiliautoml/utils/ultralytics/yolov5/artifacts
 .envs
 wandb/**
 .mypy_cache/**
+kiliautoml.egg-info/**

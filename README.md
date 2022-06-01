@@ -1,7 +1,7 @@
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-brightgreen.svg)](https://flake8.pycqa.org/)
-
+[![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
 
 # Kili AutoML
 
@@ -17,6 +17,12 @@ Iterate.
 Once you are satisfied with the performance, in one line of code, **serve** the model and monitor the performance keeping a human in the loop with [Kili](https://www.kili-technology.com).
 
 ## Installation
+Creating a new conda or virtualenv before cloning is recommended because we install a lot of packages:
+
+```bash
+conda create --name automl python=3.7
+conda activate automl
+```
 
 ```bash
 git clone https://github.com/kili-technology/automl.git
@@ -24,9 +30,11 @@ cd automl
 git submodule update --init
 ```
 
-then
+then install the requirements:
+
 ```bash
-pip install -r requirements.txt -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
+pip install -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
+pip install -e .
 ```
 
 ## Usage
@@ -38,7 +46,7 @@ We made AutoML very simple to use. The following sections detail how to call the
 We train the model with the following command line:
 
 ```bash
-python train.py \
+kiliautoml train \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID
 ```
@@ -69,7 +77,7 @@ Compute model loss to infer when you can stop labeling.
 Once trained, the models are used to predict the labels, add preannotations on the assets that have not yet been labeled by the annotators. The annotators can then validate or correct the preannotations in the Kili user interface.
 
 ```bash
-python predict.py \
+kiliautoml predict \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID
 ```
@@ -80,7 +88,7 @@ Using trained models to push pre-annotations onto unlabeled assets typically spe
 
 You can also use a model coming from another project, if they have the same ontology:
 ```bash
-python predict.py \
+kiliautoml predict \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID \
     --from-project $ANOTHER_KILI_PROJECT_ID
@@ -91,7 +99,7 @@ python predict.py \
 Once roughly 10 percent of the assets in a project have been labeled, it is possible to prioritize the remaining assets to be labeled on the project in order to prioritize the assets that will best improve the performance of the model.
 
 ```bash
-python prioritize.py \
+kiliautoml prioritize \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID
 ```
@@ -105,7 +113,7 @@ Note: for image classification projects only.
 The error is human, fortunately there are methods to detect potential annotation problems. `label_errors.py` allows to identify potential problems and create a 'potential_label_error' filter on the project's asset exploration view:
 
 ```bash
-python label_errors.py \
+kiliautoml label_errors \
     --api-key $KILI_API_KEY \
     --project-id $KILI_PROJECT_ID
 ```

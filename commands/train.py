@@ -6,6 +6,7 @@ import click
 from kili.client import Kili
 from tabulate import tabulate
 
+from commands.common_args import Options, TrainOptions
 from kiliautoml.models import (
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
@@ -24,85 +25,22 @@ from kiliautoml.utils.type import AssetStatusT
 
 
 @click.command()
-@click.option(
-    "--api-endpoint",
-    default="https://cloud.kili-technology.com/api/label/v2/graphql",
-    help="Kili Endpoint",
-)
-@click.option("--api-key", default=os.environ.get("KILI_API_KEY", ""), help="Kili API Key")
-@click.option(
-    "--model-framework", default="pytorch", help="Model framework (eg. pytorch, tensorflow)"
-)
-@click.option("--model-name", default=None, help="Model name (eg. bert-base-cased)")
-@click.option("--model-repository", default=None, help="Model repository (eg. huggingface)")
-@click.option("--project-id", required=True, help="Kili project ID")
-@click.option(
-    "--asset-status-in",
-    default="LABELED,TO_REVIEW,REVIEWED",
-    callback=lambda _, __, x: x.upper().split(",") if x else None,
-    help=(
-        "Comma separated (without space) list of Kili asset status to select "
-        "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
-        "Example: python train.py --asset-status-in TO_REVIEW,REVIEWED "
-    ),
-)
-@click.option(
-    "--target-job",
-    default=None,
-    multiple=True,
-    help=(
-        "Add a specific target job on which to train on "
-        "(multiple can be passed if --target-job <job_name> is repeated) "
-        "Example: python train.py --target-job BBOX --target-job CLASSIFICATION"
-    ),
-)
-@click.option(
-    "--epochs",
-    default=10,
-    type=int,
-    show_default=True,
-    help="Number of epochs to train for",
-)
-@click.option(
-    "--max-assets",
-    default=None,
-    type=int,
-    help="Maximum number of assets to consider",
-)
-@click.option(
-    "--randomize-assets",
-    default=True,
-    type=bool,
-    help="Wether or not to fetch assets from Kili randomized",
-)
-@click.option(
-    "--json-args",
-    default=None,
-    type=str,
-    help=(
-        "Specific parameters to pass to the trainer "
-        "(for example Yolov5 train, Hugging Face transformers, ..."
-    ),
-)
-@click.option(
-    "--clear-dataset-cache",
-    default=False,
-    is_flag=True,
-    help="Tells if the dataset cache must be cleared",
-)
-@click.option(
-    "--disable-wandb",
-    default=False,
-    is_flag=True,
-    help="Tells if wandb is disabled",
-)
-@click.option(
-    "--batch-size",
-    default=8,
-    type=int,
-    help="Maximum number of assets to consider",
-)
-@click.option("--verbose", default=0, type=int, help="Verbose level")
+@Options.project_id
+@Options.api_endpoint
+@Options.api_key
+@Options.model_framework
+@Options.model_name
+@Options.model_repository
+@Options.target_job
+@Options.max_assets
+@Options.randomize_assets
+@Options.clear_dataset_cache
+@Options.batch_size
+@Options.verbose
+@TrainOptions.asset_status_in
+@TrainOptions.epochs
+@TrainOptions.json_args
+@TrainOptions.disable_wandb
 def main(
     api_endpoint: str,
     api_key: str,
@@ -121,7 +59,11 @@ def main(
     verbose: int,
     batch_size: int,
 ):
-    """ """
+    """Train a model and then save the model in the cache.
+
+
+    If there are multiple jobs in your projects, a model will be trained on each job.
+    """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
 
@@ -243,7 +185,3 @@ def main(
         training_losses.append([job_name, training_loss])
     kili_print()
     print(tabulate(training_losses, headers=["job_name", "training_loss"]))
-
-
-if __name__ == "__main__":
-    main()
