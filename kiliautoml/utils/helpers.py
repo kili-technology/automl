@@ -151,25 +151,15 @@ def get_assets(
 
 
 def get_label(asset: AssetT, strategy: LabelMergeStrategyT):
+    TYPE_ORDER = {
+        v: i for i, v in enumerate(["REVIEW", "DEFAULT", "PREDICTION", "INFERENCE", "AUTOSAVE"])
+    }
+
     def last_order(json_response):
-        type_order = {}
-        type_order["REVIEW"] = 4
-        type_order["DEFAULT"] = 3
-        type_order["PREDICTION"] = 2
-        type_order["INFERENCE"] = 1
-        type_order["AUTOSAVE"] = 0
-        type_value = type_order[json_response["labelType"]]
-        return (type_value, json_response["createdAt"])
+        return (-TYPE_ORDER[json_response["labelType"]], json_response["createdAt"])
 
     def first_order(json_response):
-        type_order = {}
-        type_order["REVIEW"] = 0
-        type_order["DEFAULT"] = 1
-        type_order["PREDICTION"] = 2
-        type_order["INFERENCE"] = 3
-        type_order["AUTOSAVE"] = 4
-        type_value = type_order[json_response["labelType"]]
-        return (type_value, json_response["createdAt"])
+        return (TYPE_ORDER[json_response["labelType"]], json_response["createdAt"])
 
     labels = asset["labels"]
     if len(labels) > 0:
