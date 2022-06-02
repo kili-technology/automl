@@ -432,7 +432,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         self,
         *,
         assets: List[AssetT],
-        label_merge: LabelMergeT,
+        label_merge_strategy: LabelMergeStrategyT,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,

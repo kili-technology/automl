@@ -30,7 +30,7 @@ from kiliautoml.utils.pytorchvision.image_classification import (
     set_model_name_image_classification,
     set_model_repository_image_classification,
 )
-from kiliautoml.utils.type import AssetT, JobT, LabelMergeT
+from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT
 
 
 class PyTorchVisionImageClassificationModel(BaseModel):
@@ -79,7 +79,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self,
         *,
         assets: List[AssetT],
-        label_merge: LabelMergeT,
+        label_merge_strategy: LabelMergeStrategyT,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -97,7 +97,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         labels = []
         for asset in assets:
-            kili_label = get_label(asset, label_merge)
+            kili_label = get_label(asset, label_merge_strategy)
             if (kili_label is None) or (self.job_name not in kili_label["jsonResponse"]):
                 asset_id = asset["id"]
                 warn(f"${asset_id}: No annotation for job ${self.job_name}")
@@ -201,7 +201,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self,
         *,
         assets: List[AssetT],
-        label_merge: LabelMergeT,
+        label_merge_strategy: LabelMergeStrategyT,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
@@ -216,7 +216,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         labels = []
         for asset in assets:
-            kili_label = get_label(asset, label_merge)
+            kili_label = get_label(asset, label_merge_strategy)
             if (kili_label is None) or (self.job_name not in kili_label["jsonResponse"]):
                 asset_id = asset["id"]
                 warn(f"${asset_id}: No annotation for job ${self.job_name}")
