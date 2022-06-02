@@ -104,7 +104,7 @@ def main(
             )
             found_errors = image_classification_model.find_errors(
                 assets=assets,
-                label_merge=label_merge_strategy,
+                label_merge_strategy=label_merge_strategy,
                 cv_n_folds=cv_folds,
                 epochs=epochs,
                 batch_size=batch_size,
