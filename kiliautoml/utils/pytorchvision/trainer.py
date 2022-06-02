@@ -38,7 +38,7 @@ def train_model_pytorch(
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
-    best_loss = 0.0
+    best_loss = float("inf")
     for epoch in range(epochs):
         if verbose >= 2:
             print(f"Epoch {epoch + 1}/{epochs}")
@@ -82,7 +82,7 @@ def train_model_pytorch(
                 print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}")
 
             # deep copy the model
-            if phase == "val" and epoch_acc > best_acc:
+            if phase == "val" and epoch_loss < best_loss:
                 best_acc = epoch_acc
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(model.state_dict())
