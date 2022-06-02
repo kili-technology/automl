@@ -1,6 +1,6 @@
 import os
+import warnings
 from typing import Any, List, Optional
-from warnings import warn
 
 import numpy as np
 import torch
@@ -70,9 +70,9 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self.model_path = model_path
         self.data_dir = data_dir
 
-        self.class_name_to_idx = {}
-        for i, category in enumerate(job["content"]["categories"]):
-            self.class_name_to_idx[category] = i
+        self.class_name_to_idx = {
+            category: i for i, category in enumerate(job["content"]["categories"])
+        }
         self.class_names = list(self.class_name_to_idx.keys())
 
     def train(
@@ -90,30 +90,30 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         _ = clear_dataset_cache
 
         if disable_wandb is False:
-            warn("Wandb is not supported for this model.")
+            warnings.warn("Wandb is not supported for this model.")
 
         images = download_project_images(
             api_key=api_key, assets=assets, output_folder=self.data_dir
         )
         labels = []
         for asset in assets:
-            kili_label = get_label(asset, label_merge_strategy)
-            if (kili_label is None) or (self.job_name not in kili_label["jsonResponse"]):
+            label = get_label(asset, label_merge_strategy)
+            if (label is None) or (self.job_name not in label["jsonResponse"]):
                 asset_id = asset["id"]
-                warn(f"${asset_id}: No annotation for job ${self.job_name}")
+                warnings.warn(f"${asset_id}: No annotation for job ${self.job_name}")
                 return 0.0
             else:
-                labels.append(kili_label["jsonResponse"][self.job_name]["categories"][0]["name"])
+                labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
 
-        split = {}
-        split["train"], split["val"] = train_test_split(
+        splits = {}
+        splits["train"], splits["val"] = train_test_split(
             range(len(labels)), test_size=0.2, random_state=42
         )
 
         image_datasets = {
             x: ClassificationTrainDataset(
-                [images[i] for i in split[x]],
-                [labels[i] for i in split[x]],
+                [images[i] for i in splits[x]],
+                [labels[i] for i in splits[x]],
                 self.class_name_to_idx,
                 data_transforms[x],
             )
@@ -159,7 +159,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
 
         model.load_state_dict(torch.load(model_path))
         loader = torch_Data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
-        probs = predict_probabilities(loader, model, verbose=verbose)
+        prob_arrays = predict_probabilities(loader, model, verbose=verbose)
 
         job_predictions = JobPredictions(
             job_name=self.job_name,
@@ -169,13 +169,13 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 {
                     "CLASSIFICATION_JOB": {
                         "categories": [
-                            {"name": list(self.class_name_to_idx.keys())[np.argmax(prob)]}
+                            {"name": list(self.class_name_to_idx.keys())[np.argmax(prob_array)]}
                         ]
                     }
                 }
-                for prob in probs
+                for prob_array in prob_arrays
             ],
-            predictions_probability=list(np.max(probs, axis=1)),
+            predictions_probability=list(np.max(prob_arrays, axis=1)),
         )
         return job_predictions
 
@@ -216,13 +216,13 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         labels = []
         for asset in assets:
-            kili_label = get_label(asset, label_merge_strategy)
-            if (kili_label is None) or (self.job_name not in kili_label["jsonResponse"]):
+            label = get_label(asset, label_merge_strategy)
+            if (label is None) or (self.job_name not in label["jsonResponse"]):
                 asset_id = asset["id"]
-                warn(f"${asset_id}: No annotation for job ${self.job_name}")
+                warnings.warn(f"${asset_id}: No annotation for job ${self.job_name}")
                 return 0.0
             else:
-                labels.append(kili_label["jsonResponse"][self.job_name]["categories"][0]["name"])
+                labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
 
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
         pyx = np.empty((len(labels), len(self.class_name_to_idx)))
@@ -230,14 +230,14 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         for cv_fold in tqdm(range(cv_n_folds), desc="Training and predicting on several folds"):
             # Split train into train and holdout for particular cv_fold.
             cv_train_idx, cv_holdout_idx = list(kf.split(range(len(labels)), labels))[cv_fold]
-            split = {}
-            split["train"], split["val"] = train_test_split(
+            splits = {}
+            splits["train"], splits["val"] = train_test_split(
                 cv_train_idx, test_size=0.2, random_state=42
             )
             image_datasets = {
                 x: ClassificationTrainDataset(
-                    [images[i] for i in split[x]],
-                    [labels[i] for i in split[x]],
+                    [images[i] for i in splits[x]],
+                    [labels[i] for i in splits[x]],
                     self.class_name_to_idx,
                     data_transforms[x],
                 )

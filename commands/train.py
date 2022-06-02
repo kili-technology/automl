@@ -38,7 +38,7 @@ from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 @Options.batch_size
 @Options.verbose
 @TrainOptions.asset_status_in
-@TrainOptions.label_merge_strategy
+@Options.label_merge_strategy
 @TrainOptions.epochs
 @TrainOptions.json_args
 @TrainOptions.disable_wandb
