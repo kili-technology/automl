@@ -38,6 +38,7 @@ from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 @Options.verbose
 @TrainOptions.epochs
 @LabelErrorOptions.asset_status_in
+@TrainOptions.label_merge_strategy
 @LabelErrorOptions.cv_folds
 @LabelErrorOptions.dry_run
 def main(
