@@ -1,6 +1,7 @@
 import json
 import os
 import random
+from datetime import datetime
 from glob import glob
 from typing import Any, List, Optional, Tuple
 from warnings import warn
@@ -25,6 +26,24 @@ def set_all_seeds(seed):
 
 
 set_all_seeds(42)
+
+TYPE_ORDER = {
+    v: i for i, v in enumerate(["REVIEW", "DEFAULT", "PREDICTION", "INFERENCE", "AUTOSAVE"])
+}
+
+
+def last_order(json_response):
+    return (
+        TYPE_ORDER[json_response["labelType"]],
+        -datetime.strptime(json_response["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp(),
+    )
+
+
+def first_order(json_response):
+    return (
+        TYPE_ORDER[json_response["labelType"]],
+        datetime.strptime(json_response["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp(),
+    )
 
 
 def categories_from_job(job: JobT):
@@ -151,24 +170,11 @@ def get_assets(
 
 
 def get_label(asset: AssetT, strategy: LabelMergeStrategyT):
-    TYPE_ORDER = {
-        v: i for i, v in enumerate(["REVIEW", "DEFAULT", "PREDICTION", "INFERENCE", "AUTOSAVE"])
-    }
-
-    def last_order(json_response):
-        return (-TYPE_ORDER[json_response["labelType"]], json_response["createdAt"])
-
-    def first_order(json_response):
-        return (TYPE_ORDER[json_response["labelType"]], json_response["createdAt"])
 
     labels = asset["labels"]
     if len(labels) > 0:
-        if strategy == "first":
-            labels.sort(key=first_order)
-            return labels[0]
-        else:
-            labels.sort(key=last_order)
-            return labels[-1]
+        key = first_order if strategy == "first" else last_order
+        return min(labels, key=key)
     else:
         warn(f"Asset {asset['id']} does not have any label available")
         return None
