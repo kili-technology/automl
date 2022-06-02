@@ -28,7 +28,6 @@ class Options:
         help="Model framework (eg. pytorch, tensorflow)",
         type=click.Choice(get_args(ModelFrameworkT)),
     )
-
     model_name = click.option(
         "--model-name",
         default=None,
@@ -112,7 +111,16 @@ class TrainOptions:
             "(for example Yolov5 train, Hugging Face transformers, ..."
         ),
     )
-
+    label_merge_strategy = click.option(
+        "--label-merge-strategy",
+        default="last",
+        help=(
+            "Strategy to select the right label when more than one are available"
+            "for one asset. AutoML always select the best type of label ('Review' then "
+            "'Default'). When there are several labels for the highest priority label type, "
+            "the user can specify if the last label is taken or the first one"
+        ),
+    )
     disable_wandb = click.option(
         "--disable-wandb",
         default=False,

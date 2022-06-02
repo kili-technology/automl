@@ -21,7 +21,7 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.helpers import get_assets, get_project, kili_print
 from kiliautoml.utils.memoization import clear_automl_cache
-from kiliautoml.utils.type import AssetStatusT
+from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 
 
 @click.command()
@@ -38,6 +38,7 @@ from kiliautoml.utils.type import AssetStatusT
 @Options.batch_size
 @Options.verbose
 @TrainOptions.asset_status_in
+@TrainOptions.label_merge_strategy
 @TrainOptions.epochs
 @TrainOptions.json_args
 @TrainOptions.disable_wandb
@@ -50,6 +51,7 @@ def main(
     project_id: str,
     epochs: int,
     asset_status_in: List[AssetStatusT],
+    label_merge_strategy: LabelMergeStrategyT,
     target_job: List[str],
     max_assets: int,
     randomize_assets: bool,
@@ -104,6 +106,7 @@ def main(
 
             training_loss = model.train(
                 assets=assets,
+                label_merge_strategy=label_merge_strategy,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
@@ -128,6 +131,7 @@ def main(
 
             training_loss = model.train(
                 assets=assets,
+                label_merge_strategy=label_merge_strategy,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
@@ -150,6 +154,7 @@ def main(
             )
             training_loss = model.train(
                 assets=assets,
+                label_merge_strategy=label_merge_strategy,
                 epochs=epochs,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,

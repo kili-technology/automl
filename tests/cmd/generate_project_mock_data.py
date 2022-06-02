@@ -1,21 +1,29 @@
 import json
 import os
-import sys
 
 import requests
 from kili.client import Kili
 
 if __name__ == "__main__":
-    project_id = sys.argv[1]
+    project_id = "cl0wihlop3rwc0mtj9np28ti2"
 
     kili = Kili(api_key=os.environ["KILI_API_KEY"])
-    g = kili.assets(project_id=project_id, as_generator=True)
+    fields = [
+        "id",
+        "externalId",
+        "content",
+        "labels.createdAt",
+        "labels.jsonResponse",
+        "labels.labelType",
+    ]
 
+    g = kili.assets(
+        project_id=project_id,
+        fields=fields,
+        status_in=["LABELED", "TO_REVIEW", "REVIEWED"],
+        as_generator=True,
+    )
     assets = list(g)[:50]
-
-    for a in assets:
-        for label in a["labels"]:
-            del label["author"]
 
     with open("tests/e2e/fixtures/object_detection_assets_fixture.json", "w") as f:
         json.dump(assets, f)
@@ -25,6 +33,19 @@ if __name__ == "__main__":
     del project[0]["roles"]  # type:ignore
     with open("tests/e2e/fixtures/object_detection_project_fixture.json", "w") as f:
         json.dump(project, f)
+
+    project_id = "cl1e4umogdgon0ly4737z82lc"
+    g = kili.assets(
+        project_id=project_id,
+        fields=fields,
+        status_in=["LABELED", "TO_REVIEW", "REVIEWED"],
+        as_generator=True,
+    )
+
+    assets = list(g)[:52]
+
+    with open("tests/e2e/fixtures/text_assets_fixture.json", "w") as f:
+        json.dump(assets, f)
 
     c = {}
     api_key = os.environ["KILI_API_KEY"]
@@ -42,3 +63,9 @@ if __name__ == "__main__":
 
     with open("tests/e2e/fixtures/text_content_fixture.json", "w") as f:
         json.dump(c, f)
+
+    project = kili.projects(project_id=project_id)  # type:ignore
+
+    del project[0]["roles"]  # type:ignore
+    with open("tests/e2e/fixtures/text_project_fixture.json", "w") as f:
+        json.dump(project, f)
