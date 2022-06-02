@@ -171,7 +171,7 @@ def predict_probabilities(
     n_total = len(loader.dataset) / float(loader.batch_size)  # type:ignore
     outputs = []
     if verbose >= 2:
-        print("Computing probabilities for this fold")
+        print("Computing probabilities for this fold with device: {}".format(device))
     with torch.no_grad():
         for i, input in enumerate(loader):
             if verbose >= 2:

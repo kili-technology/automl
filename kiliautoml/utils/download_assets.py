@@ -8,7 +8,7 @@ from typing import List, Optional
 import requests
 from PIL import Image
 from PIL.Image import Image as PILImage
-from ratelimit import limits
+from ratelimit import limits, sleep_and_retry
 from requests import Response
 from tqdm import tqdm
 
@@ -34,6 +34,7 @@ class DownloadedText:
 ONE_MINUTE = 60
 
 
+@sleep_and_retry
 @limits(calls=250, period=ONE_MINUTE)
 def throttled_request(api_key, asset_content) -> Response:  # type: ignore
     for _ in range(20):
