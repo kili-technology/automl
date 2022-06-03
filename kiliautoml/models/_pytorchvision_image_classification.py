@@ -175,7 +175,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 }
                 for prob_array in prob_arrays
             ],
-            predictions_probability=list(np.max(prob_arrays, axis=1)),
+            predictions_probability=prob_arrays,
         )
         return job_predictions
 
