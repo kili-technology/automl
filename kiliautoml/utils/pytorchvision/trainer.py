@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
+from tqdm.autonotebook import trange
 
 # Necessary on mac for train and predict.
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -39,7 +40,7 @@ def train_model_pytorch(
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
     best_loss = float("inf")
-    for epoch in range(epochs):
+    for epoch in trange(epochs, desc="Training"):
         if verbose >= 2:
             print(f"Epoch {epoch + 1}/{epochs}")
             print("-" * 10)

@@ -220,12 +220,12 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             if (label is None) or (self.job_name not in label["jsonResponse"]):
                 asset_id = asset["id"]
                 warnings.warn(f"${asset_id}: No annotation for job ${self.job_name}")
-                return 0.0
+                return []
             else:
                 labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
 
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
-        pyx = np.empty((len(labels), len(self.class_name_to_idx)))
+        probability_matrix = np.empty((len(labels), len(self.class_name_to_idx)))
 
         for cv_fold in tqdm(range(cv_n_folds), desc="Training and predicting on several folds"):
             # Split train into train and holdout for particular cv_fold.
@@ -274,14 +274,14 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             )
 
             probs = predict_probabilities(holdout_loader, model, verbose=verbose)
-            pyx[cv_holdout_idx] = probs
+            probability_matrix[cv_holdout_idx] = probs
 
-        destination = os.path.join(self.model_dir, "train_model_intel_pyx.npy")
-        np.save(destination, pyx)
+        destination = os.path.join(self.model_dir, "train_model_intel_probability_matrix.npy")
+        np.save(destination, probability_matrix)
 
         labels_idx = [self.class_name_to_idx[label] for label in labels]
         noise_indices = find_label_issues(
-            labels_idx, pyx, return_indices_ranked_by="normalized_margin"
+            labels_idx, probability_matrix, return_indices_ranked_by="normalized_margin"
         )
 
         noise_paths = []
