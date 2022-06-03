@@ -40,9 +40,8 @@ def train_model_pytorch(
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
     best_loss = float("inf")
-    for epoch in trange(epochs, desc="Training"):
+    for _ in trange(epochs, desc="Training - Epoch"):
         if verbose >= 2:
-            print(f"Epoch {epoch + 1}/{epochs}")
             print("-" * 10)
 
         # Each epoch has a training and validation phase
