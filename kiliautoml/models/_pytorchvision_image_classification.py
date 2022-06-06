@@ -1,6 +1,4 @@
-import copy
 import os
-import shutil
 import warnings
 from typing import Any, List, Optional
 
@@ -10,33 +8,29 @@ import torch.backends.cudnn as cudnn
 import torch.utils.data as torch_Data
 from cleanlab.filter import find_label_issues
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from torchvision import datasets
 from tqdm import tqdm
 
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.cleanlab.datasets import (
-    get_original_image_dataset,
-    prepare_image_dataset,
-    separe_holdout_datasets,
-)
-from kiliautoml.utils.cleanlab.train_cleanlab import combine_folds
 from kiliautoml.utils.constants import (
     HOME,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
 )
-from kiliautoml.utils.download_assets import download_project_image_clean_lab
-from kiliautoml.utils.helpers import JobPredictions
+from kiliautoml.utils.download_assets import download_project_images
+from kiliautoml.utils.helpers import JobPredictions, get_label
 from kiliautoml.utils.path import Path, PathPytorchVision
 from kiliautoml.utils.pytorchvision.image_classification import (
+    ClassificationPredictDataset,
+    ClassificationTrainDataset,
+    data_transforms,
     get_trained_model_image_classif,
     initialize_model_img_class,
     predict_probabilities,
     set_model_name_image_classification,
     set_model_repository_image_classification,
 )
-from kiliautoml.utils.type import AssetT, JobT
+from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT
 
 
 class PyTorchVisionImageClassificationModel(BaseModel):
@@ -76,29 +70,16 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self.model_path = model_path
         self.data_dir = data_dir
 
-    def prepare_dataset(
-        self,
-        assets: List[AssetT],
-        api_key,
-    ):
-        shutil.rmtree(self.data_dir, ignore_errors=True)
-        download_project_image_clean_lab(
-            assets=assets,
-            api_key=api_key,
-            data_path=self.data_dir,
-            job_name=self.job_name,
-        )
-        original_image_datasets = get_original_image_dataset(self.data_dir)
-
-        class_names = original_image_datasets["train"].classes  # type: ignore
-        labels = [label for _, label in datasets.ImageFolder(self.data_dir).imgs]
-        assert len(class_names) > 1, "There should be at least 2 classes in the dataset."
-        return original_image_datasets, labels, class_names
+        self.class_name_to_idx = {
+            category: i for i, category in enumerate(job["content"]["categories"])
+        }
+        self.class_names = list(self.class_name_to_idx.keys())
 
     def train(
         self,
         *,
         assets: List[AssetT],
+        label_merge_strategy: LabelMergeStrategyT,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -110,17 +91,41 @@ class PyTorchVisionImageClassificationModel(BaseModel):
 
         if disable_wandb is False:
             warnings.warn("Wandb is not supported for this model.")
-        original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
 
-        image_datasets = copy.deepcopy(original_image_datasets)
-        train_idx, val_idx = train_test_split(range(len(labels)), test_size=0.2, random_state=42)
-        prepare_image_dataset(train_idx, val_idx, image_datasets)
+        images = download_project_images(
+            api_key=api_key, assets=assets, output_folder=self.data_dir
+        )
+        labels = []
+        for asset in assets:
+            label = get_label(asset, label_merge_strategy)
+            if (label is None) or (self.job_name not in label["jsonResponse"]):
+                asset_id = asset["id"]
+                warnings.warn(f"${asset_id}: No annotation for job ${self.job_name}")
+                return 0.0
+            else:
+                labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
+
+        splits = {}
+        splits["train"], splits["val"] = train_test_split(
+            range(len(labels)), test_size=0.2, random_state=42
+        )
+
+        image_datasets = {
+            x: ClassificationTrainDataset(
+                [images[i] for i in splits[x]],
+                [labels[i] for i in splits[x]],
+                self.class_name_to_idx,
+                data_transforms[x],
+            )
+            for x in ["train", "val"]
+        }
+
         _, loss = get_trained_model_image_classif(
             epochs=epochs,
             model_name=self.model_name,  # type: ignore
             batch_size=batch_size,
             verbose=verbose,
-            class_names=class_names,
+            class_names=self.class_names,
             image_datasets=image_datasets,
             save_model_path=self.model_path,
         )
@@ -139,27 +144,38 @@ class PyTorchVisionImageClassificationModel(BaseModel):
     ):
         _ = clear_dataset_cache
 
-        original_image_datasets, _, class_names = self.prepare_dataset(assets, api_key)
+        images = download_project_images(
+            api_key=api_key, assets=assets, output_folder=self.data_dir
+        )
+
+        dataset = ClassificationPredictDataset(images, data_transforms["val"])
 
         model = initialize_model_img_class(
             self.model_name,  # type: ignore
-            class_names,
+            self.class_names,
         )
 
         model_path = self.get_model_path(model_path, from_project)
 
         model.load_state_dict(torch.load(model_path))
-        loader = torch_Data.DataLoader(
-            original_image_datasets["val"], batch_size=batch_size, shuffle=False, num_workers=1
-        )
-        probs = predict_probabilities(loader, model, verbose=verbose)
+        loader = torch_Data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
+        prob_arrays = predict_probabilities(loader, model, verbose=verbose)
 
         job_predictions = JobPredictions(
             job_name=self.job_name,
             external_id_array=[asset["externalId"] for asset in assets],
             model_name_array=[self.model_name] * len(assets),
-            json_response_array=[asset["labels"][0]["jsonResponse"] for asset in assets],
-            predictions_probability=list(np.max(probs, axis=1)),
+            json_response_array=[
+                {
+                    "CLASSIFICATION_JOB": {
+                        "categories": [
+                            {"name": list(self.class_name_to_idx.keys())[np.argmax(prob_array)]}
+                        ]
+                    }
+                }
+                for prob_array in prob_arrays
+            ],
+            predictions_probability=prob_arrays,
         )
         return job_predictions
 
@@ -185,6 +201,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self,
         *,
         assets: List[AssetT],
+        label_merge_strategy: LabelMergeStrategyT,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
@@ -194,27 +211,56 @@ class PyTorchVisionImageClassificationModel(BaseModel):
     ) -> Any:
         _ = clear_dataset_cache
 
-        original_image_datasets, labels, class_names = self.prepare_dataset(assets, api_key)
+        images = download_project_images(
+            api_key=api_key, assets=assets, output_folder=self.data_dir
+        )
+        labels = []
+        for asset in assets:
+            label = get_label(asset, label_merge_strategy)
+            if (label is None) or (self.job_name not in label["jsonResponse"]):
+                asset_id = asset["id"]
+                warnings.warn(f"${asset_id}: No annotation for job ${self.job_name}")
+                return []
+            else:
+                labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
+
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
+        probability_matrix = np.empty((len(labels), len(self.class_name_to_idx)))
+
         for cv_fold in tqdm(range(cv_n_folds), desc="Training and predicting on several folds"):
             # Split train into train and holdout for particular cv_fold.
             cv_train_idx, cv_holdout_idx = list(kf.split(range(len(labels)), labels))[cv_fold]
-
-            image_datasets, holdout_dataset = separe_holdout_datasets(
-                cv_n_folds,
-                verbose,
-                original_image_datasets,
-                cv_fold,
-                cv_train_idx,
-                cv_holdout_idx,
+            splits = {}
+            splits["train"], splits["val"] = train_test_split(
+                cv_train_idx, test_size=0.2, random_state=42
             )
+            image_datasets = {
+                x: ClassificationTrainDataset(
+                    [images[i] for i in splits[x]],
+                    [labels[i] for i in splits[x]],
+                    self.class_name_to_idx,
+                    data_transforms[x],
+                )
+                for x in ["train", "val"]
+            }
+            holdout_dataset = ClassificationPredictDataset(
+                [images[i] for i in cv_holdout_idx],
+                data_transforms["val"],
+            )
+            if verbose >= 1:
+                print(f"\nCV Fold: {cv_fold+1}/{cv_n_folds}")
+                print(f"Train size: {len(image_datasets['train'])}")
+                print(f"Validation size: {len(image_datasets['val'])}")
+                print(f"Holdout size: {len(holdout_dataset)}")
+                print()
+
             model_name: ModelNameT = self.model_name  # type: ignore
 
             model, _ = get_trained_model_image_classif(
                 model_name=model_name,
                 batch_size=batch_size,
                 verbose=verbose,
-                class_names=class_names,
+                class_names=self.class_names,
                 epochs=epochs,
                 image_datasets=image_datasets,
                 save_model_path=None,
@@ -228,22 +274,17 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             )
 
             probs = predict_probabilities(holdout_loader, model, verbose=verbose)
-            probs_path = os.path.join(self.model_dir, "model_fold_{}__probs.npy".format(cv_fold))
-            np.save(probs_path, probs)
+            probability_matrix[cv_holdout_idx] = probs
 
-        psx_path = combine_folds(
-            data_dir=self.data_dir,
-            model_dir=self.model_dir,
-            num_classes=len(class_names),
-            verbose=verbose,
+        destination = os.path.join(self.model_dir, "train_model_intel_probability_matrix.npy")
+        np.save(destination, probability_matrix)
+
+        labels_idx = [self.class_name_to_idx[label] for label in labels]
+        noise_indices = find_label_issues(
+            labels_idx, probability_matrix, return_indices_ranked_by="normalized_margin"
         )
-
-        psx = np.load(psx_path)
-        train_imgs = datasets.ImageFolder(self.data_dir).imgs
-
-        noise_indices = find_label_issues(labels, psx, return_indices_ranked_by="normalized_margin")
 
         noise_paths = []
         for idx in noise_indices:
-            noise_paths.append(os.path.basename(train_imgs[idx][0])[:-4])
+            noise_paths.append(images[idx].id)
         return noise_paths

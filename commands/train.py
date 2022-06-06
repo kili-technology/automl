@@ -38,7 +38,7 @@ from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 @Options.batch_size
 @Options.verbose
 @TrainOptions.asset_status_in
-@TrainOptions.label_merge_strategy
+@Options.label_merge_strategy
 @TrainOptions.epochs
 @TrainOptions.json_args
 @TrainOptions.disable_wandb
@@ -177,6 +177,7 @@ def main(
 
             training_loss = image_classification_model.train(
                 assets=assets,
+                label_merge_strategy=label_merge_strategy,
                 batch_size=batch_size,
                 epochs=epochs,
                 clear_dataset_cache=clear_dataset_cache,

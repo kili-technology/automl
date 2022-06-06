@@ -79,6 +79,17 @@ class Options:
         help="Whether or not to shuffle Kili assets",
     )
 
+    label_merge_strategy = click.option(
+        "--label-merge-strategy",
+        default="last",
+        help=(
+            "Strategy to select the right label when more than one are available"
+            "for one asset. AutoML always select the best type of label ('Review' then "
+            "'Default'). When there are several labels for the highest priority label type, "
+            "the user can specify if the last label is taken or the first one"
+        ),
+    )
+
 
 def asset_status_in(default: List[AssetStatusT]):
     default_string = ",".join(default) if default else None
@@ -109,16 +120,6 @@ class TrainOptions:
         help=(
             "Specific parameters to pass to the trainer "
             "(for example Yolov5 train, Hugging Face transformers, ..."
-        ),
-    )
-    label_merge_strategy = click.option(
-        "--label-merge-strategy",
-        default="last",
-        help=(
-            "Strategy to select the right label when more than one are available"
-            "for one asset. AutoML always select the best type of label ('Review' then "
-            "'Default'). When there are several labels for the highest priority label type, "
-            "the user can specify if the last label is taken or the first one"
         ),
     )
     disable_wandb = click.option(

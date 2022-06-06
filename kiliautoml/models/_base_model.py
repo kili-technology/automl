@@ -8,7 +8,7 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
 )
 from kiliautoml.utils.helpers import JobPredictions
-from kiliautoml.utils.type import AssetT, JobT
+from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT
 
 
 class BaseModel(metaclass=ABCMeta):
@@ -32,6 +32,7 @@ class BaseModel(metaclass=ABCMeta):
         self,
         *,
         assets: List[AssetT],
+        label_merge_strategy: LabelMergeStrategyT,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -59,6 +60,7 @@ class BaseModel(metaclass=ABCMeta):
         self,
         *,
         assets: List[AssetT],
+        label_merge_strategy: LabelMergeStrategyT,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
