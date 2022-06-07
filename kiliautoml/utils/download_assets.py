@@ -51,7 +51,6 @@ def throttled_request(api_key, asset_content, use_header=True, k=0) -> Response:
         assert response.status_code == 200
         return response
     except AssertionError:
-        print(f"{response.status_code} {response.reason}")
         return throttled_request(api_key, asset_content, use_header=not use_header, k=k + 1)
 
 
