@@ -1,6 +1,15 @@
 print("Loading KiliAutoML...")
 
 import sys
+from platform import python_version
+
+version = python_version()
+if "3.7." not in version:
+    print("KiliAutoML requires Python 3.7.x")
+    print("You are running Python {}".format(version))
+    print("Please create a new virtual environment and install KiliAutoML")
+    print("https://github.com/kili-technology/automl#installation")
+    sys.exit(1)
 
 import click
 from IPython.core import ultratb
