@@ -948,8 +948,8 @@ def confusion_filter(
 
             # If no prediction is strongly dominent and their is no alternate class significant
             # This is the central nodes of our "Neuron"
-            if (confidence_pred_class < cover_projection[1, 0]) and (
-                confidence_alt_pred_class < cover_alt_projection[1, 0]
+            if (confidence_pred_class <= cover_projection[1, 0]) and (
+                confidence_alt_pred_class <= cover_alt_projection[1, 0]
             ):
                 assignment.append(
                     pred_class
@@ -959,7 +959,7 @@ def confusion_filter(
             # If one prediction is strongly dominent
             # This is the axone of the Neuron
             for p in range(1, cover_projection.shape[1]):
-                if cover_projection[0, p] < confidence_pred_class < cover_projection[1, p]:
+                if cover_projection[0, p] <= confidence_pred_class <= cover_projection[1, p]:
                     assignment.append(
                         pred_class
                         * (cover_projection.shape[1] + n_classes * cover_alt_projection.shape[1])
@@ -968,12 +968,12 @@ def confusion_filter(
 
             # If no prediction is strongly dominent but their is an significant alternate class
             # This is the central nodes of our "Neuron"
-            if confidence_pred_class < cover_projection[0, 1]:
+            if confidence_pred_class <= cover_projection[0, 1]:
                 for a in range(1, cover_alt_projection.shape[1]):
                     if (
                         cover_alt_projection[0, a]
-                        < confidence_alt_pred_class
-                        < cover_alt_projection[1, a]
+                        <= confidence_alt_pred_class
+                        <= cover_alt_projection[1, a]
                     ):
                         assignment.append(
                             pred_class
@@ -1001,7 +1001,7 @@ def confusion_filter(
             confidence_pred_class = predictions[i, pred_class]
 
             for p in range(cover_projection.shape[1]):
-                if cover_projection[0, p] < confidence_pred_class < cover_projection[1, p]:
+                if cover_projection[0, p] <= confidence_pred_class <= cover_projection[1, p]:
                     assignment.append(
                         label * n_classes * cover_projection.shape[1]
                         # We only separate asset if the confidence in projected class is significant
