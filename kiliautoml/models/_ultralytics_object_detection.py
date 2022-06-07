@@ -226,6 +226,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         n_train_assets = math.floor(len(assets) * train_val_proportions[0])
         n_val_assets = math.floor(len(assets) * train_val_proportions[1])
+        assert (
+            n_val_assets > 0
+        ), "Validation set must contain at least 2 assets. max_asset should be > 9"
         assets_splits = {
             "train": assets[:n_train_assets],
             "val": assets[n_train_assets : n_train_assets + n_val_assets],
@@ -251,8 +254,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 label = get_label(asset, label_merge_strategy)
                 if (label is None) or (job_name not in label["jsonResponse"]):
                     asset_id = asset["id"]
-                    warnings.warn(f"${asset_id}: No annotation for job ${job_name}")
-                    return
+                    warnings.warn(f"assetId {asset_id}: No annotation for job ${job_name}")
                 else:
                     asset_id = asset["id"] + ".txt"  # type: ignore
                     with open(os.path.join(path_labels, asset_id), "w") as handler:
