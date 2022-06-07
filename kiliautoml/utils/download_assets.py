@@ -35,19 +35,24 @@ ONE_MINUTE = 60
 
 @sleep_and_retry
 @limits(calls=250, period=ONE_MINUTE)
-def throttled_request(api_key, asset_content) -> Response:  # type: ignore
-    for _ in range(20):
-        try:
-            response = requests.get(
-                asset_content,
-                headers={
-                    "Authorization": f"X-API-Key: {api_key}",
-                },
-            )
-            assert response.status_code == 200
-            return response
-        except Exception:
-            time.sleep(1)
+def throttled_request(api_key, asset_content, use_header=True, k=0) -> Response:  # type: ignore
+    if k == 20:
+        raise Exception("Too many retries")
+    if use_header:
+        response = requests.get(
+            asset_content,
+            headers={
+                "Authorization": f"X-API-Key: {api_key}",
+            },
+        )
+    else:
+        response = requests.get(asset_content)
+    try:
+        assert response.status_code == 200
+        return response
+    except AssertionError:
+        print(f"{response.status_code} {response.reason}")
+        return throttled_request(api_key, asset_content, use_header=not use_header, k=k + 1)
 
 
 @kili_memoizer
