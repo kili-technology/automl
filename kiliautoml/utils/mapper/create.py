@@ -132,7 +132,7 @@ class MapperClassification:
 
     def create_mapper(
         self,
-        cv_folds: int,
+        cv_folds: int = 4,
     ):
         # Compute embeddings
         kili_print("Computing embeddings")
