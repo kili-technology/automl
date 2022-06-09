@@ -16,6 +16,12 @@ Iterate.
 
 Once you are satisfied with the performance, in one line of code, **serve** the model and monitor the performance keeping a human in the loop with [Kili](https://www.kili-technology.com).
 
+## Quickstart
+
+You can try automl on a mock image classification project with this notebook.
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/image_classification.ipynb)
+
 ## Installation
 Creating a new conda or virtualenv before cloning is recommended because we install a lot of packages:
 
