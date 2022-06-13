@@ -42,5 +42,5 @@ pylint kiliautoml  --rcfile pyproject.toml --output-format=colorized
 To run one end-to-end test:
 
 ```bash
-PYTHONPATH=$(pwd) pytest -s tests/e2e/test_from_project.py
+python -m pytest -s tests/e2e/test_from_project.py
 ```
