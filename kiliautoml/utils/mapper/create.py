@@ -1,8 +1,9 @@
 import os
+import warnings
 from typing import Any, List, Optional
 
 import datasets
-import kmapper as km
+import kmapper as km  # type: ignore
 import numpy as np
 import pandas as pd
 import torch
@@ -22,7 +23,7 @@ from kiliautoml.utils.download_assets import (
     download_project_images,
     download_project_text,
 )
-from kiliautoml.utils.helpers import kili_print
+from kiliautoml.utils.helpers import get_label, kili_print
 from kiliautoml.utils.mapper.clustering import DensityMergeHierarchicalClustering
 from kiliautoml.utils.mapper.gudhi_mapper import (
     CoverComplex,
@@ -33,7 +34,7 @@ from kiliautoml.utils.mapper.gudhi_mapper import (
     gudhi_to_KM,
     topic_score,
 )
-from kiliautoml.utils.type import AssetStatusT, JobT
+from kiliautoml.utils.type import AssetStatusT, JobT, LabelMergeStrategyT
 
 
 def embeddings_text(list_text: List[str]):
@@ -100,7 +101,8 @@ class MapperClassification:
         job_name: str,
         assets_repository,  # check type
         asset_status_in: Optional[List[AssetStatusT]],
-        predictions: Optional[str],
+        label_merge_strategy: LabelMergeStrategyT,
+        predictions_path: Optional[str],
         focus_class: Optional[List[str]],
     ):
         self.job = job
@@ -109,9 +111,23 @@ class MapperClassification:
         self.assets = assets
         self.focus_class = focus_class
         self.input_type = input_type
-        self.predictions = predictions
-        if self.predictions is not None:
-            self.predictions = pd.read_csv(self.predictions)
+
+        predictions_df = None
+        self.predictions = []
+        if predictions_path is not None:
+            predictions_df = pd.read_csv(predictions_path)
+            for asset in assets:
+                prediction = predictions_df[predictions_df.iloc[0, :] == asset["id"], 1:]
+                self.predictions.append(prediction)
+
+        self.labels = []
+        for asset in assets:
+            label = get_label(asset, label_merge_strategy)
+            if (label is None) or (self.job_name not in label["jsonResponse"]):
+                asset_id = asset["id"]
+                warnings.warn(f"${asset_id}: No annotation for job ${self.job_name}")
+            else:
+                self.labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
 
         class_list = self.job["content"]["categories"]
         self.cat2id = {}

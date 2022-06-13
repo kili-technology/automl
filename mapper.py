@@ -6,7 +6,7 @@ from kili.client import Kili
 
 from kiliautoml.utils.helpers import get_assets, get_project, kili_print
 from kiliautoml.utils.mapper.create import MapperClassification
-from kiliautoml.utils.type import AssetStatusT
+from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 
 
 @click.command()
@@ -38,13 +38,25 @@ from kiliautoml.utils.type import AssetStatusT
     ),
 )
 @click.option(
+    "--label-merge-strategy",
+    default="last",
+    help=(
+        "Strategy to select the right label when more than one are available"
+        "for one asset. AutoML always select the best type of label ('Review' then "
+        "'Default'). When there are several labels for the highest priority label type, "
+        "the user can specify if the last label is taken or the first one"
+    ),
+)
+@click.option(
     "--max-assets",
     default=None,
     type=int,
     help="Maximum number of assets to consider",
 )
 @click.option("--assets-repository", default=None, help="Asset repository (eg. /content/assets/)")
-@click.option("--predictions", default=None, help="csv with predictions")
+@click.option(
+    "--predictions-path", default=None, help="csv file with predictions (first column = asset_id)"
+)
 @click.option(
     "--cv-folds",
     default=4,
@@ -67,9 +79,10 @@ def main(
     #    model_name: ModelNameT,
     #    model_repository: ModelRepositoryT,
     asset_status_in: Optional[List[AssetStatusT]],
+    label_merge_strategy: LabelMergeStrategyT,
     max_assets: int,
     assets_repository: str,
-    predictions: Optional[str],
+    predictions_path: Optional[str],
     cv_folds: int,
     focus_class: Optional[List[str]],
 ):
@@ -108,7 +121,8 @@ def main(
                 job_name=job_name,
                 assets_repository=assets_repository,
                 asset_status_in=asset_status_in,
-                predictions=predictions,
+                label_merge_strategy=label_merge_strategy,
+                predictions_path=predictions_path,
                 focus_class=focus_class,
             )
 

@@ -164,6 +164,7 @@ class DensityMergeHierarchicalClustering(ClusterMixin, BaseEstimator):  # type: 
         self.n_max_clusters = n_max_clusters
         self.min_clust_size = min_clust_size
         self.outliers_agglomeration_method = outliers_agglomeration_method
+        self.n_clusters_ = 0
 
     def fit(self, X, y=None):
         """Fit the hierarchical clustering from features, or distance matrix.

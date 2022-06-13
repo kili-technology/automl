@@ -7,7 +7,7 @@ from typing import List
 
 import datasets
 import gensim  # type: ignore
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore
 import nltk
 import numpy as np
 import pandas as pd
@@ -15,7 +15,7 @@ from gudhi import SimplexTree  # type: ignore
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from PIL import Image
 from scipy.spatial.distance import directed_hausdorff
-from skimage.util import img_as_ubyte
+from skimage.util import img_as_ubyte  # type: ignore
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.cluster import DBSCAN, AgglomerativeClustering
 from sklearn.metrics import pairwise_distances
@@ -507,7 +507,7 @@ class CoverComplex(BaseEstimator, TransformerMixin):  # type: ignore
             G (networkx graph): graph representing the 1-skeleton of the cover complex.
         """
         try:
-            import networkx as nx
+            import networkx as nx  # type: ignore
 
             st = self.simplex_tree
             G = nx.Graph()
