@@ -18,7 +18,7 @@ Once you are satisfied with the performance, in one line of code, **serve** the 
 
 ## Quickstart
 
-You can try automl on a mock image classification project with this notebook.
+You can try automl on a sample image classification project with this notebook.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/image_classification.ipynb)
 
