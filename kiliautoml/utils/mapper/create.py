@@ -100,6 +100,7 @@ class MapperClassification:
         job_name: str,
         assets_repository,  # check type
         asset_status_in: Optional[List[AssetStatusT]],
+        predictions: Optional[str],
         focus_class: Optional[List[str]],
     ):
         self.job = job
@@ -108,6 +109,9 @@ class MapperClassification:
         self.assets = assets
         self.focus_class = focus_class
         self.input_type = input_type
+        self.predictions = predictions
+        if self.predictions is not None:
+            self.predictions = pd.read_csv(self.predictions)
 
         class_list = self.job["content"]["categories"]
         self.cat2id = {}

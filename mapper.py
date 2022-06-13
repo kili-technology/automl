@@ -44,6 +44,7 @@ from kiliautoml.utils.type import AssetStatusT
     help="Maximum number of assets to consider",
 )
 @click.option("--assets-repository", default=None, help="Asset repository (eg. /content/assets/)")
+@click.option("--predictions", default=None, help="csv with predictions")
 @click.option(
     "--cv-folds",
     default=4,
@@ -68,6 +69,7 @@ def main(
     asset_status_in: Optional[List[AssetStatusT]],
     max_assets: int,
     assets_repository: str,
+    predictions: Optional[str],
     cv_folds: int,
     focus_class: Optional[List[str]],
 ):
@@ -106,6 +108,7 @@ def main(
                 job_name=job_name,
                 assets_repository=assets_repository,
                 asset_status_in=asset_status_in,
+                predictions=predictions,
                 focus_class=focus_class,
             )
 
