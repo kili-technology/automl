@@ -21,6 +21,7 @@ Usage - formats:
 import argparse
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
@@ -30,9 +31,12 @@ from tqdm import tqdm
 
 from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.label_errors.yolo_metrics import ap_per_class, box_iou
-from kiliautoml.utils.utltralytics.yolov5.models.common import DetectMultiBackend
-from kiliautoml.utils.utltralytics.yolov5.utils.datasets import create_dataloader
-from kiliautoml.utils.utltralytics.yolov5.utils.general import (
+
+sys.path.append("kiliautoml/utils/ultralytics/yolov5/")
+
+from kiliautoml.utils.ultralytics.yolov5.models.common import DetectMultiBackend  # noqa
+from kiliautoml.utils.ultralytics.yolov5.utils.datasets import create_dataloader  # noqa
+from kiliautoml.utils.ultralytics.yolov5.utils.general import (  # noqa
     LOGGER,
     check_dataset,
     check_img_size,
@@ -44,10 +48,9 @@ from kiliautoml.utils.utltralytics.yolov5.utils.general import (
     xywh2xyxy,
 )
 
-# sys.path.append("kiliautoml/utils/ultralytics/yolov5/")
-
-
 FILE = Path(__file__).resolve()
+
+os.environ["OMP_NUM_THREADS"] = "1"
 
 default_path = Path("")
 
@@ -59,19 +62,22 @@ def time_sync():
     return time.time()
 
 
-def process_batch(detections, labels, iouv):
+def process_batch(detections, labels_gt, iou_thresholds):
     """
     Return correct predictions matrix. Both sets of boxes are in (x1, y1, x2, y2) format.
     Arguments:
         detections (Array[N, 6]), x1, y1, x2, y2, conf, class
-        labels (Array[M, 5]), class, x1, y1, x2, y2
+        labels_gt (Array[M, 5]), class, x1, y1, x2, y2
+            "ground truth"
     Returns:
-        correct (Array[N, 10]), for 10 IoU levels
+        correct bool (Array[N, 10]), for 10 IoU levels (10=iou_thresholds.shape[0])
     """
-    correct = torch.zeros(detections.shape[0], iouv.shape[0], dtype=torch.bool, device=iouv.device)
-    iou = box_iou(labels[:, 1:], detections[:, :4])
+    correct = torch.zeros(
+        detections.shape[0], iou_thresholds.shape[0], dtype=torch.bool, device=iou_thresholds.device
+    )
+    iou = box_iou(labels_gt[:, 1:], detections[:, :4])
     x = torch.where(
-        (iou >= iouv[0]) & (labels[:, 0:1] == detections[:, 5])
+        (iou >= iou_thresholds[0]) & (labels_gt[:, 0:1] == detections[:, 5])
     )  # IoU above threshold and classes match
     if x[0].shape[0]:
         matches = (
@@ -82,8 +88,8 @@ def process_batch(detections, labels, iouv):
             matches = matches[np.unique(matches[:, 1], return_index=True)[1]]
             # matches = matches[matches[:, 2].argsort()[::-1]]
             matches = matches[np.unique(matches[:, 0], return_index=True)[1]]
-        matches = torch.Tensor(matches).to(iouv.device)
-        correct[matches[:, 1].long()] = matches[:, 2:3] >= iouv
+        matches = torch.Tensor(matches).to(iou_thresholds.device)
+        correct[matches[:, 1].long()] = matches[:, 2:3] >= iou_thresholds
     return correct
 
 
@@ -114,7 +120,7 @@ def run(
     # Load model
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
     stride, pt, jit, onnx, engine = model.stride, model.pt, model.jit, model.onnx, model.engine
-    imgsz = check_img_size(imgsz, s=stride)  # check image size
+    imgsz = check_img_size(imgsz, s=stride)  # type:ignore # check image size
     half &= (
         pt or jit or onnx or engine
     ) and device.type != "cpu"  # FP16 supported on limited backends with CUDA
@@ -127,8 +133,8 @@ def run(
         batch_size = 1  # export.py models default to batch-size 1
         device = torch.device("cpu")
         LOGGER.info(
-            f"Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for \
-            non-PyTorch backends"
+            f"Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for            "
+            " non-PyTorch backends"
         )
 
     # Data
@@ -137,8 +143,8 @@ def run(
     # Configure
     model.eval()
     nc = 1 if single_cls else int(data["nc"])  # number of classes
-    iouv = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
-    niou = iouv.numel()
+    iou_thresholds = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
+    niou = iou_thresholds.numel()
 
     image_names = []
 
@@ -153,33 +159,38 @@ def run(
         stride,
         single_cls,
         pad=pad,
-        rect=pt,
+        rect=pt,  # type:ignore
         workers=workers,
         prefix=colorstr(f"{task}: "),
     )[0]
 
-    seen = 0
+    image_with_labels_counter = 0
     names = {
-        k: v for k, v in enumerate(model.names if hasattr(model, "names") else model.module.names)
+        k: v
+        for k, v in enumerate(
+            model.names if hasattr(model, "names") else model.module.names  # type:ignore
+        )
     }
     s = ("%20s" + "%11s" * 6) % ("Class", "Images", "Labels", "P", "R", "mAP@.5", "mAP@.5:.95")
     dt, p, r, mp, mr, map50, map = [0.0, 0.0, 0.0], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     loss = torch.zeros(3, device=device)
     stats, ap, ap_class = [], [], []
+
+    # Predict by batch of images
     pbar = tqdm(dataloader, desc=s, bar_format="{l_bar}{bar:10}{r_bar}{bar:-10b}")  # progress bar
-    for _, (im, targets, paths, shapes) in enumerate(pbar):
+    for _, (imgs_batche, targets, paths, shapes) in enumerate(pbar):
         t1 = time_sync()
         if pt or jit or engine:
-            im = im.to(device, non_blocking=True)
+            imgs_batche = imgs_batche.to(device, non_blocking=True)
             targets = targets.to(device)
-        im = im.half() if half else im.float()  # uint8 to fp16/32
-        im /= 255  # 0 - 255 to 0.0 - 1.0
-        nb, _, height, width = im.shape  # batch size, channels, height, width
+        imgs_batche = imgs_batche.half() if half else imgs_batche.float()  # uint8 to fp16/32
+        imgs_batche /= 255  # 0 - 255 to 0.0 - 1.0
+        nb, _, height, width = imgs_batche.shape  # batch size, channels, height, width
         t2 = time_sync()
         dt[0] += t2 - t1
 
         # Inference
-        out, train_out = model(im, augment=augment, val=True)  # inference, loss outputs
+        out, train_out = model(imgs_batche, augment=augment, val=True)  # inference, loss outputs
         dt[1] += time_sync() - t2
 
         # Loss
@@ -197,45 +208,20 @@ def run(
         )
         dt[2] += time_sync() - t3
 
-        # Metrics
-        for si, pred in enumerate(out):
-            labels = targets[targets[:, 0] == si, 1:]
-            nl = len(labels)
-            tcls = labels[:, 0].tolist() if nl else []  # target class
-            path, shape = Path(paths[si]), shapes[si][0]
-            seen += 1
-
-            if len(pred) == 0:
-                if nl:
-                    stats.append(
-                        (
-                            torch.zeros(0, niou, dtype=torch.bool),
-                            torch.Tensor(),
-                            torch.Tensor(),
-                            tcls,
-                        )
-                    )
-                continue
-
-            # Predictions
-            if single_cls:
-                pred[:, 5] = 0
-            predn = pred.clone()
-            scale_coords(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
-
-            # Evaluate
-            if nl:
-                tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
-                scale_coords(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
-                labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-                correct = process_batch(predn, labelsn, iouv)
-
-            else:
-                correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool)
-            image_names.append(path.name)
-            stats.append(
-                (correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls)
-            )  # (correct, conf, pcls, tcls)
+        # Metrics for each image
+        compute_metrics_by_images(
+            single_cls,
+            iou_thresholds,
+            niou,
+            image_names,
+            image_with_labels_counter,
+            stats,
+            imgs_batche,
+            targets,
+            paths,
+            shapes,
+            out,
+        )  # (correct, conf, pcls, tcls)
 
     # Compute metrics
     metrics_per_images = np.array([])
@@ -270,22 +256,85 @@ def run(
 
     # Print results
     pf = "%20s" + "%11i" * 2 + "%11.3g" * 4  # print format
-    LOGGER.info(pf % ("all", seen, nt.sum(), mp, mr, map50, map))
+    LOGGER.info(
+        pf % ("all", image_with_labels_counter, nt.sum(), mp, mr, map50, map)  # type:ignore
+    )
 
     # Print results per class
     if (verbose or (nc < 50)) and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
-            LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))  # type: ignore
-
-    # Print speeds
-    t = tuple(x / seen * 1e3 for x in dt)  # speeds per image
-
-    shape = (batch_size, 3, imgsz, imgsz)
-    LOGGER.info(
-        f"Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}" % t
-    )
+            LOGGER.info(
+                pf
+                % (
+                    names[c],
+                    image_with_labels_counter,
+                    nt[c],
+                    p[i],  # type: ignore
+                    r[i],  # type: ignore
+                    ap50[i],  # type: ignore
+                    ap[i],
+                ),
+            )
 
     return metrics_per_image_dict
+
+
+def compute_metrics_by_images(
+    single_cls,
+    iou_thresholds,
+    niou,
+    image_names,
+    image_with_labels_counter,
+    stats,
+    imgs_batche,
+    targets,
+    paths,
+    shapes,
+    out,
+):
+    for index_image, pred in tqdm(enumerate(out)):
+        labels = targets[targets[:, 0] == index_image, 1:]
+        n_labels = len(labels)
+        target_class = labels[:, 0].tolist() if n_labels else []
+        image_path, image_shape = Path(paths[index_image]), shapes[index_image][0]
+        image_with_labels_counter = image_with_labels_counter + 1
+
+        if len(pred) == 0:
+            if n_labels:
+                stats.append(
+                    (
+                        torch.zeros(0, niou, dtype=torch.bool),
+                        torch.Tensor(),
+                        torch.Tensor(),
+                        target_class,
+                    )
+                )
+            continue
+
+            # Predictions
+        if single_cls:
+            pred[:, 5] = 0
+        predn = pred.clone()
+        scale_coords(
+            imgs_batche[index_image].shape[1:],
+            predn[:, :4],
+            image_shape,
+            shapes[index_image][1],
+        )  # native-space pred
+
+        # Evaluate
+        if n_labels:
+            tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
+            scale_coords(
+                imgs_batche[index_image].shape[1:], tbox, image_shape, shapes[index_image][1]
+            )  # native-space labels
+            labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
+            correct = process_batch(predn, labelsn, iou_thresholds)
+
+        else:
+            correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool)
+        image_names.append(image_path.name)
+        stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), target_class))
 
 
 def parse_opt():
@@ -360,11 +409,14 @@ def main():
                 output_file.write(found_errors_json.encode("utf-8"))
                 kili_print("Per-image metric written to: ", json_path)
     """
+
+    path_result_train = "/Users/raph/.cache/kili/automl/cl0wihlop3rwc0mtj9np28ti2/DETECTION/ultralytics/model/pytorch/2022-06-14_00_47_44/Severstal-steel-defect-detection/"  # noqa
+
     print(
         compute_per_image_map(
             "./",
-            "/Volumes/GoogleDrive-109043737286691549671/My Drive/kili/automl/ckzdzhh260ec00mub7gqjfetz/JOB_0/ultralytics/model/pytorch/2022-05-17_13_57_12/Plastic detection in river/kili.yaml",  # noqa
-            "/Volumes/GoogleDrive-109043737286691549671/My Drive/kili/automl/ckzdzhh260ec00mub7gqjfetz/JOB_0/ultralytics/model/pytorch/2022-05-17_13_57_12/Plastic detection in river/exp/weights/best.pt",  # noqa
+            path_result_train + "kili.yaml",
+            path_result_train + "exp/weights/best.pt",
         )
     )
 
