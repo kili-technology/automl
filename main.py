@@ -4,8 +4,13 @@ import sys
 from platform import python_version
 
 version = python_version()
-if ("3.7." not in version) and ("3.8." not in version):
-    print("KiliAutoML requires Python 3.7.x or 3.8.x ")
+if (
+    ("3.7." not in version)
+    and ("3.8." not in version)
+    and ("3.9." not in version)
+    and ("3.10." not in version)
+):
+    print("KiliAutoML requires Python 3.7 or later")
     print("You are running Python {}".format(version))
     print("Please create a new virtual environment and install KiliAutoML")
     print("https://github.com/kili-technology/automl#installation")
