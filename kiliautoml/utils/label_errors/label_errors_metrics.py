@@ -21,43 +21,42 @@ Usage - formats:
 import argparse
 import json
 import os
-import sys
+import time
 from pathlib import Path
-from threading import Thread
 
 import numpy as np
 import torch
 from tqdm import tqdm
-from yolov5.models.common import DetectMultiBackend
-from yolov5.utils.callbacks import Callbacks
-from yolov5.utils.datasets import create_dataloader
-from yolov5.utils.general import (
+
+from kiliautoml.utils.helpers import kili_print
+from kiliautoml.utils.label_errors.yolo_metrics import ap_per_class, box_iou
+from kiliautoml.utils.utltralytics.yolov5.models.common import DetectMultiBackend
+from kiliautoml.utils.utltralytics.yolov5.utils.datasets import create_dataloader
+from kiliautoml.utils.utltralytics.yolov5.utils.general import (
     LOGGER,
-    box_iou,
     check_dataset,
     check_img_size,
     check_yaml,
     colorstr,
-    increment_path,
     non_max_suppression,
     print_args,
     scale_coords,
     xywh2xyxy,
 )
-from yolov5.utils.metrics import ConfusionMatrix, ap_per_class
-from yolov5.utils.plots import output_to_target, plot_images
-from yolov5.utils.torch_utils import select_device, time_sync
 
-from kiliautoml.utils.helpers import kili_print
+# sys.path.append("kiliautoml/utils/ultralytics/yolov5/")
+
 
 FILE = Path(__file__).resolve()
-ROOT = FILE.parents[0]  # YOLOv5 root directory
-if str(ROOT) not in sys.path:
-    sys.path.append(str(ROOT))  # add ROOT to PATH
-ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 default_path = Path("")
-default_callbacks = Callbacks()
+
+
+def time_sync():
+    # pytorch-accurate time
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    return time.time()
 
 
 def process_batch(detections, labels, iouv):
@@ -97,68 +96,43 @@ def run(
     conf_thres=0.001,  # confidence threshold
     iou_thres=0.65,  # NMS IoU threshold
     task="test",  # train, val, test, speed or study
-    device="",  # cuda device, i.e. 0 or 0,1,2,3 or cpu
     workers=8,  # max dataloader workers (per RANK in DDP mode)
     single_cls=False,  # treat as single-class dataset
     augment=False,  # augmented inference
     verbose=True,  # verbose output
-    save_txt=False,  # save results to *.txt
     save_hybrid=False,  # save label+prediction hybrid results to *.txt
-    project=ROOT / "runs/val",  # save to project/name
-    name="exp",  # save to project/name
-    exist_ok=False,  # existing project/name ok, do not increment
     half=True,  # use FP16 half-precision inference
     dnn=False,  # use OpenCV DNN for ONNX inference
     model=None,
     dataloader=None,
-    save_dir=default_path,
-    plots=True,
-    callbacks=default_callbacks,
+    plots=False,
     compute_loss=None,
 ):
-    # Initialize/load model and set device
-    training = model is not None
-    if training:  # called by train.py
-        device, pt, jit, engine = (
-            next(model.parameters()).device,
-            True,
-            False,
-            False,
-        )  # get model device, PyTorch model
 
-        half &= device.type != "cpu"  # half precision only supported on CUDA
-        model.half() if half else model.float()
-    else:  # called directly
-        device = select_device(device, batch_size=batch_size)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        # Directories
-        save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
-        (save_dir / "labels" if save_txt else save_dir).mkdir(
-            parents=True, exist_ok=True
-        )  # make dir
+    # Load model
+    model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
+    stride, pt, jit, onnx, engine = model.stride, model.pt, model.jit, model.onnx, model.engine
+    imgsz = check_img_size(imgsz, s=stride)  # check image size
+    half &= (
+        pt or jit or onnx or engine
+    ) and device.type != "cpu"  # FP16 supported on limited backends with CUDA
+    if pt or jit:
+        model.model.half() if half else model.model.float()
+    elif engine:
+        batch_size = model.batch_size
+    else:
+        half = False
+        batch_size = 1  # export.py models default to batch-size 1
+        device = torch.device("cpu")
+        LOGGER.info(
+            f"Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for \
+            non-PyTorch backends"
+        )
 
-        # Load model
-        model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
-        stride, pt, jit, onnx, engine = model.stride, model.pt, model.jit, model.onnx, model.engine
-        imgsz = check_img_size(imgsz, s=stride)  # check image size
-        half &= (
-            pt or jit or onnx or engine
-        ) and device.type != "cpu"  # FP16 supported on limited backends with CUDA
-        if pt or jit:
-            model.model.half() if half else model.model.float()
-        elif engine:
-            batch_size = model.batch_size
-        else:
-            half = False
-            batch_size = 1  # export.py models default to batch-size 1
-            device = torch.device("cpu")
-            LOGGER.info(
-                f"Forcing --batch-size 1 square inference shape(1,3,{imgsz},{imgsz}) for \
-                non-PyTorch backends"
-            )
-
-        # Data
-        data = check_dataset(data)  # check
+    # Data
+    data = check_dataset(data)  # check
 
     # Configure
     model.eval()
@@ -168,25 +142,23 @@ def run(
 
     image_names = []
 
-    # Dataloader
-    if not training:
-        model.warmup(imgsz=(1, 3, imgsz, imgsz), half=half)  # warmup
-        pad = 0.0 if task == "speed" else 0.5
-        task = task if task in ("train", "val", "test") else "val"  # path to train/val/test images
-        dataloader = create_dataloader(
-            data[task],
-            imgsz,
-            batch_size,
-            stride,
-            single_cls,
-            pad=pad,
-            rect=pt,
-            workers=workers,
-            prefix=colorstr(f"{task}: "),
-        )[0]
+    # model.warmup(imgsz=(1, 3, imgsz, imgsz), half=half)  # warmup
+    model.warmup(imgsz=(1, 3, imgsz, imgsz))  # warmup
+    pad = 0.0 if task == "speed" else 0.5
+    task = task if task in ("train", "val", "test") else "val"  # path to train/val/test images
+    dataloader = create_dataloader(
+        data[task],
+        imgsz,
+        batch_size,
+        stride,
+        single_cls,
+        pad=pad,
+        rect=pt,
+        workers=workers,
+        prefix=colorstr(f"{task}: "),
+    )[0]
 
     seen = 0
-    confusion_matrix = ConfusionMatrix(nc=nc)
     names = {
         k: v for k, v in enumerate(model.names if hasattr(model, "names") else model.module.names)
     }
@@ -195,7 +167,7 @@ def run(
     loss = torch.zeros(3, device=device)
     stats, ap, ap_class = [], [], []
     pbar = tqdm(dataloader, desc=s, bar_format="{l_bar}{bar:10}{r_bar}{bar:-10b}")  # progress bar
-    for batch_i, (im, targets, paths, shapes) in enumerate(pbar):
+    for _, (im, targets, paths, shapes) in enumerate(pbar):
         t1 = time_sync()
         if pt or jit or engine:
             im = im.to(device, non_blocking=True)
@@ -207,9 +179,7 @@ def run(
         dt[0] += t2 - t1
 
         # Inference
-        out, train_out = (
-            model(im) if training else model(im, augment=augment, val=True)
-        )  # inference, loss outputs
+        out, train_out = model(im, augment=augment, val=True)  # inference, loss outputs
         dt[1] += time_sync() - t2
 
         # Loss
@@ -259,25 +229,13 @@ def run(
                 scale_coords(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
-                if plots:
-                    confusion_matrix.process_batch(predn, labelsn)
+
             else:
                 correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool)
-            image_names.append(path)
+            image_names.append(path.name)
             stats.append(
                 (correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), tcls)
             )  # (correct, conf, pcls, tcls)
-
-            callbacks.run("on_val_image_end", pred, predn, path, names, im[si])
-
-        # Plot images
-        if plots and batch_i < 3:
-            f = save_dir / f"val_batch{batch_i}_labels.jpg"  # labels
-            Thread(target=plot_images, args=(im, targets, paths, f, names), daemon=True).start()
-            f = save_dir / f"val_batch{batch_i}_pred.jpg"  # predictions
-            Thread(
-                target=plot_images, args=(im, output_to_target(out), paths, f, names), daemon=True
-            ).start()
 
     # Compute metrics
     metrics_per_images = np.array([])
@@ -286,9 +244,7 @@ def run(
         for stat in stats:
             stat = [np.array(x) for x in stat]
             if len(stat) and stat[0].any():
-                _tp, _fp, p, r, _f1, ap, ap_class = ap_per_class(
-                    *stat, plot=plots, save_dir=save_dir, names=names
-                )
+                _tp, _fp, p, r, _f1, ap, ap_class = ap_per_class(*stat, plot=plots, names=names)
                 ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
                 mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
                 nt = np.bincount(
@@ -305,9 +261,7 @@ def run(
 
     stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
     if len(stats) and stats[0].any():
-        _tp, _fp, p, r, _f1, ap, ap_class = ap_per_class(
-            *stats, plot=plots, save_dir=save_dir, names=names
-        )
+        _tp, _fp, p, r, _f1, ap, ap_class = ap_per_class(*stats, plot=plots, names=names)
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
         nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
@@ -319,34 +273,26 @@ def run(
     LOGGER.info(pf % ("all", seen, nt.sum(), mp, mr, map50, map))
 
     # Print results per class
-    if (verbose or (nc < 50 and not training)) and nc > 1 and len(stats):
+    if (verbose or (nc < 50)) and nc > 1 and len(stats):
         for i, c in enumerate(ap_class):
-            LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))
+            LOGGER.info(pf % (names[c], seen, nt[c], p[i], r[i], ap50[i], ap[i]))  # type: ignore
 
     # Print speeds
     t = tuple(x / seen * 1e3 for x in dt)  # speeds per image
-    if not training:
-        shape = (batch_size, 3, imgsz, imgsz)
-        LOGGER.info(
-            f"Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}"
-            % t
-        )
 
-    # Plots
-    if plots:
-        confusion_matrix.plot(save_dir=save_dir, names=list(names.values()))
-        callbacks.run("on_val_end")
+    shape = (batch_size, 3, imgsz, imgsz)
+    LOGGER.info(
+        f"Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {shape}" % t
+    )
 
     return metrics_per_image_dict
 
 
 def parse_opt():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--data", type=str, default="./data/coco128.yaml", help="dataset.yaml path")
     parser.add_argument(
-        "--data", type=str, default=ROOT / "data/coco128.yaml", help="dataset.yaml path"
-    )
-    parser.add_argument(
-        "--weights", nargs="+", type=str, default=ROOT / "yolov5s.pt", help="model.pt path(s)"
+        "--weights", nargs="+", type=str, default="./yolov5s.pt", help="model.pt path(s)"
     )
     parser.add_argument("--batch-size", type=int, default=32, help="batch size")
     parser.add_argument(
@@ -366,7 +312,6 @@ def parse_opt():
     parser.add_argument(
         "--save-hybrid", action="store_true", help="save label+prediction hybrid results to *.txt"
     )
-    parser.add_argument("--project", default=ROOT / "runs/val", help="save to project/name")
     parser.add_argument("--name", default="exp", help="save to project/name")
     parser.add_argument(
         "--exist-ok", action="store_true", help="existing project/name ok, do not increment"
@@ -387,6 +332,7 @@ def compute_per_image_map(
     weights_path: str,
 ):
     metric_per_image = run(data=data_yaml_path, weights=weights_path)
+    print(metric_per_image)
 
     found_errors_json = json.dumps(metric_per_image, sort_keys=True, indent=4)
     if found_errors_json is not None:
@@ -397,7 +343,8 @@ def compute_per_image_map(
     return metric_per_image
 
 
-def main(opt):
+def main():
+    """
     if opt.task in ("train", "val", "test"):
         if opt.conf_thres > 0.001:  # https://github.com/ultralytics/yolov5/issues/1466
             LOGGER.info(
@@ -412,8 +359,16 @@ def main(opt):
             with open(json_path, "wb") as output_file:
                 output_file.write(found_errors_json.encode("utf-8"))
                 kili_print("Per-image metric written to: ", json_path)
+    """
+    print(
+        compute_per_image_map(
+            "./",
+            "/Volumes/GoogleDrive-109043737286691549671/My Drive/kili/automl/ckzdzhh260ec00mub7gqjfetz/JOB_0/ultralytics/model/pytorch/2022-05-17_13_57_12/Plastic detection in river/kili.yaml",  # noqa
+            "/Volumes/GoogleDrive-109043737286691549671/My Drive/kili/automl/ckzdzhh260ec00mub7gqjfetz/JOB_0/ultralytics/model/pytorch/2022-05-17_13_57_12/Plastic detection in river/exp/weights/best.pt",  # noqa
+        )
+    )
 
 
 if __name__ == "__main__":
-    opt = parse_opt()
-    main(opt)
+    # opt = parse_opt()
+    main()

@@ -27,4 +27,10 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
-          [types-PyYAML, types-termcolor, types-tabulate, types-requests]
+          [
+            types-PyYAML,
+            types-termcolor,
+            types-tabulate,
+            types-requests,
+            types-setuptools,
+          ]
