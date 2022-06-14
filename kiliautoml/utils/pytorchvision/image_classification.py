@@ -185,8 +185,10 @@ def predict_probabilities(
             print()
 
     # Prepare outputs as a single matrix
-    probs = np.concatenate(
-        [torch.nn.functional.softmax(z, dim=1).cpu().numpy() for z in outputs]  # type:ignore
+    probs = list(
+        np.concatenate(
+            [torch.nn.functional.softmax(z, dim=1).cpu().numpy() for z in outputs]  # type:ignore
+        )
     )
 
     return probs
