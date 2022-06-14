@@ -5,6 +5,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 13
+    strategy:
+      matrix:
+        version: [3.7, 3.8]
 
     steps:
       - name: Check out repository code
@@ -13,7 +16,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: "3.7"
+          python-version: ${{ matrix.version }}
           cache: "pip"
 
       - name: Install deps
