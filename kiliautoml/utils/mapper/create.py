@@ -128,7 +128,7 @@ class MapperClassification:
         else:
             raise NotImplementedError
 
-    def create_mapper(self):
+    def create_mapper(self, graph_name: str):
         # Compute embeddings
         kili_print("Computing embeddings")
         embeddings = self._get_embeddings()
@@ -189,7 +189,7 @@ class MapperClassification:
             topic_list = ["topic_" + str(i) for i in range(10)]
             self.lens_names = self.lens_names + topic_list
 
-        temp = gudhi_to_KM(Mapper_kili)
+        temp = gudhi_to_KM(Mapper_kili, self.cat2id)
         mapper = km.KeplerMapper(verbose=2)
         _ = mapper.visualize(
             temp,
@@ -198,7 +198,7 @@ class MapperClassification:
             custom_tooltips=tooltip_s,
             color_values=self.lens,
             color_function_name=self.lens_names,
-            title="Mapper_" + self.job_name,
+            title=graph_name,
             path_html="Mapper_" + self.job_name + ".html",
         )
         return Mapper_kili
@@ -236,20 +236,20 @@ class MapperClassification:
         # Create lens for statistic displayed in Mapper
         self.lens = np.column_stack(
             (
-                prediction_true_class,
                 label_id_array,
-                np.max(self.predictions, axis=1),
+                prediction_true_class,
                 predicted_class,
+                np.max(self.predictions, axis=1),
                 predicted_class == label_id_array,
             )
         )
 
         self.lens_names = [
-            "confidence_C",
-            "correct_class",
-            "confidence_PC",
-            "predicted_class",
-            "prediction_error",
+            "Correct class (CC)",
+            "Probability CC",
+            "Predicted class (PC)",
+            "Probability PC",
+            "Accuracy",
         ]
 
     def _get_assignments_and_lens_without_labels(self):
@@ -260,12 +260,12 @@ class MapperClassification:
 
         # Create lens for statistic displayed in Mapper
         self.lens = np.column_stack(
-            (np.max(self.predictions, axis=1), predicted_class, predicted_order[:, -2])
+            (predicted_class, np.max(self.predictions, axis=1), predicted_order[:, -2])
         )
         self.lens_names = [
-            "confidence_PC",
-            "predicted_class",
-            "alt_predicted_class",
+            "Predicted class (PC)",
+            "Probability PC",
+            "Alternate PC",
         ]
 
     def _get_custom_tooltip(self):

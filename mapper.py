@@ -6,12 +6,7 @@ import pandas as pd
 from kili.client import Kili
 from tabulate import tabulate
 
-from commands.common_args import (
-    LabelErrorOptions,
-    Options,
-    PredictOptions,
-    TrainOptions,
-)
+from commands.common_args import Options, PredictOptions, TrainOptions
 from commands.predict import predict_one_job
 from kiliautoml.models import PyTorchVisionImageClassificationModel
 from kiliautoml.utils.constants import ModelFrameworkT, ModelNameT, ModelRepositoryT
@@ -41,7 +36,6 @@ from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
     help="Asset repository (eg. /content/assets/)",
 )
 @click.option("--predictions-path", required=True, default=None, help="csv file with predictions")
-@LabelErrorOptions.cv_folds
 @click.option(
     "--focus-class",
     default=None,
@@ -50,6 +44,11 @@ from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 )
 @PredictOptions.from_model
 @PredictOptions.from_project
+@click.option(
+    "--graph-name",
+    default="Mapper",
+    help="Name to de displayed in the KMapper html page",
+)
 def main(
     api_endpoint: str,
     api_key: str,
@@ -66,10 +65,10 @@ def main(
     predictions_path: Optional[str],
     batch_size: int,
     epochs: int,
-    cv_folds: int,
     focus_class: Optional[List[str]],
     from_model: Optional[ModelFrameworkT],
     from_project: Optional[str],
+    graph_name: str,
 ):
     """
     Main method for creating mapper
@@ -131,7 +130,7 @@ def main(
                     verbose=4,
                 )
 
-                training_losses = [job_name, training_loss]
+                training_losses = [[job_name, training_loss]]
                 print(tabulate(training_losses, headers=["job_name", "training_loss"]))
 
                 job_predictions = predict_one_job(
@@ -157,7 +156,40 @@ def main(
 
                 predictions = job_predictions.predictions_probability
             else:
-                predictions = list(pd.read_csv(predictions_path))
+                with open("/content/predictions.csv", "r") as csv:
+                    first_line = csv.readline()
+                    next_lines = csv.readlines()
+                    ncol = first_line.count(",") + 1
+                    nrows = len(next_lines) + 1
+
+                if ncol == len(job["content"]["categories"]):
+                    index_col = None
+                elif ncol == len(job["content"]["categories"]):
+                    index_col = None
+                else:
+                    raise ValueError(
+                        "Number of column in predictions should be either "
+                        "the number of category of the number of category + 1 for the external id"
+                    )
+
+                if nrows == len(assets):
+                    header = None
+                elif ncol == len(assets) + 1:
+                    header = 0
+                else:
+                    raise ValueError(
+                        "Number of rows in predictions should be either "
+                        "the number of assets of the number of assets + 1 for the header"
+                    )
+
+                predictions_df = pd.read_csv(predictions_path, index_col=index_col, header=header)
+
+                if index_col is None:
+                    predictions = list(predictions_df.to_numpy())
+                else:
+                    predictions = []
+                    for asset in assets:
+                        predictions.append(predictions_df.loc[asset["externalId"]].to_numpy())
 
             mapper_image_classification = MapperClassification(
                 api_key=api_key,
@@ -171,7 +203,7 @@ def main(
                 focus_class=focus_class,
             )
 
-            _ = mapper_image_classification.create_mapper(cv_folds)
+            _ = mapper_image_classification.create_mapper(graph_name)
 
         else:
             raise NotImplementedError

@@ -670,7 +670,7 @@ def display_pic_from_mapper_node(
         plt.show()
 
 
-def gudhi_to_KM(mapper_cover_complex):
+def gudhi_to_KM(mapper_cover_complex, cat2id):
     """Convert mapper_cover_complex from Gudhi_mapper to a Kepler Mapper ready to use for visualization
     Args:
         mapper_cover_complex (dict): Cover complex computed with gudhi_mapper
@@ -681,12 +681,12 @@ def gudhi_to_KM(mapper_cover_complex):
 
     # extract metadata
     out["meta_data"] = {
+        "filter": "Model predictions",
+        "cover": "Confusion cover",
+        "input space": "embeddings (computed with Img2Vec efficient_b7 model",
         "clustering": mapper_cover_complex.get_params()["clustering"],
-        "resolutions": mapper_cover_complex.get_params()["resolutions"],
-        "gains": mapper_cover_complex.get_params()["gains"],
-        "cover_name": mapper_cover_complex.get_params()["cover_name"],
-        "input_name": mapper_cover_complex.get_params()["input_name"],
     }
+    out["meta_data"].update(cat2id)
 
     # extract edges / links
     out["links"] = defaultdict(list)
