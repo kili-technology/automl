@@ -227,6 +227,9 @@ def run(
                 ap = ap.mean(1)  # AP@0.5:0.95
                 map = ap.mean()
                 metrics_per_images = np.append(metrics_per_images, map)
+            else:
+                metrics_per_images = np.append(metrics_per_images, 0)
+
     dataset_mean_map = metrics_per_images.mean()
     print("dataset mAP: ", dataset_mean_map)
 
@@ -260,6 +263,7 @@ def compute_metrics_by_images(
 
         if len(pred) == 0:
             if n_labels:
+                image_names.append(image_path.stem)
                 stats.append(
                     (
                         torch.zeros(0, niou, dtype=torch.bool),
@@ -338,15 +342,16 @@ def compute_per_image_map(
     json_path: str,
     data_yaml_path: str,
     weights_path: str,
+    cv_fold: int,
 ):
     metric_per_image = run(data=data_yaml_path, weights=weights_path)
 
     found_errors_json = json.dumps(metric_per_image, sort_keys=True, indent=4)
     if found_errors_json is not None:
-        json_file_path = os.path.join(json_path, "error_labels.json")
+        json_file_path = os.path.join(json_path, f"error_labels_{cv_fold}.json")
         with open(json_file_path, "wb") as output_file:
             output_file.write(found_errors_json.encode("utf-8"))
-            kili_print("Per-image metric written to: ", json_file_path)
+            kili_print(f"Per-image metric for fold {cv_fold} written to: ", json_file_path)
     return metric_per_image
 
 
@@ -371,9 +376,7 @@ def main():
     path_result_train = "/Volumes/GoogleDrive-109043737286691549671/My Drive/kili/automl/ckzdzhh260ec00mub7gqjfetz/JOB_0/ultralytics/model/pytorch/2022-05-17_13_57_12/Plastic detection in river/"  # noqa
 
     compute_per_image_map(
-        "./",
-        path_result_train + "kili.yaml",
-        path_result_train + "exp/weights/best.pt",
+        "./", path_result_train + "kili.yaml", path_result_train + "exp/weights/best.pt", 0
     )
 
 

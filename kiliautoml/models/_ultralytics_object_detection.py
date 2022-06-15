@@ -1,4 +1,5 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
+import json
 import math
 import os
 import re
@@ -32,6 +33,7 @@ from kiliautoml.utils.helpers import (
     get_last_trained_model_path,
     kili_print,
 )
+from kiliautoml.utils.label_errors.label_errors_yolo import compute_per_image_map
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT
 
@@ -109,6 +111,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
         title: str,
         api_key: str,
         additional_train_args_yolo: AdditionalTrainingArgsT,
+        download_all: bool = False,
+        label_error_cv_fold: int = 0,
+        label_error_n_folds: int = 0,
     ):
         _ = verbose
 
@@ -123,7 +128,12 @@ class UltralyticsObjectDetectionModel(BaseModel):
         data_path = os.path.join(model_repository_dir, "data")
         config_data_path = os.path.join(yolov5_path, "data", "kili.yaml")
 
-        if clear_dataset_cache and os.path.exists(data_path) and os.path.isdir(data_path):
+        if (
+            clear_dataset_cache
+            and os.path.exists(data_path)
+            and os.path.isdir(data_path)
+            and (not label_error_n_folds or (label_error_n_folds and label_error_cv_fold == 0))
+        ):
             kili_print("Dataset cache for this project is being cleared.")
             shutil.rmtree(data_path)
 
@@ -133,12 +143,21 @@ class UltralyticsObjectDetectionModel(BaseModel):
         os.makedirs(model_output_path, exist_ok=True)
 
         os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
-        self._yaml_preparation(
-            data_path=data_path,
-            class_names=class_names,
-            kili_api_key=api_key,
-            assets=assets,
-        )
+        if not label_error_n_folds or (label_error_n_folds and label_error_cv_fold == 0):
+            self._yaml_preparation(
+                data_path=data_path,
+                class_names=class_names,
+                kili_api_key=api_key,
+                assets=assets,
+                job_name=self.job_name,
+                label_merge_strategy=label_merge_strategy,
+                download_all=download_all,
+            )
+
+        if label_error_n_folds:
+            self._label_errors_preparation(
+                cv_fold=label_error_cv_fold, data_path=data_path, n_folds=label_error_n_folds
+            )
 
         with open(config_data_path, "w") as f:
             f.write(
@@ -221,12 +240,12 @@ class UltralyticsObjectDetectionModel(BaseModel):
         images = [
             f
             for f in os.listdir(path_all_images)
-            if os.path.isfile(os.path.join(path_all_images, f)) and f.endswith(".jpeg")
+            if os.path.isfile(os.path.join(path_all_images, f)) and not f.startswith(".")
         ]
         labels = [
             f
             for f in os.listdir(path_all_labels)
-            if os.path.isfile(os.path.join(path_all_labels, f)) and f.endswith(".txt")
+            if os.path.isfile(os.path.join(path_all_labels, f)) and not f.startswith(".")
         ]
 
         assert len(images) == len(labels)
@@ -502,8 +521,58 @@ class UltralyticsObjectDetectionModel(BaseModel):
         verbose: int = 0,
         clear_dataset_cache: bool = False,
         api_key: str = "",
+        disable_wandb: bool = True,
+        title: str = "",
+        json_args: Dict = {},  # type: ignore
     ) -> Any:
-        pass
+        metrics = []
+        for cv_fold in range(cv_n_folds):
+            loss = self.train(
+                assets=assets,
+                label_merge_strategy=label_merge_strategy,
+                epochs=epochs,
+                clear_dataset_cache=clear_dataset_cache,
+                disable_wandb=disable_wandb,
+                verbose=verbose,
+                batch_size=batch_size,
+                api_key=api_key,
+                title=title,
+                json_args=json_args,
+                download_all=True,
+                label_error_cv_fold=cv_fold,
+                label_error_n_folds=cv_n_folds,
+            )
+            kili_print(f"Fold {cv_fold}: Loss ", loss)
+
+            model_path, _ = self._get_last_model_param(self.project_id, None)
+            data_yaml_path = os.path.join(model_path, "../../kili.yaml")
+            weights_path = os.path.join(model_path, "best.pt")
+
+            metrics_per_image_fold = compute_per_image_map(
+                model_path, data_yaml_path, weights_path, cv_fold
+            )
+            metrics.append(metrics_per_image_fold)
+
+        all_metrics_per_image = {}
+
+        for dictionary in metrics:
+            all_metrics_per_image.update(dictionary)
+
+        found_errors_json = json.dumps(all_metrics_per_image, sort_keys=True, indent=4)
+        if found_errors_json is not None:
+            model_path, _ = self._get_last_model_param(self.project_id, None)
+            json_file_path = os.path.join(model_path, "error_labels.json")
+            with open(json_file_path, "wb") as output_file:
+                output_file.write(found_errors_json.encode("utf-8"))
+                kili_print("Final per-image metric written to: ", json_file_path)
+
+        return all_metrics_per_image
+
+    def prioritize_label_errors(self, metrics_per_image, kili):
+        sorted_metrics = dict(sorted(metrics_per_image.items(), key=lambda item: -item[1]))
+        sorted_ids = list(sorted_metrics.keys())
+        priorities = list(range(len(sorted_ids)))
+        kili.update_properties_in_assets(asset_ids=sorted_ids, priorities=priorities)
 
 
 def save_annotations_to_yolo_format(names, handler, job):
