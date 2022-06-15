@@ -2,6 +2,7 @@ import warnings
 from typing import List, Optional
 
 import click
+import numpy as np
 import pandas as pd
 from kili.client import Kili
 from tabulate import tabulate
@@ -162,34 +163,36 @@ def main(
                     ncol = first_line.count(",") + 1
                     nrows = len(next_lines) + 1
 
-                if ncol == len(job["content"]["categories"]):
-                    index_col = None
+                if ncol == len(job["content"]["categories"]) + 1:
+                    index_col = 0
+                    header = None
                 elif ncol == len(job["content"]["categories"]):
                     index_col = None
+                    if nrows == len(assets):
+                        header = None
+                    elif ncol == len(assets) + 1:
+                        header = 0
+                    else:
+                        raise ValueError(
+                            "When there is no index column in csv file with predictions"
+                            "the number of row has to be equal to the number of assets"
+                            "or the number of assets + 1 if there is a header"
+                        )
                 else:
                     raise ValueError(
                         "Number of column in predictions should be either "
                         "the number of category of the number of category + 1 for the external id"
                     )
 
-                if nrows == len(assets):
-                    header = None
-                elif ncol == len(assets) + 1:
-                    header = 0
-                else:
-                    raise ValueError(
-                        "Number of rows in predictions should be either "
-                        "the number of assets of the number of assets + 1 for the header"
-                    )
-
                 predictions_df = pd.read_csv(predictions_path, index_col=index_col, header=header)
 
                 if index_col is None:
-                    predictions = list(predictions_df.to_numpy())
+                    predictions = predictions_df.to_numpy()
                 else:
                     predictions = []
                     for asset in assets:
                         predictions.append(predictions_df.loc[asset["externalId"]].to_numpy())
+                    predictions = np.array(predictions)
 
             mapper_image_classification = MapperClassification(
                 api_key=api_key,

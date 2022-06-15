@@ -96,7 +96,7 @@ class MapperClassification:
         job: JobT,
         job_name: str,
         assets_repository,  # check type
-        predictions: List[Any],
+        predictions: Any,
         focus_class: Optional[List[str]],
     ):
         self.job = job
@@ -226,7 +226,7 @@ class MapperClassification:
 
         label_id_array = [self.cat2id[label] for label in self.labels]
         prediction_true_class = [
-            self.predictions[enum][item] for enum, item in enumerate(label_id_array)
+            self.predictions[enum, item] for enum, item in enumerate(label_id_array)
         ]
         predicted_order = np.argsort(self.predictions, axis=1)
         predicted_class = predicted_order[:, -1]
@@ -274,14 +274,14 @@ class MapperClassification:
             # with labels available
             if len(self.lens_names) == 5:
                 return custom_tooltip_picture(
-                    np.column_stack((self.lens[:, 1], self.lens[:, 3])),
+                    np.column_stack((self.lens[:, 0], self.lens[:, 2])),
                     pict_data_type="img_list",
                     image_list=self.data,
                 )
             # without labels available
             else:
                 return custom_tooltip_picture(
-                    self.lens[:, 1],
+                    self.lens[:, 0],
                     pict_data_type="img_list",
                     image_list=self.data,
                 )
@@ -290,13 +290,13 @@ class MapperClassification:
             # with labels available
             if len(self.lens_names) == 5:
                 return custom_tooltip_text(
-                    np.column_stack((self.lens[:, 1], self.lens[:, 3])),
+                    np.column_stack((self.lens[:, 0], self.lens[:, 2])),
                     data=self.data,
                 )
             # without labels available
             else:
                 return custom_tooltip_text(
-                    self.lens[:, 1],
+                    self.lens[:, 0],
                     data=self.data,
                 )
         else:
