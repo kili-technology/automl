@@ -22,7 +22,6 @@ import argparse
 import json
 import os
 import sys
-import time
 from pathlib import Path
 
 import numpy as np
@@ -47,19 +46,16 @@ from kiliautoml.utils.ultralytics.yolov5.utils.general import (  # noqa
     scale_coords,
     xywh2xyxy,
 )
+from kiliautoml.utils.ultralytics.yolov5.utils.torch_utils import (  # noqa
+    select_device,
+    time_sync,
+)
 
 FILE = Path(__file__).resolve()
 
 os.environ["OMP_NUM_THREADS"] = "1"
 
 default_path = Path("")
-
-
-def time_sync():
-    # pytorch-accurate time
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-    return time.time()
 
 
 def process_batch(detections, labels_gt, iou_thresholds):
@@ -105,7 +101,6 @@ def run(
     workers=8,  # max dataloader workers (per RANK in DDP mode)
     single_cls=False,  # treat as single-class dataset
     augment=False,  # augmented inference
-    verbose=True,  # verbose output
     save_hybrid=False,  # save label+prediction hybrid results to *.txt
     half=True,  # use FP16 half-precision inference
     dnn=False,  # use OpenCV DNN for ONNX inference
@@ -115,7 +110,7 @@ def run(
     compute_loss=None,
 ):
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = select_device("", batch_size=batch_size)
 
     # Load model
     model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data)
@@ -142,14 +137,13 @@ def run(
 
     # Configure
     model.eval()
-    nc = 1 if single_cls else int(data["nc"])  # number of classes
     iou_thresholds = torch.linspace(0.5, 0.95, 10).to(device)  # iou vector for mAP@0.5:0.95
     niou = iou_thresholds.numel()
 
     image_names = []
 
-    # model.warmup(imgsz=(1, 3, imgsz, imgsz), half=half)  # warmup
-    model.warmup(imgsz=(1, 3, imgsz, imgsz))  # warmup
+    model.warmup(imgsz=(1, 3, imgsz, imgsz), half=bool(half))  # warmup
+
     pad = 0.0 if task == "speed" else 0.5
     task = task if task in ("train", "val", "test") else "val"  # path to train/val/test images
     dataloader = create_dataloader(
@@ -171,13 +165,12 @@ def run(
             model.names if hasattr(model, "names") else model.module.names  # type:ignore
         )
     }
-    s = ("%20s" + "%11s" * 6) % ("Class", "Images", "Labels", "P", "R", "mAP@.5", "mAP@.5:.95")
-    dt, p, r, mp, mr, map50, map = [0.0, 0.0, 0.0], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+    dt, map = [0.0, 0.0, 0.0], 0.0
     loss = torch.zeros(3, device=device)
-    stats, ap, ap_class = [], [], []
+    stats, ap = [], []
 
     # Predict by batch of images
-    pbar = tqdm(dataloader, desc=s, bar_format="{l_bar}{bar:10}{r_bar}{bar:-10b}")  # progress bar
+    pbar = tqdm(dataloader, bar_format="{l_bar}{bar:10}{r_bar}{bar:-10b}")  # progress bar
     for _, (imgs_batche, targets, paths, shapes) in enumerate(pbar):
         t1 = time_sync()
         if pt or jit or engine:
@@ -230,12 +223,9 @@ def run(
         for stat in stats:
             stat = [np.array(x) for x in stat]
             if len(stat) and stat[0].any():
-                _tp, _fp, p, r, _f1, ap, ap_class = ap_per_class(*stat, plot=plots, names=names)
-                ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
-                mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
-                nt = np.bincount(
-                    stat[3].astype(np.int64), minlength=nc
-                )  # number of targets per class
+                ap = ap_per_class(*stat, plot=plots, names=names)
+                ap = ap.mean(1)  # AP@0.5:0.95
+                map = ap.mean()
                 metrics_per_images = np.append(metrics_per_images, map)
     dataset_mean_map = metrics_per_images.mean()
     print("dataset mAP: ", dataset_mean_map)
@@ -244,37 +234,6 @@ def run(
 
     for idx, map_value in enumerate(metrics_per_images):
         metrics_per_image_dict[image_names[idx]] = map_value
-
-    stats = [np.concatenate(x, 0) for x in zip(*stats)]  # to numpy
-    if len(stats) and stats[0].any():
-        _tp, _fp, p, r, _f1, ap, ap_class = ap_per_class(*stats, plot=plots, names=names)
-        ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
-        mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
-        nt = np.bincount(stats[3].astype(np.int64), minlength=nc)  # number of targets per class
-    else:
-        nt = torch.zeros(1)
-
-    # Print results
-    pf = "%20s" + "%11i" * 2 + "%11.3g" * 4  # print format
-    LOGGER.info(
-        pf % ("all", image_with_labels_counter, nt.sum(), mp, mr, map50, map)  # type:ignore
-    )
-
-    # Print results per class
-    if (verbose or (nc < 50)) and nc > 1 and len(stats):
-        for i, c in enumerate(ap_class):
-            LOGGER.info(
-                pf
-                % (
-                    names[c],
-                    image_with_labels_counter,
-                    nt[c],
-                    p[i],  # type: ignore
-                    r[i],  # type: ignore
-                    ap50[i],  # type: ignore
-                    ap[i],
-                ),
-            )
 
     return metrics_per_image_dict
 
@@ -333,7 +292,7 @@ def compute_metrics_by_images(
 
         else:
             correct = torch.zeros(pred.shape[0], niou, dtype=torch.bool)
-        image_names.append(image_path.name)
+        image_names.append(image_path.stem)
         stats.append((correct.cpu(), pred[:, 4].cpu(), pred[:, 5].cpu(), target_class))
 
 
@@ -381,7 +340,6 @@ def compute_per_image_map(
     weights_path: str,
 ):
     metric_per_image = run(data=data_yaml_path, weights=weights_path)
-    print(metric_per_image)
 
     found_errors_json = json.dumps(metric_per_image, sort_keys=True, indent=4)
     if found_errors_json is not None:
@@ -410,14 +368,12 @@ def main():
                 kili_print("Per-image metric written to: ", json_path)
     """
 
-    path_result_train = "/Users/raph/.cache/kili/automl/cl0wihlop3rwc0mtj9np28ti2/DETECTION/ultralytics/model/pytorch/2022-06-14_00_47_44/Severstal-steel-defect-detection/"  # noqa
+    path_result_train = "/Volumes/GoogleDrive-109043737286691549671/My Drive/kili/automl/ckzdzhh260ec00mub7gqjfetz/JOB_0/ultralytics/model/pytorch/2022-05-17_13_57_12/Plastic detection in river/"  # noqa
 
-    print(
-        compute_per_image_map(
-            "./",
-            path_result_train + "kili.yaml",
-            path_result_train + "exp/weights/best.pt",
-        )
+    compute_per_image_map(
+        "./",
+        path_result_train + "kili.yaml",
+        path_result_train + "exp/weights/best.pt",
     )
 
 

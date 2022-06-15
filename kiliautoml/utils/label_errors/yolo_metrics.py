@@ -16,7 +16,6 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, names=(), eps=1e-16
         pred_cls:  Predicted object classes (nparray).
         target_cls:  True object classes (nparray).
         plot:  Plot precision-recall curve at mAP@0.5
-        save_dir:  Plot save directory
     # Returns
         The average precision as computed in py-faster-rcnn.
     """
@@ -29,11 +28,8 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, names=(), eps=1e-16
     unique_classes, nt = np.unique(target_cls, return_counts=True)
     nc = unique_classes.shape[0]  # number of classes, number of detections
 
-    n_linspace = 1000
-
     # Create Precision-Recall curve and compute AP for each class
-    px, py = np.linspace(0, 1, n_linspace), []  # for plotting
-    ap, p, r = np.zeros((nc, tp.shape[1])), np.zeros((nc, n_linspace)), np.zeros((nc, n_linspace))
+    ap = np.zeros((nc, tp.shape[1]))
     for ci, c in enumerate(unique_classes):
         i = pred_cls == c
         n_l = nt[ci]  # number of labels
@@ -48,32 +44,15 @@ def ap_per_class(tp, conf, pred_cls, target_cls, plot=False, names=(), eps=1e-16
 
             # Recall
             recall = tpc / (n_l + eps)  # recall curve
-            r[ci] = np.interp(
-                -px, -conf[i], recall[:, 0], left=0
-            )  # negative x, xp because xp decreases
 
             # Precision
             precision = tpc / (tpc + fpc)  # precision curve
-            p[ci] = np.interp(-px, -conf[i], precision[:, 0], left=1)  # p at pr_score
 
             # AP from recall-precision curve
             for j in range(tp.shape[1]):
-                ap[ci, j], mpre, mrec = compute_ap(recall[:, j], precision[:, j])
-                if plot and j == 0:
-                    py.append(np.interp(px, mrec, mpre))  # precision at mAP@0.5
+                ap[ci, j], _, _ = compute_ap(recall[:, j], precision[:, j])
 
-    # Compute F1 (harmonic mean of precision and recall)
-    f1 = 2 * p * r / (p + r + eps)
-    names = [
-        v for k, v in names.items() if k in unique_classes
-    ]  # list: only classes that have data
-    names = {i: v for i, v in enumerate(names)}  # to dict
-
-    i = f1.mean(0).argmax()  # max F1 index
-    p, r, f1 = p[:, i], r[:, i], f1[:, i]
-    tp = (r * nt).round()  # true positives
-    fp = (tp / (p + eps) - tp).round()  # false positives
-    return tp, fp, p, r, f1, ap, unique_classes.astype("int32")
+    return ap
 
 
 def compute_ap(recall, precision):
