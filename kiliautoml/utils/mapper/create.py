@@ -1,5 +1,4 @@
 import os
-import warnings
 from typing import Any, List, Optional
 
 import datasets
@@ -11,10 +10,6 @@ import torch.nn.functional as F
 from img2vec_pytorch import Img2Vec  # type: ignore
 from more_itertools import chunked
 from PIL.Image import Image as PILImage
-from sklearn import linear_model
-from sklearn.model_selection import cross_val_predict
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer  # type: ignore
 
@@ -23,7 +18,7 @@ from kiliautoml.utils.download_assets import (
     download_project_images,
     download_project_text,
 )
-from kiliautoml.utils.helpers import get_label, kili_print
+from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.mapper.clustering import DensityMergeHierarchicalClustering
 from kiliautoml.utils.mapper.gudhi_mapper import (
     CoverComplex,
@@ -34,7 +29,7 @@ from kiliautoml.utils.mapper.gudhi_mapper import (
     gudhi_to_KM,
     topic_score,
 )
-from kiliautoml.utils.type import AssetStatusT, JobT, LabelMergeStrategyT
+from kiliautoml.utils.type import JobT
 
 
 def embeddings_text(list_text: List[str]):
@@ -97,37 +92,20 @@ class MapperClassification:
         api_key: str,
         input_type: InputTypeT,
         assets: List[Any],
+        labels: List[Any],
         job: JobT,
         job_name: str,
         assets_repository,  # check type
-        asset_status_in: Optional[List[AssetStatusT]],
-        label_merge_strategy: LabelMergeStrategyT,
-        predictions_path: Optional[str],
+        predictions: List[Any],
         focus_class: Optional[List[str]],
     ):
         self.job = job
         self.job_name = job_name
-        self.asset_status_in = asset_status_in
-        self.assets = assets
-        self.focus_class = focus_class
         self.input_type = input_type
-
-        predictions_df = None
-        self.predictions = []
-        if predictions_path is not None:
-            predictions_df = pd.read_csv(predictions_path)
-            for asset in assets:
-                prediction = predictions_df[predictions_df.iloc[0, :] == asset["id"], 1:]
-                self.predictions.append(prediction)
-
-        self.labels = []
-        for asset in assets:
-            label = get_label(asset, label_merge_strategy)
-            if (label is None) or (self.job_name not in label["jsonResponse"]):
-                asset_id = asset["id"]
-                warnings.warn(f"${asset_id}: No annotation for job ${self.job_name}")
-            else:
-                self.labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
+        self.assets = assets
+        self.labels = labels
+        self.predictions = predictions
+        self.focus_class = focus_class
 
         class_list = self.job["content"]["categories"]
         self.cat2id = {}
@@ -150,10 +128,7 @@ class MapperClassification:
         else:
             raise NotImplementedError
 
-    def create_mapper(
-        self,
-        cv_folds: int = 4,
-    ):
+    def create_mapper(self):
         # Compute embeddings
         kili_print("Computing embeddings")
         embeddings = self._get_embeddings()
@@ -163,7 +138,7 @@ class MapperClassification:
         self.lens_names: List[str]  # type: ignore
         self.lens: np.ndarray  # type: ignore
 
-        self._get_assignments_and_lens(embeddings, cv_folds)
+        self._get_assignments_and_lens()
 
         # Keep only assets in focus_class
         if self.focus_class is not None:
@@ -240,51 +215,32 @@ class MapperClassification:
         else:
             raise NotImplementedError
 
-    def _get_assignments_and_lens(self, embeddings, cv_folds: int):
+    def _get_assignments_and_lens(self):
 
-        if (
-            (self.asset_status_in is None)
-            or ("TODO" in self.asset_status_in)
-            or ("ONGOING" in self.asset_status_in)
-        ):  # TODO modify when asset type changed
-            self._get_assignments_and_lens_without_labels(embeddings)
+        if len(self.assets) == len(self.labels):
+            self._get_assignments_and_lens_with_labels()
         else:  # TODO modify when asset type changed
-            self._get_assignments_and_lens_with_labels(embeddings, cv_folds)
+            self._get_assignments_and_lens_without_labels()
 
-    def _get_assignments_and_lens_with_labels(self, embeddings, cv_folds: int):
+    def _get_assignments_and_lens_with_labels(self):
 
-        # Get labels (as string and number_id)
-        labels = [
-            asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
-            for asset in self.assets
+        label_id_array = [self.cat2id[label] for label in self.labels]
+        prediction_true_class = [
+            self.predictions[enum][item] for enum, item in enumerate(label_id_array)
         ]
-        label_id_array = [self.cat2id[label] for label in labels]
-
-        # Compute predictions from embeddings with a simple model
-        kili_print("Compute prediction by cross-validation with model: linear SVM")
-        classifier = make_pipeline(
-            StandardScaler(), linear_model.SGDClassifier(loss="log", alpha=0.1)
-        )
-        predict = cross_val_predict(
-            classifier, embeddings, label_id_array, cv=cv_folds, method="predict_proba"
-        )
-        predict_order = np.argsort(predict, axis=1)
-        prediction_true_class = [predict[enum, item] for enum, item in enumerate(label_id_array)]
-        predict_class = predict_order[:, -1]
-        accuracy = round(np.sum(predict_class == label_id_array) / len(label_id_array) * 100, 2)
-        kili_print("Model accuracy is:" f" {accuracy}%")
-
+        predicted_order = np.argsort(self.predictions, axis=1)
+        predicted_class = predicted_order[:, -1]
         # Compute assignments with confusion filter
-        self.assignments = confusion_filter(predict, label_id_array)
+        self.assignments = confusion_filter(self.predictions, label_id_array)
 
         # Create lens for statistic displayed in Mapper
         self.lens = np.column_stack(
             (
                 prediction_true_class,
                 label_id_array,
-                np.max(predict, axis=1),
-                predict_class,
-                predict_class == label_id_array,
+                np.max(self.predictions, axis=1),
+                predicted_class,
+                predicted_class == label_id_array,
             )
         )
 
@@ -296,38 +252,16 @@ class MapperClassification:
             "prediction_error",
         ]
 
-    def _get_assignments_and_lens_without_labels(self, embeddings):
+    def _get_assignments_and_lens_without_labels(self):
 
-        idx_labeled_assets = [
-            idx for idx, asset in enumerate(self.assets) if len(asset["labels"]) > 0
-        ]
-
-        # Get labels (as string and number_id)
-        labels = [
-            self.assets[idx]["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
-            for idx in idx_labeled_assets
-        ]
-        label_id_array = [self.cat2id[label] for label in labels]
-        # Compute predictions from embeddings with a simple model
-        kili_print("Compute prediction with model: linear SVM")
-        classifier = make_pipeline(
-            StandardScaler(), linear_model.SGDClassifier(loss="log", alpha=0.1)
-        )
-        classifier.fit(embeddings[idx_labeled_assets, :], label_id_array)
-        predict = classifier.predict_proba(embeddings)
-        predict_order = np.argsort(predict, axis=1)
-        predict_class = predict_order[:, -1]
-        accuracy = round(
-            np.sum(predict_class[idx_labeled_assets] == label_id_array) / len(label_id_array) * 100,
-            2,
-        )
-        kili_print("Model accuracy (on training data) is:" f" {accuracy}%")
-
-        # Compute assignments with confusion filter
-        self.assignments = confusion_filter(predict)
+        self.assignments = confusion_filter(self.predictions)
+        predicted_order = np.argsort(self.predictions, axis=1)
+        predicted_class = predicted_order[:, -1]
 
         # Create lens for statistic displayed in Mapper
-        self.lens = np.column_stack((np.max(predict, axis=1), predict_class, predict_order[:, -2]))
+        self.lens = np.column_stack(
+            (np.max(self.predictions, axis=1), predicted_class, predicted_order[:, -2])
+        )
         self.lens_names = [
             "confidence_PC",
             "predicted_class",
