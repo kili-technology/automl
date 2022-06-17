@@ -126,7 +126,7 @@ class TrainOptions:
 
     asset_status_in = asset_status_in(["LABELED", "TO_REVIEW", "REVIEWED"])
 
-    json_string_hg = '{"logging_steps": 20, "evaluation_strategy": "steps"}'
+    json_string_hg = '{"logging_strategy": "epoch"}'
     additionalTrainArgsHuggingFace = click.option(
         "--additional-train-args-hg",
         default=json_string_hg,
@@ -144,7 +144,7 @@ class TrainOptions:
         default=json_string_yolo,
         callback=lambda _, __, x: json.loads(x),
         help=(
-            "args passed to huggingface TrainingArguments constructor. "
+            "Additional args passed to Yolo Training script."
             "See https://github.com/ultralytics/yolov5/blob/master/train.py"
             "Ex:  --additional-train-args-yolo " + json_string_yolo
         ),
