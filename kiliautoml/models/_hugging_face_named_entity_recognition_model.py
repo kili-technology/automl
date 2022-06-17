@@ -151,6 +151,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
         train_dataset = tokenized_datasets["train"]  # type:  ignore
+        test_dataset = tokenized_datasets["test"]  # type: ignore
         path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
         training_arguments = self._get_training_args(
@@ -168,6 +169,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             data_collator=data_collator,  # type: ignore
             tokenizer=tokenizer,
             train_dataset=train_dataset,  # type: ignore
+            test_dataset=test_dataset,  # type: ignore
         )
         output = trainer.train()
         kili_print(f"Saving model to {path_model}")
