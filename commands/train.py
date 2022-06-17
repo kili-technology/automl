@@ -1,4 +1,3 @@
-import json
 import os
 from typing import List
 
@@ -41,10 +40,9 @@ from kiliautoml.utils.type import (
 @Options.clear_dataset_cache
 @Options.batch_size
 @Options.verbose
-@TrainOptions.asset_status_in
 @Options.label_merge_strategy
+@TrainOptions.asset_status_in
 @TrainOptions.epochs
-@TrainOptions.json_args
 @TrainOptions.disable_wandb
 @TrainOptions.additionalTrainArgsHuggingFace
 @TrainOptions.additionalTrainArgsYolo
@@ -61,13 +59,12 @@ def main(
     target_job: List[str],
     max_assets: int,
     randomize_assets: bool,
-    json_args: str,
     clear_dataset_cache: bool,
     disable_wandb: bool,
     verbose: int,
     batch_size: int,
     additional_train_args_hg: AdditionalTrainingArgsT,
-    additionalTrainArgsYolo: AdditionalTrainingArgsT,
+    additional_train_args_yolo: AdditionalTrainingArgsT,
 ):
     """Train a model and then save the model in the cache.
 
@@ -170,10 +167,9 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
                 disable_wandb=disable_wandb,
                 title=title,
-                json_args=json.loads(json_args) if json_args is not None else {},
                 api_key=api_key,
                 verbose=verbose,
-                additionalTrainArgsYolo=additionalTrainArgsYolo,
+                additional_train_args_yolo=additional_train_args_yolo,
             )
         elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 

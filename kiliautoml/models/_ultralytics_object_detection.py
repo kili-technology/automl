@@ -114,7 +114,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         verbose: int,
         title: str,
         api_key: str,
-        additionalTrainArgsYolo: AdditionalTrainingArgsT,
+        additional_train_args_yolo: AdditionalTrainingArgsT,
     ):
         _ = verbose
 
@@ -157,11 +157,11 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 )
             )
 
-        if not additionalTrainArgsYolo:
-            additionalTrainArgsYolo = {}
-        additionalTrainArgsYolo["epochs"] = epochs
+        if not additional_train_args_yolo:
+            additional_train_args_yolo = {}
+        additional_train_args_yolo["epochs"] = epochs
         args_from_json = reduce(
-            lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in additionalTrainArgsYolo.items())
+            lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in additional_train_args_yolo.items())
         )
         kili_print("Starting Ultralytics' YoloV5 ...")
         try:

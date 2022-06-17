@@ -116,15 +116,7 @@ class TrainOptions:
         show_default=True,
         help="Number of epochs to train for",
     )
-    json_args = click.option(
-        "--json-args",
-        default=None,
-        type=str,
-        help=(
-            "Specific parameters to pass to the trainer "
-            "(for example Yolov5 train, Hugging Face transformers, ..."
-        ),
-    )
+
     disable_wandb = click.option(
         "--disable-wandb",
         default=False,
@@ -148,7 +140,7 @@ class TrainOptions:
 
     json_string_yolo = '{"bbox_interval": -1}'
     additionalTrainArgsYolo = click.option(
-        "--additional-train-args-hg",
+        "--additional-train-args-yolo",
         default=json_string_yolo,
         callback=lambda _, __, x: json.loads(x),
         help=(
