@@ -8,7 +8,7 @@ setup(
         "Click",
         "cleanlab>=2.0.0",
         "click",
-        "datasets",
+        "datasets<=2.2",
         "kili",
         "jinja2",
         "nltk>=3.3",
