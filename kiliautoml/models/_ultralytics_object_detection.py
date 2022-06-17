@@ -33,7 +33,12 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
-from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT
+from kiliautoml.utils.type import (
+    AdditionalTrainingArgsT,
+    AssetT,
+    JobT,
+    LabelMergeStrategyT,
+)
 
 env = Environment(
     loader=FileSystemLoader(os.path.abspath(PathUltralytics.ULTRALYTICS_REL_PATH)),
@@ -108,8 +113,8 @@ class UltralyticsObjectDetectionModel(BaseModel):
         disable_wandb: bool,
         verbose: int,
         title: str,
-        json_args: Dict,  # type: ignore
         api_key: str,
+        additional_train_args_yolo: AdditionalTrainingArgsT,
     ):
         _ = verbose
 
@@ -152,11 +157,11 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 )
             )
 
-        if not json_args:
-            json_args = {}
-        json_args["epochs"] = epochs
+        if not additional_train_args_yolo:
+            additional_train_args_yolo = {}
+        additional_train_args_yolo["epochs"] = epochs
         args_from_json = reduce(
-            lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in json_args.items())
+            lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in additional_train_args_yolo.items())
         )
         kili_print("Starting Ultralytics' YoloV5 ...")
         try:

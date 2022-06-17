@@ -24,7 +24,12 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.helpers import JobPredictions, ensure_dir, get_label, kili_print
 from kiliautoml.utils.path import Path, PathHF
-from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT, TrainingArgsT
+from kiliautoml.utils.type import (
+    AdditionalTrainingArgsT,
+    AssetT,
+    JobT,
+    LabelMergeStrategyT,
+)
 
 
 class KiliNerAnnotations(TypedDict):
@@ -71,7 +76,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         clear_dataset_cache: bool,
         disable_wandb: bool,
         verbose: int,
-        additional_args: TrainingArgsT = {},
+        additional_train_args_hg: AdditionalTrainingArgsT = {},
     ):
         """
         Sources:
@@ -146,6 +151,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
         train_dataset = tokenized_datasets["train"]  # type:  ignore
+        test_dataset = tokenized_datasets["test"]  # type: ignore
         path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
         training_arguments = self._get_training_args(
@@ -154,7 +160,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             disable_wandb=disable_wandb,
             epochs=epochs,
             batch_size=batch_size,
-            additional_args=additional_args,
+            additional_train_args_hg=additional_train_args_hg,
         )
         data_collator = DataCollatorForTokenClassification(tokenizer)
         trainer = Trainer(
@@ -163,6 +169,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             data_collator=data_collator,  # type: ignore
             tokenizer=tokenizer,
             train_dataset=train_dataset,  # type: ignore
+            test_dataset=test_dataset,  # type: ignore
         )
         output = trainer.train()
         kili_print(f"Saving model to {path_model}")

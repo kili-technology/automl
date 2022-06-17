@@ -1,4 +1,3 @@
-import json
 import os
 from typing import List
 
@@ -21,7 +20,11 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.helpers import get_assets, get_project, kili_print
 from kiliautoml.utils.memoization import clear_automl_cache
-from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
+from kiliautoml.utils.type import (
+    AdditionalTrainingArgsT,
+    AssetStatusT,
+    LabelMergeStrategyT,
+)
 
 
 @click.command()
@@ -37,11 +40,12 @@ from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 @Options.clear_dataset_cache
 @Options.batch_size
 @Options.verbose
-@TrainOptions.asset_status_in
 @Options.label_merge_strategy
+@TrainOptions.asset_status_in
 @TrainOptions.epochs
-@TrainOptions.json_args
 @TrainOptions.disable_wandb
+@TrainOptions.additionalTrainArgsHuggingFace
+@TrainOptions.additionalTrainArgsYolo
 def main(
     api_endpoint: str,
     api_key: str,
@@ -55,11 +59,12 @@ def main(
     target_job: List[str],
     max_assets: int,
     randomize_assets: bool,
-    json_args: str,
     clear_dataset_cache: bool,
     disable_wandb: bool,
     verbose: int,
     batch_size: int,
+    additional_train_args_hg: AdditionalTrainingArgsT,
+    additional_train_args_yolo: AdditionalTrainingArgsT,
 ):
     """Train a model and then save the model in the cache.
 
@@ -112,6 +117,7 @@ def main(
                 epochs=epochs,
                 disable_wandb=disable_wandb,
                 verbose=verbose,
+                additional_train_args_hg=additional_train_args_hg,
             )
 
         elif (
@@ -137,6 +143,7 @@ def main(
                 epochs=epochs,
                 disable_wandb=disable_wandb,
                 verbose=verbose,
+                additional_train_args_hg=additional_train_args_hg,
             )
         elif (
             content_input == "radio"
@@ -160,9 +167,9 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
                 disable_wandb=disable_wandb,
                 title=title,
-                json_args=json.loads(json_args) if json_args is not None else {},
                 api_key=api_key,
                 verbose=verbose,
+                additional_train_args_yolo=additional_train_args_yolo,
             )
         elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 

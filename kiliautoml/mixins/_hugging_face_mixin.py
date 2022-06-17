@@ -115,14 +115,14 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         epochs: int,
         disable_wandb: bool,
         batch_size: int,
-        additional_args: Dict[Any, Any],
+        additional_train_args_hg: Dict[Any, Any],
     ):
         date = datetime.now().strftime("%Y-%m-%d_%H:%M")
         default_args = {
             "report_to": "wandb" if not disable_wandb else "none",
             "run_name": model_name + "_" + date,
         }
-        default_args.update(additional_args)
+        default_args.update(additional_train_args_hg)
         training_args = TrainingArguments(
             PathHF.append_training_args_dir(path_model),
             num_train_epochs=epochs,

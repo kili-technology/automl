@@ -28,7 +28,12 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.path import Path, PathHF
-from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT, TrainingArgsT
+from kiliautoml.utils.type import (
+    AdditionalTrainingArgsT,
+    AssetT,
+    JobT,
+    LabelMergeStrategyT,
+)
 
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
@@ -63,7 +68,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
         verbose: int,
-        training_args: TrainingArgsT = {},
+        additional_train_args_hg: AdditionalTrainingArgsT,
     ) -> float:
         _ = verbose
 
@@ -74,7 +79,6 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         model_name: ModelNameT = self.model_name  # type: ignore
-        training_args = training_args or {}
 
         kili_print(self.job_name)
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
@@ -114,7 +118,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             disable_wandb=disable_wandb,
             epochs=epochs,
             batch_size=batch_size,
-            additional_args=training_args,
+            additional_train_args_hg=additional_train_args_hg,
         )
 
         trainer = Trainer(
