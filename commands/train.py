@@ -21,7 +21,11 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.helpers import get_assets, get_project, kili_print
 from kiliautoml.utils.memoization import clear_automl_cache
-from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
+from kiliautoml.utils.type import (
+    AdditionalTrainingArgsT,
+    AssetStatusT,
+    LabelMergeStrategyT,
+)
 
 
 @click.command()
@@ -42,6 +46,8 @@ from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 @TrainOptions.epochs
 @TrainOptions.json_args
 @TrainOptions.disable_wandb
+@TrainOptions.additionalTrainArgsHuggingFace
+@TrainOptions.additionalTrainArgsYolo
 def main(
     api_endpoint: str,
     api_key: str,
@@ -60,6 +66,8 @@ def main(
     disable_wandb: bool,
     verbose: int,
     batch_size: int,
+    additional_train_args_hg: AdditionalTrainingArgsT,
+    additionalTrainArgsYolo: AdditionalTrainingArgsT,
 ):
     """Train a model and then save the model in the cache.
 
@@ -112,6 +120,7 @@ def main(
                 epochs=epochs,
                 disable_wandb=disable_wandb,
                 verbose=verbose,
+                additional_train_args_hg=additional_train_args_hg,
             )
 
         elif (
@@ -137,6 +146,7 @@ def main(
                 epochs=epochs,
                 disable_wandb=disable_wandb,
                 verbose=verbose,
+                additional_train_args_hg=additional_train_args_hg,
             )
         elif (
             content_input == "radio"
@@ -163,6 +173,7 @@ def main(
                 json_args=json.loads(json_args) if json_args is not None else {},
                 api_key=api_key,
                 verbose=verbose,
+                additionalTrainArgsYolo=additionalTrainArgsYolo,
             )
         elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 

@@ -1,3 +1,4 @@
+import json
 import os
 from typing import List
 
@@ -19,7 +20,9 @@ class Options:
     )
 
     api_key = click.option(
-        "--api-key", default=os.environ.get("KILI_API_KEY", ""), help="Kili API Key"
+        "--api-key",
+        default=os.environ.get("KILI_API_KEY", ""),
+        help="Kili API Key",
     )
 
     model_framework = click.option(
@@ -130,6 +133,30 @@ class TrainOptions:
     )
 
     asset_status_in = asset_status_in(["LABELED", "TO_REVIEW", "REVIEWED"])
+
+    json_string_hg = '{"logging_steps": 20, "evaluation_strategy": "steps"}'
+    additionalTrainArgsHuggingFace = click.option(
+        "--additional-train-args-hg",
+        default=json_string_hg,
+        callback=lambda _, __, x: json.loads(x),
+        help=(
+            "args passed to huggingface TrainingArguments constructor. "
+            "See https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments"  # noqa
+            "Ex:  --additional-train-args-hg " + json_string_hg
+        ),
+    )
+
+    json_string_yolo = '{"bbox_interval": -1}'
+    additionalTrainArgsYolo = click.option(
+        "--additional-train-args-hg",
+        default=json_string_yolo,
+        callback=lambda _, __, x: json.loads(x),
+        help=(
+            "args passed to huggingface TrainingArguments constructor. "
+            "See https://github.com/ultralytics/yolov5/blob/master/train.py"
+            "Ex:  --additional-train-args-yolo " + json_string_yolo
+        ),
+    )
 
 
 class PredictOptions:
