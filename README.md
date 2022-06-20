@@ -39,7 +39,7 @@ git submodule update --init
 then install the requirements:
 
 ```bash
-pip install -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
+pip install torch && pip install -r requirements.txt
 pip install -e .
 ```
 

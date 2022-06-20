@@ -1,7 +1,7 @@
 """It's not possible to use the python debugger with the command kiliautoml.
 
-So this fife enables to use the command
-python -m pdb utils.debug.py
+This file enables to use the the debugger as follows:
+python -m pdb utils/debug.py
 """
 from main import kiliautoml
 
