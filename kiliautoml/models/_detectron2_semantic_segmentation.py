@@ -6,10 +6,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
+import torch
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
-from detectron2.data import DatasetCatalog, MetadataCatalog
-from detectron2.engine import DefaultTrainer
+from detectron2.data import DatasetCatalog, MetadataCatalog, build_detection_test_loader
+from detectron2.engine import DefaultPredictor, DefaultTrainer
+from detectron2.evaluation import COCOEvaluator, inference_on_dataset
 from detectron2.structures import BoxMode
 from detectron2.utils.logger import setup_logger
 from typing_extensions import Literal, TypedDict
@@ -44,6 +46,9 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
     ):
+        # TODO - model_name should be shecked by BaseModel
+        if model_name is None:
+            model_name = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
         BaseModel.__init__(
             self,
             job=job,
@@ -120,6 +125,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):
             shutil.rmtree(model_path_repository_dir, ignore_errors=True)
         model_dir = PathDetectron2.append_model_dir(model_path_repository_dir)
         data_dir = PathDetectron2.append_data_dir(model_path_repository_dir)
+        eval_dir = PathDetectron2.append_output_evaluation(model_path_repository_dir)
 
         # 1. Convert to COCO format
         _, classes = convert_kili_semantic_to_coco(
@@ -130,14 +136,19 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         MetadataCatalog.clear()
         DatasetCatalog.clear()
         for d in ["train", "val"]:
-            DatasetCatalog.register("balloon_" + d, lambda d=d: self.get_coco_dicts(data_dir))
-            MetadataCatalog.get("balloon_" + d).set(thing_classes=classes)
+            # TODO: separate train and test
+            DatasetCatalog.register("dataset_" + d, lambda d=d: self.get_coco_dicts(data_dir))
+            MetadataCatalog.get("dataset_" + d).set(thing_classes=classes)
 
         # 3. Train model
         cfg = get_cfg()
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        cfg.MODEL.DEVICE = device
+        if device == "cpu":
+            kili_print("Running on CPU, this will be extremely slow.")
         cfg.merge_from_file(model_zoo.get_config_file(self.model_name))
-        cfg.DATASETS.TRAIN = ("balloon_train",)
-        cfg.DATASETS.TEST = ()
+        cfg.DATASETS.TRAIN = ("dataset_train",)
+        cfg.DATASETS.TEST = ("dataset_val",)
         cfg.DATALOADER.NUM_WORKERS = 1
         cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(self.model_name)
         cfg.SOLVER.IMS_PER_BATCH = batch_size  # This is the real "batch size" commonly known to deep learning people # noqa: E501
@@ -155,16 +166,32 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         cfg.OUTPUT_DIR = model_dir
         trainer = DefaultTrainer(cfg)
         trainer.resume_or_load(resume=False)
-        trainer.train()
-        return 0
+        res = trainer.train()
+        print(res)
+
+        # Inference should use the config with parameters that are used in training
+        # cfg now already contains everything we've set previously. We changed it a little bit for inference: # noqa
+        cfg.MODEL.WEIGHTS = os.path.join(
+            cfg.OUTPUT_DIR, "model_final.pth"
+        )  # path to the model we just trained
+        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.00003  # set a custom testing threshold
+        predictor = DefaultPredictor(cfg)
+
+        evaluator = COCOEvaluator("dataset_val", output_dir=eval_dir)
+        val_loader = build_detection_test_loader(cfg, "dataset_val")  # type:ignore
+        eval_res = inference_on_dataset(predictor.model, val_loader, evaluator)
+        print(eval_res)
+        kili_print(f"Evaluations results are available in {eval_dir}")
+
+        return eval_res["segm"]["AP"]
 
     # def visualise_labels(self):
     #     dataset_dicts = self.get_coco_dicts("./output")
-    #     balloon_metadata = MetadataCatalog.get("balloon_train")
+    #     dataset_metadata = MetadataCatalog.get("dataset_train")
 
     #     for d in random.sample(dataset_dicts, 2):
     #         img = cv2.imread(d["file_name"])
-    #         visualizer = Visualizer(img[:, :, ::-1], metadata=balloon_metadata, scale=0.5)
+    #         visualizer = Visualizer(img[:, :, ::-1], metadata=dataset_metadata, scale=0.5)
     #         out = visualizer.draw_dataset_dict(d)
     #         cv2_imshow(out.get_image()[:, :, ::-1])
 

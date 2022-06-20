@@ -139,5 +139,10 @@ class PathDetectron2:
 
     @staticmethod
     @makedirs_exist_ok
-    def append_data_dir(model_dir: ModelDirT) -> ModelPathT:
-        return os.path.join(model_dir, "data")
+    def append_data_dir(model_repository_dir: ModelRepositoryDirT):
+        return os.path.join(model_repository_dir, "data")
+
+    @staticmethod
+    @makedirs_exist_ok
+    def append_output_evaluation(model_repository_dir: ModelRepositoryDirT):
+        return os.path.join(model_repository_dir, "evaluation")
