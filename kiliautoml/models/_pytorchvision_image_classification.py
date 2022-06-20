@@ -102,7 +102,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 asset_id = asset["id"]
                 warn = f"${asset_id}: No annotation for job ${self.job_name}"
                 warnings.warn(warn)
-                return {"warning": warn}
+                return {"training_loss": None}
             else:
                 labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
 

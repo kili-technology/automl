@@ -10,7 +10,7 @@ from kiliautoml.utils.constants import (
 from kiliautoml.utils.helpers import JobPredictions
 from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT
 
-DictTrainingInfos = Dict[Any, Any]
+DictTrainingInfos = Dict[str, Any]
 
 
 class BaseModel(metaclass=ABCMeta):

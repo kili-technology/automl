@@ -26,7 +26,6 @@ setup(
         "wandb==0.12.10",
         "ipython",
         "ratelimit",
-        "pyyaml==5.1",
         "opencv-python",
         "git+https://github.com/facebookresearch/detectron2.git",
     ],
