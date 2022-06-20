@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import time
 from os.path import join
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -34,7 +35,7 @@ from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT
 setup_logger()
 
 
-class Detectron2SemanticSegmentationModel(BaseModel):
+class Detectron2SemanticSegmentationModel(BaseModel):  #
 
     ml_task: MLTaskT = "OBJECT_DETECTION"
     model_repository: ModelRepositoryT = "detectron2"
@@ -118,6 +119,8 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         """Download Kili assets, convert to coco format, then to detectron2 format, train model."""
         _ = verbose
         _ = disable_wandb
+        if not disable_wandb:
+            kili_print("Wandb is not yet available on Detectron2. But tensorboard is available.")
         _ = label_merge_strategy
 
         model_path_repository_dir = Path.model_repository_dir(
@@ -147,14 +150,15 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         trainer = DefaultTrainer(cfg)
         trainer.resume_or_load(resume=False)
         res = trainer.train()
-        print(res)
+        kili_print("Training metrics", res)
 
+        # 4. Inference
         # Inference should use the config with parameters that are used in training
         # cfg now already contains everything we've set previously. We changed it a little bit for inference: # noqa
         cfg.MODEL.WEIGHTS = os.path.join(
             cfg.OUTPUT_DIR, "model_final.pth"
         )  # path to the model we just trained
-        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.00003  # set a custom testing threshold
+        cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.3  # set a custom testing threshold
         predictor = DefaultPredictor(cfg)
 
         evaluator = COCOEvaluator("dataset_val", output_dir=eval_dir)
@@ -162,7 +166,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         eval_res = inference_on_dataset(predictor.model, val_loader, evaluator)
         print(eval_res)
         kili_print(f"Evaluations results are available in {eval_dir}")
-
+        kili_print("The logs and model are saved in ", cfg.OUTPUT_DIR)
         return eval_res["segm"]["AP"]
 
     def get_cfg_kili(
@@ -188,25 +192,16 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         if epochs:
             n_iter = int(epochs * len(assets) / batch_size) + 1
             print("n_iter:", n_iter, "(Recommended min: 500)")
-            cfg.SOLVER.MAX_ITER = n_iter  # 300 iterations seems good enough for this toy dataset; you will need to train longer for a practical dataset # noqa: E501
+            cfg.SOLVER.MAX_ITER = n_iter
         cfg.SOLVER.STEPS = []  # do not decay learning rate
-        cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128  # The "RoIHead batch size". 128 is faster, and good enough for this toy dataset (default: 512) # noqa: E501
+        cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128
         cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(
             classes
         )  # (see https://detectron2.readthedocs.io/tutorials/datasets.html#update-the-config-for-new-datasets) # noqa: E501
 
         cfg.OUTPUT_DIR = model_dir
+        kili_print("The model and the logs will be be saved in ", cfg.OUTPUT_DIR)
         return cfg
-
-    # def visualise_labels(self):
-    #     dataset_dicts = self.get_coco_dicts("./output")
-    #     dataset_metadata = MetadataCatalog.get("dataset_train")
-
-    #     for d in random.sample(dataset_dicts, 2):
-    #         img = cv2.imread(d["file_name"])
-    #         visualizer = Visualizer(img[:, :, ::-1], metadata=dataset_metadata, scale=0.5)
-    #         out = visualizer.draw_dataset_dict(d)
-    #         cv2_imshow(out.get_image()[:, :, ::-1])
 
     def predict(  # type: ignore
         self,
@@ -234,8 +229,6 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         visualization_dir = PathDetectron2.append_output_visualization(model_path_repository_dir)
 
         # Inference should use the config with parameters that are used in training
-        # cfg now already contains everything we've set previously.
-        # We changed it a little bit for inference:
         _, classes = convert_kili_semantic_to_coco(
             job_name=self.job_name, assets=assets, output_dir=data_dir, api_key=api_key
         )
@@ -254,10 +247,8 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         # 2. Convert to Detectron2 format
         MetadataCatalog.clear()
         DatasetCatalog.clear()
-        for d in ["train", "val"]:
-            # TODO: separate train and test
-            DatasetCatalog.register("dataset_" + d, lambda d=d: self.get_coco_dicts(data_dir))
-            MetadataCatalog.get("dataset_" + d).set(thing_classes=classes)
+        DatasetCatalog.register("dataset_val", lambda _=_: self.get_coco_dicts(data_dir))
+        MetadataCatalog.get("dataset_val").set(thing_classes=classes)
         dataset_metadata_train = MetadataCatalog.get("dataset_train")
 
         # 3. Predict
@@ -301,11 +292,11 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         h, w = instances._image_size
         scores = instances.scores.cpu().detach().numpy()
         classes = instances.pred_classes.cpu().detach().numpy()
-        for i in range(len(classes)):
-            score = scores[i]
-            classe = classes[i]
+        for class_i in range(len(classes)):
+            score = scores[class_i]
+            classe = classes[class_i]
             categories = [Category(name=class_names[classe], confidence=int(score * 100))]
-            list_x_y = self.get_contours_instance(instances, i)
+            list_x_y = self.get_contours_instance(instances, class_i)
             boundingPoly = [
                 NormalizedVertices(
                     normalizedVertices=[
@@ -328,7 +319,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):
             im[:, :, ::-1],
             metadata=dataset_metadata_train,
             scale=0.5,
-            instance_mode=ColorMode.IMAGE_BW,  # remove the colors of unsegmented pixels. This option is only available for segmentation models # noqa
+            instance_mode=ColorMode.IMAGE_BW,
         )
         out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
         image_with_predictions = out.get_image()[:, :, ::-1]
@@ -410,27 +401,14 @@ class NormalizedVertices(TypedDict):
 
 
 class Annotation(TypedDict):
-    boundingPoly: List[NormalizedVertices]
+    boundingPoly: List[NormalizedVertices]  # len(self.boundingPoly) == 1
     mid: str
     type: Literal["semantic"]
     categories: List[Category]
 
-    # def check(self):
-    #   assert len(self.boundingPoly) == 1
-
 
 class SemanticJob(TypedDict):
     annotations: List[Annotation]
-
-
-infos_coco = {
-    "year": "2022",
-    "version": "1.0",
-    "description": "Exported from KiliAutoML",
-    "contributor": "KiliAutoML",
-    "url": "https://kili-technology.com",
-    "date_created": "2022-01-19T09:48:27",
-}
 
 
 def convert_kili_semantic_to_coco(
@@ -448,6 +426,14 @@ def convert_kili_semantic_to_coco(
 
     We iterate on the assets and create a coco format for each asset.
     """
+    infos_coco = {
+        "year": time.strftime("%Y"),
+        "version": "1.0",
+        "description": "Exported from KiliAutoML",
+        "contributor": "KiliAutoML",
+        "url": "https://kili-technology.com",
+        "date_created": time.strftime("%Y %m %d %H %M"),
+    }
     labels_json = CocoFormat(
         info=infos_coco,
         licenses=[],
@@ -481,19 +467,19 @@ def convert_kili_semantic_to_coco(
         labels_json["categories"].append(categories_coco)
 
     # Fill labels_json
-    j = -1
-    for i, asset in enumerate(assets):
+    annotation_j = -1
+    for asset_i, asset in enumerate(assets):
         annotations_: List[Annotation] = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
 
         # Add a new image
         img_data = download_asset_binary(api_key, asset["content"])  # jpg
         img = cv2.imdecode(np.frombuffer(img_data, np.uint8), cv2.IMREAD_COLOR)
-        file_name = os.path.join(data_dir, f"{i}.jpg")
+        file_name = os.path.join(data_dir, f"{asset_i}.jpg")
         cv2.imwrite(file_name, img)
         height = img.shape[0]
         width = img.shape[1]
         image_coco = ImageCoco(
-            id=i,
+            id=asset_i,
             license=0,
             file_name=file_name,
             height=height,
@@ -503,7 +489,7 @@ def convert_kili_semantic_to_coco(
         labels_json["images"].append(image_coco)
 
         for annotation in annotations_:
-            j += 1
+            annotation_j += 1
             boundingPoly = annotation["boundingPoly"]
             px: List[float] = [v["x"] * width for v in boundingPoly[0]["normalizedVertices"]]
             py: List[float] = [v["y"] * height for v in boundingPoly[0]["normalizedVertices"]]
@@ -513,8 +499,8 @@ def convert_kili_semantic_to_coco(
             categories = annotation["categories"]
             cat_id = category_name_to_id[categories[0]["name"]]
             annotations_coco = AnnotationsCoco(
-                id=j,
-                image_id=i,
+                id=annotation_j,
+                image_id=asset_i,
                 category_id=cat_id,
                 bbox=[np.min(px), np.min(py), np.max(px), np.max(py)],
                 # Objects have only one connected part.
