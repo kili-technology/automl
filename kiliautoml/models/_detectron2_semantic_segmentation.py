@@ -277,7 +277,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):
 
         job_predictions = JobPredictions(
             job_name=self.job_name,
-            external_id_array=[a[0] for a in id_json_list],
+            external_id_array=[asset["externalId"] for asset in assets],
             json_response_array=[a[1] for a in id_json_list],
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=[100] * len(id_json_list),

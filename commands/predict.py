@@ -1,4 +1,3 @@
-from pprint import pprint
 from typing import List, Optional
 
 import click
@@ -222,7 +221,6 @@ def main(
         )
 
         if not dry_run and job_predictions.external_id_array:
-            pprint(job_predictions.json_response_array)
             kili.create_predictions(
                 project_id,
                 external_id_array=job_predictions.external_id_array,
