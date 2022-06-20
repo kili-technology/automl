@@ -28,17 +28,11 @@ from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
     JobPredictions,
     categories_from_job,
-    get_label,
     get_last_trained_model_path,
     kili_print,
 )
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
-from kiliautoml.utils.type import (
-    AdditionalTrainingArgsT,
-    AssetT,
-    JobT,
-    LabelMergeStrategyT,
-)
+from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT
 
 env = Environment(
     loader=FileSystemLoader(os.path.abspath(PathUltralytics.ULTRALYTICS_REL_PATH)),
@@ -106,7 +100,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
         self,
         *,
         assets: List[AssetT],
-        label_merge_strategy: LabelMergeStrategyT,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -144,8 +137,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
             class_names=class_names,
             kili_api_key=api_key,
             assets=assets,
-            job_name=self.job_name,
-            label_merge_strategy=label_merge_strategy,
         )
 
         with open(config_data_path, "w") as f:
@@ -219,8 +210,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
         class_names: List[str],
         kili_api_key: str,
         assets,
-        job_name,
-        label_merge_strategy,
     ):
 
         print("Downloading datasets from Kili")
@@ -256,16 +245,11 @@ class UltralyticsObjectDetectionModel(BaseModel):
             print(path_labels)
             os.makedirs(path_labels, exist_ok=True)
             for asset in assets_split:
-                label = get_label(asset, label_merge_strategy)
-                if (label is None) or (job_name not in label["jsonResponse"]):
-                    asset_id = asset["id"]
-                    warnings.warn(f"assetId {asset_id}: No annotation for job ${job_name}")
-                else:
-                    asset_id = asset["id"] + ".txt"  # type: ignore
-                    with open(os.path.join(path_labels, asset_id), "w") as handler:
-                        json_response = label["jsonResponse"]
-                        for job in json_response.values():
-                            save_annotations_to_yolo_format(names, handler, job)
+                asset_id = asset["id"] + ".txt"  # type: ignore
+                with open(os.path.join(path_labels, asset_id), "w") as handler:
+                    json_response = asset["labels"]["jsonResponse"]
+                    for job in json_response.values():
+                        save_annotations_to_yolo_format(names, handler, job)
 
     # TODO: Move to Paths
     @staticmethod
@@ -439,7 +423,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
         self,
         *,
         assets: List[AssetT],
-        label_merge_strategy: LabelMergeStrategyT,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,

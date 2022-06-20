@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import List
 
 import click
@@ -18,7 +19,7 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
     ToolT,
 )
-from kiliautoml.utils.helpers import get_assets, get_project, kili_print
+from kiliautoml.utils.helpers import get_assets, get_label, get_project, kili_print
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -76,12 +77,28 @@ def main(
 
     training_losses = []
 
-    assets = get_assets(
-        kili, project_id, asset_status_in, max_assets=max_assets, randomize=randomize_assets
-    )
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:
             continue
+
+        ml_task = job.get("mlTask")
+        assets = get_assets(
+            kili, project_id, asset_status_in, max_assets=max_assets, randomize=randomize_assets
+        )
+        asset_id_to_remove = []
+        for asset in assets:
+            label = get_label(asset, label_merge_strategy)
+            if (label is None) or (
+                ml_task == "CLASSIFICATION" and job_name not in label["jsonResponse"]
+            ):
+                asset_id = asset["id"]
+                warnings.warn(f"${asset_id} removed: no annotation for job ${job_name}")
+                asset_id_to_remove.append(asset_id)
+            else:
+                asset["labels"] = label
+
+        assets = [asset for asset in assets if asset["id"] not in asset_id_to_remove]
+
         kili_print(f"Training on job: {job_name}")
         os.environ["WANDB_PROJECT"] = title + "_" + job_name
 
@@ -94,7 +111,6 @@ def main(
                 model_repository=model_repository,
             )
         content_input = job.get("content", {}).get("input")
-        ml_task = job.get("mlTask")
         tools: List[ToolT] = job.get("tools")  # type: ignore
         training_loss = None
 
@@ -111,7 +127,6 @@ def main(
 
             training_loss = model.train(
                 assets=assets,
-                label_merge_strategy=label_merge_strategy,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
@@ -137,7 +152,6 @@ def main(
 
             training_loss = model.train(
                 assets=assets,
-                label_merge_strategy=label_merge_strategy,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
                 epochs=epochs,
@@ -161,7 +175,6 @@ def main(
             )
             training_loss = model.train(
                 assets=assets,
-                label_merge_strategy=label_merge_strategy,
                 epochs=epochs,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
@@ -184,7 +197,6 @@ def main(
 
             training_loss = image_classification_model.train(
                 assets=assets,
-                label_merge_strategy=label_merge_strategy,
                 batch_size=batch_size,
                 epochs=epochs,
                 clear_dataset_cache=clear_dataset_cache,
@@ -196,5 +208,6 @@ def main(
         else:
             kili_print("not implemented yet")
         training_losses.append([job_name, training_loss])
+
     kili_print()
     print(tabulate(training_losses, headers=["job_name", "training_loss"]))

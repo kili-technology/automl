@@ -1,3 +1,4 @@
+import warnings
 from typing import List
 
 import click
@@ -15,6 +16,7 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.helpers import (
     get_assets,
+    get_label,
     get_project,
     kili_print,
     upload_errors_to_kili,
@@ -85,15 +87,24 @@ def main(
                 model_repository=model_repository,
             )
 
-        if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
+        assets = get_assets(
+            kili, project_id, asset_status_in, max_assets=max_assets, randomize=randomize_assets
+        )
+        asset_id_to_remove = []
+        for asset in assets:
+            label = get_label(asset, label_merge_strategy)
+            if (label is None) or (
+                ml_task == "CLASSIFICATION" and job_name not in label["jsonResponse"]
+            ):
+                asset_id = asset["id"]
+                warnings.warn(f"${asset_id} removed: no annotation for job ${job_name}")
+                asset_id_to_remove.append(asset_id)
+            else:
+                asset["labels"] = label
 
-            assets = get_assets(
-                kili,
-                project_id,
-                asset_status_in,
-                max_assets=max_assets,
-                randomize=randomize_assets,
-            )
+        assets = [asset for asset in assets if asset["id"] not in asset_id_to_remove]
+
+        if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 
             image_classification_model = PyTorchVisionImageClassificationModel(
                 model_repository=model_repository,
@@ -105,7 +116,6 @@ def main(
             )
             found_errors = image_classification_model.find_errors(
                 assets=assets,
-                label_merge_strategy=label_merge_strategy,
                 cv_n_folds=cv_folds,
                 epochs=epochs,
                 batch_size=batch_size,
