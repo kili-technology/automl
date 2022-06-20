@@ -170,9 +170,12 @@ def get_assets(
     return assets
 
 
-def get_label(asset: AssetT, strategy: LabelMergeStrategyT):
+def get_label(asset: AssetT, job_name: str, ml_task, strategy: LabelMergeStrategyT):
 
     labels = asset["labels"]
+    # for CLASSIFICATION task, we can only accept label with
+    if ml_task == "CLASSIFICATION":
+        labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
         return min(labels, key=key)
@@ -184,6 +187,8 @@ def get_label(asset: AssetT, strategy: LabelMergeStrategyT):
 def get_labeled_assets(
     kili,
     project_id: str,
+    job_name: str,
+    ml_task,
     status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
     randomize: bool = False,
@@ -192,7 +197,7 @@ def get_labeled_assets(
     assets = get_assets(kili, project_id, status_in, max_assets=max_assets, randomize=randomize)
     asset_id_to_remove = set()
     for asset in assets:
-        label = get_label(asset, strategy)
+        label = get_label(asset, job_name, ml_task, strategy)
         if label is None:
             asset_id = asset["id"]
             warnings.warn(f"${asset_id} removed because no labels where available")
