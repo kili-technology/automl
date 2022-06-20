@@ -1,4 +1,6 @@
 # Do not forget to add in setup.py
+# This file is identical to requirements.txt but does not contain detectron2.
+# Because the ci needs detectron2 to be installed at the very end.
 cleanlab>=2.0.0
 click
 datasets<=2.2
@@ -22,4 +24,3 @@ ipython
 ratelimit
 pyyaml==5.1
 opencv-python
-git+https://github.com/facebookresearch/detectron2.git

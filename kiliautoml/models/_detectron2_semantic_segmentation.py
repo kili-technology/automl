@@ -62,7 +62,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         self.project_id = project_id
 
     @staticmethod
-    def get_coco_dicts(img_dir):
+    def _get_coco_dicts(img_dir):
         """Convert COCO format to Detectron2 format."""
         json_file = os.path.join(img_dir, "labels.json")
         with open(json_file) as f:
@@ -118,7 +118,6 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
     ):
         """Download Kili assets, convert to coco format, then to detectron2 format, train model."""
         _ = verbose
-        _ = disable_wandb
         if not disable_wandb:
             kili_print("Wandb is not yet available on Detectron2. But tensorboard is available.")
         _ = label_merge_strategy
@@ -142,11 +141,11 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         DatasetCatalog.clear()
         for d in ["train", "val"]:
             # TODO: separate train and test
-            DatasetCatalog.register("dataset_" + d, lambda d=d: self.get_coco_dicts(data_dir))
+            DatasetCatalog.register("dataset_" + d, lambda d=d: self._get_coco_dicts(data_dir))
             MetadataCatalog.get("dataset_" + d).set(thing_classes=classes)
 
         # 3. Train model
-        cfg = self.get_cfg_kili(assets, epochs, batch_size, model_dir, classes)
+        cfg = self._get_cfg_kili(assets, epochs, batch_size, model_dir, classes)
         trainer = DefaultTrainer(cfg)
         trainer.resume_or_load(resume=False)
         res = trainer.train()
@@ -169,7 +168,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         kili_print("The logs and model are saved in ", cfg.OUTPUT_DIR)
         return eval_res["segm"]["AP"]
 
-    def get_cfg_kili(
+    def _get_cfg_kili(
         self,
         assets: List[AssetT],
         epochs: Optional[int],
@@ -232,7 +231,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         _, classes = convert_kili_semantic_to_coco(
             job_name=self.job_name, assets=assets, output_dir=data_dir, api_key=api_key
         )
-        cfg = self.get_cfg_kili(
+        cfg = self._get_cfg_kili(
             assets, epochs=None, batch_size=batch_size, model_dir=model_dir, classes=classes
         )
         cfg.OUTPUT_DIR = model_dir
@@ -247,12 +246,12 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         # 2. Convert to Detectron2 format
         MetadataCatalog.clear()
         DatasetCatalog.clear()
-        DatasetCatalog.register("dataset_val", lambda _=_: self.get_coco_dicts(data_dir))
+        DatasetCatalog.register("dataset_val", lambda _=_: self._get_coco_dicts(data_dir))
         MetadataCatalog.get("dataset_val").set(thing_classes=classes)
         dataset_metadata_train = MetadataCatalog.get("dataset_train")
 
         # 3. Predict
-        dataset_dicts = self.get_coco_dicts(data_dir)
+        dataset_dicts = self._get_coco_dicts(data_dir)
         id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
         for d in dataset_dicts:
             externalId = d["file_name"]  # type:ignore
@@ -262,7 +261,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             annotations = self.get_annotations_from_instances(
                 outputs["instances"], class_names=classes
             )
-            self.visualize_predictions(visualization_dir, d, dataset_metadata_train, im, outputs)
+            self._visualize_predictions(visualization_dir, d, dataset_metadata_train, im, outputs)
             id_json_list.append((externalId, {self.job_name: {"annotations": annotations}}))
 
         job_predictions = JobPredictions(
@@ -313,7 +312,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             annotations.append(annotation)
         return annotations
 
-    def visualize_predictions(self, visualization_dir, d, dataset_metadata_train, im, outputs):
+    def _visualize_predictions(self, visualization_dir, d, dataset_metadata_train, im, outputs):
         v = Visualizer(
             im[:, :, ::-1],
             metadata=dataset_metadata_train,

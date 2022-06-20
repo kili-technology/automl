@@ -17,12 +17,13 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.version }}
-          cache: "pip"
+          # cache: "pip"
 
       - name: Install deps
         run: |
-          pip install -r requirements.txt -r requirements_dev.txt && git submodule update --init && pip install -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
-
+          pip install -r requirements_ci.txt -r requirements_dev.txt && git submodule update --init && pip install -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
+      - name: Install detectron2
+        run: pip install git+https://github.com/facebookresearch/detectron2.git
       - name: Run test suite
         run: |
           python -m pytest -s tests/e2e -v

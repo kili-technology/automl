@@ -236,4 +236,7 @@ def main(
             kili_print(
                 "Predictions sent to kili, you can open the following url to check them out!"
             )
-            kili_print(f"{api_endpoint[:-21]}/label/projects/{project_id}/explore")
+            status_filter = "%2C".join(asset_status_in)
+            kili_print(
+                f"{api_endpoint[:-21]}/label/projects/{project_id}/explore?statusIn={status_filter}"
+            )

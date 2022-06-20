@@ -258,9 +258,10 @@ def upload_errors_to_kili(found_errors, kili):
 
 
 def not_implemented_job(job_name, ml_task):
-    kili_print(f"MLTask {ml_task} for job {job_name} is not yet Supported")
+    kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
     kili_print(
-        "You can use the flag --target-job job_name1  --target-job job_name2 "
-        "to select one or multiple job."
+        "You can use the repeatable flag --target-job "
+        "(for example: --target-job job_name1 --target-job job_name2) "
+        "to select one or multiple jobs."
     )
     raise NotImplementedError

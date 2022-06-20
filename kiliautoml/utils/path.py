@@ -150,4 +150,4 @@ class PathDetectron2:
     @staticmethod
     @makedirs_exist_ok
     def append_output_visualization(model_repository_dir: ModelRepositoryDirT):
-        return os.path.join(model_repository_dir, "visualization_predictions")
+        return os.path.join(model_repository_dir, "prediction_visualization")
