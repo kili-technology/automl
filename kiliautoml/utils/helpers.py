@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import warnings
 from datetime import datetime
 from glob import glob
 from typing import Any, List, Optional, Tuple
@@ -178,6 +179,28 @@ def get_label(asset: AssetT, strategy: LabelMergeStrategyT):
     else:
         warn(f"Asset {asset['id']} does not have any label available")
         return None
+
+
+def get_labeled_assets(
+    kili,
+    project_id: str,
+    status_in: Optional[List[AssetStatusT]] = None,
+    max_assets: Optional[int] = None,
+    randomize: bool = False,
+    strategy: LabelMergeStrategyT = "last",
+) -> List[AssetT]:
+    assets = get_assets(kili, project_id, status_in, max_assets=max_assets, randomize=randomize)
+    asset_id_to_remove = set()
+    for asset in assets:
+        label = get_label(asset, strategy)
+        if label is None:
+            asset_id = asset["id"]
+            warnings.warn(f"${asset_id} removed because no labels where available")
+            asset_id_to_remove.add(asset_id)
+        else:
+            asset["labels"] = label
+
+    return [asset for asset in assets if asset["id"] not in asset_id_to_remove]
 
 
 def get_project(kili, project_id: str) -> Tuple[InputTypeT, JobsT, str]:

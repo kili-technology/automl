@@ -1,5 +1,4 @@
 import os
-import warnings
 from typing import List
 
 import click
@@ -19,7 +18,7 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
     ToolT,
 )
-from kiliautoml.utils.helpers import get_assets, get_label, get_project, kili_print
+from kiliautoml.utils.helpers import get_labeled_assets, get_project, kili_print
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -82,22 +81,14 @@ def main(
             continue
 
         ml_task = job.get("mlTask")
-        assets = get_assets(
-            kili, project_id, asset_status_in, max_assets=max_assets, randomize=randomize_assets
+        assets = get_labeled_assets(
+            kili,
+            project_id=project_id,
+            status_in=asset_status_in,
+            max_assets=max_assets,
+            randomize=randomize_assets,
+            strategy=label_merge_strategy,
         )
-        asset_id_to_remove = []
-        for asset in assets:
-            label = get_label(asset, label_merge_strategy)
-            if (label is None) or (
-                ml_task == "CLASSIFICATION" and job_name not in label["jsonResponse"]
-            ):
-                asset_id = asset["id"]
-                warnings.warn(f"${asset_id} removed: no annotation for job ${job_name}")
-                asset_id_to_remove.append(asset_id)
-            else:
-                asset["labels"] = label
-
-        assets = [asset for asset in assets if asset["id"] not in asset_id_to_remove]
 
         kili_print(f"Training on job: {job_name}")
         os.environ["WANDB_PROJECT"] = title + "_" + job_name
