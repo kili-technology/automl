@@ -100,8 +100,9 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             label = get_label(asset, label_merge_strategy)
             if (label is None) or (self.job_name not in label["jsonResponse"]):
                 asset_id = asset["id"]
-                warnings.warn(f"${asset_id}: No annotation for job ${self.job_name}")
-                return 0.0
+                warn = f"${asset_id}: No annotation for job ${self.job_name}"
+                warnings.warn(warn)
+                return {"warning": warn}
             else:
                 labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
 
@@ -129,7 +130,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             image_datasets=image_datasets,
             save_model_path=self.model_path,
         )
-        return loss
+        return {"training_loss": loss}
 
     def predict(
         self,

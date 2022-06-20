@@ -210,7 +210,8 @@ class UltralyticsObjectDetectionModel(BaseModel):
         df_result = pd.read_csv(os.path.join(model_output_path, "exp", "results.csv"))
 
         # we take the class loss as the main metric
-        return df_result.iloc[-1:][["        val/obj_loss"]].to_numpy()[0][0]  # type: ignore
+        train_loss = df_result.iloc[-1:][["        val/obj_loss"]].to_numpy()[0][0]  # type:ignore
+        return {"training_loss": train_loss}
 
     @staticmethod
     def _yaml_preparation(

@@ -69,7 +69,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         disable_wandb: bool = False,
         verbose: int,
         additional_train_args_hg: AdditionalTrainingArgsT,
-    ) -> float:
+    ):
         _ = verbose
 
         nltk.download("punkt")
@@ -129,7 +129,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         output = trainer.train()
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
-        return output.training_loss
+        return {"training_loss": output.training_loss}
 
     def predict(
         self,
