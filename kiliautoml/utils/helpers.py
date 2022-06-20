@@ -13,6 +13,7 @@ from tqdm import tqdm
 from typing_extensions import get_args
 
 from kiliautoml.utils.constants import HOME, InputTypeT
+from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeStrategyT
 
@@ -106,7 +107,7 @@ def get_asset_memoized(
     skip,
     status_in: Optional[List[AssetStatusT]] = None,
 ) -> List[AssetT]:
-    return kili.assets(
+    assets = kili.assets(
         project_id=project_id,
         first=total,
         skip=skip,
@@ -121,6 +122,10 @@ def get_asset_memoized(
         status_in=status_in,
         as_generator=False,
     )
+
+    if GENERATE_MOCK:
+        jsonify_mock_data(assets, function_name="assets")
+    return assets
 
 
 def get_assets(
@@ -182,6 +187,8 @@ def get_label(asset: AssetT, strategy: LabelMergeStrategyT):
 
 def get_project(kili, project_id: str) -> Tuple[InputTypeT, JobsT, str]:
     projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface", "title"])
+    if GENERATE_MOCK:
+        jsonify_mock_data(projects, function_name="projects")
     if len(projects) == 0:
         raise ValueError(
             "no such project. Maybe your KILI_API_KEY does not belong to a member of the project."

@@ -11,6 +11,7 @@ from ratelimit import limits, sleep_and_retry
 from requests import Response
 from tqdm import tqdm
 
+from kiliautoml.utils.helper_mock import GENERATE_MOCK, save_mock_data
 from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.memoization import kili_memoizer
 
@@ -49,6 +50,10 @@ def throttled_request(api_key, asset_content, use_header=True, k=0) -> Response:
         response = requests.get(asset_content)
     try:
         assert response.status_code == 200
+
+        if GENERATE_MOCK:
+            id = asset_content.split("/")[-1].split(".")[0]
+            save_mock_data(id, response, function_name="throttled_request")
         return response
     except AssertionError:
         # Sometimes, the header breaks google bucket and just removing the header makes it work.
