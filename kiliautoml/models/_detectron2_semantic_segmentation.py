@@ -310,7 +310,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):
                 NormalizedVertices(
                     normalizedVertices=[
                         NormalizedVertice(x=float(round(x / w, 4)), y=float(round(y / h, 4)))
-                        for x, y in list_x_y[::50]
+                        for x, y in list_x_y
                     ]
                 )
             ]
@@ -338,7 +338,8 @@ class Detectron2SemanticSegmentationModel(BaseModel):
     def save_predictions(self, visualization_dir, file_name, image_with_predictions):
         im = Image.fromarray(image_with_predictions)
         path = os.path.join(visualization_dir, file_name)
-        im.save(path + ".jpeg")
+        im.save(path)
+        print("predictions image have been saved in", path)
 
     def find_errors(
         self,

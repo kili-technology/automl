@@ -12,7 +12,13 @@ from kiliautoml.models import (
     UltralyticsObjectDetectionModel,
 )
 from kiliautoml.utils.constants import ModelFrameworkT
-from kiliautoml.utils.helpers import JobPredictions, get_assets, get_project, kili_print
+from kiliautoml.utils.helpers import (
+    JobPredictions,
+    get_assets,
+    get_project,
+    kili_print,
+    not_implemented_job,
+)
 from kiliautoml.utils.type import AssetStatusT
 
 
@@ -144,7 +150,7 @@ def predict_one_job(
         )
 
     else:
-        raise NotImplementedError
+        not_implemented_job(job_name, ml_task)
     return job_predictions
 
 

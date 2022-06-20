@@ -255,3 +255,12 @@ def upload_errors_to_kili(found_errors, kili):
             meta["labeling_error"] = True
 
         kili.update_properties_in_assets(asset_ids=asset_ids, json_metadatas=new_metadatas)
+
+
+def not_implemented_job(job_name, ml_task):
+    kili_print(f"MLTask {ml_task} for job {job_name} is not yet Supported")
+    kili_print(
+        "You can use the flag --target-job job_name1  --target-job job_name2 "
+        "to select one or multiple job."
+    )
+    raise NotImplementedError

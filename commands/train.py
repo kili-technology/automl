@@ -19,7 +19,12 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
     ToolT,
 )
-from kiliautoml.utils.helpers import get_assets, get_project, kili_print
+from kiliautoml.utils.helpers import (
+    get_assets,
+    get_project,
+    kili_print,
+    not_implemented_job,
+)
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -219,8 +224,7 @@ def main(
             )
 
         else:
-            print(tools, content_input, input_type, ml_task)
-            kili_print("not implemented yet")
+            not_implemented_job(job_name, ml_task)
         training_losses.append([job_name, training_loss])
     kili_print()
     print(tabulate(training_losses, headers=["job_name", "training_loss"]))
