@@ -188,7 +188,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         cfg.DATALOADER.NUM_WORKERS = 1
         cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(self.model_name)
         cfg.SOLVER.IMS_PER_BATCH = batch_size  # This is the real "batch size" commonly known to deep learning people # noqa: E501
-        cfg.SOLVER.BASE_LR = 0.00025  # pick a good LR
+        cfg.SOLVER.BASE_LR = 0.00025
         if epochs:
             n_iter = int(epochs * len(assets) / batch_size) + 1
             kili_print("n_iter:", n_iter, "(Recommended min: 500)")
@@ -516,4 +516,5 @@ def convert_kili_semantic_to_coco(
 
     kili_print(f"Kili format has been converted to Coco format. Saved in {output_dir}")
     classes: List[str] = list(category_name_to_id.keys())
+    kili_print("List of classes:", classes)
     return labels_json, classes

@@ -233,3 +233,7 @@ def main(
                 json_response_array=job_predictions.json_response_array,
                 model_name_array=job_predictions.model_name_array,
             )
+            kili_print(
+                "Predictions sent to kili, you can open the following url to check them out!"
+            )
+            kili_print(f"{api_endpoint[:-21]}/label/projects/{project_id}/explore")
