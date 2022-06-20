@@ -1,3 +1,8 @@
+"""It's not possible to use the python debugger with the command kiliautoml.
+
+So this fife enables to use the command
+python -m pdb utils.debug.py
+"""
 from main import kiliautoml
 
 if __name__ == "__main__":
