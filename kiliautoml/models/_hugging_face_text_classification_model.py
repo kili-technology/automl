@@ -109,7 +109,6 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
         train_dataset = tokenized_datasets["train"]  # type: ignore
-
         path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
         training_arguments = self._get_training_args(
@@ -124,8 +123,8 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         trainer = Trainer(
             model=model,
             args=training_arguments,
-            train_dataset=train_dataset,  # type: ignore
             tokenizer=tokenizer,
+            train_dataset=train_dataset,  # type: ignore
         )
         output = trainer.train()
         kili_print(f"Saving model to {path_model}")
