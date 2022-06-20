@@ -164,7 +164,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         evaluator = COCOEvaluator("dataset_val", output_dir=eval_dir)
         val_loader = build_detection_test_loader(cfg, "dataset_val")  # type:ignore
         eval_res = inference_on_dataset(predictor.model, val_loader, evaluator)
-        print(eval_res)
+        kili_print(eval_res)
         kili_print(f"Evaluations results are available in {eval_dir}")
         kili_print("The logs and model are saved in ", cfg.OUTPUT_DIR)
         return eval_res["segm"]["AP"]
@@ -191,7 +191,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         cfg.SOLVER.BASE_LR = 0.00025  # pick a good LR
         if epochs:
             n_iter = int(epochs * len(assets) / batch_size) + 1
-            print("n_iter:", n_iter, "(Recommended min: 500)")
+            kili_print("n_iter:", n_iter, "(Recommended min: 500)")
             cfg.SOLVER.MAX_ITER = n_iter
         cfg.SOLVER.STEPS = []  # do not decay learning rate
         cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128
@@ -256,7 +256,6 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
         for d in dataset_dicts:
             externalId = d["file_name"]  # type:ignore
-            print("externalId", externalId)
             im = cv2.imread(externalId)
             outputs = predictor(im)
 
@@ -330,7 +329,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         im = Image.fromarray(image_with_predictions)
         path = os.path.join(visualization_dir, file_name)
         im.save(path)
-        print("predictions image have been saved in", path)
+        kili_print("predictions image have been saved in", path)
 
     def find_errors(
         self,

@@ -72,7 +72,7 @@ class BBoxAnnotation(TypedDict):
 def inspect(e):
     kili_print("Error while executing YoloV5:")
     for k, v in e.__dict__.items():
-        print(k)
+        kili_print(k)
         if isinstance(v, bytes):
             print(v.decode("utf-8"))
         else:
@@ -182,7 +182,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 str(batch_size),
                 *args_from_json,
             ]
-            print("Executing Yolo with command line:", " ".join(args))
+            kili_print("Executing Yolo with command line:", " ".join(args))
 
             with open("/tmp/test.log", "wb") as f:
                 process = subprocess.Popen(
@@ -195,7 +195,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 for line in iter(process.stdout.readline, b""):  # type:ignore
                     sys.stdout.write(line.decode(sys.stdout.encoding))
 
-                print("process return code:", process.returncode)
+                kili_print("process return code:", process.returncode)
                 output, error = process.communicate()
                 if process.returncode != 0:
                     print(output)
@@ -223,7 +223,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         label_merge_strategy,
     ):
 
-        print("Downloading datasets from Kili")
+        kili_print("Downloading datasets from Kili")
         train_val_proportions = [0.8, 0.1]
         path = data_path
         if "/kili/" not in path:
@@ -381,7 +381,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 )
                 proba_list.append(min(probabilities))
                 if verbose >= 1:
-                    print(f"Asset {image.externalId}: {kili_predictions}")
+                    kili_print(f"Asset {image.externalId}: {kili_predictions}")
                 id_json_list.append(
                     (image.externalId, {job_name: {"annotations": kili_predictions}})
                 )
@@ -407,7 +407,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=proba_list,
         )
-        print("predictions_probability", job_predictions.predictions_probability)
+        kili_print("predictions_probability", job_predictions.predictions_probability)
         return job_predictions
 
     def _get_last_model_param(self, project_id, model_path) -> Tuple[ModelPathT, ModelFrameworkT]:

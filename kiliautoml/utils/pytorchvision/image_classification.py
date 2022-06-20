@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 from torchvision import models, transforms
 
 from kiliautoml.utils.constants import ModelNameT, ModelRepositoryT
-from kiliautoml.utils.helpers import set_default
+from kiliautoml.utils.helpers import kili_print, set_default
 from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
 
@@ -142,7 +142,7 @@ def get_trained_model_image_classif(
 
 
 def initialize_model_img_class(model_name: ModelNameT, class_names):
-    print("Initialization of the model with N={} classes".format(len(class_names)))
+    kili_print("Initialization of the model with N={} classes".format(len(class_names)))
     if model_name == "efficientnet_b0":
         model = models.efficientnet_b0(pretrained=True)
         num_ftrs = model.classifier[1].in_features
@@ -171,11 +171,11 @@ def predict_probabilities(
     n_total = len(loader.dataset) / float(loader.batch_size)  # type:ignore
     outputs = []
     if verbose >= 2:
-        print("Computing probabilities for this fold with device: {}".format(device))
+        kili_print("Computing probabilities for this fold with device: {}".format(device))
     with torch.no_grad():
         for i, input in enumerate(loader):
             if verbose >= 2:
-                print("\rComplete: {:.1%}".format(i / n_total), end="")
+                kili_print("\rComplete: {:.1%}".format(i / n_total), end="")
             if torch.cuda.is_available():
                 input = input.cuda(non_blocking=True)
 

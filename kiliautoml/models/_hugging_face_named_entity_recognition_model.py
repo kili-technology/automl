@@ -226,9 +226,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             if verbose:
                 if len(predictions_asset):
                     for p in predictions_asset:
-                        print(p)
+                        kili_print(p)
                 else:
-                    print("No prediction")
+                    kili_print("No prediction")
 
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
