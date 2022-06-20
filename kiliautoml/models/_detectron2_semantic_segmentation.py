@@ -278,7 +278,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         pred_masks = instances.pred_masks
         masks = np.int8(pred_masks.cpu().detach().numpy())
 
-        im = masks[i] * 255
+        im = masks[i] * 255  # type:ignore
         im = np.array(im, dtype=np.uint8)
         idx = cv2.findContours(im, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         list_x_y = idx[0][0]
