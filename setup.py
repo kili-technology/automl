@@ -26,6 +26,8 @@ setup(
         "wandb==0.12.10",
         "ipython",
         "ratelimit",
+        "pyyaml==5.1",
+        "git+https://github.com/facebookresearch/detectron2.git",
     ],
     entry_points={
         "console_scripts": [

@@ -127,3 +127,17 @@ class PathPytorchVision:
     @makedirs_exist_ok
     def append_training_args_folder(model_dir: ModelDirT):
         return os.path.join(model_dir, "training_args")
+
+
+class PathDetectron2:
+    @staticmethod
+    @makedirs_exist_ok
+    def append_model_dir(
+        model_repository_dir: ModelRepositoryDirT,
+    ) -> ModelDirT:
+        return os.path.join(model_repository_dir, "pytorch", "model")
+
+    @staticmethod
+    @makedirs_exist_ok
+    def append_data_dir(model_dir: ModelDirT) -> ModelPathT:
+        return os.path.join(model_dir, "data")

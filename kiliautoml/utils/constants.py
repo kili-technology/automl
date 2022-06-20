@@ -22,16 +22,17 @@ ModelNameT = Literal[
     "efficientnet_b0",
     "resnet50",
     "ultralytics/yolov5",
+    "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml",
 ]
 
 
-ModelRepositoryT = Literal["huggingface", "ultralytics", "torchvision"]
+ModelRepositoryT = Literal["huggingface", "ultralytics", "torchvision", "detectron2"]
 
 
 MLTaskT = Literal["CLASSIFICATION", "NAMED_ENTITIES_RECOGNITION", "OBJECT_DETECTION"]
 
 
-ToolT = Literal["rectangle"]
+ToolT = Literal["rectangle", "semantic"]
 
 
 class Job(TypedDict):
