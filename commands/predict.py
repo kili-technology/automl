@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import List, Optional
 
 import click
@@ -5,6 +6,7 @@ from kili.client import Kili
 
 from commands.common_args import Options, PredictOptions
 from kiliautoml.models import (
+    Detectron2SemanticSegmentationModel,
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
     PyTorchVisionImageClassificationModel,
@@ -118,6 +120,29 @@ def predict_one_job(
             clear_dataset_cache=clear_dataset_cache,
             api_key=api_key,
         )
+    elif (
+        content_input == "radio"
+        and input_type == "IMAGE"
+        and ml_task == "OBJECT_DETECTION"
+        and "semantic" in tools
+    ):
+        image_classification_model = Detectron2SemanticSegmentationModel(
+            model_name=model_name,
+            job=job,
+            model_framework=model_framework,
+            job_name=job_name,
+            project_id=project_id,
+        )
+
+        job_predictions = image_classification_model.predict(
+            assets=assets,
+            model_path=from_model,
+            from_project=from_project,
+            batch_size=batch_size,
+            clear_dataset_cache=clear_dataset_cache,
+            api_key=api_key,
+            verbose=verbose,
+        )
 
     else:
         raise NotImplementedError
@@ -197,6 +222,7 @@ def main(
         )
 
         if not dry_run and job_predictions.external_id_array:
+            pprint(job_predictions.json_response_array)
             kili.create_predictions(
                 project_id,
                 external_id_array=job_predictions.external_id_array,
