@@ -13,7 +13,7 @@ from termcolor import colored
 from tqdm import tqdm
 from typing_extensions import get_args
 
-from kiliautoml.utils.constants import HOME, InputTypeT
+from kiliautoml.utils.constants import HOME, InputTypeT, MLTaskT
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeStrategyT
 
@@ -170,8 +170,9 @@ def get_assets(
     return assets
 
 
-def get_label(asset: AssetT, job_name: str, ml_task, strategy: LabelMergeStrategyT):
-
+def get_label(
+    asset: AssetT, job_name: str, ml_task: Optional[MLTaskT], strategy: LabelMergeStrategyT
+):
     labels = asset["labels"]
     # for CLASSIFICATION task, we can only accept label with
     if ml_task == "CLASSIFICATION":
@@ -188,7 +189,7 @@ def get_labeled_assets(
     kili,
     project_id: str,
     job_name: str,
-    ml_task,
+    ml_task: Optional[MLTaskT],
     status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
     randomize: bool = False,
