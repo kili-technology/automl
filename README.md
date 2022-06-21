@@ -141,10 +141,8 @@ AutoML currently supports the following tasks:
 You can test the features of AutoML with these notebooks:
 
 - Natural Language Processing (NLP)
-  - Named Entity Recognition
   - [Text Classification](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/text_classification.ipynb)
 - Image
-  - Object detection
   - [Image Classification](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/image_classification.ipynb)
 
 ## Disclaimer
