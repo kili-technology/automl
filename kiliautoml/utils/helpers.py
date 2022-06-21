@@ -1,6 +1,7 @@
 import json
 import os
 import random
+import warnings
 from datetime import datetime
 from glob import glob
 from typing import Any, List, Optional, Tuple
@@ -12,7 +13,7 @@ from termcolor import colored
 from tqdm import tqdm
 from typing_extensions import get_args
 
-from kiliautoml.utils.constants import HOME, InputTypeT
+from kiliautoml.utils.constants import HOME, InputTypeT, MLTaskT
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeStrategyT
 
@@ -169,15 +170,43 @@ def get_assets(
     return assets
 
 
-def get_label(asset: AssetT, strategy: LabelMergeStrategyT):
-
+def get_label(
+    asset: AssetT, job_name: str, ml_task: Optional[MLTaskT], strategy: LabelMergeStrategyT
+):
     labels = asset["labels"]
+    # for CLASSIFICATION task, we can only accept label with
+    if ml_task == "CLASSIFICATION":
+        labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
         return min(labels, key=key)
     else:
         warn(f"Asset {asset['id']} does not have any label available")
         return None
+
+
+def get_labeled_assets(
+    kili,
+    project_id: str,
+    job_name: str,
+    ml_task: Optional[MLTaskT],
+    status_in: Optional[List[AssetStatusT]] = None,
+    max_assets: Optional[int] = None,
+    randomize: bool = False,
+    strategy: LabelMergeStrategyT = "last",
+) -> List[AssetT]:
+    assets = get_assets(kili, project_id, status_in, max_assets=max_assets, randomize=randomize)
+    asset_id_to_remove = set()
+    for asset in assets:
+        label = get_label(asset, job_name, ml_task, strategy)
+        if label is None:
+            asset_id = asset["id"]
+            warnings.warn(f"${asset_id} removed because no labels where available")
+            asset_id_to_remove.add(asset_id)
+        else:
+            asset["labels"] = label
+
+    return [asset for asset in assets if asset["id"] not in asset_id_to_remove]
 
 
 def get_project(kili, project_id: str) -> Tuple[InputTypeT, JobsT, str]:

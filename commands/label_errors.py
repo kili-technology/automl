@@ -14,7 +14,7 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
 )
 from kiliautoml.utils.helpers import (
-    get_assets,
+    get_labeled_assets,
     get_project,
     kili_print,
     upload_errors_to_kili,
@@ -85,15 +85,18 @@ def main(
                 model_repository=model_repository,
             )
 
-        if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
+        assets = get_labeled_assets(
+            kili,
+            project_id=project_id,
+            job_name=job_name,
+            ml_task=ml_task,
+            status_in=asset_status_in,
+            max_assets=max_assets,
+            randomize=randomize_assets,
+            strategy=label_merge_strategy,
+        )
 
-            assets = get_assets(
-                kili,
-                project_id,
-                asset_status_in,
-                max_assets=max_assets,
-                randomize=randomize_assets,
-            )
+        if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 
             image_classification_model = PyTorchVisionImageClassificationModel(
                 model_repository=model_repository,
@@ -105,7 +108,6 @@ def main(
             )
             found_errors = image_classification_model.find_errors(
                 assets=assets,
-                label_merge_strategy=label_merge_strategy,
                 cv_n_folds=cv_folds,
                 epochs=epochs,
                 batch_size=batch_size,
