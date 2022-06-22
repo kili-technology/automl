@@ -242,7 +242,7 @@ def get_last_trained_model_path(
 ) -> str:
     if model_path is None:
         path_project_models = os.path.join(HOME, project_id, job_name, *project_path_wildcard)
-        kili_print("searching models in folder:", path_project_models)
+        kili_print("Searching models in folder:", path_project_models)
         paths_project_sorted = sorted(glob(path_project_models), reverse=True)
         model_path = None
         while len(paths_project_sorted):
