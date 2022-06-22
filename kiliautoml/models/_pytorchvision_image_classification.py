@@ -104,6 +104,13 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         splits["train"], splits["val"] = train_test_split(
             range(len(labels)), test_size=0.2, random_state=42
         )
+        label_train = [labels[i] for i in splits["train"]]
+        label_val = [labels[i] for i in splits["val"]]
+
+        if len(np.unique(label_train)) + len(np.unique(label_val)) < 2 * len(self.class_names):
+            raise Exception(
+                "Some category are not represented in train or val dataset, increase sample size"
+            )
 
         image_datasets = {
             x: ClassificationTrainDataset(
@@ -115,7 +122,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             for x in ["train", "val"]
         }
 
-        _, loss = get_trained_model_image_classif(
+        _, model_evaluation = get_trained_model_image_classif(
             epochs=epochs,
             model_name=self.model_name,  # type: ignore
             batch_size=batch_size,
@@ -124,7 +131,8 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             image_datasets=image_datasets,
             save_model_path=self.model_path,
         )
-        return {"training_loss": loss}
+        print(model_evaluation)
+        return model_evaluation
 
     def predict(
         self,

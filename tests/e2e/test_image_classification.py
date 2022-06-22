@@ -21,7 +21,7 @@ def mocked__download_asset_binary(api_key, asset_content):
     import pickle
 
     id = asset_content.split("label/v2/files?id=")[-1]
-    with open(f"tests/e2e/fixtures/download_asset_binary/{id}.pkl", "rb") as f:
+    with open(f"tests/e2e/fixtures/download_asset_binary/image_classification/{id}.pkl", "rb") as f:
         asset_data = pickle.load(f)
     return asset_data
 

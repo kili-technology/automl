@@ -168,7 +168,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         kili_print(eval_res)
         kili_print(f"Evaluations results are available in {eval_dir}")
         kili_print("The logs and model are saved in ", cfg.OUTPUT_DIR)
-        return eval_res["segm"]
+        return eval_res
 
     def _get_cfg_kili(
         self,

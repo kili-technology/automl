@@ -200,9 +200,22 @@ class UltralyticsObjectDetectionModel(BaseModel):
         shutil.copy(config_data_path, model_output_path)
         df_result = pd.read_csv(os.path.join(model_output_path, "exp", "results.csv"))
 
-        # we take the class loss as the main metric
-        train_loss = df_result.iloc[-1:][["        val/obj_loss"]].to_numpy()[0][0]  # type:ignore
-        return {"training_loss": train_loss}
+        model_evaluation = {}
+        model_evaluation["train__overall"] = {
+            "box_loss": df_result.iloc[-1:]["      train/box_loss"].to_numpy()[0],
+            "cls_loss": df_result.iloc[-1:]["      train/cls_loss"].to_numpy()[0],
+            "obj_loss": df_result.iloc[-1:]["      train/obj_loss"].to_numpy()[0],
+        }
+        model_evaluation["val__overall"] = {
+            "box_loss": df_result.iloc[-1:]["        val/box_loss"].to_numpy()[0],
+            "cls_loss": df_result.iloc[-1:]["        val/cls_loss"].to_numpy()[0],
+            "obj_loss": df_result.iloc[-1:]["        val/obj_loss"].to_numpy()[0],
+            "precision": df_result.iloc[-1:]["   metrics/precision"].to_numpy()[0],
+            "recall": df_result.iloc[-1:]["      metrics/recall"].to_numpy()[0],
+            "mAP_0.5": df_result.iloc[-1:]["     metrics/mAP_0.5"].to_numpy()[0],
+            "mAP_0.5:0.95": df_result.iloc[-1:]["metrics/mAP_0.5:0.95"].to_numpy()[0],
+        }
+        return model_evaluation
 
     @staticmethod
     def _yaml_preparation(
@@ -214,21 +227,16 @@ class UltralyticsObjectDetectionModel(BaseModel):
     ):
 
         kili_print("Downloading datasets from Kili")
-        train_val_proportions = [0.8, 0.1]
+        train_val_proportions = [0.8, 0.2]
         path = data_path
         if "/kili/" not in path:
             raise ValueError("'path' field in config must contain '/kili/'")
 
         n_train_assets = math.floor(len(assets) * train_val_proportions[0])
-        n_val_assets = math.floor(len(assets) * train_val_proportions[1])
         assert (
-            n_val_assets > 0
+            n_train_assets > 8
         ), "Validation set must contain at least 2 assets. max_asset should be > 9"
-        assets_splits = {
-            "train": assets[:n_train_assets],
-            "val": assets[n_train_assets : n_train_assets + n_val_assets],
-            "test": assets[n_train_assets + n_val_assets :],
-        }
+        assets_splits = {"train": assets[:n_train_assets], "val": assets[n_train_assets:]}
 
         for name_split, assets_split in assets_splits.items():
             if len(assets_split) == 0:

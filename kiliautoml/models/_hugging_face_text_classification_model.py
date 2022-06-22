@@ -1,11 +1,13 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import datasets
+import evaluate  # type: ignore
 import nltk
 import numpy as np
+from tqdm import tqdm
 from transformers import Trainer
 from typing_extensions import Literal
 
@@ -89,7 +91,12 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                     "text": datasets.Value(dtype="string"),  # type: ignore
                 }
             ),
+        )[
+            "train"
+        ].train_test_split(  # type: ignore
+            test_size=0.2
         )
+
         tokenizer, model = self._get_tokenizer_and_model_from_name(
             model_name, self.model_framework, job_categories, self.ml_task
         )
@@ -98,7 +105,8 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             return tokenizer(examples["text"], padding="max_length", truncation=True)
 
         tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
-        train_dataset = tokenized_datasets["train"]  # type: ignore
+        train_dataset = tokenized_datasets["train"]
+        eval_dataset = tokenized_datasets["test"]  # type: ignore
         path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
         training_arguments = self._get_training_args(
@@ -110,16 +118,92 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             additional_train_args_hg=additional_train_args_hg,
         )
 
+        def compute_metrics(eval_pred):
+            metrics = ["accuracy", "precision", "recall", "f1"]
+            metric = {}
+            for met in metrics:
+                if met == "accuracy":
+                    metric[met] = datasets.load_metric(met)
+                else:
+                    metric[met] = evaluate.load(met)
+            logits, labels = eval_pred
+            predictions = np.argmax(logits, axis=-1)
+            metric_res = {}
+            for met in metrics:
+                if met == "accuracy":
+                    metric_res[met] = metric[met].compute(
+                        predictions=predictions, references=labels
+                    )[met]
+                elif met == "f1":
+                    metric_res[met] = np.append(
+                        metric[met].compute(
+                            predictions=predictions, references=labels, average=None
+                        )[met],
+                        metric[met].compute(
+                            predictions=predictions, references=labels, average="weighted"
+                        )[met],
+                    )
+                else:
+                    metric_res[met] = np.append(
+                        metric[met].compute(
+                            predictions=predictions,
+                            references=labels,
+                            average=None,
+                            zero_division=0,
+                        )[met],
+                        metric[met].compute(
+                            predictions=predictions,
+                            references=labels,
+                            average="weighted",
+                            zero_division=0,
+                        )[met],
+                    )
+            return metric_res
+
         trainer = Trainer(
             model=model,
             args=training_arguments,
             tokenizer=tokenizer,
             train_dataset=train_dataset,  # type: ignore
+            eval_dataset=eval_dataset,  # type: ignore
+            compute_metrics=compute_metrics,  # type: ignore
         )
-        output = trainer.train()
+        trainer.train()
+        train_metrics = trainer.evaluate(trainer.train_dataset)
+        val_metrics = trainer.evaluate()
+        model_evaluation: Dict[str, Any] = {}
+
+        for i, label in enumerate(job_categories):
+            if "eval_" + label in train_metrics:
+                train_label_metrics = {}
+                for metric in ["precision", "recall", "f1"]:
+                    train_label_metrics[metric] = train_metrics["eval_" + metric][i]  # type: ignore
+                model_evaluation["train_" + label] = train_label_metrics
+            if "eval_" + label in val_metrics:
+                val_label_metrics = {}
+                for metric in ["precision", "recall", "f1"]:
+                    val_label_metrics[metric] = val_metrics["eval_" + metric][i]  # type: ignore
+                model_evaluation["val_" + label] = val_label_metrics
+
+        model_evaluation["train__overall"] = {
+            "loss": train_metrics["eval_loss"],
+            "accuracy": train_metrics["eval_accuracy"],
+            "precision": train_metrics["eval_precision"][-1],  # type: ignore
+            "recall": train_metrics["eval_recall"][-1],  # type: ignore
+            "f1": train_metrics["eval_f1"][-1],  # type: ignore
+        }
+
+        model_evaluation["val__overall"] = {
+            "loss": val_metrics["eval_loss"],
+            "accuracy": val_metrics["eval_accuracy"],
+            "precision": val_metrics["eval_precision"][-1],  # type: ignore
+            "recall": val_metrics["eval_recall"][-1],  # type: ignore
+            "f1": val_metrics["eval_f1"][-1],  # type: ignore
+        }
+        print(model_evaluation)
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
-        return {"training_loss": output.training_loss}
+        return {key: value for key, value in sorted(model_evaluation.items())}
 
     def predict(
         self,
@@ -173,7 +257,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def _write_dataset(self, assets, job_name, path_dataset, job_categories):
         with open(ensure_dir(path_dataset), "w") as handler:
-            for asset in assets:
+            for asset in tqdm(assets, desc="Downloading content"):
                 label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0][
                     "name"
                 ]

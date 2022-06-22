@@ -21,7 +21,12 @@ from kiliautoml.utils.constants import (
     ModelNameT,
     ModelRepositoryT,
 )
-from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print
+from kiliautoml.utils.helpers import (
+    JobPredictions,
+    categories_from_job,
+    ensure_dir,
+    kili_print,
+)
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT
 
@@ -59,6 +64,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             model_name=model_name,
             model_framework=model_framework,
         )
+        self.label_list: List[Any] = []
 
     def train(
         self,
@@ -89,7 +95,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         kili_print(f"Base model: {model_name}")
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
 
-        label_list = self._kili_assets_to_hf_ner_dataset(
+        self.label_list = self._kili_assets_to_hf_ner_dataset(
             self.job, self.job_name, path_dataset, assets, clear_dataset_cache
         )
 
@@ -99,15 +105,19 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             features=datasets.features.features.Features(  # type: ignore
                 {
                     "ner_tags": datasets.Sequence(  # type: ignore
-                        feature=datasets.ClassLabel(names=label_list)  # type: ignore
+                        feature=datasets.ClassLabel(names=self.label_list)  # type: ignore
                     ),  # noqa
                     "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),  # type: ignore # noqa
                 }
             ),
+        )[
+            "train"
+        ].train_test_split(  # type: ignore
+            test_size=0.1
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.model_framework, label_list, self.ml_task
+            model_name, self.model_framework, self.label_list, self.ml_task
         )
 
         label_all_tokens = True
@@ -144,6 +154,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         tokenized_datasets = raw_datasets.map(tokenize_and_align_labels, batched=True)
 
         train_dataset = tokenized_datasets["train"]  # type:  ignore
+        eval_dataset = tokenized_datasets["test"]
         path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
 
         training_arguments = self._get_training_args(
@@ -154,6 +165,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             batch_size=batch_size,
             additional_train_args_hg=additional_train_args_hg,
         )
+
         data_collator = DataCollatorForTokenClassification(tokenizer)
         trainer = Trainer(
             model=model,
@@ -161,11 +173,46 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             data_collator=data_collator,  # type: ignore
             tokenizer=tokenizer,
             train_dataset=train_dataset,  # type: ignore
+            eval_dataset=eval_dataset,  # type: ignore
+            compute_metrics=self.compute_metrics,  # type: ignore
         )
-        output = trainer.train()
+
+        trainer.train()
+        train_metrics = trainer.evaluate(trainer.train_dataset)
+        val_metrics = trainer.evaluate()
+        model_evaluation = {}
+        nb_train_ent = 0
+        nb_val_ent = 0
+        for label in categories_from_job(self.job):
+            if "eval_" + label in train_metrics:
+                model_evaluation["train_" + label] = train_metrics["eval_" + label]
+                nb_train_ent += train_metrics["eval_" + label]["number"]  # type: ignore
+            else:
+                model_evaluation["train_" + label] = {"number": 0}
+            if "eval_" + label in val_metrics:
+                model_evaluation["val_" + label] = val_metrics["eval_" + label]
+                nb_val_ent += val_metrics["eval_" + label]["number"]  # type: ignore
+            else:
+                model_evaluation["val_" + label] = {"number": 0}
+
+        model_evaluation["train__overall"] = {
+            "loss": train_metrics["eval_loss"],
+            "precision": train_metrics["eval_overall_precision"],
+            "recall": train_metrics["eval_overall_recall"],
+            "f1": train_metrics["eval_overall_f1"],
+            "number": nb_train_ent,
+        }
+        model_evaluation["val__overall"] = {
+            "loss": val_metrics["eval_loss"],
+            "precision": val_metrics["eval_overall_precision"],
+            "recall": val_metrics["eval_overall_recall"],
+            "f1": val_metrics["eval_overall_f1"],
+            "number": nb_val_ent,
+        }
+        print(model_evaluation)
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
-        return {"training_loss": output.training_loss}
+        return {key: value for key, value in sorted(model_evaluation.items())}
 
     def predict(
         self,
@@ -265,7 +312,10 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def _write_asset(self, job_name, labels_to_ids, handler, asset):
         text = self._get_text_from(asset["content"])
-        annotations = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
+        if job_name in asset["labels"][0]["jsonResponse"]:
+            annotations = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
+        else:
+            annotations = []
         sentences = nltk.sent_tokenize(text)
         offset = 0
         for sentence_tokens in nltk.TreebankWordTokenizer().span_tokenize_sents(sentences):
@@ -458,6 +508,25 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         return cls._compute_kili_annotations(
             text, pp_labels, predicted_probas, tokens, null_category, offset_in_text
         )
+
+    def compute_metrics(self, eval_preds):
+
+        metric = datasets.load_metric("seqeval")
+
+        logits, labels = eval_preds
+        predictions = np.argmax(logits, axis=-1)
+
+        # Remove ignored index (special tokens) and convert to labels
+        true_labels = [
+            [self.label_list[label_id] for label_id in label if label_id != -100]
+            for label in labels
+        ]
+        true_predictions = [
+            [self.label_list[p] for (p, label_id) in zip(prediction, label) if label_id != -100]
+            for prediction, label in zip(predictions, labels)
+        ]
+        all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
+        return all_metrics
 
     def find_errors(
         self,
