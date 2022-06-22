@@ -370,45 +370,40 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                 "##"
             ):  # number tokens annotation should be ignored when aligning categories
                 token = token.replace("##", "")
-
             text_remaining = text[offset_in_sentence:]
-            ind = text_remaining.find(token)
-            if ind == -1:
+            ind_in_remaining_text = text_remaining.find(token)
+            if ind_in_remaining_text == -1:
                 raise Exception(f"token {token} not found in text {text_remaining}")
 
-            offset_in_sentence += ind
+            content = token
+            str_between_tokens = text_remaining[:ind_in_remaining_text]
 
             if label != null_category:
                 is_i_tag = label.startswith("I-")
                 c_kili = label.replace("B-", "").replace("I-", "")
 
-                ann_ = {
+                ann: KiliNerAnnotations = {
                     "beginOffset": offset_in_text + offset_in_sentence,
-                    "content": token,
-                    "endOffset": offset_in_text + offset_in_sentence + len(token),
+                    "content": content,
+                    "endOffset": offset_in_text + offset_in_sentence + len(content),
                     "categories": [{"name": c_kili, "confidence": int(proba * 100)}],
                 }
-                ann = KiliNerAnnotations(
-                    beginOffset=ann_["beginOffset"],
-                    content=ann_["content"],
-                    endOffset=ann_["endOffset"],
-                    categories=ann_["categories"],
-                )
 
                 if (
                     len(kili_annotations)
                     and ann["categories"][0]["name"]
                     == kili_annotations[-1]["categories"][0]["name"]
-                    and (ann["beginOffset"] == kili_annotations[-1]["endOffset"] or is_i_tag)
+                    and (ann["beginOffset"] - kili_annotations[-1]["endOffset"] <= 1 or is_i_tag)
                 ):
-                    # merge with previous if same category and contiguous offset and onset:
+                    # merge with previous if same category and contiguous (up to 1 character)
+                    # offset and onset :
                     kili_annotations[-1]["endOffset"] = ann["endOffset"]
-                    kili_annotations[-1]["content"] += ann["content"]
+                    kili_annotations[-1]["content"] += str_between_tokens + ann["content"]
 
                 else:
                     kili_annotations.append(ann)
 
-            offset_in_sentence += len(token)
+            offset_in_sentence += ind_in_remaining_text + len(token)
 
         return kili_annotations
 
