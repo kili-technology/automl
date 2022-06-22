@@ -356,7 +356,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         Format token predictions into a the kili format.
         :param: text:
         """
-
         kili_annotations: List[KiliNerAnnotations] = []
         offset_in_sentence = 0
         for label, proba, token in zip(predicted_label, predicted_proba, tokens):
@@ -368,7 +367,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                 continue
             if token.startswith(
                 "##"
-            ):  # number tokens annotation should be ignored when aligning categories
+            ):  # hash token annotations should be ignored when aligning tokens and text
                 token = token.replace("##", "")
             text_remaining = text[offset_in_sentence:]
             ind_in_remaining_text = text_remaining.find(token)
@@ -383,9 +382,12 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                 c_kili = label.replace("B-", "").replace("I-", "")
 
                 ann: KiliNerAnnotations = {
-                    "beginOffset": offset_in_text + offset_in_sentence,
+                    "beginOffset": offset_in_text + offset_in_sentence + ind_in_remaining_text,
                     "content": content,
-                    "endOffset": offset_in_text + offset_in_sentence + len(content),
+                    "endOffset": offset_in_text
+                    + offset_in_sentence
+                    + ind_in_remaining_text
+                    + len(content),
                     "categories": [{"name": c_kili, "confidence": int(proba * 100)}],
                 }
 
