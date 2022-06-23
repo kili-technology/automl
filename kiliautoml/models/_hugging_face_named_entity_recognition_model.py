@@ -165,7 +165,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         output = trainer.train()
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
-        return output.training_loss
+        return {"training_loss": output.training_loss}
 
     def predict(
         self,
@@ -219,9 +219,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             if verbose:
                 if len(predictions_asset):
                     for p in predictions_asset:
-                        print(p)
+                        kili_print(p)
                 else:
-                    print("No prediction")
+                    kili_print("No prediction")
 
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
@@ -265,7 +265,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def _write_asset(self, job_name, labels_to_ids, handler, asset):
         text = self._get_text_from(asset["content"])
-        annotations = asset["labels"]["jsonResponse"][job_name]["annotations"]
+        annotations = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
         sentences = nltk.sent_tokenize(text)
         offset = 0
         for sentence_tokens in nltk.TreebankWordTokenizer().span_tokenize_sents(sentences):

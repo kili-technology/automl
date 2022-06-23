@@ -18,7 +18,7 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
 )
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helpers import JobPredictions
+from kiliautoml.utils.helpers import JobPredictions, kili_print
 from kiliautoml.utils.path import Path, PathPytorchVision
 from kiliautoml.utils.pytorchvision.image_classification import (
     ClassificationPredictDataset,
@@ -96,7 +96,9 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         labels = []
         for asset in assets:
-            labels.append(asset["labels"]["jsonResponse"][self.job_name]["categories"][0]["name"])
+            labels.append(
+                asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
+            )
 
         splits = {}
         splits["train"], splits["val"] = train_test_split(
@@ -122,7 +124,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             image_datasets=image_datasets,
             save_model_path=self.model_path,
         )
-        return loss
+        return {"training_loss": loss}
 
     def predict(
         self,
@@ -208,7 +210,9 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         labels = []
         for asset in assets:
-            labels.append(asset["labels"]["jsonResponse"][self.job_name]["categories"][0]["name"])
+            labels.append(
+                asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
+            )
 
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
         probability_matrix = np.empty((len(labels), len(self.class_name_to_idx)))
@@ -234,10 +238,10 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 data_transforms["val"],
             )
             if verbose >= 1:
-                print(f"\nCV Fold: {cv_fold+1}/{cv_n_folds}")
-                print(f"Train size: {len(image_datasets['train'])}")
-                print(f"Validation size: {len(image_datasets['val'])}")
-                print(f"Holdout size: {len(holdout_dataset)}")
+                kili_print(f"\nCV Fold: {cv_fold+1}/{cv_n_folds}")
+                kili_print(f"Train size: {len(image_datasets['train'])}")
+                kili_print(f"Validation size: {len(image_datasets['val'])}")
+                kili_print(f"Holdout size: {len(holdout_dataset)}")
                 print()
 
             model_name: ModelNameT = self.model_name  # type: ignore

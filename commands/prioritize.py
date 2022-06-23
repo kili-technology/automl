@@ -409,7 +409,7 @@ def main(
         raise NotImplementedError
 
     predictions_probability = job_predictions.predictions_probability
-    print("Predictions probability shape: ", predictions_probability)
+    kili_print("Predictions probability shape: ", predictions_probability)
     asset_ids = [asset["id"] for asset in unlabeled_assets]
     prioritizer = Prioritizer(embeddings, predictions_probability=predictions_probability)
     priorities = prioritizer.get_priorities(

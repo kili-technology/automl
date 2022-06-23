@@ -1,4 +1,7 @@
 # flake8: noqa
+from ._detectron2_semantic_segmentation import (
+    Detectron2SemanticSegmentationModel,  # type: ignore
+)
 from ._hugging_face_named_entity_recognition_model import (
     HuggingFaceNamedEntityRecognitionModel,  # type: ignore
 )

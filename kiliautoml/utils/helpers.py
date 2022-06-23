@@ -14,6 +14,7 @@ from tqdm import tqdm
 from typing_extensions import get_args
 
 from kiliautoml.utils.constants import HOME, InputTypeT, MLTaskT
+from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeStrategyT
 
@@ -107,7 +108,7 @@ def get_asset_memoized(
     skip,
     status_in: Optional[List[AssetStatusT]] = None,
 ) -> List[AssetT]:
-    return kili.assets(
+    assets = kili.assets(
         project_id=project_id,
         first=total,
         skip=skip,
@@ -122,6 +123,10 @@ def get_asset_memoized(
         status_in=status_in,
         as_generator=False,
     )
+
+    if GENERATE_MOCK:
+        jsonify_mock_data(assets, function_name="assets")
+    return assets
 
 
 def get_assets(
@@ -204,13 +209,15 @@ def get_labeled_assets(
             warnings.warn(f"${asset_id} removed because no labels where available")
             asset_id_to_remove.add(asset_id)
         else:
-            asset["labels"] = label
+            asset["labels"] = [label]
 
     return [asset for asset in assets if asset["id"] not in asset_id_to_remove]
 
 
 def get_project(kili, project_id: str) -> Tuple[InputTypeT, JobsT, str]:
     projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface", "title"])
+    if GENERATE_MOCK:
+        jsonify_mock_data(projects, function_name="projects")
     if len(projects) == 0:
         raise ValueError(
             "no such project. Maybe your KILI_API_KEY does not belong to a member of the project."
@@ -284,3 +291,13 @@ def upload_errors_to_kili(found_errors, kili):
             meta["labeling_error"] = True
 
         kili.update_properties_in_assets(asset_ids=asset_ids, json_metadatas=new_metadatas)
+
+
+def not_implemented_job(job_name, ml_task):
+    kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
+    kili_print(
+        "You can use the repeatable flag --target-job "
+        "(for example: --target-job job_name1 --target-job job_name2) "
+        "to select one or multiple jobs."
+    )
+    raise NotImplementedError

@@ -5,13 +5,20 @@ from kili.client import Kili
 
 from commands.common_args import Options, PredictOptions
 from kiliautoml.models import (
+    Detectron2SemanticSegmentationModel,
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
     PyTorchVisionImageClassificationModel,
     UltralyticsObjectDetectionModel,
 )
 from kiliautoml.utils.constants import ModelFrameworkT
-from kiliautoml.utils.helpers import JobPredictions, get_assets, get_project, kili_print
+from kiliautoml.utils.helpers import (
+    JobPredictions,
+    get_assets,
+    get_project,
+    kili_print,
+    not_implemented_job,
+)
 from kiliautoml.utils.type import AssetStatusT
 
 
@@ -118,9 +125,32 @@ def predict_one_job(
             clear_dataset_cache=clear_dataset_cache,
             api_key=api_key,
         )
+    elif (
+        content_input == "radio"
+        and input_type == "IMAGE"
+        and ml_task == "OBJECT_DETECTION"
+        and "semantic" in tools
+    ):
+        image_classification_model = Detectron2SemanticSegmentationModel(
+            model_name=model_name,
+            job=job,
+            model_framework=model_framework,
+            job_name=job_name,
+            project_id=project_id,
+        )
+
+        job_predictions = image_classification_model.predict(
+            assets=assets,
+            model_path=from_model,
+            from_project=from_project,
+            batch_size=batch_size,
+            clear_dataset_cache=clear_dataset_cache,
+            api_key=api_key,
+            verbose=verbose,
+        )
 
     else:
-        raise NotImplementedError
+        not_implemented_job(job_name, ml_task)
     return job_predictions
 
 
@@ -202,4 +232,11 @@ def main(
                 external_id_array=job_predictions.external_id_array,
                 json_response_array=job_predictions.json_response_array,
                 model_name_array=job_predictions.model_name_array,
+            )
+            kili_print(
+                "Predictions sent to kili, you can open the following url to check them out!"
+            )
+            status_filter = "%2C".join(asset_status_in)
+            kili_print(
+                f"{api_endpoint[:-21]}/label/projects/{project_id}/explore?statusIn={status_filter}"
             )

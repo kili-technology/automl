@@ -5,7 +5,6 @@ setup(
     version="0.1.0",
     py_modules=["main"],
     install_requires=[
-        "Click",
         "cleanlab>=2.0.0",
         "click",
         "datasets<=2.2",
@@ -26,6 +25,8 @@ setup(
         "wandb==0.12.10",
         "ipython",
         "ratelimit",
+        "opencv-python",
+        "git+https://github.com/facebookresearch/detectron2.git",
     ],
     entry_points={
         "console_scripts": [

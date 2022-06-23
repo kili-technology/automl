@@ -61,7 +61,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         disable_wandb: bool = False,
         verbose: int,
         additional_train_args_hg: AdditionalTrainingArgsT,
-    ) -> float:
+    ):
         _ = verbose
 
         nltk.download("punkt")
@@ -119,7 +119,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         output = trainer.train()
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
-        return output.training_loss
+        return {"training_loss": output.training_loss}
 
     def predict(
         self,
@@ -174,7 +174,9 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     def _write_dataset(self, assets, job_name, path_dataset, job_categories):
         with open(ensure_dir(path_dataset), "w") as handler:
             for asset in assets:
-                label_category = asset["labels"]["jsonResponse"][job_name]["categories"][0]["name"]
+                label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0][
+                    "name"
+                ]
                 handler.write(
                     json.dumps(
                         {

@@ -18,11 +18,12 @@ jobs:
         with:
           python-version: ${{ matrix.version }}
           cache: "pip"
-
+      - name: initialize git submodules
+        run: git submodule update --init
       - name: Install deps
-        run: |
-          pip install -r requirements.txt -r requirements_dev.txt && git submodule update --init && pip install -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
+        run: pip install torch && pip install -r requirements.txt -r requirements_dev.txt
 
+      - name: Install pytest
+        run: pip install pytest
       - name: Run test suite
-        run: |
-          python -m pytest -s tests/e2e -v
+        run: python -m pytest -s tests/e2e -v

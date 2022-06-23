@@ -66,7 +66,7 @@ class BBoxAnnotation(TypedDict):
 def inspect(e):
     kili_print("Error while executing YoloV5:")
     for k, v in e.__dict__.items():
-        print(k)
+        kili_print(k)
         if isinstance(v, bytes):
             print(v.decode("utf-8"))
         else:
@@ -173,7 +173,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 str(batch_size),
                 *args_from_json,
             ]
-            print("Executing Yolo with command line:", " ".join(args))
+            kili_print("Executing Yolo with command line:", " ".join(args))
 
             with open("/tmp/test.log", "wb") as f:
                 process = subprocess.Popen(
@@ -186,7 +186,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 for line in iter(process.stdout.readline, b""):  # type:ignore
                     sys.stdout.write(line.decode(sys.stdout.encoding))
 
-                print("process return code:", process.returncode)
+                kili_print("process return code:", process.returncode)
                 output, error = process.communicate()
                 if process.returncode != 0:
                     print(output)
@@ -201,7 +201,8 @@ class UltralyticsObjectDetectionModel(BaseModel):
         df_result = pd.read_csv(os.path.join(model_output_path, "exp", "results.csv"))
 
         # we take the class loss as the main metric
-        return df_result.iloc[-1:][["        val/obj_loss"]].to_numpy()[0][0]  # type: ignore
+        train_loss = df_result.iloc[-1:][["        val/obj_loss"]].to_numpy()[0][0]  # type:ignore
+        return {"training_loss": train_loss}
 
     @staticmethod
     def _yaml_preparation(
@@ -212,7 +213,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         assets,
     ):
 
-        print("Downloading datasets from Kili")
+        kili_print("Downloading datasets from Kili")
         train_val_proportions = [0.8, 0.1]
         path = data_path
         if "/kili/" not in path:
@@ -247,7 +248,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             for asset in assets_split:
                 asset_id = asset["id"] + ".txt"  # type: ignore
                 with open(os.path.join(path_labels, asset_id), "w") as handler:
-                    json_response = asset["labels"]["jsonResponse"]
+                    json_response = asset["labels"][0]["jsonResponse"]
                     for job in json_response.values():
                         save_annotations_to_yolo_format(names, handler, job)
 
@@ -365,7 +366,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 )
                 proba_list.append(min(probabilities))
                 if verbose >= 1:
-                    print(f"Asset {image.externalId}: {kili_predictions}")
+                    kili_print(f"Asset {image.externalId}: {kili_predictions}")
                 id_json_list.append(
                     (image.externalId, {job_name: {"annotations": kili_predictions}})
                 )
@@ -391,7 +392,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=proba_list,
         )
-        print("predictions_probability", job_predictions.predictions_probability)
+        kili_print("predictions_probability", job_predictions.predictions_probability)
         return job_predictions
 
     def _get_last_model_param(self, project_id, model_path) -> Tuple[ModelPathT, ModelFrameworkT]:

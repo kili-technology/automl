@@ -7,6 +7,7 @@ from tabulate import tabulate
 
 from commands.common_args import Options, TrainOptions
 from kiliautoml.models import (
+    Detectron2SemanticSegmentationModel,
     HuggingFaceNamedEntityRecognitionModel,
     HuggingFaceTextClassificationModel,
     PyTorchVisionImageClassificationModel,
@@ -18,7 +19,12 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
     ToolT,
 )
-from kiliautoml.utils.helpers import get_labeled_assets, get_project, kili_print
+from kiliautoml.utils.helpers import (
+    get_labeled_assets,
+    get_project,
+    kili_print,
+    not_implemented_job,
+)
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -197,9 +203,33 @@ def main(
                 api_key=api_key,
                 verbose=verbose,
             )
+        elif (
+            content_input == "radio"
+            and input_type == "IMAGE"
+            and ml_task == "OBJECT_DETECTION"
+            and "semantic" in tools
+        ):
+            image_classification_model = Detectron2SemanticSegmentationModel(
+                model_name=model_name,
+                job=job,
+                model_framework=model_framework,
+                job_name=job_name,
+                project_id=project_id,
+            )
+
+            training_loss = image_classification_model.train(
+                assets=assets,
+                label_merge_strategy=label_merge_strategy,
+                batch_size=batch_size,
+                epochs=epochs,
+                clear_dataset_cache=clear_dataset_cache,
+                disable_wandb=disable_wandb,
+                api_key=api_key,
+                verbose=verbose,
+            )
 
         else:
-            kili_print("not implemented yet")
+            not_implemented_job(job_name, ml_task)
         training_losses.append([job_name, training_loss])
 
     kili_print()

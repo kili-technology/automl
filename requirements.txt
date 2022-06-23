@@ -1,4 +1,5 @@
 # Do not forget to add in setup.py
+-r kiliautoml/utils/ultralytics/yolov5/requirements.txt
 cleanlab>=2.0.0
 click
 datasets<=2.2
@@ -13,9 +14,12 @@ tensorflow
 termcolor
 tqdm
 transformers
+torch
 img2vec-pytorch==1.0.1
 more-itertools
 typing_extensions
 wandb==0.12.10
 ipython
 ratelimit
+opencv-python
+git+https://github.com/facebookresearch/detectron2.git

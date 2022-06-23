@@ -9,6 +9,8 @@ import torch.optim as optim
 from torch.optim import lr_scheduler
 from tqdm.autonotebook import trange
 
+from kiliautoml.utils.helpers import kili_print
+
 # Necessary on mac for train and predict.
 os.environ["OMP_NUM_THREADS"] = "1"
 
@@ -27,7 +29,7 @@ def train_model_pytorch(
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if verbose >= 2:
-        print("Start model training on device: {}".format(device))
+        kili_print("Start model training on device: {}".format(device))
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
@@ -79,7 +81,7 @@ def train_model_pytorch(
             epoch_acc = running_corrects.double() / dataset_sizes[phase]  # type:ignore
 
             if verbose >= 2:
-                print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}")
+                kili_print(f"{phase} Loss: {epoch_loss:.4f} Acc: {epoch_acc:.4f}")
 
             # deep copy the model
             if phase == "val" and epoch_loss < best_loss:
@@ -91,8 +93,8 @@ def train_model_pytorch(
 
     if verbose >= 2:
         time_elapsed = time.time() - since
-        print(f"Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s")
-        print(f"Best val Loss: {best_loss:4f}, Best val Acc: {best_acc:4f}")
+        kili_print(f"Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s")
+        kili_print(f"Best val Loss: {best_loss:4f}, Best val Acc: {best_acc:4f}")
 
     # load best model weights
     model.load_state_dict(best_model_wts)
