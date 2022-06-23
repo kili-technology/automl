@@ -11,7 +11,7 @@ from typing_extensions import Literal, TypedDict
 
 from kiliautoml.utils.download_assets import download_asset_binary
 from kiliautoml.utils.helpers import kili_print
-from kiliautoml.utils.type import AssetT
+from kiliautoml.utils.type import AssetT, CategoryT
 
 # ## DETECTRON FORMAT
 
@@ -52,11 +52,6 @@ class CocoFormat(TypedDict):
 # ## KILI Polygon Semantic Format
 
 
-class Category(TypedDict):
-    name: str
-    confidence: int  # between 0 and 100
-
-
 class NormalizedVertice(TypedDict):
     x: float
     y: float
@@ -70,7 +65,7 @@ class Annotation(TypedDict):
     boundingPoly: List[NormalizedVertices]  # len(self.boundingPoly) == 1
     mid: str
     type: Literal["semantic"]
-    categories: List[Category]
+    categories: List[CategoryT]
 
 
 class SemanticJob(TypedDict):

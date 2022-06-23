@@ -26,14 +26,13 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.detectron2.utils_detectron import (
     Annotation,
-    Category,
     NormalizedVertice,
     NormalizedVertices,
     convert_kili_semantic_to_coco,
 )
 from kiliautoml.utils.helpers import JobPredictions, kili_print
 from kiliautoml.utils.path import ModelDirT, Path, PathDetectron2
-from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT
+from kiliautoml.utils.type import AssetT, CategoryT, JobT, LabelMergeStrategyT
 
 setup_logger()
 
@@ -296,7 +295,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         for class_i in range(len(classes)):
             score = scores[class_i]
             classe = classes[class_i]
-            categories = [Category(name=class_names[classe], confidence=int(score * 100))]
+            categories = [CategoryT(name=class_names[classe], confidence=int(score * 100))]
             list_x_y = self.get_contours_instance(instances, class_i)
             boundingPoly = [
                 NormalizedVertices(
