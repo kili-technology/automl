@@ -117,7 +117,7 @@ def convert_kili_semantic_to_coco(
     # Mapping category - category id
     category_names = []
     for asset in assets:
-        annotations: List[Annotation] = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
+        annotations: List[Annotation] = asset["labels"]["jsonResponse"][job_name]["annotations"]
         for annotation in annotations:
             categories = annotation["categories"]
             category_names.append(categories[0]["name"])
@@ -135,7 +135,7 @@ def convert_kili_semantic_to_coco(
     # Fill labels_json
     annotation_j = -1
     for asset_i, asset in enumerate(assets):
-        annotations_: List[Annotation] = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
+        annotations_: List[Annotation] = asset["labels"]["jsonResponse"][job_name]["annotations"]
 
         # Add a new image
         img_data = download_asset_binary(api_key, asset["content"])  # jpg

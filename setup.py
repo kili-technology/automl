@@ -5,7 +5,6 @@ setup(
     version="0.1.0",
     py_modules=["main"],
     install_requires=[
-        "Click",
         "cleanlab>=2.0.0",
         "click",
         "datasets<=2.2",

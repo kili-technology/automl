@@ -38,8 +38,8 @@ def mocked__throttled_request(api_key, asset_content):
 def test_detectron2_image_segmentation(mocker):
 
     mocker.patch("kili.client.Kili.__init__", return_value=None)
-    mocker.patch("commands.train.get_assets", side_effect=mocked__get_assets)
     mocker.patch("kili.client.Kili.projects", side_effect=mocked__projects)
+    mocker.patch("kiliautoml.utils.helpers.get_assets", side_effect=mocked__get_assets)
     mocker.patch(
         "kiliautoml.utils.download_assets.throttled_request",
         side_effect=mocked__throttled_request,
