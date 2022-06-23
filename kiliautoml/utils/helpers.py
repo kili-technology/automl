@@ -209,7 +209,7 @@ def get_labeled_assets(
             warnings.warn(f"${asset_id} removed because no labels where available")
             asset_id_to_remove.add(asset_id)
         else:
-            asset["labels"] = label
+            asset["labels"] = [label]
 
     return [asset for asset in assets if asset["id"] not in asset_id_to_remove]
 

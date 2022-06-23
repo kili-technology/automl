@@ -174,7 +174,9 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     def _write_dataset(self, assets, job_name, path_dataset, job_categories):
         with open(ensure_dir(path_dataset), "w") as handler:
             for asset in assets:
-                label_category = asset["labels"]["jsonResponse"][job_name]["categories"][0]["name"]
+                label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0][
+                    "name"
+                ]
                 handler.write(
                     json.dumps(
                         {

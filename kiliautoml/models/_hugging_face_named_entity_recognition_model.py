@@ -265,7 +265,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def _write_asset(self, job_name, labels_to_ids, handler, asset):
         text = self._get_text_from(asset["content"])
-        annotations = asset["labels"]["jsonResponse"][job_name]["annotations"]
+        annotations = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
         sentences = nltk.sent_tokenize(text)
         offset = 0
         for sentence_tokens in nltk.TreebankWordTokenizer().span_tokenize_sents(sentences):

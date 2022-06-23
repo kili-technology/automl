@@ -96,7 +96,9 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         labels = []
         for asset in assets:
-            labels.append(asset["labels"]["jsonResponse"][self.job_name]["categories"][0]["name"])
+            labels.append(
+                asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
+            )
 
         splits = {}
         splits["train"], splits["val"] = train_test_split(
@@ -208,7 +210,9 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         labels = []
         for asset in assets:
-            labels.append(asset["labels"]["jsonResponse"][self.job_name]["categories"][0]["name"])
+            labels.append(
+                asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
+            )
 
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
         probability_matrix = np.empty((len(labels), len(self.class_name_to_idx)))
