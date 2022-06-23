@@ -1,14 +1,19 @@
-"""To generate new mocked data, just launch kiliautoml train with the --clean-dataset-cache
+"""To generate new mocked data, just launch kiliautoml like this:
 
-and change GENERATE_MOCK to True.
-and choose a MOCK_DIR.
+KILI_AUTOML_MOCK=True KILI_AUTOML_MOCK_OUTPUT_DIR=cl4cisaq36awx0lpb8ql57mxk_segmentation \
+    kiliautoml train --clear-dataset-cache
 """
 import json
 import os
 import pickle
 
-GENERATE_MOCK = False
-MOCK_DIR = "cl4cisaq36awx0lpb8ql57mxk_segmentation"
+GENERATE_MOCK = os.getenv("KILI_AUTOML_MOCK", False)
+
+# Exemple : "cl4cisaq36awx0lpb8ql57mxk_segmentation"
+MOCK_DIR = os.getenv("KILI_AUTOML_MOCK_OUTPUT_DIR", None)
+
+if GENERATE_MOCK:
+    print("We will generate the mocking test data.")
 
 
 def save_mock_data(id, response, function_name):
