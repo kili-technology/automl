@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -337,12 +337,11 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         self,
         *,
         assets: List[AssetT],
-        label_merge_strategy: LabelMergeStrategyT,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
         verbose: int = 0,
         clear_dataset_cache: bool = False,
         api_key: str = "",
-    ) -> Any:
+    ):
         raise NotImplementedError

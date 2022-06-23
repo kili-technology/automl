@@ -3,7 +3,6 @@ import json
 import os
 import warnings
 from typing import Any, List, Optional
-from warnings import warn
 
 import datasets
 import nltk
@@ -22,14 +21,9 @@ from kiliautoml.utils.constants import (
     ModelNameT,
     ModelRepositoryT,
 )
-from kiliautoml.utils.helpers import JobPredictions, ensure_dir, get_label, kili_print
+from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
-from kiliautoml.utils.type import (
-    AdditionalTrainingArgsT,
-    AssetT,
-    JobT,
-    LabelMergeStrategyT,
-)
+from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT
 
 
 class KiliNerAnnotations(TypedDict):
@@ -70,7 +64,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         self,
         *,
         assets: List[AssetT],
-        label_merge_strategy: LabelMergeStrategyT,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -97,7 +90,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
 
         label_list = self._kili_assets_to_hf_ner_dataset(
-            self.job, self.job_name, path_dataset, assets, label_merge_strategy, clear_dataset_cache
+            self.job, self.job_name, path_dataset, assets, clear_dataset_cache
         )
 
         raw_datasets = datasets.load_dataset(  # type: ignore
@@ -247,7 +240,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         job_name: str,
         path_dataset: str,
         assets: List[AssetT],
-        label_merge_strategy: LabelMergeStrategyT,
         clear_dataset_cache: bool,
     ):
 
@@ -267,18 +259,13 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         if not os.path.exists(path_dataset):
             with open(ensure_dir(path_dataset), "w") as handler:
                 for asset in tqdm(assets, desc="Converting assets to huggingface dataset"):
-                    self._write_asset(job_name, labels_to_ids, handler, asset, label_merge_strategy)
+                    self._write_asset(job_name, labels_to_ids, handler, asset)
 
         return label_list
 
-    def _write_asset(self, job_name, labels_to_ids, handler, asset, label_merge_strategy):
+    def _write_asset(self, job_name, labels_to_ids, handler, asset):
         text = self._get_text_from(asset["content"])
-        label = get_label(asset, label_merge_strategy)
-        if (label is None) or (job_name not in label["jsonResponse"]):
-            asset_id = asset["id"]
-            warn(f"${asset_id}: No annotation for job ${job_name}")
-            return
-        annotations = label["jsonResponse"][job_name]["annotations"]
+        annotations = asset["labels"]["jsonResponse"][job_name]["annotations"]
         sentences = nltk.sent_tokenize(text)
         offset = 0
         for sentence_tokens in nltk.TreebankWordTokenizer().span_tokenize_sents(sentences):
@@ -429,7 +416,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         self,
         *,
         assets: List[AssetT],
-        label_merge_strategy: LabelMergeStrategyT,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,

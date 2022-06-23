@@ -18,7 +18,7 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
 )
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helpers import JobPredictions, get_label, kili_print
+from kiliautoml.utils.helpers import JobPredictions, kili_print
 from kiliautoml.utils.path import Path, PathPytorchVision
 from kiliautoml.utils.pytorchvision.image_classification import (
     ClassificationPredictDataset,
@@ -30,7 +30,7 @@ from kiliautoml.utils.pytorchvision.image_classification import (
     set_model_name_image_classification,
     set_model_repository_image_classification,
 )
-from kiliautoml.utils.type import AssetT, JobT, LabelMergeStrategyT
+from kiliautoml.utils.type import AssetT, JobT
 
 
 class PyTorchVisionImageClassificationModel(BaseModel):
@@ -79,7 +79,6 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self,
         *,
         assets: List[AssetT],
-        label_merge_strategy: LabelMergeStrategyT,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -97,14 +96,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         labels = []
         for asset in assets:
-            label = get_label(asset, label_merge_strategy)
-            if (label is None) or (self.job_name not in label["jsonResponse"]):
-                asset_id = asset["id"]
-                warn = f"${asset_id}: No annotation for job ${self.job_name}"
-                warnings.warn(warn)
-                return {"training_loss": None}
-            else:
-                labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
+            labels.append(asset["labels"]["jsonResponse"][self.job_name]["categories"][0]["name"])
 
         splits = {}
         splits["train"], splits["val"] = train_test_split(
@@ -202,7 +194,6 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self,
         *,
         assets: List[AssetT],
-        label_merge_strategy: LabelMergeStrategyT,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
@@ -217,13 +208,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         )
         labels = []
         for asset in assets:
-            label = get_label(asset, label_merge_strategy)
-            if (label is None) or (self.job_name not in label["jsonResponse"]):
-                asset_id = asset["id"]
-                warnings.warn(f"${asset_id}: No annotation for job ${self.job_name}")
-                return []
-            else:
-                labels.append(label["jsonResponse"][self.job_name]["categories"][0]["name"])
+            labels.append(asset["labels"]["jsonResponse"][self.job_name]["categories"][0]["name"])
 
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
         probability_matrix = np.empty((len(labels), len(self.class_name_to_idx)))
