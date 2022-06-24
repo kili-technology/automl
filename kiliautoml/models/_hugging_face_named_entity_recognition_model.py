@@ -343,23 +343,60 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         return predictions_sentence, probas
 
     @classmethod
-    def _predicted_tokens_to_kili_annotations(
+    def _post_process_labels(cls, predicted_labels: List[str], tokens: List[str], null_category):
+
+        post_processed_labels: List[str] = []
+        prev_category: Optional[str] = None
+        category: Optional[str] = None
+
+        for label, token in zip(predicted_labels, tokens):
+            if token in [
+                "[CLS]",
+                "[SEP]",
+                "[UNK]",
+            ]:  # special BERT tokens that should ignored at inference time
+                post_processed_labels.append(label)
+                continue
+
+            if token.startswith(
+                "##"
+            ):  # hash token annotations should be ignored when aligning tokens and text
+                token = token.replace("##", "")
+
+            category = None
+            if label != null_category:
+                category = label.replace("B-", "").replace("I-", "")
+
+                if len(post_processed_labels):
+                    if category == prev_category:
+                        new_label = "I-" + category
+                    else:
+                        new_label = "B-" + category
+                else:
+                    new_label = label
+            else:
+                new_label = label
+            post_processed_labels.append(new_label)
+
+            prev_category = category
+
+        return post_processed_labels
+
+    @classmethod
+    def _compute_kili_annotations(
         cls,
         text: str,
-        predicted_label: List[str],
-        predicted_proba: List[float],
+        labels: List[str],
+        probas: List[float],
         tokens: List[str],
         null_category: str,
         offset_in_text: int,
     ) -> List[KiliNerAnnotations]:
-        """
-        Format token predictions into a the kili format.
-        :param: text:
-        """
 
+        offset_in_sentence: int = 0
         kili_annotations: List[KiliNerAnnotations] = []
-        offset_in_sentence = 0
-        for label, proba, token in zip(predicted_label, predicted_proba, tokens):
+
+        for label, proba, token in zip(labels, probas, tokens):
             if token in [
                 "[CLS]",
                 "[SEP]",
@@ -368,49 +405,59 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                 continue
             if token.startswith(
                 "##"
-            ):  # number tokens annotation should be ignored when aligning categories
+            ):  # hash token annotations should be ignored when aligning tokens and text
                 token = token.replace("##", "")
-
             text_remaining = text[offset_in_sentence:]
-            ind = text_remaining.find(token)
-            if ind == -1:
+            ind_in_remaining_text = text_remaining.find(token)
+            if ind_in_remaining_text == -1:
                 raise Exception(f"token {token} not found in text {text_remaining}")
 
-            offset_in_sentence += ind
+            content = token
+            str_between_tokens = text_remaining[:ind_in_remaining_text]
 
             if label != null_category:
-                is_i_tag = label.startswith("I-")
-                c_kili = label.replace("B-", "").replace("I-", "")
 
-                ann_ = {
-                    "beginOffset": offset_in_text + offset_in_sentence,
-                    "content": token,
-                    "endOffset": offset_in_text + offset_in_sentence + len(token),
-                    "categories": [{"name": c_kili, "confidence": int(proba * 100)}],
+                ann: KiliNerAnnotations = {
+                    "beginOffset": offset_in_text + offset_in_sentence + ind_in_remaining_text,
+                    "content": content,
+                    "endOffset": offset_in_text
+                    + offset_in_sentence
+                    + ind_in_remaining_text
+                    + len(content),
+                    "categories": [{"name": label[2:], "confidence": int(proba * 100)}],
                 }
-                ann = KiliNerAnnotations(
-                    beginOffset=ann_["beginOffset"],
-                    content=ann_["content"],
-                    endOffset=ann_["endOffset"],
-                    categories=ann_["categories"],
-                )
 
-                if (
-                    len(kili_annotations)
-                    and ann["categories"][0]["name"]
-                    == kili_annotations[-1]["categories"][0]["name"]
-                    and (ann["beginOffset"] == kili_annotations[-1]["endOffset"] or is_i_tag)
-                ):
-                    # merge with previous if same category and contiguous offset and onset:
+                if label.startswith("I-"):
+                    # merge with previous if continuation label
                     kili_annotations[-1]["endOffset"] = ann["endOffset"]
-                    kili_annotations[-1]["content"] += ann["content"]
+                    kili_annotations[-1]["content"] += str_between_tokens + ann["content"]
 
                 else:
                     kili_annotations.append(ann)
 
-            offset_in_sentence += len(token)
+            offset_in_sentence += ind_in_remaining_text + len(token)
 
         return kili_annotations
+
+    @classmethod
+    def _predicted_tokens_to_kili_annotations(
+        cls,
+        text: str,
+        predicted_labels: List[str],
+        predicted_probas: List[float],
+        tokens: List[str],
+        null_category: str,
+        offset_in_text: int,
+    ) -> List[KiliNerAnnotations]:
+        """
+        Format token predictions into a the kili format.
+        :param: text:
+        """
+        pp_labels = cls._post_process_labels(predicted_labels, tokens, null_category)
+
+        return cls._compute_kili_annotations(
+            text, pp_labels, predicted_probas, tokens, null_category, offset_in_text
+        )
 
     def find_errors(
         self,

@@ -1,0 +1,28 @@
+name: Unit tests
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    strategy:
+      matrix:
+        version: ["3.10", "3.9", "3.8", "3.7"]
+
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.version }}
+          cache: "pip"
+
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt -r requirements_dev.txt && git submodule update --init && pip install -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
+
+      - name: Run test suite
+        run: |
+          python -m pytest -s tests --ignore=tests/e2e -v
