@@ -27,6 +27,24 @@ setup(
         "ratelimit",
         "opencv-python",
         "detectron2 @ git+https://github.com/facebookresearch/detectron2.git",
+        # ################################ yolo
+        "matplotlib>=3.2.2",
+        "numpy>=1.18.5",
+        "opencv-python>=4.1.2",
+        "Pillow>=7.1.2",
+        "PyYAML>=5.3.1",
+        "requests>=2.23.0",
+        "scipy>=1.4.1",
+        "torch>=1.7.0",
+        "torchvision>=0.8.1",
+        "tqdm>=4.41.0",
+        # Logging -------------------------------------
+        "tensorboard>=2.4.1",
+        # wandb
+        # Plotting ------------------------------------
+        "pandas>=1.1.4",
+        "seaborn>=0.11.0",
+        "thop",
     ],
     entry_points={
         "console_scripts": [
