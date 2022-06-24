@@ -39,8 +39,7 @@ git submodule update --init
 then install the requirements:
 
 ```bash
-pip install torch && pip install -r requirements.txt
-pip install -e .
+pip install torch && pip install -e .
 ```
 
 ## Usage
