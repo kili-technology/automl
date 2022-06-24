@@ -26,7 +26,7 @@ setup(
         "ipython",
         "ratelimit",
         "opencv-python",
-        "git+https://github.com/facebookresearch/detectron2.git",
+        "detectron2 @ git+https://github.com/facebookresearch/detectron2.git",
     ],
     entry_points={
         "console_scripts": [
