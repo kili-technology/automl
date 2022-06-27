@@ -21,7 +21,7 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install torch && pip install -e .
+          pip install torch && pip install -r requirements_dev.txt && pip install -e .
 
       - name: Run test suite
         run: |
