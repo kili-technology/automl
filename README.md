@@ -22,6 +22,8 @@ You can try automl on a simple image classification project with this notebook.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/image_classification.ipynb)
 
+Check the [Demos](##Demos) section for more examples.
+
 ## Installation
 Creating a new conda or virtualenv before cloning is recommended because we install a lot of packages:
 
@@ -141,6 +143,7 @@ You can test the features of AutoML with these notebooks:
 
 - Natural Language Processing (NLP)
   - [Text Classification](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/text_classification.ipynb)
+  - [Named Entity Recognition](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/named_entity_recognition.ipynb)
 - Image
   - [Image Classification](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/image_classification.ipynb)
 
