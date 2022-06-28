@@ -18,7 +18,8 @@ jobs:
         with:
           python-version: ${{ matrix.version }}
           cache: "pip"
-
+      - name: Initialize git submodules
+        run: git submodule update --init
       - name: Install deps
         run: |
           pip install torch && pip install -r requirements_dev.txt && pip install -e .

@@ -1,10 +1,12 @@
 import os
+from pathlib import Path
 from typing import Dict, List
 
 from typing_extensions import Literal, TypedDict
 
 HOME = os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type: ignore
 
+AUTOML_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 ContentInputT = Literal["checkbox", "radio"]
 

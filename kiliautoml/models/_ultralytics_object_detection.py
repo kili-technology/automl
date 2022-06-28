@@ -10,6 +10,7 @@ import warnings
 from datetime import datetime
 from functools import reduce
 from glob import glob
+from pathlib import Path as PathlibPath
 from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -111,7 +112,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         title: str,
         api_key: str,
         additional_train_args_yolo: AdditionalTrainingArgsT,
-        download_all: bool = False,
+        split_train_test: bool = True,
         label_error_cv_fold: int = 0,
         label_error_n_folds: int = 0,
     ):
@@ -149,9 +150,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 class_names=class_names,
                 kili_api_key=api_key,
                 assets=assets,
-                job_name=self.job_name,
-                label_merge_strategy=label_merge_strategy,
-                download_all=download_all,
+                split_train_test=split_train_test,
             )
 
         if label_error_n_folds:
@@ -295,9 +294,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         class_names: List[str],
         kili_api_key: str,
         assets,
-        job_name,
-        label_merge_strategy,
-        download_all: bool = False,
+        split_train_test: bool = True,
     ):
 
         kili_print("Downloading datasets from Kili")
@@ -309,9 +306,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         n_train_assets = math.floor(len(assets) * train_val_proportions[0])
         n_val_assets = math.floor(len(assets) * train_val_proportions[1])
 
-        if download_all:
-            assets_splits = {"all": assets}
-        else:
+        if split_train_test:
             assert (
                 n_val_assets > 0
             ), "Validation set must contain at least 2 assets. max_asset should be > 9"
@@ -320,6 +315,8 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 "val": assets[n_train_assets : n_train_assets + n_val_assets],
                 "test": assets[n_train_assets + n_val_assets :],
             }
+        else:
+            assets_splits = {"all": assets}
 
         for name_split, assets_split in assets_splits.items():
             if len(assets_split) == 0:
@@ -523,13 +520,12 @@ class UltralyticsObjectDetectionModel(BaseModel):
         api_key: str = "",
         disable_wandb: bool = True,
         title: str = "",
-        json_args: Dict = {},  # type: ignore
+        additional_train_args_yolo: AdditionalTrainingArgsT = {},
     ) -> Any:
         metrics = []
         for cv_fold in range(cv_n_folds):
             loss = self.train(
                 assets=assets,
-                label_merge_strategy=label_merge_strategy,
                 epochs=epochs,
                 clear_dataset_cache=clear_dataset_cache,
                 disable_wandb=disable_wandb,
@@ -537,8 +533,8 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 batch_size=batch_size,
                 api_key=api_key,
                 title=title,
-                json_args=json_args,
-                download_all=True,
+                additional_train_args_yolo=additional_train_args_yolo,
+                split_train_test=False,
                 label_error_cv_fold=cv_fold,
                 label_error_n_folds=cv_n_folds,
             )
@@ -560,8 +556,10 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         found_errors_json = json.dumps(all_metrics_per_image, sort_keys=True, indent=4)
         if found_errors_json is not None:
-            model_path, _ = self._get_last_model_param(self.project_id, None)
-            json_file_path = os.path.join(model_path, "error_labels.json")
+            model_path = os.path.join(HOME, self.project_id, self.job_name)
+            json_file_path = PathUltralytics.label_errors_dir(
+                str(PathlibPath(model_path).parent.absolute())
+            )
             with open(json_file_path, "wb") as output_file:
                 output_file.write(found_errors_json.encode("utf-8"))
                 kili_print("Final per-image metric written to: ", json_file_path)
