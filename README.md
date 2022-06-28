@@ -22,7 +22,7 @@ You can try automl on a simple image classification project with this notebook.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/image_classification.ipynb)
 
-Check the [Demos](##Demos) section for more examples.
+Check the [Demos](#demos) section for more examples.
 
 ## Installation
 Creating a new conda or virtualenv before cloning is recommended because we install a lot of packages:
