@@ -23,3 +23,5 @@ ipython
 ratelimit
 opencv-python
 git+https://github.com/facebookresearch/detectron2.git
+rich
+stackprinter

@@ -8,3 +8,7 @@ kiliautoml/utils/ultralytics/yolov5/artifacts
 wandb/**
 .mypy_cache/**
 kiliautoml.egg-info/**
+kiliautoml/models/_detectron2_semantic_segmentation.py
+coco_dataset/**
+kiliautoml/models/_detectron2_semantic_segmentation.py
+coco_dataset_2017_val.zip

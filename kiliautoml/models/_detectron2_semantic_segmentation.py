@@ -150,8 +150,8 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         cfg = self._get_cfg_kili(assets, epochs, batch_size, model_dir, classes)
         trainer = DefaultTrainer(cfg)
         trainer.resume_or_load(resume=False)
-        res = trainer.train()
-        kili_print("Training metrics", res)
+        train_res = trainer.train()
+        kili_print("Training metrics", train_res)
 
         # 4. Inference
         # Inference should use the config with parameters that are used in training
@@ -168,7 +168,10 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         kili_print(eval_res)
         kili_print(f"Evaluations results are available in {eval_dir}")
         kili_print("The logs and model are saved in ", cfg.OUTPUT_DIR)
-        return eval_res["segm"]
+
+        if "segm" not in eval_res:
+            kili_print("Your Epoch number is probably too low.")
+        return eval_res
 
     def _get_cfg_kili(
         self,

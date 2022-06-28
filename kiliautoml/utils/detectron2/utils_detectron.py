@@ -156,9 +156,11 @@ def convert_kili_semantic_to_coco(
         for annotation in annotations_:
             annotation_j += 1
             boundingPoly = annotation["boundingPoly"]
-            px: List[float] = [v["x"] * width for v in boundingPoly[0]["normalizedVertices"]]
-            py: List[float] = [v["y"] * height for v in boundingPoly[0]["normalizedVertices"]]
-            poly_ = [(x, y) for x, y in zip(px, py)]
+            px: List[float] = [float(v["x"]) * width for v in boundingPoly[0]["normalizedVertices"]]
+            py: List[float] = [
+                float(v["y"]) * height for v in boundingPoly[0]["normalizedVertices"]
+            ]
+            poly_ = [(float(x), float(y)) for x, y in zip(px, py)]
             poly = [p for x in poly_ for p in x]
 
             categories = annotation["categories"]
@@ -167,7 +169,7 @@ def convert_kili_semantic_to_coco(
                 id=annotation_j,
                 image_id=asset_i,
                 category_id=cat_id,
-                bbox=[np.min(px), np.min(py), np.max(px), np.max(py)],
+                bbox=[int(np.min(px)), int(np.min(py)), int(np.max(px)), int(np.max(py))],
                 # Objects have only one connected part.
                 # But a type of object can appear several times on the same image.
                 # The limitation of the single connected part comes from Kili.
