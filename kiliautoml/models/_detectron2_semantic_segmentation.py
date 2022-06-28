@@ -25,9 +25,9 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
 )
 from kiliautoml.utils.detectron2.utils_detectron import (
-    Annotation,
     NormalizedVertice,
     NormalizedVertices,
+    SemanticAnnotation,
     convert_kili_semantic_to_coco,
 )
 from kiliautoml.utils.helpers import JobPredictions, kili_print
@@ -305,7 +305,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
                     ]
                 )
             ]
-            annotation = Annotation(
+            annotation = SemanticAnnotation(
                 boundingPoly=boundingPoly,
                 mid=None,  # type:ignore
                 type="semantic",

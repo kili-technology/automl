@@ -32,7 +32,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
-from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT
+from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, CategoryT, JobT
 
 env = Environment(
     loader=FileSystemLoader(os.path.abspath(PathUltralytics.ULTRALYTICS_REL_PATH)),
@@ -51,15 +51,9 @@ def get_id_from_path(path_yolov5_inference: str) -> str:
     return os.path.split(path_yolov5_inference)[-1].split(".")[0]
 
 
-class CategoryNameConfidence(TypedDict):
-    name: str
-    # confidence is a probability between 0 and 100.
-    confidence: int
-
-
 class BBoxAnnotation(TypedDict):
     boundingPoly: Any
-    categories: List[CategoryNameConfidence]
+    categories: List[CategoryT]
     type: str
 
 
@@ -368,7 +362,10 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 if verbose >= 1:
                     kili_print(f"Asset {image.externalId}: {kili_predictions}")
                 id_json_list.append(
-                    (image.externalId, {job_name: {"annotations": kili_predictions}})
+                    (
+                        image.externalId,
+                        {job_name: {"annotations": kili_predictions}},
+                    )  # kili_prediction : List[BBoxAnnotation]
                 )
 
         # TODO: move this check in the prioritizer
@@ -469,7 +466,7 @@ def yolov5_to_kili_json(
             c = int(c_)
             p = int(100.0 * float(p_))
 
-            category: CategoryNameConfidence = {
+            category: CategoryT = {
                 "name": ind_to_categories[c],
                 "confidence": p,
             }
