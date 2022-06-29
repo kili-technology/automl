@@ -36,7 +36,7 @@ from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
     default=None,
     help="Asset repository (eg. /content/assets/)",
 )
-@click.option("--predictions-path", required=True, default=None, help="csv file with predictions")
+@click.option("--predictions-path", default=None, help="csv file with predictions")
 @click.option(
     "--focus-class",
     default=None,
