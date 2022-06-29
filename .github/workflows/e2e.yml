@@ -21,7 +21,7 @@ jobs:
       - name: initialize git submodules
         run: git submodule update --init
       - name: Install deps
-        run: pip install torch && pip install -r requirements_dev.txt && pip install -e .
+        run: pip install "torch<1.12" && pip install -r requirements_dev.txt && pip install -e .
 
       - name: Install pytest
         run: pip install pytest
