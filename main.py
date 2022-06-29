@@ -29,15 +29,16 @@ sys.excepthook = ultratb.FormattedTB(mode="Verbose", color_scheme="Linux", call_
 #     # show_locals=True,
 # )
 
-import stackprinter
+# import stackprinter
 
-stackprinter.set_excepthook(
-    line_wrap=100,
-    suppressed_paths=[r"lib/python.*/site-packages/numpy", r"click"],
-    suppressed_vars=[r"api_key"],
-    show_vals="like_source",
-    truncate_vals=500,
-)
+# stackprinter.set_excepthook(
+#     line_wrap=100,
+#     suppressed_paths=[r"lib/python.*/site-packages/numpy", r"click"],
+#     suppressed_vars=[r"api_key"],
+#     show_vals="like_source",
+#     truncate_vals=500,
+#     style="lightbg",
+# )
 
 from commands.label_errors import main as label_errors
 from commands.predict import main as predict

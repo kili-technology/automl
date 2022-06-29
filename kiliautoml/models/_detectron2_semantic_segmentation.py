@@ -30,6 +30,7 @@ from kiliautoml.utils.detectron2.utils_detectron import (
     SemanticAnnotation,
     convert_kili_semantic_to_coco,
 )
+from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import JobPredictions, kili_print
 from kiliautoml.utils.path import ModelDirT, Path, PathDetectron2
 from kiliautoml.utils.type import AssetT, CategoryT, JobT, LabelMergeStrategyT
@@ -147,8 +148,8 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         assert len(set(full_classes)) == len(full_classes)
         if len(_classes) < len(full_classes):
             kili_print(
-                f"Warning: Your training set contains only {len(_classes)} whereas the ontology"
-                f" contains {len(full_classes)} classes."
+                f"Warning: Your training set contains only {len(_classes)} classes whereas the"
+                f" ontology contains {len(full_classes)} classes."
             )
 
         # 2. Convert to Detectron2 format
@@ -247,8 +248,13 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         visualization_dir = PathDetectron2.append_output_visualization(model_path_repository_dir)
 
         # Inference should use the config with parameters that are used in training
-        _, _classes = convert_kili_semantic_to_coco(
-            job_name=self.job_name, assets=assets, output_dir=data_dir, api_key=api_key
+        # img_data = download_asset_binary(api_key, asset["content"])  # jpg
+        # img = cv2.imdecode(np.frombuffer(img_data, np.uint8), cv2.IMREAD_COLOR)
+        # file_name = os.path.join(data_dir, f"{asset_i}.jpg")
+        # cv2.imwrite(file_name, img)
+
+        downloaded_images = download_project_images(
+            api_key=api_key, assets=assets, output_folder=data_dir
         )
 
         full_classes = list(job["content"]["categories"].keys())
@@ -271,25 +277,22 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         predictor = DefaultPredictor(cfg)
 
         # 2. Convert to Detectron2 format
-        MetadataCatalog.clear()
-        DatasetCatalog.clear()
-        DatasetCatalog.register("dataset_val", lambda _=_: self._get_coco_dicts(data_dir))
         MetadataCatalog.get("dataset_val").set(thing_classes=full_classes)
-        dataset_metadata_train = MetadataCatalog.get("dataset_train")
+        dataset_metadata_predict = MetadataCatalog.get("dataset_val")
 
         # 3. Predict
-        dataset_dicts = self._get_coco_dicts(data_dir)
         id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
-        for d in dataset_dicts:
-            externalId = d["file_name"]  # type:ignore
-            im = cv2.imread(externalId)
+        for image in downloaded_images:
+            im = cv2.imread(image.filename)
             outputs = predictor(im)
 
             annotations = self.get_annotations_from_instances(
                 outputs["instances"], class_names=full_classes
             )
-            self._visualize_predictions(visualization_dir, d, dataset_metadata_train, im, outputs)
-            id_json_list.append((externalId, {self.job_name: {"annotations": annotations}}))
+            self._visualize_predictions(
+                visualization_dir, image.filename, dataset_metadata_predict, im, outputs
+            )
+            id_json_list.append((image.externalId, {self.job_name: {"annotations": annotations}}))
 
         job_predictions = JobPredictions(
             job_name=self.job_name,
@@ -339,7 +342,9 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             annotations.append(annotation)
         return annotations
 
-    def _visualize_predictions(self, visualization_dir, d, dataset_metadata_train, im, outputs):
+    def _visualize_predictions(
+        self, visualization_dir, file_name, dataset_metadata_train, im, outputs
+    ):
         v = Visualizer(
             im[:, :, ::-1],
             metadata=dataset_metadata_train,
@@ -349,7 +354,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
         image_with_predictions = out.get_image()[:, :, ::-1]
 
-        self.save_predictions(visualization_dir, d["file_name"], image_with_predictions)
+        self.save_predictions(visualization_dir, file_name, image_with_predictions)
 
     def save_predictions(self, visualization_dir, file_name, image_with_predictions):
         im = Image.fromarray(image_with_predictions)
