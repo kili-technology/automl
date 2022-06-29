@@ -131,7 +131,6 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             image_datasets=image_datasets,
             save_model_path=self.model_path,
         )
-        print(model_evaluation)
         return model_evaluation
 
     def predict(

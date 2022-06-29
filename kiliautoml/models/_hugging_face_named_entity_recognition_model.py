@@ -176,40 +176,8 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             eval_dataset=eval_dataset,  # type: ignore
             compute_metrics=self.compute_metrics,  # type: ignore
         )
-
         trainer.train()
-        train_metrics = trainer.evaluate(trainer.train_dataset)
-        val_metrics = trainer.evaluate()
-        model_evaluation = {}
-        nb_train_ent = 0
-        nb_val_ent = 0
-        for label in categories_from_job(self.job):
-            if "eval_" + label in train_metrics:
-                model_evaluation["train_" + label] = train_metrics["eval_" + label]
-                nb_train_ent += train_metrics["eval_" + label]["number"]  # type: ignore
-            else:
-                model_evaluation["train_" + label] = {"number": 0}
-            if "eval_" + label in val_metrics:
-                model_evaluation["val_" + label] = val_metrics["eval_" + label]
-                nb_val_ent += val_metrics["eval_" + label]["number"]  # type: ignore
-            else:
-                model_evaluation["val_" + label] = {"number": 0}
-
-        model_evaluation["train__overall"] = {
-            "loss": train_metrics["eval_loss"],
-            "precision": train_metrics["eval_overall_precision"],
-            "recall": train_metrics["eval_overall_recall"],
-            "f1": train_metrics["eval_overall_f1"],
-            "number": nb_train_ent,
-        }
-        model_evaluation["val__overall"] = {
-            "loss": val_metrics["eval_loss"],
-            "precision": val_metrics["eval_overall_precision"],
-            "recall": val_metrics["eval_overall_recall"],
-            "f1": val_metrics["eval_overall_f1"],
-            "number": nb_val_ent,
-        }
-        print(model_evaluation)
+        model_evaluation = self.model_evaulation(trainer)
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
         return {key: value for key, value in sorted(model_evaluation.items())}
@@ -510,12 +478,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
 
     def compute_metrics(self, eval_preds):
-
         metric = datasets.load_metric("seqeval")
-
         logits, labels = eval_preds
         predictions = np.argmax(logits, axis=-1)
-
         # Remove ignored index (special tokens) and convert to labels
         true_labels = [
             [self.label_list[label_id] for label_id in label if label_id != -100]
@@ -527,6 +492,40 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         ]
         all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
         return all_metrics
+
+    def model_evaulation(self, trainer):
+        train_metrics = trainer.evaluate(trainer.train_dataset)
+        val_metrics = trainer.evaluate()
+        model_evaluation = {}
+        nb_train_ent = 0
+        nb_val_ent = 0
+        for label in categories_from_job(self.job):
+            if "eval_" + label in train_metrics:
+                model_evaluation["train_" + label] = train_metrics["eval_" + label]
+                nb_train_ent += train_metrics["eval_" + label]["number"]  # type: ignore
+            else:
+                model_evaluation["train_" + label] = {"number": 0}
+            if "eval_" + label in val_metrics:
+                model_evaluation["val_" + label] = val_metrics["eval_" + label]
+                nb_val_ent += val_metrics["eval_" + label]["number"]  # type: ignore
+            else:
+                model_evaluation["val_" + label] = {"number": 0}
+
+        model_evaluation["train__overall"] = {
+            "loss": train_metrics["eval_loss"],
+            "precision": train_metrics["eval_overall_precision"],
+            "recall": train_metrics["eval_overall_recall"],
+            "f1": train_metrics["eval_overall_f1"],
+            "number": nb_train_ent,
+        }
+        model_evaluation["val__overall"] = {
+            "loss": val_metrics["eval_loss"],
+            "precision": val_metrics["eval_overall_precision"],
+            "recall": val_metrics["eval_overall_recall"],
+            "f1": val_metrics["eval_overall_f1"],
+            "number": nb_val_ent,
+        }
+        return model_evaluation
 
     def find_errors(
         self,

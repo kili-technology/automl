@@ -52,6 +52,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         BaseModel.__init__(
             self, job=job, job_name=job_name, model_name=model_name, model_framework=model_framework
         )
+        self.job_categories: List[str] = []
 
     def train(
         self,
@@ -79,15 +80,15 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         kili_print(f"Downloading data to {path_dataset}")
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
-        job_categories = categories_from_job(self.job)
+        self.job_categories = categories_from_job(self.job)
         if not os.path.exists(path_dataset):
-            self._write_dataset(assets, self.job_name, path_dataset, job_categories)
+            self._write_dataset(assets, self.job_name, path_dataset, self.job_categories)
         raw_datasets = datasets.load_dataset(  # type: ignore
             "json",
             data_files=path_dataset,
             features=datasets.features.features.Features(  # type: ignore
                 {
-                    "label": datasets.ClassLabel(names=job_categories),  # type: ignore
+                    "label": datasets.ClassLabel(names=self.job_categories),  # type: ignore
                     "text": datasets.Value(dtype="string"),  # type: ignore
                 }
             ),
@@ -98,7 +99,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.model_framework, job_categories, self.ml_task
+            model_name, self.model_framework, self.job_categories, self.ml_task
         )
 
         def tokenize_function(examples):
@@ -118,89 +119,17 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             additional_train_args_hg=additional_train_args_hg,
         )
 
-        def compute_metrics(eval_pred):
-            metrics = ["accuracy", "precision", "recall", "f1"]
-            metric = {}
-            for met in metrics:
-                if met == "accuracy":
-                    metric[met] = datasets.load_metric(met)
-                else:
-                    metric[met] = evaluate.load(met)
-            logits, labels = eval_pred
-            predictions = np.argmax(logits, axis=-1)
-            metric_res = {}
-            for met in metrics:
-                if met == "accuracy":
-                    metric_res[met] = metric[met].compute(
-                        predictions=predictions, references=labels
-                    )[met]
-                elif met == "f1":
-                    metric_res[met] = np.append(
-                        metric[met].compute(
-                            predictions=predictions, references=labels, average=None
-                        )[met],
-                        metric[met].compute(
-                            predictions=predictions, references=labels, average="weighted"
-                        )[met],
-                    )
-                else:
-                    metric_res[met] = np.append(
-                        metric[met].compute(
-                            predictions=predictions,
-                            references=labels,
-                            average=None,
-                            zero_division=0,
-                        )[met],
-                        metric[met].compute(
-                            predictions=predictions,
-                            references=labels,
-                            average="weighted",
-                            zero_division=0,
-                        )[met],
-                    )
-            return metric_res
-
         trainer = Trainer(
             model=model,
             args=training_arguments,
             tokenizer=tokenizer,
             train_dataset=train_dataset,  # type: ignore
             eval_dataset=eval_dataset,  # type: ignore
-            compute_metrics=compute_metrics,  # type: ignore
+            compute_metrics=self.compute_metrics,  # type: ignore
         )
         trainer.train()
-        train_metrics = trainer.evaluate(trainer.train_dataset)
-        val_metrics = trainer.evaluate()
-        model_evaluation: Dict[str, Any] = {}
+        model_evaluation = self.model_evaluation(trainer)
 
-        for i, label in enumerate(job_categories):
-            if "eval_" + label in train_metrics:
-                train_label_metrics = {}
-                for metric in ["precision", "recall", "f1"]:
-                    train_label_metrics[metric] = train_metrics["eval_" + metric][i]  # type: ignore
-                model_evaluation["train_" + label] = train_label_metrics
-            if "eval_" + label in val_metrics:
-                val_label_metrics = {}
-                for metric in ["precision", "recall", "f1"]:
-                    val_label_metrics[metric] = val_metrics["eval_" + metric][i]  # type: ignore
-                model_evaluation["val_" + label] = val_label_metrics
-
-        model_evaluation["train__overall"] = {
-            "loss": train_metrics["eval_loss"],
-            "accuracy": train_metrics["eval_accuracy"],
-            "precision": train_metrics["eval_precision"][-1],  # type: ignore
-            "recall": train_metrics["eval_recall"][-1],  # type: ignore
-            "f1": train_metrics["eval_f1"][-1],  # type: ignore
-        }
-
-        model_evaluation["val__overall"] = {
-            "loss": val_metrics["eval_loss"],
-            "accuracy": val_metrics["eval_accuracy"],
-            "precision": val_metrics["eval_precision"][-1],  # type: ignore
-            "recall": val_metrics["eval_recall"][-1],  # type: ignore
-            "f1": val_metrics["eval_f1"][-1],  # type: ignore
-        }
-        print(model_evaluation)
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
         return {key: value for key, value in sorted(model_evaluation.items())}
@@ -299,6 +228,79 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         predicted_label = model.config.id2label[predicted_id]
 
         return {"categories": [{"name": predicted_label, "confidence": int(probas * 100)}]}
+
+    def compute_metrics(self, eval_pred):
+        metrics = ["accuracy", "precision", "recall", "f1"]
+        metric = {}
+        for met in metrics:
+            if met == "accuracy":
+                metric[met] = datasets.load_metric(met)
+            else:
+                metric[met] = evaluate.load(met)
+        logits, labels = eval_pred
+        predictions = np.argmax(logits, axis=-1)
+        metric_res = {}
+        for met in metrics:
+            if met == "accuracy":
+                metric_res[met] = metric[met].compute(predictions=predictions, references=labels)[
+                    met
+                ]
+            elif met == "f1":
+                metric_res[met] = np.append(
+                    metric[met].compute(predictions=predictions, references=labels, average=None)[
+                        met
+                    ],
+                    metric[met].compute(
+                        predictions=predictions, references=labels, average="weighted"
+                    )[met],
+                )
+            else:
+                metric_res[met] = np.append(
+                    metric[met].compute(
+                        predictions=predictions,
+                        references=labels,
+                        average=None,
+                        zero_division=0,
+                    )[met],
+                    metric[met].compute(
+                        predictions=predictions,
+                        references=labels,
+                        average="weighted",
+                        zero_division=0,
+                    )[met],
+                )
+        return metric_res
+
+    def model_evaluation(self, trainer):
+        train_metrics = trainer.evaluate(trainer.train_dataset)
+        val_metrics = trainer.evaluate()
+        model_evaluation: Dict[str, Any] = {}
+        for i, label in enumerate(self.job_categories):
+            if "eval_" + label in train_metrics:
+                train_label_metrics = {}
+                for metric in ["precision", "recall", "f1"]:
+                    train_label_metrics[metric] = train_metrics["eval_" + metric][i]  # type: ignore
+                model_evaluation["train_" + label] = train_label_metrics
+            if "eval_" + label in val_metrics:
+                val_label_metrics = {}
+                for metric in ["precision", "recall", "f1"]:
+                    val_label_metrics[metric] = val_metrics["eval_" + metric][i]  # type: ignore
+                model_evaluation["val_" + label] = val_label_metrics
+        model_evaluation["train__overall"] = {
+            "loss": train_metrics["eval_loss"],
+            "accuracy": train_metrics["eval_accuracy"],
+            "precision": train_metrics["eval_precision"][-1],  # type: ignore
+            "recall": train_metrics["eval_recall"][-1],  # type: ignore
+            "f1": train_metrics["eval_f1"][-1],  # type: ignore
+        }
+        model_evaluation["val__overall"] = {
+            "loss": val_metrics["eval_loss"],
+            "accuracy": val_metrics["eval_accuracy"],
+            "precision": val_metrics["eval_precision"][-1],  # type: ignore
+            "recall": val_metrics["eval_recall"][-1],  # type: ignore
+            "f1": val_metrics["eval_f1"][-1],  # type: ignore
+        }
+        return model_evaluation
 
     def find_errors(
         self,

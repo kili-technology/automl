@@ -9,6 +9,7 @@ setup(
         "click",
         "datasets<=2.2",
         "evaluate",
+        "seqeval",
         "kili",
         "jinja2",
         "nltk>=3.3",

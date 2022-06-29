@@ -37,15 +37,13 @@ def train_model_pytorch(
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
     model = model.to(device)
-    dataset_sizes = {x: len(dataloaders[x].dataset) for x in ["train", "val"]}
-
     # Decay LR by a factor of 0.1 every 7 epochs
     scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_val_acc = epoch_train_acc = corresponding_train_acc = 0.0
     best_val_precision = best_val_recall = best_val_f1 = []
-    epoch_train_precision = epoch_train_recall = epoch_train_f1 = []
+    epoch_train_evaluation = {}
     corresponding_train_precision = corresponding_train_recall = corresponding_train_f1 = []
     best_val_loss = epoch_train_loss = corresponding_train_loss = float("inf")
     for _ in trange(epochs, desc="Training - Epoch"):
@@ -85,71 +83,33 @@ def train_model_pytorch(
                 ys_true.append(labels.cpu())
             if phase == "train":
                 scheduler.step()
-                epoch_train_loss = running_loss / dataset_sizes[phase]
-                epoch_train_acc = running_corrects.double() / dataset_sizes[phase]  # type:ignore
-                y_pred = np.concatenate(ys_pred)
-                y_true = np.concatenate(ys_true)
-                epoch_train_precision = np.append(
-                    precision_score(
-                        y_true, y_pred, average=None, zero_division=0  # type:ignore
-                    ),
-                    precision_score(
-                        y_true, y_pred, average="weighted", zero_division=0  # type:ignore
-                    ),
+                epoch_train_evaluation = evaluate(
+                    running_loss, np.concatenate(ys_pred), np.concatenate(ys_true)
                 )
-                epoch_train_recall = np.append(
-                    recall_score(y_true, y_pred, average=None, zero_division=0),  # type:ignore
-                    recall_score(
-                        y_true, y_pred, average="weighted", zero_division=0  # type:ignore
-                    ),
-                )
-                epoch_train_f1 = np.append(
-                    f1_score(y_true, y_pred, average=None, zero_division=0),  # type:ignore
-                    f1_score(
-                        y_true, y_pred, average="weighted", zero_division=0  # type:ignore
-                    ),
-                )
+                epoch_train_loss = epoch_train_evaluation["loss"]
+                epoch_train_acc = epoch_train_evaluation["acc"]
                 if verbose >= 2:
                     print(f"{phase} Loss: {epoch_train_loss:.4f} Acc: {epoch_train_acc:.4f}")
             if phase == "val":
-                epoch_val_loss = running_loss / dataset_sizes[phase]
-                epoch_val_acc = running_corrects.double() / dataset_sizes[phase]  # type:ignore
-                y_pred = np.concatenate(ys_pred)
-                y_true = np.concatenate(ys_true)
-                epoch_val_precision = np.append(
-                    precision_score(
-                        y_true, y_pred, average=None, zero_division=0  # type:ignore
-                    ),
-                    precision_score(
-                        y_true, y_pred, average="weighted", zero_division=0  # type:ignore
-                    ),
+                epoch_val_evaluation = evaluate(
+                    running_loss, np.concatenate(ys_pred), np.concatenate(ys_true)
                 )
-                epoch_val_recall = np.append(
-                    recall_score(y_true, y_pred, average=None, zero_division=0),  # type:ignore
-                    recall_score(
-                        y_true, y_pred, average="weighted", zero_division=0  # type:ignore
-                    ),
-                )
-                epoch_val_f1 = np.append(
-                    f1_score(y_true, y_pred, average=None, zero_division=0),  # type:ignore
-                    f1_score(
-                        y_true, y_pred, average="weighted", zero_division=0  # type:ignore
-                    ),
-                )
+                epoch_val_loss = epoch_val_evaluation["loss"]
+                epoch_val_acc = epoch_val_evaluation["acc"]
                 if verbose >= 2:
                     print(f"{phase} Loss: {epoch_val_loss:.4f} Acc: {epoch_val_acc:.4f}")
                 # deep copy the model
                 if epoch_val_loss < best_val_loss:
                     best_val_acc = epoch_val_acc
                     best_val_loss = epoch_val_loss
-                    best_val_precision = epoch_val_precision
-                    best_val_recall = epoch_val_recall
-                    best_val_f1 = epoch_val_f1
+                    best_val_precision = epoch_val_evaluation["precision"]
+                    best_val_recall = epoch_val_evaluation["recall"]
+                    best_val_f1 = epoch_val_evaluation["f1"]
                     corresponding_train_acc = epoch_train_acc
                     corresponding_train_loss = epoch_train_loss
-                    corresponding_train_precision = epoch_train_precision
-                    corresponding_train_recall = epoch_train_recall
-                    corresponding_train_f1 = epoch_train_f1
+                    corresponding_train_precision = epoch_train_evaluation["precision"]
+                    corresponding_train_recall = epoch_train_evaluation["recall"]
+                    corresponding_train_f1 = epoch_train_evaluation["f1"]
                     best_model_wts = copy.deepcopy(model.state_dict())
         if verbose >= 2:
             print()
@@ -193,3 +153,30 @@ def train_model_pytorch(
         "f1": best_val_f1[-1],  # type: ignore
     }
     return model, {key: value for key, value in sorted(model_evaluation.items())}
+
+
+def evaluate(running_loss, y_pred, y_true):
+    evaluation = {}
+    evaluation["loss"] = running_loss / len(y_true)
+    evaluation["acc"] = np.sum(y_pred == y_true) / len(y_true)
+    evaluation["precision"] = np.append(
+        precision_score(
+            y_true, y_pred, average=None, zero_division=0  # type:ignore
+        ),
+        precision_score(
+            y_true, y_pred, average="weighted", zero_division=0  # type:ignore
+        ),
+    )
+    evaluation["recall"] = np.append(
+        recall_score(y_true, y_pred, average=None, zero_division=0),  # type:ignore
+        recall_score(
+            y_true, y_pred, average="weighted", zero_division=0  # type:ignore
+        ),
+    )
+    evaluation["f1"] = np.append(
+        f1_score(y_true, y_pred, average=None, zero_division=0),  # type:ignore
+        f1_score(
+            y_true, y_pred, average="weighted", zero_division=0  # type:ignore
+        ),
+    )
+    return evaluation
