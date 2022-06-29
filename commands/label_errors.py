@@ -61,7 +61,8 @@ def main(
     cv_folds: int,
 ):
     """
-    Main method for detecting incorrect labeled assets in a Kili project.
+    Detect incorrectly labeled assets in a Kili project.
+
     It downloads the assets, trains a classification neural network with CV and then by
     using the Cleanlab library we get the wrong labels. The concerned asset IDs are then
     stored in a file, but also a metadata (labeling_error: true) is uploaded to Kili to
