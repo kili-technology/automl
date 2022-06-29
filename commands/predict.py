@@ -147,6 +147,7 @@ def predict_one_job(
             clear_dataset_cache=clear_dataset_cache,
             api_key=api_key,
             verbose=verbose,
+            job=job,
         )
 
     else:

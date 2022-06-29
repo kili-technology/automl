@@ -83,6 +83,8 @@ def main(
     training_losses = []
 
     for job_name, job in jobs.items():
+
+        print(job)
         if target_job and job_name not in target_job:
             continue
 
@@ -226,6 +228,7 @@ def main(
                 disable_wandb=disable_wandb,
                 api_key=api_key,
                 verbose=verbose,
+                job=job,
             )
 
         else:

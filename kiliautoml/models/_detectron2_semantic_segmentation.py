@@ -117,6 +117,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         disable_wandb: bool,
         verbose: int,
         api_key: str,
+        job: JobT,
     ):
         """Download Kili assets, convert to coco format, then to detectron2 format, train model."""
         _ = verbose
@@ -134,9 +135,21 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         eval_dir = PathDetectron2.append_output_evaluation(model_path_repository_dir)
 
         # 1. Convert to COCO format
-        _, classes = convert_kili_semantic_to_coco(
+        _, _classes = convert_kili_semantic_to_coco(
             job_name=self.job_name, assets=assets, output_dir=data_dir, api_key=api_key
         )
+
+        full_classes = list(job["content"]["categories"].keys())
+        # assert len(classes) == len(full_classes), (
+        #     "The set of assets you selected does not contain every class defined in the ontology."
+        #     " Please raise the number of asset."
+        # )
+        assert len(set(full_classes)) == len(full_classes)
+        if len(_classes) < len(full_classes):
+            kili_print(
+                f"Warning: Your training set contains only {len(_classes)} whereas the ontology"
+                f" contains {len(full_classes)} classes."
+            )
 
         # 2. Convert to Detectron2 format
         MetadataCatalog.clear()
@@ -144,10 +157,10 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         for d in ["train", "val"]:
             # TODO: separate train and test
             DatasetCatalog.register("dataset_" + d, lambda d=d: self._get_coco_dicts(data_dir))
-            MetadataCatalog.get("dataset_" + d).set(thing_classes=classes)
+            MetadataCatalog.get("dataset_" + d).set(thing_classes=full_classes)
 
         # 3. Train model
-        cfg = self._get_cfg_kili(assets, epochs, batch_size, model_dir, classes)
+        cfg = self._get_cfg_kili(assets, epochs, batch_size, model_dir, full_classes)
         trainer = DefaultTrainer(cfg)
         trainer.resume_or_load(resume=False)
         train_res = trainer.train()
@@ -217,6 +230,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         verbose: int,
         clear_dataset_cache: bool,
         api_key: str = "",
+        job: JobT,
     ):
         _ = verbose
         if from_project:
@@ -233,11 +247,19 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         visualization_dir = PathDetectron2.append_output_visualization(model_path_repository_dir)
 
         # Inference should use the config with parameters that are used in training
-        _, classes = convert_kili_semantic_to_coco(
+        _, _classes = convert_kili_semantic_to_coco(
             job_name=self.job_name, assets=assets, output_dir=data_dir, api_key=api_key
         )
+
+        full_classes = list(job["content"]["categories"].keys())
+        # assert len(classes) == len(full_classes), (
+        #     "The set of assets you selected does not contain every class defined in the ontology."
+        #     " Please raise the number of asset."
+        # )
+        assert len(set(full_classes)) == len(full_classes)
+
         cfg = self._get_cfg_kili(
-            assets, epochs=None, batch_size=batch_size, model_dir=model_dir, classes=classes
+            assets, epochs=None, batch_size=batch_size, model_dir=model_dir, classes=full_classes
         )
         cfg.OUTPUT_DIR = model_dir
         cfg.MODEL.WEIGHTS = os.path.join(
@@ -252,7 +274,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         MetadataCatalog.clear()
         DatasetCatalog.clear()
         DatasetCatalog.register("dataset_val", lambda _=_: self._get_coco_dicts(data_dir))
-        MetadataCatalog.get("dataset_val").set(thing_classes=classes)
+        MetadataCatalog.get("dataset_val").set(thing_classes=full_classes)
         dataset_metadata_train = MetadataCatalog.get("dataset_train")
 
         # 3. Predict
@@ -264,7 +286,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             outputs = predictor(im)
 
             annotations = self.get_annotations_from_instances(
-                outputs["instances"], class_names=classes
+                outputs["instances"], class_names=full_classes
             )
             self._visualize_predictions(visualization_dir, d, dataset_metadata_train, im, outputs)
             id_json_list.append((externalId, {self.job_name: {"annotations": annotations}}))
