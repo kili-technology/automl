@@ -13,7 +13,7 @@ from termcolor import colored
 from tqdm import tqdm
 from typing_extensions import get_args
 
-from kiliautoml.utils.constants import HOME, InputTypeT, MLTaskT
+from kiliautoml.utils.constants import AUTOML_CACHE, InputTypeT, MLTaskT
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeStrategyT
@@ -248,7 +248,9 @@ def get_last_trained_model_path(
     model_path: Optional[str],
 ) -> str:
     if model_path is None:
-        path_project_models = os.path.join(HOME, project_id, job_name, *project_path_wildcard)
+        path_project_models = os.path.join(
+            AUTOML_CACHE, project_id, job_name, *project_path_wildcard
+        )
         kili_print("Searching models in folder:", path_project_models)
         paths_project_sorted = sorted(glob(path_project_models), reverse=True)
         model_path = None

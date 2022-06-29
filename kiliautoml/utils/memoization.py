@@ -5,7 +5,7 @@ from typing import List, Optional
 from joblib import Memory
 from typing_extensions import get_args
 
-from kiliautoml.utils.constants import HOME, ModelFrameworkT, ModelRepositoryT
+from kiliautoml.utils.constants import AUTOML_CACHE, ModelFrameworkT, ModelRepositoryT
 from kiliautoml.utils.path import ModelRepositoryDirT, Path, PathHF
 from kiliautoml.utils.type import CommandT
 
@@ -31,7 +31,7 @@ def kili_project_memoizer(
 
 def kili_memoizer(some_function):
     def wrapper(*args, **kwargs):
-        memory = Memory(HOME, verbose=0)
+        memory = Memory(AUTOML_CACHE, verbose=0)
         return memory.cache(some_function)(*args, **kwargs)
 
     return wrapper
@@ -60,7 +60,7 @@ def clear_automl_cache(
             assert job_name is not None
             assert model_repository is not None
             path = Path.model_repository_dir(
-                root_dir=HOME,
+                root_dir=AUTOML_CACHE,
                 project_id=project_id,
                 job_name=job_name,
                 model_repository=model_repository,

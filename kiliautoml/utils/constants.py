@@ -4,7 +4,7 @@ from typing import Dict, List
 from typing_extensions import Literal, TypedDict
 
 HOME = os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type: ignore
-
+AUTOML_CACHE = os.getenv("KILIAUTOML_CACHE", HOME)  # type: ignore
 
 ContentInputT = Literal["checkbox", "radio"]
 

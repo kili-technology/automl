@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
-    HOME,
+    AUTOML_CACHE,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
@@ -47,7 +47,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         model_repository = set_model_repository_image_classification(model_repository)
         model_name = set_model_name_image_classification(model_name)
         model_repository_dir = Path.model_repository_dir(
-            HOME, project_id, job_name, model_repository
+            AUTOML_CACHE, project_id, job_name, model_repository
         )
 
         model_dir = PathPytorchVision.append_model_dir(model_repository_dir)
@@ -181,7 +181,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             model_path_set = model_path
         elif from_project is not None:
             model_path_repository_dir = Path.model_repository_dir(
-                HOME, from_project, self.job_name, self.model_repository
+                AUTOML_CACHE, from_project, self.job_name, self.model_repository
             )
 
             model_path_from_project = PathPytorchVision.append_model_path(

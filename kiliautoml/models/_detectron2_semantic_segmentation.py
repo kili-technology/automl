@@ -18,7 +18,7 @@ from PIL import Image
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
-    HOME,
+    AUTOML_CACHE,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
@@ -125,7 +125,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         _ = label_merge_strategy
 
         model_path_repository_dir = Path.model_repository_dir(
-            HOME, self.project_id, self.job_name, self.model_repository
+            AUTOML_CACHE, self.project_id, self.job_name, self.model_repository
         )
         if clear_dataset_cache:
             shutil.rmtree(model_path_repository_dir, ignore_errors=True)
@@ -224,7 +224,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         else:
             project_id = self.project_id
         model_path_repository_dir = Path.model_repository_dir(
-            HOME, project_id, self.job_name, self.model_repository
+            AUTOML_CACHE, project_id, self.job_name, self.model_repository
         )
         if clear_dataset_cache:
             shutil.rmtree(model_path_repository_dir, ignore_errors=True)
