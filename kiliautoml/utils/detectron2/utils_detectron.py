@@ -73,7 +73,7 @@ class SemanticJob(TypedDict):
 
 
 def convert_kili_semantic_to_coco(
-    job_name: str, assets: List[AssetT], output_dir, api_key: str
+    job_name: str, assets: List[AssetT], output_dir, api_key: str, full_classes: List[str]
 ) -> Tuple[CocoFormat, List[str]]:
     """
     creates the following structure on the disk:
@@ -110,17 +110,7 @@ def convert_kili_semantic_to_coco(
     os.makedirs(data_dir, exist_ok=True)
 
     # Mapping category - category id
-    category_names = []
-    for asset in assets:
-        annotations: List[SemanticAnnotation] = asset["labels"][0]["jsonResponse"][job_name][
-            "annotations"
-        ]
-        for annotation in annotations:
-            categories = annotation["categories"]
-            category_names.append(categories[0]["name"])
-            categories = annotation["categories"]
-
-    category_name_to_id = {cat_name: i for i, cat_name in enumerate(list(set(category_names)))}
+    category_name_to_id = {cat_name: i for i, cat_name in enumerate(list(set(full_classes)))}
     for cat_name, cat_id in category_name_to_id.items():
         categories_coco: CategoryCoco = {
             "id": cat_id,

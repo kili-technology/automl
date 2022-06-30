@@ -25,6 +25,7 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
 )
 from kiliautoml.utils.detectron2.utils_detectron import (
+    CocoFormat,
     NormalizedVertice,
     NormalizedVertices,
     SemanticAnnotation,
@@ -69,7 +70,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         """Convert COCO format to Detectron2 format."""
         json_file = os.path.join(img_dir, "labels.json")
         with open(json_file) as f:
-            imgs_anns = json.load(f)
+            imgs_anns: CocoFormat = json.load(f)
 
         dataset_dicts = []
 
@@ -136,11 +137,15 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         eval_dir = PathDetectron2.append_output_evaluation(model_path_repository_dir)
 
         # 1. Convert to COCO format
+        full_classes = list(job["content"]["categories"].keys())
         _, _classes = convert_kili_semantic_to_coco(
-            job_name=self.job_name, assets=assets, output_dir=data_dir, api_key=api_key
+            job_name=self.job_name,
+            assets=assets,
+            output_dir=data_dir,
+            api_key=api_key,
+            full_classes=full_classes,
         )
 
-        full_classes = list(job["content"]["categories"].keys())
         assert len(set(full_classes)) == len(full_classes)
         if len(_classes) < len(full_classes):
             kili_print(
