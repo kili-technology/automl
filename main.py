@@ -22,24 +22,6 @@ from IPython.core import ultratb
 sys.excepthook = ultratb.FormattedTB(mode="Verbose", color_scheme="Linux", call_pdb=False)
 
 
-# from rich.traceback import install
-
-# install(
-#     suppress=[click],
-#     # show_locals=True,
-# )
-
-# import stackprinter
-
-# stackprinter.set_excepthook(
-#     line_wrap=100,
-#     suppressed_paths=[r"lib/python.*/site-packages/numpy", r"click"],
-#     suppressed_vars=[r"api_key"],
-#     show_vals="like_source",
-#     truncate_vals=500,
-#     style="lightbg",
-# )
-
 from commands.label_errors import main as label_errors
 from commands.predict import main as predict
 from commands.prioritize import main as prioritize

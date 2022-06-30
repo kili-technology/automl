@@ -84,7 +84,6 @@ def main(
 
     for job_name, job in jobs.items():
 
-        print(job)
         if target_job and job_name not in target_job:
             continue
 
@@ -101,6 +100,7 @@ def main(
         )
 
         kili_print(f"Training on job: {job_name}")
+        kili_print(job)
         os.environ["WANDB_PROJECT"] = title + "_" + job_name
 
         if clear_dataset_cache:

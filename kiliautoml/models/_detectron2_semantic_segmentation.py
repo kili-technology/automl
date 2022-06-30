@@ -141,10 +141,6 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         )
 
         full_classes = list(job["content"]["categories"].keys())
-        # assert len(classes) == len(full_classes), (
-        #     "The set of assets you selected does not contain every class defined in the ontology."
-        #     " Please raise the number of asset."
-        # )
         assert len(set(full_classes)) == len(full_classes)
         if len(_classes) < len(full_classes):
             kili_print(
@@ -163,7 +159,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         # 3. Train model
         cfg = self._get_cfg_kili(assets, epochs, batch_size, model_dir, full_classes)
         trainer = DefaultTrainer(cfg)
-        trainer.resume_or_load(resume=False)
+        trainer.resume_or_load(resume=True)
         train_res = trainer.train()
         kili_print("Training metrics", train_res)
 
@@ -207,6 +203,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(self.model_name)
         cfg.SOLVER.IMS_PER_BATCH = batch_size  # This is the real "batch size" commonly known to deep learning people # noqa: E501
         cfg.SOLVER.BASE_LR = 0.00025
+        cfg.TEST.EVAL_PERIOD = 100
         if epochs:
             n_iter = int(epochs * len(assets) / batch_size) + 1
             kili_print("n_iter:", n_iter, "(Recommended min: 500)")
@@ -247,21 +244,11 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         data_dir = PathDetectron2.append_data_dir(model_path_repository_dir)
         visualization_dir = PathDetectron2.append_output_visualization(model_path_repository_dir)
 
-        # Inference should use the config with parameters that are used in training
-        # img_data = download_asset_binary(api_key, asset["content"])  # jpg
-        # img = cv2.imdecode(np.frombuffer(img_data, np.uint8), cv2.IMREAD_COLOR)
-        # file_name = os.path.join(data_dir, f"{asset_i}.jpg")
-        # cv2.imwrite(file_name, img)
-
         downloaded_images = download_project_images(
             api_key=api_key, assets=assets, output_folder=data_dir
         )
 
         full_classes = list(job["content"]["categories"].keys())
-        # assert len(classes) == len(full_classes), (
-        #     "The set of assets you selected does not contain every class defined in the ontology."
-        #     " Please raise the number of asset."
-        # )
         assert len(set(full_classes)) == len(full_classes)
 
         cfg = self._get_cfg_kili(
