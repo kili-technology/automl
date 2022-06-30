@@ -64,7 +64,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             model_name=model_name,
             model_framework=model_framework,
         )
-        self.label_list: List[Any] = []
 
     def train(
         self,
@@ -95,7 +94,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         kili_print(f"Base model: {model_name}")
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
 
-        self.label_list = self._kili_assets_to_hf_ner_dataset(
+        label_list = self._kili_assets_to_hf_ner_dataset(
             self.job, self.job_name, path_dataset, assets, clear_dataset_cache
         )
 
@@ -105,7 +104,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             features=datasets.features.features.Features(  # type: ignore
                 {
                     "ner_tags": datasets.Sequence(  # type: ignore
-                        feature=datasets.ClassLabel(names=self.label_list)  # type: ignore
+                        feature=datasets.ClassLabel(names=label_list)  # type: ignore
                     ),  # noqa
                     "tokens": datasets.Sequence(feature=datasets.Value(dtype="string")),  # type: ignore # noqa
                 }
@@ -117,7 +116,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.model_framework, self.label_list, self.ml_task
+            model_name, self.model_framework, label_list, self.ml_task
         )
 
         label_all_tokens = True
@@ -167,6 +166,22 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
 
         data_collator = DataCollatorForTokenClassification(tokenizer)
+
+        def compute_metrics(eval_preds):
+            metric = datasets.load_metric("seqeval")
+            logits, labels = eval_preds
+            predictions = np.argmax(logits, axis=-1)
+            # Remove ignored index (special tokens) and convert to labels
+            true_labels = [
+                [label_list[label_id] for label_id in label if label_id != -100] for label in labels
+            ]
+            true_predictions = [
+                [label_list[p] for (p, label_id) in zip(prediction, label) if label_id != -100]
+                for prediction, label in zip(predictions, labels)
+            ]
+            all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
+            return all_metrics
+
         trainer = Trainer(
             model=model,
             args=training_arguments,
@@ -174,13 +189,13 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             tokenizer=tokenizer,
             train_dataset=train_dataset,  # type: ignore
             eval_dataset=eval_dataset,  # type: ignore
-            compute_metrics=self.compute_metrics,  # type: ignore
+            compute_metrics=compute_metrics,  # type: ignore
         )
         trainer.train()
-        model_evaluation = self.model_evaulation(trainer)
+        model_evaluation = self.evaluation(trainer)
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
-        return {key: value for key, value in sorted(model_evaluation.items())}
+        return dict(sorted(model_evaluation.items()))
 
     def predict(
         self,
@@ -477,23 +492,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             text, pp_labels, predicted_probas, tokens, null_category, offset_in_text
         )
 
-    def compute_metrics(self, eval_preds):
-        metric = datasets.load_metric("seqeval")
-        logits, labels = eval_preds
-        predictions = np.argmax(logits, axis=-1)
-        # Remove ignored index (special tokens) and convert to labels
-        true_labels = [
-            [self.label_list[label_id] for label_id in label if label_id != -100]
-            for label in labels
-        ]
-        true_predictions = [
-            [self.label_list[p] for (p, label_id) in zip(prediction, label) if label_id != -100]
-            for prediction, label in zip(predictions, labels)
-        ]
-        all_metrics = metric.compute(predictions=true_predictions, references=true_labels)
-        return all_metrics
-
-    def model_evaulation(self, trainer):
+    def evaluation(self, trainer):
         train_metrics = trainer.evaluate(trainer.train_dataset)
         val_metrics = trainer.evaluate()
         model_evaluation = {}

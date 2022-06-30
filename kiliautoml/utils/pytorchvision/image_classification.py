@@ -114,8 +114,7 @@ def set_model_repository_image_classification(
         "model_repository",
         ["torchvision"],
     )
-
-    return model_repository
+    return model_repository  # type: ignore
 
 
 def get_trained_model_image_classif(

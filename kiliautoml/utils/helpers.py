@@ -9,6 +9,7 @@ from warnings import warn
 
 import numpy as np
 import torch
+from tabulate import tabulate
 from termcolor import colored
 from tqdm import tqdm
 from typing_extensions import get_args
@@ -16,7 +17,14 @@ from typing_extensions import get_args
 from kiliautoml.utils.constants import HOME, InputTypeT, MLTaskT
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
-from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeStrategyT
+from kiliautoml.utils.type import (
+    AssetStatusT,
+    AssetT,
+    DictTrainingInfosT,
+    JobsT,
+    JobT,
+    LabelMergeStrategyT,
+)
 
 
 def set_all_seeds(seed):
@@ -301,3 +309,29 @@ def not_implemented_job(job_name, ml_task):
         "to select one or multiple jobs."
     )
     raise NotImplementedError
+
+
+def print_evaluation(evaluation: Tuple[str, DictTrainingInfosT]):
+    def get_keys(my_dict):
+        keys = list(my_dict.keys())
+        keys_int = []
+        for key in keys:
+            keys_int.extend(list(my_dict[key].keys()))
+        return list(set(keys_int))
+
+    # get headers
+    keys = get_keys(evaluation[1])
+    keys.sort()
+    # get body
+    table = []
+    table_int = []
+    for k, values in evaluation[1].items():
+        table_int.append(k)
+        for key in keys:
+            if key in values.keys():
+                table_int.append(round(values[key], 4))
+            else:
+                table_int.append("nan")
+        table.append(table_int)
+        table_int = []
+    print(tabulate(table, headers=[evaluation[0]] + keys))

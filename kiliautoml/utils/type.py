@@ -41,3 +41,4 @@ class AssetT(TypedDict):
 JobT = Dict[str, Any]
 JobsT = Dict[str, JobT]
 AdditionalTrainingArgsT = Dict[str, Any]
+DictTrainingInfosT = Dict[str, Any]

@@ -41,11 +41,10 @@ def train_model_pytorch(
     scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
     best_model_wts = copy.deepcopy(model.state_dict())
-    best_val_acc = epoch_train_acc = corresponding_train_acc = 0.0
-    best_val_precision = best_val_recall = best_val_f1 = []
+    best_val_metrics = {}
+    best_val_metrics["loss"] = float("inf")
     epoch_train_evaluation = {}
-    corresponding_train_precision = corresponding_train_recall = corresponding_train_f1 = []
-    best_val_loss = epoch_train_loss = corresponding_train_loss = float("inf")
+    corresponding_train_metrics = {}
     for _ in trange(epochs, desc="Training - Epoch"):
         if verbose >= 2:
             print("-" * 10)
@@ -58,27 +57,21 @@ def train_model_pytorch(
                 model.eval()  # Set model to evaluate mode
 
             running_loss = 0.0
-            running_corrects = 0
             ys_pred = []
             ys_true = []
             for inputs, labels in dataloaders[phase]:
                 inputs = inputs.to(device)
                 labels = labels.to(device)
-
                 optimizer.zero_grad()
-
                 # track history if only in train
                 with torch.set_grad_enabled(phase == "train"):
                     outputs = model(inputs)
                     _, preds = torch.max(outputs, 1)
                     loss = criterion(outputs, labels)
-
                     if phase == "train":
                         loss.backward()
                         optimizer.step()
-
                 running_loss += loss.item() * inputs.size(0)
-                running_corrects += torch.sum(preds == labels.data)  # type:ignore
                 ys_pred.append(preds.cpu())
                 ys_true.append(labels.cpu())
             if phase == "train":
@@ -99,17 +92,9 @@ def train_model_pytorch(
                 if verbose >= 2:
                     print(f"{phase} Loss: {epoch_val_loss:.4f} Acc: {epoch_val_acc:.4f}")
                 # deep copy the model
-                if epoch_val_loss < best_val_loss:
-                    best_val_acc = epoch_val_acc
-                    best_val_loss = epoch_val_loss
-                    best_val_precision = epoch_val_evaluation["precision"]
-                    best_val_recall = epoch_val_evaluation["recall"]
-                    best_val_f1 = epoch_val_evaluation["f1"]
-                    corresponding_train_acc = epoch_train_acc
-                    corresponding_train_loss = epoch_train_loss
-                    corresponding_train_precision = epoch_train_evaluation["precision"]
-                    corresponding_train_recall = epoch_train_evaluation["recall"]
-                    corresponding_train_f1 = epoch_train_evaluation["f1"]
+                if epoch_val_loss < best_val_metrics["loss"]:
+                    best_val_metrics = epoch_val_evaluation
+                    corresponding_train_metrics = epoch_train_evaluation
                     best_model_wts = copy.deepcopy(model.state_dict())
         if verbose >= 2:
             print()
@@ -117,6 +102,10 @@ def train_model_pytorch(
     if verbose >= 2:
         time_elapsed = time.time() - since
         print(f"Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s")
+        best_val_loss = best_val_metrics["loss"]
+        best_val_acc = best_val_metrics["acc"]
+        corresponding_train_loss = corresponding_train_metrics["loss"]
+        corresponding_train_acc = corresponding_train_metrics["acc"]
         print(f"Best val Loss: {best_val_loss:4f}, Best val Acc: {best_val_acc:4f}")
         print(
             f"Corresponding train Loss: {corresponding_train_loss:4f},"
@@ -130,27 +119,31 @@ def train_model_pytorch(
     for i, label in enumerate(class_names):
         model_evaluation["train_" + label] = {}
         model_evaluation["val_" + label] = {}
-        model_evaluation["train_" + label]["precision"] = corresponding_train_precision[i]
-        model_evaluation["train_" + label]["recall"] = corresponding_train_recall[i]
-        model_evaluation["train_" + label]["f1"] = corresponding_train_f1[i]
-        model_evaluation["val_" + label]["precision"] = best_val_precision[i]
-        model_evaluation["val_" + label]["recall"] = best_val_recall[i]
-        model_evaluation["val_" + label]["f1"] = best_val_f1[i]
+        model_evaluation["train_" + label]["precision"] = corresponding_train_metrics["precision"][
+            i
+        ]
+        model_evaluation["train_" + label]["recall"] = corresponding_train_metrics["recall"][i]
+        model_evaluation["train_" + label]["f1"] = corresponding_train_metrics["f1"][i]
+        model_evaluation["val_" + label]["precision"] = best_val_metrics["precision"][
+            i
+        ]  # type:ignore
+        model_evaluation["val_" + label]["recall"] = best_val_metrics["recall"][i]  # type:ignore
+        model_evaluation["val_" + label]["f1"] = best_val_metrics["f1"][i]  # type:ignore
 
     model_evaluation["train__overall"] = {
-        "loss": corresponding_train_loss,
-        "accuracy": corresponding_train_acc,
-        "precision": corresponding_train_precision[-1],  # type: ignore
-        "recall": corresponding_train_recall[-1],  # type: ignore
-        "f1": corresponding_train_f1[-1],  # type: ignore
+        "loss": corresponding_train_metrics["loss"],
+        "accuracy": corresponding_train_metrics["acc"],
+        "precision": corresponding_train_metrics["precision"][-1],
+        "recall": corresponding_train_metrics["recall"][-1],
+        "f1": corresponding_train_metrics["f1"][-1],
     }
 
     model_evaluation["val__overall"] = {
-        "loss": best_val_loss,
-        "accuracy": best_val_acc,
-        "precision": best_val_precision[-1],  # type: ignore
-        "recall": best_val_recall[-1],  # type: ignore
-        "f1": best_val_f1[-1],  # type: ignore
+        "loss": best_val_metrics["loss"],
+        "accuracy": best_val_metrics["acc"],
+        "precision": best_val_metrics["precision"][-1],  # type:ignore
+        "recall": best_val_metrics["recall"][-1],  # type:ignore
+        "f1": best_val_metrics["f1"][-1],  # type:ignore
     }
     return model, {key: value for key, value in sorted(model_evaluation.items())}
 

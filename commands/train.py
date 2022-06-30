@@ -2,9 +2,7 @@ import os
 from typing import List
 
 import click
-import pandas as pd
 from kili.client import Kili
-from tabulate import tabulate
 
 from commands.common_args import Options, TrainOptions
 from kiliautoml.models import (
@@ -25,6 +23,7 @@ from kiliautoml.utils.helpers import (
     get_project,
     kili_print,
     not_implemented_job,
+    print_evaluation,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.type import (
@@ -236,5 +235,4 @@ def main(
 
     kili_print()
     for evaluation in model_evaluations:
-        metrics_table = pd.DataFrame(evaluation[1]).transpose()
-        print(tabulate(metrics_table, headers=[evaluation[0]] + list(metrics_table.columns)))
+        print_evaluation(evaluation)

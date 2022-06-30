@@ -52,7 +52,6 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         BaseModel.__init__(
             self, job=job, job_name=job_name, model_name=model_name, model_framework=model_framework
         )
-        self.job_categories: List[str] = []
 
     def train(
         self,
@@ -80,15 +79,15 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         kili_print(f"Downloading data to {path_dataset}")
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
-        self.job_categories = categories_from_job(self.job)
+        job_categories = categories_from_job(self.job)
         if not os.path.exists(path_dataset):
-            self._write_dataset(assets, self.job_name, path_dataset, self.job_categories)
+            self._write_dataset(assets, self.job_name, path_dataset, job_categories)
         raw_datasets = datasets.load_dataset(  # type: ignore
             "json",
             data_files=path_dataset,
             features=datasets.features.features.Features(  # type: ignore
                 {
-                    "label": datasets.ClassLabel(names=self.job_categories),  # type: ignore
+                    "label": datasets.ClassLabel(names=job_categories),  # type: ignore
                     "text": datasets.Value(dtype="string"),  # type: ignore
                 }
             ),
@@ -99,7 +98,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.model_framework, self.job_categories, self.ml_task
+            model_name, self.model_framework, job_categories, self.ml_task
         )
 
         def tokenize_function(examples):
@@ -128,11 +127,11 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             compute_metrics=self.compute_metrics,  # type: ignore
         )
         trainer.train()
-        model_evaluation = self.model_evaluation(trainer)
+        model_evaluation = self.model_evaluation(trainer, job_categories)
 
         kili_print(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))
-        return {key: value for key, value in sorted(model_evaluation.items())}
+        return dict(sorted(model_evaluation.items()))
 
     def predict(
         self,
@@ -271,17 +270,19 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                 )
         return metric_res
 
-    def model_evaluation(self, trainer):
+    def model_evaluation(self, trainer, job_categories):
         train_metrics = trainer.evaluate(trainer.train_dataset)
         val_metrics = trainer.evaluate()
         model_evaluation: Dict[str, Any] = {}
-        for i, label in enumerate(self.job_categories):
-            if "eval_" + label in train_metrics:
+
+        if len(train_metrics["eval_precision"]) == len(job_categories) + 1:
+            for i, label in enumerate(job_categories):
                 train_label_metrics = {}
                 for metric in ["precision", "recall", "f1"]:
                     train_label_metrics[metric] = train_metrics["eval_" + metric][i]  # type: ignore
                 model_evaluation["train_" + label] = train_label_metrics
-            if "eval_" + label in val_metrics:
+        if len(val_metrics["eval_precision"]) == len(job_categories) + 1:
+            for i, label in enumerate(job_categories):
                 val_label_metrics = {}
                 for metric in ["precision", "recall", "f1"]:
                     val_label_metrics[metric] = val_metrics["eval_" + metric][i]  # type: ignore

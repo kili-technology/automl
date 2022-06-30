@@ -1,4 +1,5 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
+import csv
 import math
 import os
 import re
@@ -11,7 +12,6 @@ from functools import reduce
 from glob import glob
 from typing import Any, Dict, List, Optional, Tuple
 
-import pandas as pd
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from typing_extensions import TypedDict
@@ -198,22 +198,26 @@ class UltralyticsObjectDetectionModel(BaseModel):
             raise AutoMLYoloException()
 
         shutil.copy(config_data_path, model_output_path)
-        df_result = pd.read_csv(os.path.join(model_output_path, "exp", "results.csv"))
+        last_row = []
+        with open(os.path.join(model_output_path, "exp", "results.csv"), "r") as file:
+            csvreader = csv.reader(file)
+            for row in csvreader:
+                last_row = row
 
         model_evaluation = {}
         model_evaluation["train__overall"] = {
-            "box_loss": df_result.iloc[-1:]["      train/box_loss"].to_numpy()[0],
-            "cls_loss": df_result.iloc[-1:]["      train/cls_loss"].to_numpy()[0],
-            "obj_loss": df_result.iloc[-1:]["      train/obj_loss"].to_numpy()[0],
+            "box_loss": float(last_row[1]),
+            "obj_loss": float(last_row[2]),
+            "cls_loss": float(last_row[3]),
         }
         model_evaluation["val__overall"] = {
-            "box_loss": df_result.iloc[-1:]["        val/box_loss"].to_numpy()[0],
-            "cls_loss": df_result.iloc[-1:]["        val/cls_loss"].to_numpy()[0],
-            "obj_loss": df_result.iloc[-1:]["        val/obj_loss"].to_numpy()[0],
-            "precision": df_result.iloc[-1:]["   metrics/precision"].to_numpy()[0],
-            "recall": df_result.iloc[-1:]["      metrics/recall"].to_numpy()[0],
-            "mAP_0.5": df_result.iloc[-1:]["     metrics/mAP_0.5"].to_numpy()[0],
-            "mAP_0.5:0.95": df_result.iloc[-1:]["metrics/mAP_0.5:0.95"].to_numpy()[0],
+            "box_loss": float(last_row[7]),
+            "obj_loss": float(last_row[8]),
+            "cls_loss": float(last_row[9]),
+            "precision": float(last_row[4]),
+            "recall": float(last_row[5]),
+            "mAP_0.5": float(last_row[6]),
+            "mAP_0.5:0.95": float(last_row[7]),
         }
         return model_evaluation
 

@@ -44,7 +44,6 @@ setup(
         "tensorboard>=2.4.1",
         # wandb
         # Plotting ------------------------------------
-        "pandas>=1.1.4",
         "seaborn>=0.11.0",
         "thop",
     ],
