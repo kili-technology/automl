@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 import torch
@@ -8,6 +8,7 @@ from torch.utils.data import Dataset
 from torchvision import models, transforms
 
 from kiliautoml.utils.constants import ModelNameT, ModelRepositoryT
+from kiliautoml.utils.download_assets import DownloadedImage
 from kiliautoml.utils.helpers import kili_print, set_default
 from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
@@ -33,7 +34,13 @@ data_transforms = {
 
 
 class ClassificationTrainDataset(Dataset):  # type: ignore
-    def __init__(self, images, labels, class_name_to_idx, transform=None):
+    def __init__(
+        self,
+        images: List[DownloadedImage],
+        labels: List[str],
+        class_name_to_idx: Dict[str, int],
+        transform=None,
+    ):
         """
         Args:
             Images (list of DownloadedImages)
@@ -53,7 +60,7 @@ class ClassificationTrainDataset(Dataset):  # type: ignore
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        image = self.images[idx].image
+        image = self.images[idx].get_image()
         image = image.convert("RGB")
         label_idx = self.class_name_to_idx[self.labels[idx]]
         if self.transform:
@@ -62,7 +69,7 @@ class ClassificationTrainDataset(Dataset):  # type: ignore
 
 
 class ClassificationPredictDataset(Dataset):  # type: ignore
-    def __init__(self, images, transform=None):
+    def __init__(self, images: List[DownloadedImage], transform=None):
         """
         Args:
             Images (list of DownloadedImages)
@@ -80,14 +87,14 @@ class ClassificationPredictDataset(Dataset):  # type: ignore
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
-        image = self.images[idx].image
+        image = self.images[idx].get_image()
         image = image.convert("RGB")
         if self.transform:
             image = self.transform(image)
         return image
 
 
-def set_model_name_image_classification(model_name) -> ModelNameT:
+def set_model_name_image_classification(model_name: str) -> ModelNameT:
     model_name = set_default(
         model_name,
         "efficientnet_b0",
@@ -95,10 +102,12 @@ def set_model_name_image_classification(model_name) -> ModelNameT:
         ["efficientnet_b0", "resnet50"],
     )
 
-    return model_name
+    return model_name  # type:ignore
 
 
-def set_model_repository_image_classification(model_repository) -> ModelRepositoryT:
+def set_model_repository_image_classification(
+    model_repository: Optional[ModelRepositoryT],
+) -> ModelRepositoryT:
     model_repository = set_default(
         model_repository,
         "torchvision",
@@ -190,5 +199,4 @@ def predict_probabilities(
             [torch.nn.functional.softmax(z, dim=1).cpu().numpy() for z in outputs]  # type:ignore
         )
     )
-
     return probs

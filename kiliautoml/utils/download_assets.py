@@ -17,11 +17,13 @@ from kiliautoml.utils.memoization import kili_memoizer
 
 
 @dataclass
-class DownloadedImages:
+class DownloadedImage:
     id: str
     externalId: str
-    filename: str
-    image: PILImage
+    filepath: str
+
+    def get_image(self) -> PILImage:
+        return Image.open(self.filepath)
 
 
 @dataclass
@@ -96,25 +98,24 @@ def download_project_images(
     api_key: str,
     assets,
     output_folder: Optional[str] = None,
-) -> List[DownloadedImages]:
+) -> List[DownloadedImage]:
     kili_print("Downloading images to folder {}".format(output_folder))
     downloaded_images = []
 
     for asset in tqdm(assets, desc="Downloading images"):
         image = download_image(api_key, asset["content"])
         format = str(image.format or "")
-        filename = ""
+        filepath = ""
         if output_folder:
-            filename = os.path.join(output_folder, asset["id"] + "." + format.lower())
+            filepath = os.path.join(output_folder, asset["id"] + "." + format.lower())
             os.makedirs(output_folder, exist_ok=True)
-            with open(filename, "wb") as fp:
+            with open(filepath, "wb") as fp:
                 image.save(fp, format)  # type: ignore
         downloaded_images.append(
-            DownloadedImages(
+            DownloadedImage(
                 id=asset["id"],
                 externalId=asset["externalId"],
-                filename=filename or "",
-                image=image,
+                filepath=filepath or "",
             )
         )
     return downloaded_images
