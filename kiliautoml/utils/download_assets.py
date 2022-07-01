@@ -17,7 +17,7 @@ from kiliautoml.utils.memoization import kili_memoizer
 
 
 @dataclass
-class DownloadedImages:
+class DownloadedImage:
     id: str
     externalId: str
     filepath: str
@@ -98,7 +98,7 @@ def download_project_images(
     api_key: str,
     assets,
     output_folder: Optional[str] = None,
-) -> List[DownloadedImages]:
+) -> List[DownloadedImage]:
     kili_print("Downloading images to folder {}".format(output_folder))
     downloaded_images = []
 
@@ -112,7 +112,7 @@ def download_project_images(
             with open(filepath, "wb") as fp:
                 image.save(fp, format)  # type: ignore
         downloaded_images.append(
-            DownloadedImages(
+            DownloadedImage(
                 id=asset["id"],
                 externalId=asset["externalId"],
                 filepath=filepath or "",
