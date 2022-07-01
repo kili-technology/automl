@@ -14,7 +14,7 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
 )
 from kiliautoml.utils.helpers import (
-    get_labeled_assets,
+    get_assets,
     get_project,
     kili_print,
     upload_errors_to_kili,
@@ -86,14 +86,14 @@ def main(
                 model_repository=model_repository,
             )
 
-        assets = get_labeled_assets(
+        assets = get_assets(
             kili,
             project_id=project_id,
-            job_name=job_name,
             status_in=asset_status_in,
             max_assets=max_assets,
             randomize=randomize_assets,
             strategy=label_merge_strategy,
+            job_name=job_name,
         )
 
         if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":

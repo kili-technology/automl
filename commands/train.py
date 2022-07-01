@@ -20,7 +20,7 @@ from kiliautoml.utils.constants import (
     ToolT,
 )
 from kiliautoml.utils.helpers import (
-    get_labeled_assets,
+    get_assets,
     get_project,
     kili_print,
     not_implemented_job,
@@ -88,14 +88,14 @@ def main(
 
         ml_task = job.get("mlTask")
         print("max_assets train", max_assets)
-        assets = get_labeled_assets(
+        assets = get_assets(
             kili,
             project_id=project_id,
-            job_name=job_name,
             status_in=asset_status_in,
             max_assets=max_assets,
             randomize=randomize_assets,
             strategy=label_merge_strategy,
+            job_name=job_name,
         )
         print("len(assets) train", len(assets))
 
