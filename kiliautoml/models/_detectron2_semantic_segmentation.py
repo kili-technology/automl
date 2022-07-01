@@ -32,7 +32,7 @@ from kiliautoml.utils.detectron2.utils_detectron import (
     convert_kili_semantic_to_coco,
 )
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helpers import JobPredictions, kili_print
+from kiliautoml.utils.helpers import JobPredictions, categories_from_job, kili_print
 from kiliautoml.utils.path import ModelDirT, Path, PathDetectron2
 from kiliautoml.utils.type import AssetT, CategoryT, JobT, LabelMergeStrategyT
 
@@ -66,7 +66,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         self.project_id = project_id
 
     @staticmethod
-    def _get_coco_dicts(img_dir):
+    def _convert_coco_to_detectron(img_dir):
         """Convert COCO format to Detectron2 format."""
         json_file = os.path.join(img_dir, "labels.json")
         with open(json_file) as f:
@@ -106,6 +106,8 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             record["annotations"] = objs
             dataset_dicts.append(record)
 
+        print(dataset_dicts)
+
         return dataset_dicts
 
     def train(
@@ -137,7 +139,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         eval_dir = PathDetectron2.append_output_evaluation(model_path_repository_dir)
 
         # 1. Convert to COCO format
-        full_classes = list(job["content"]["categories"].keys())
+        full_classes = categories_from_job(job=job)
         _, _classes = convert_kili_semantic_to_coco(
             job_name=self.job_name,
             assets=assets,
@@ -158,7 +160,9 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         DatasetCatalog.clear()
         for d in ["train", "val"]:
             # TODO: separate train and test
-            DatasetCatalog.register("dataset_" + d, lambda d=d: self._get_coco_dicts(data_dir))
+            DatasetCatalog.register(
+                "dataset_" + d, lambda d=d: self._convert_coco_to_detectron(data_dir)
+            )
             MetadataCatalog.get("dataset_" + d).set(thing_classes=full_classes)
 
         # 3. Train model
@@ -253,7 +257,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             api_key=api_key, assets=assets, output_folder=data_dir
         )
 
-        full_classes = list(job["content"]["categories"].keys())
+        full_classes = categories_from_job(job=job)
         assert len(set(full_classes)) == len(full_classes)
 
         cfg = self._get_cfg_kili(
@@ -281,6 +285,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             annotations = self.get_annotations_from_instances(
                 outputs["instances"], class_names=full_classes
             )
+            print(annotations)
             self._visualize_predictions(
                 visualization_dir, image.filename, dataset_metadata_predict, im, outputs
             )

@@ -59,7 +59,7 @@ kiliautoml train \
 ```
 
 By default, the library uses [Weights and Biases](https://wandb.ai/site) to track the training and the quality of the predictions.
-The model is then stored in the cache of the AutoML library in `HOME/.cache/kili/automl`.
+The model is then stored in the cache of the AutoML library (default location: `HOME/.cache/kili/automl`, but you can choose the location with the env variable `KILIAUTOML_CACHE`)
 Kili automl training does the following:
 * Selects the models related to the tasks declared in the project ontology.
 * Retrieve Kili's asset data and convert it into the input format for each model.

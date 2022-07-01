@@ -49,7 +49,17 @@ def first_order(json_response):
 
 
 def categories_from_job(job: JobT):
-    return list(job["content"]["categories"].keys())
+    """Returns the category id.
+
+    Example:
+        - categoryId =" LIGHT_OF_THE_CAR
+        - category name = "light of the car"
+    """
+    return [cat for cat in job["content"]["categories"].keys()]
+
+
+def get_content_input_from_job(job: JobT):
+    return job.get("content", {}).get("input")  # type:ignore
 
 
 def ensure_dir(file_path: str):
@@ -296,10 +306,12 @@ def upload_errors_to_kili(found_errors, kili):
 
 
 def not_implemented_job(job_name, ml_task):
+    if "_MARKER" in job_name:
+        # This is the virtual job associated with the semantic segementation
+        return
     kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
     kili_print(
         "You can use the repeatable flag --target-job "
         "(for example: --target-job job_name1 --target-job job_name2) "
         "to select one or multiple jobs."
     )
-    raise NotImplementedError

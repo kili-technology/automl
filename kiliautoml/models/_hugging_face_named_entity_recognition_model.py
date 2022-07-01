@@ -21,7 +21,12 @@ from kiliautoml.utils.constants import (
     ModelNameT,
     ModelRepositoryT,
 )
-from kiliautoml.utils.helpers import JobPredictions, ensure_dir, kili_print
+from kiliautoml.utils.helpers import (
+    JobPredictions,
+    categories_from_job,
+    ensure_dir,
+    kili_print,
+)
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT
 
@@ -247,7 +252,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             kili_print("Dataset cache for this project is being cleared.")
             os.remove(path_dataset)
 
-        job_categories = list(job["content"]["categories"].keys())
+        job_categories = categories_from_job(job=job)
         label_list = (
             ["O"] + ["B-" + jc for jc in job_categories] + ["I-" + jc for jc in job_categories]
         )

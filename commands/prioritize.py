@@ -17,7 +17,12 @@ from commands.common_args import Options, PredictOptions, PrioritizeOptions
 from commands.predict import predict_one_job
 from kiliautoml.utils.constants import MLTaskT, ModelFrameworkT, ToolT
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helpers import get_assets, get_project, kili_print
+from kiliautoml.utils.helpers import (
+    get_assets,
+    get_content_input_from_job,
+    get_project,
+    kili_print,
+)
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.type import AssetStatusT
 
@@ -361,7 +366,7 @@ def main(
         raise NotImplementedError
 
     job_name, job = jobs_item[0]
-    content_input = job.get("content", {}).get("input")
+    content_input = get_content_input_from_job(job)
     ml_task: MLTaskT = job.get("mlTask")  # type: ignore
     tools: ToolT = job.get("tools")  # type: ignore
 

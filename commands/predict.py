@@ -15,6 +15,7 @@ from kiliautoml.utils.constants import ModelFrameworkT
 from kiliautoml.utils.helpers import (
     JobPredictions,
     get_assets,
+    get_content_input_from_job,
     get_project,
     kili_print,
     not_implemented_job,
@@ -202,7 +203,7 @@ def main(
         if target_job and job_name not in target_job:
             continue
         kili_print(f"Predicting annotations for job: {job_name}")
-        content_input = job.get("content", {}).get("input")
+        content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")
         tools = job.get("tools")
 

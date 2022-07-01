@@ -110,7 +110,7 @@ def convert_kili_semantic_to_coco(
     os.makedirs(data_dir, exist_ok=True)
 
     # Mapping category - category id
-    category_name_to_id = {cat_name: i for i, cat_name in enumerate(list(set(full_classes)))}
+    category_name_to_id = {cat_name: i for i, cat_name in enumerate(list(full_classes))}
     for cat_name, cat_id in category_name_to_id.items():
         categories_coco: CategoryCoco = {
             "id": cat_id,

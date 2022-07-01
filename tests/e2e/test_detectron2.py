@@ -5,7 +5,7 @@ from click.testing import CliRunner
 import main
 from tests.e2e.utils_test_e2e import debug_subprocess_pytest
 
-MOCK_DIR = "cl4cisaq36awx0lpb8ql57mxk_segmentation"
+MOCK_DIR = "cl56hzgbp0ix60lst97r56err_segmentation"
 
 
 def mocked__get_assets(*_, max_assets=None, randomize=None):

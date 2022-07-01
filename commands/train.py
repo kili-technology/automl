@@ -20,6 +20,7 @@ from kiliautoml.utils.constants import (
     ToolT,
 )
 from kiliautoml.utils.helpers import (
+    get_content_input_from_job,
     get_labeled_assets,
     get_project,
     kili_print,
@@ -111,7 +112,7 @@ def main(
                 model_framework=model_framework,
                 model_repository=model_repository,
             )
-        content_input = job.get("content", {}).get("input")
+        content_input = get_content_input_from_job(job)
         tools: List[ToolT] = job.get("tools")  # type: ignore
         training_loss = None
 

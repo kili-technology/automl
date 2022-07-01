@@ -367,7 +367,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                     (
                         image.externalId,
                         {job_name: {"annotations": kili_predictions}},
-                    )  # kili_prediction : List[BBoxAnnotation]
+                    )
                 )
 
         # TODO: move this check in the prioritizer
@@ -439,7 +439,8 @@ def save_annotations_to_yolo_format(names, handler, job):
         try:
             category = names.index(name)
         except ValueError:
-            pass
+            print("Warning: No annotation in image", name)
+            continue
         bounding_poly = annotation.get("boundingPoly", [])
         if len(bounding_poly) < 1:
             continue
@@ -452,7 +453,7 @@ def save_annotations_to_yolo_format(names, handler, job):
         x_max, y_max = max(x_s), max(y_s)
         _x_, _y_ = (x_max + x_min) / 2, (y_max + y_min) / 2
         _w_, _h_ = x_max - x_min, y_max - y_min
-        handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")  # type: ignore
+        handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")
 
 
 def yolov5_to_kili_json(
