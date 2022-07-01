@@ -13,7 +13,7 @@ from termcolor import colored
 from tqdm import tqdm
 from typing_extensions import get_args
 
-from kiliautoml.utils.constants import HOME, InputTypeT, MLTaskT
+from kiliautoml.utils.constants import HOME, InputTypeT
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeStrategyT
@@ -150,6 +150,8 @@ def get_assets(
         kili_print("Downloading assets from Kili project")
 
     if randomize:
+        print("randomize", randomize)
+        print("max_assets", max_assets)
         assets = get_asset_memoized(
             kili=kili,
             project_id=project_id,
@@ -159,8 +161,11 @@ def get_assets(
         )
         random.shuffle(assets)
         assets = assets[:max_assets]
+        print("len(assets)", len(assets))
 
     else:
+        print("randomize", randomize)
+        print("max_assets", max_assets)
         assets = get_asset_memoized(
             kili=kili,
             project_id=project_id,
@@ -168,6 +173,7 @@ def get_assets(
             skip=0,
             status_in=status_in,
         )
+        print("len(assets)", len(assets))
 
     if len(assets) == 0:
         kili_print(f"No {status_in} assets found in project {project_id}.")
@@ -175,13 +181,9 @@ def get_assets(
     return assets
 
 
-def get_label(
-    asset: AssetT, job_name: str, ml_task: Optional[MLTaskT], strategy: LabelMergeStrategyT
-):
+def get_label(asset: AssetT, job_name: str, strategy: LabelMergeStrategyT):
     labels = asset["labels"]
-    # for CLASSIFICATION task, we can only accept label with
-    if ml_task == "CLASSIFICATION":
-        labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
+    labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
         return min(labels, key=key)
@@ -194,16 +196,17 @@ def get_labeled_assets(
     kili,
     project_id: str,
     job_name: str,
-    ml_task: Optional[MLTaskT],
     status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
     randomize: bool = False,
     strategy: LabelMergeStrategyT = "last",
 ) -> List[AssetT]:
+    print("max_assets get_labeled_assets", max_assets)
     assets = get_assets(kili, project_id, status_in, max_assets=max_assets, randomize=randomize)
+    print("len(assets) get_labeled_assets", len(assets))
     asset_id_to_remove = set()
     for asset in assets:
-        label = get_label(asset, job_name, ml_task, strategy)
+        label = get_label(asset, job_name, strategy)
         if label is None:
             asset_id = asset["id"]
             warnings.warn(f"${asset_id} removed because no labels where available")

@@ -87,16 +87,17 @@ def main(
             continue
 
         ml_task = job.get("mlTask")
+        print("max_assets train", max_assets)
         assets = get_labeled_assets(
             kili,
             project_id=project_id,
             job_name=job_name,
-            ml_task=ml_task,
             status_in=asset_status_in,
             max_assets=max_assets,
             randomize=randomize_assets,
             strategy=label_merge_strategy,
         )
+        print("len(assets) train", len(assets))
 
         kili_print(f"Training on job: {job_name}")
         os.environ["WANDB_PROJECT"] = title + "_" + job_name

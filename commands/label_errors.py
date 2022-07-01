@@ -90,7 +90,6 @@ def main(
             kili,
             project_id=project_id,
             job_name=job_name,
-            ml_task=ml_task,
             status_in=asset_status_in,
             max_assets=max_assets,
             randomize=randomize_assets,
