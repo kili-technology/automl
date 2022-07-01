@@ -105,10 +105,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                 }
             ),
         )
-        print("len(raw_datasets['train']['tokens'])", len(raw_datasets["train"]["tokens"]))
-        for tokens, tags in zip(raw_datasets["train"]["tokens"], raw_datasets["train"]["ner_tags"]):
-            print(tokens)
-            print(tags)
         tokenizer, model = self._get_tokenizer_and_model_from_name(
             model_name, self.model_framework, label_list, self.ml_task
         )
