@@ -3,7 +3,7 @@ import json
 from click.testing import CliRunner
 
 import main
-from tests.e2e.utils_test_e2e import debug_subprocess_pytest
+from tests.e2e.utils_test_e2e import debug_subprocess_pytest, mock__projects
 
 text_content = json.load(open("tests/e2e/fixtures/text_content_fixture.json"))
 
@@ -12,9 +12,9 @@ def mocked__get_text_from(asset_url):
     return text_content[asset_url]
 
 
-def mocked__get_assets(*_, max_assets=None, randomize=None):
-    _ = randomize
+def mocked__get_asset_memoized(**kwargs):
     res = json.load(open("tests/e2e/fixtures/text_assets_fixture.json"))
+    max_assets = kwargs.get("max_assets", None)
     tot = min(20, max_assets) if max_assets is not None else 20
 
     project_id = "abcdefgh"
@@ -24,16 +24,16 @@ def mocked__get_assets(*_, max_assets=None, randomize=None):
         return res[-tot:]
 
 
-def mocked__projects(*_, project_id, fields):
-    _ = project_id, fields
-    return json.load(open("tests/e2e/fixtures/text_project_fixture.json"))
-
-
 def test_hugging_face_text_classification(mocker):
 
     mocker.patch("kili.client.Kili.__init__", return_value=None)
-    mocker.patch("kiliautoml.utils.helpers.get_assets", side_effect=mocked__get_assets)
-    mocker.patch("kili.client.Kili.projects", side_effect=mocked__projects)
+    mocker.patch(
+        "kiliautoml.utils.helpers.get_asset_memoized", side_effect=mocked__get_asset_memoized
+    )
+    mocker.patch(
+        "kili.client.Kili.projects",
+        side_effect=mock__projects("tests/e2e/fixtures/text_project_fixture.json"),
+    )
     mocker.patch(
         "kiliautoml.mixins._kili_text_project_mixin.KiliTextProjectMixin._get_text_from",
         side_effect=mocked__get_text_from,
@@ -63,7 +63,6 @@ def test_hugging_face_text_classification(mocker):
     )
     debug_subprocess_pytest(result)
 
-    mocker.patch("commands.predict.get_assets", side_effect=mocked__get_assets)
     result = runner.invoke(
         main.kiliautoml,
         [
