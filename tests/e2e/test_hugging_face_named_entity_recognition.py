@@ -3,9 +3,9 @@ from click.testing import CliRunner
 import main
 from tests.e2e.utils_test_e2e import (
     debug_subprocess_pytest,
-    mocked__get_text_from,
     mock__get_asset_memoized,
     mock__projects,
+    mocked__get_text_from,
 )
 
 
@@ -41,7 +41,7 @@ def test_hugging_face_text_classification(mocker):
             "distilbert-base-uncased",
             "--disable-wandb",
             "--epochs",
-            "5",
+            "10",
             "--batch-size",
             "2",
         ],
