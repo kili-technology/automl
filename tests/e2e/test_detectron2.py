@@ -7,7 +7,6 @@ from tests.e2e.utils_test_e2e import (
     mock__projects,
 )
 
-
 MOCK_DIR = "cl4cisaq36awx0lpb8ql57mxk_segmentation"
 
 
