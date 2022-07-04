@@ -413,6 +413,8 @@ def main(
     else:
         raise NotImplementedError
 
+    if not job_predictions:
+        return
     predictions_probability = job_predictions.predictions_probability
     kili_print("Predictions probability shape: ", predictions_probability)
     asset_ids = [asset["id"] for asset in unlabeled_assets]

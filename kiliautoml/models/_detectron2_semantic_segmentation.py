@@ -106,8 +106,6 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             record["annotations"] = objs
             dataset_dicts.append(record)
 
-        print(dataset_dicts)
-
         return dataset_dicts
 
     def train(
@@ -145,7 +143,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             assets=assets,
             output_dir=data_dir,
             api_key=api_key,
-            full_classes=full_classes,
+            job=self.job,
         )
 
         assert len(set(full_classes)) == len(full_classes)
@@ -285,7 +283,6 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             annotations = self.get_annotations_from_instances(
                 outputs["instances"], class_names=full_classes
             )
-            print(annotations)
             self._visualize_predictions(
                 visualization_dir, image.filename, dataset_metadata_predict, im, outputs
             )

@@ -55,8 +55,9 @@ def throttled_request(api_key, asset_content, use_header=True, k=0) -> Response:
             id = asset_content.split("/")[-1].split(".")[0]
             save_mock_data(id, response, function_name="throttled_request")
         return response
-    except AssertionError:
+    except AssertionError as e:
         # Sometimes, the header breaks google bucket and just removing the header makes it work.
+        print(e)
         return throttled_request(api_key, asset_content, use_header=not use_header, k=k + 1)
 
 

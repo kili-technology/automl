@@ -6,7 +6,7 @@ KILI_AUTOML_MOCK=True KILI_AUTOML_MOCK_OUTPUT_DIR=cl56hzgbp0ix60lst97r56err_segm
         --clear-dataset-cache --epochs 1 \
         --project-id cl56hzgbp0ix60lst97r56err
 
-2. ADAPT THE TEST file
+2. ADAPT THE TEST FILE
 """
 import json
 import os

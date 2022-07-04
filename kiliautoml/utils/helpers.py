@@ -4,7 +4,7 @@ import random
 import warnings
 from datetime import datetime
 from glob import glob
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from warnings import warn
 
 import numpy as np
@@ -16,7 +16,15 @@ from typing_extensions import get_args
 from kiliautoml.utils.constants import AUTOML_CACHE, InputTypeT, MLTaskT
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
-from kiliautoml.utils.type import AssetStatusT, AssetT, JobsT, JobT, LabelMergeStrategyT
+from kiliautoml.utils.type import (
+    AssetStatusT,
+    AssetT,
+    CategoryIdT,
+    CategoryNameT,
+    JobsT,
+    JobT,
+    LabelMergeStrategyT,
+)
 
 
 def set_all_seeds(seed):
@@ -52,7 +60,7 @@ def categories_from_job(job: JobT):
     """Returns the category id.
 
     Example:
-        - categoryId =" LIGHT_OF_THE_CAR
+        - categoryId = "LIGHT_OF_THE_CAR"
         - category name = "light of the car"
     """
     return [cat for cat in job["content"]["categories"].keys()]
@@ -305,13 +313,20 @@ def upload_errors_to_kili(found_errors, kili):
         kili.update_properties_in_assets(asset_ids=asset_ids, json_metadatas=new_metadatas)
 
 
-def not_implemented_job(job_name, ml_task):
-    if "_MARKER" in job_name:
-        # This is the virtual job associated with the semantic segementation
-        return
-    kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
-    kili_print(
-        "You can use the repeatable flag --target-job "
-        "(for example: --target-job job_name1 --target-job job_name2) "
-        "to select one or multiple jobs."
-    )
+def not_implemented_job(job_name: str, ml_task: MLTaskT):
+    if "_MARKER" not in job_name:
+        kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
+        kili_print(
+            "You can use the repeatable flag --target-job "
+            "(for example: --target-job job_name1 --target-job job_name2) "
+            "to select one or multiple jobs."
+        )
+        raise NotImplementedError
+
+
+def get_mapping_category_name_cat_kili_id(job: JobT):
+    cats = job["content"]["categories"]
+    mapping_category_name_category_ids: Dict[CategoryNameT, CategoryIdT] = {
+        cat["name"]: catId for catId, cat in cats.items()
+    }
+    return mapping_category_name_category_ids

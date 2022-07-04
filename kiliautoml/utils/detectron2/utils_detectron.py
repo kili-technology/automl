@@ -10,8 +10,8 @@ import numpy as np
 from typing_extensions import Literal, TypedDict
 
 from kiliautoml.utils.download_assets import download_asset_binary
-from kiliautoml.utils.helpers import kili_print
-from kiliautoml.utils.type import AssetT, CategoryT
+from kiliautoml.utils.helpers import get_mapping_category_name_cat_kili_id, kili_print
+from kiliautoml.utils.type import AssetT, CategoryIdT, CategoryT, JobT
 
 # ## DETECTRON FORMAT
 
@@ -27,7 +27,7 @@ class ImageCoco(TypedDict):
 
 class CategoryCoco(TypedDict):
     id: int
-    name: str
+    name: CategoryIdT
     supercategory: str
 
 
@@ -73,7 +73,7 @@ class SemanticJob(TypedDict):
 
 
 def convert_kili_semantic_to_coco(
-    job_name: str, assets: List[AssetT], output_dir, api_key: str, full_classes: List[str]
+    job_name: str, assets: List[AssetT], output_dir, api_key: str, job: JobT
 ) -> Tuple[CocoFormat, List[str]]:
     """
     creates the following structure on the disk:
@@ -110,11 +110,13 @@ def convert_kili_semantic_to_coco(
     os.makedirs(data_dir, exist_ok=True)
 
     # Mapping category - category id
-    category_name_to_id = {cat_name: i for i, cat_name in enumerate(list(full_classes))}
-    for cat_name, cat_id in category_name_to_id.items():
+    mapping_cat_name_cat_kili_id = get_mapping_category_name_cat_kili_id(job)
+    cat_kili_ids = list(mapping_cat_name_cat_kili_id.values())
+    cat_kili_id_to_coco_id = {categoryId: i for i, categoryId in enumerate(cat_kili_ids)}
+    for cat_kili_id, cat_coco_id in cat_kili_id_to_coco_id.items():
         categories_coco: CategoryCoco = {
-            "id": cat_id,
-            "name": cat_name,
+            "id": cat_coco_id,
+            "name": cat_kili_id,
             "supercategory": "",
         }
         labels_json["categories"].append(categories_coco)
@@ -154,11 +156,11 @@ def convert_kili_semantic_to_coco(
             poly = [p for x in poly_ for p in x]
 
             categories = annotation["categories"]
-            cat_id = category_name_to_id[categories[0]["name"]]
+            cat_coco_id = cat_kili_id_to_coco_id[categories[0]["name"]]
             annotations_coco = AnnotationsCoco(
                 id=annotation_j,
                 image_id=asset_i,
-                category_id=cat_id,
+                category_id=cat_coco_id,
                 bbox=[int(np.min(px)), int(np.min(py)), int(np.max(px)), int(np.max(py))],
                 # Objects have only one connected part.
                 # But a type of object can appear several times on the same image.
@@ -173,6 +175,6 @@ def convert_kili_semantic_to_coco(
         json.dump(labels_json, outfile)
 
     kili_print(f"Kili format has been converted to Coco format. Saved in {output_dir}")
-    classes: List[str] = list(category_name_to_id.keys())
+    classes: List[str] = list(cat_kili_id_to_coco_id.keys())
     kili_print("List of classes:", classes)
     return labels_json, classes

@@ -1,7 +1,6 @@
 import os
-from typing import Dict, List
 
-from typing_extensions import Literal, TypedDict
+from typing_extensions import Literal
 
 HOME = os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type: ignore
 AUTOML_CACHE = os.getenv("KILIAUTOML_CACHE", HOME)  # type: ignore
@@ -33,9 +32,3 @@ MLTaskT = Literal["CLASSIFICATION", "NAMED_ENTITIES_RECOGNITION", "OBJECT_DETECT
 
 
 ToolT = Literal["rectangle", "semantic"]
-
-
-class Job(TypedDict):
-    content: Dict  # type: ignore
-    ml_task: MLTaskT
-    tools: List[ToolT]

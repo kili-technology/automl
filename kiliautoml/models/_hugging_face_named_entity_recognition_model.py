@@ -90,7 +90,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
 
         model_name: ModelNameT = self.model_name  # type: ignore
-        kili_print(f"Job Name: {self.job_name}")
+        kili_print(f"JobT Name: {self.job_name}")
         kili_print(f"Base model: {model_name}")
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
 

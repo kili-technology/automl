@@ -115,6 +115,7 @@ def main(
         content_input = get_content_input_from_job(job)
         tools: List[ToolT] = job.get("tools")  # type: ignore
         training_loss = None
+        print(job)
 
         if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
 

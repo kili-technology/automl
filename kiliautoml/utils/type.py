@@ -14,8 +14,12 @@ LabelMergeStrategyT = Literal["last", "first"]
 AnnotationsT = Any
 
 
+CategoryNameT = str
+CategoryIdT = str  # camelCase with first letter in minuscule
+
+
 class CategoryT(TypedDict):
-    name: str
+    name: CategoryIdT
     confidence: int  # between 0 and 100
 
 
@@ -43,19 +47,22 @@ class AssetT(TypedDict):
 
 class OntologyCategory(TypedDict):
     children: Any
-    name: str
+    name: CategoryNameT
     person: str
     color: str
     id: int
 
 
+OntologyCategories = Dict[CategoryIdT, OntologyCategory]
+
+
 class JobT(TypedDict):
-    content: Dict[Literal["categories"], Dict[str, OntologyCategory]]
+    content: Dict[Literal["categories"], OntologyCategories]
     instruction: str
     isChild: Bool
-    tools: Any  # ["semantic"],
+    tools: Any  # example: ["semantic"],
     mlTask: MLTaskT
-    models: Any  # {"interactive-segmentation": {"job": "SEMANTIC_JOB_MARKER"}},
+    models: Any  # example: {"interactive-segmentation": {"job": "SEMANTIC_JOB_MARKER"}},
     isVisible: Bool
     required: int
     isNew: Bool
