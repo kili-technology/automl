@@ -83,7 +83,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         model_repository_dir = Path.model_repository_dir(
             HOME, self.project_id, self.job_name, self.model_repository
         )
-        print("len(assets) NER train", len(assets))
         model_name: ModelNameT = self.model_name  # type: ignore
         kili_print(f"Job Name: {self.job_name}")
         kili_print(f"Base model: {model_name}")
@@ -241,8 +240,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[AssetT],
         clear_dataset_cache: bool,
     ):
-        clear_dataset_cache = True
-        print("clear_dataset_cache", clear_dataset_cache)
         if clear_dataset_cache and os.path.exists(path_dataset):
             kili_print("Dataset cache for this project is being cleared.")
             os.remove(path_dataset)
@@ -257,7 +254,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
         if not os.path.exists(path_dataset):
-            print("hello")
             with open(ensure_dir(path_dataset), "w") as handler:
                 for asset in tqdm(assets, desc="Converting assets to huggingface dataset"):
                     self._write_asset(job_name, labels_to_ids, handler, asset)

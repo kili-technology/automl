@@ -155,8 +155,6 @@ def get_assets(
         kili_print("Downloading assets from Kili project")
 
     if randomize:
-        print("randomize", randomize)
-        print("max_assets", max_assets)
         assets = get_asset_memoized(
             kili=kili,
             project_id=project_id,
@@ -166,11 +164,8 @@ def get_assets(
         )
         random.shuffle(assets)
         assets = assets[:max_assets]
-        print("len(assets)", len(assets))
 
     else:
-        print("randomize", randomize)
-        print("max_assets", max_assets)
         assets = get_asset_memoized(
             kili=kili,
             project_id=project_id,
@@ -178,7 +173,6 @@ def get_assets(
             skip=0,
             status_in=status_in,
         )
-        print("len(assets)", len(assets))
 
     if len(assets) == 0:
         kili_print(f"No {status_in} assets found in project {project_id}.")

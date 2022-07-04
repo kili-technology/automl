@@ -3,14 +3,13 @@ from click.testing import CliRunner
 import main
 from tests.e2e.utils_test_e2e import (
     debug_subprocess_pytest,
-    mocked__get_text_from,
     mock__get_asset_memoized,
     mock__projects,
+    mocked__get_text_from,
 )
 
 
 def test_hugging_face_text_classification(mocker):
-    print("hello")
     mocker.patch("kili.client.Kili.__init__", return_value=None)
     mocker.patch(
         "kiliautoml.utils.helpers.get_asset_memoized",
