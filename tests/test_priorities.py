@@ -1,8 +1,11 @@
 import random
+import sys
 
 import numpy as np
 
 from commands.prioritize import Prioritizer, PriorityQueue
+
+print(sys.path)
 
 
 class TestQueue:

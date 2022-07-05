@@ -1,4 +1,5 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
+import json
 import math
 import os
 import re
@@ -9,11 +10,13 @@ import warnings
 from datetime import datetime
 from functools import reduce
 from glob import glob
+from pathlib import Path as PathlibPath
 from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from sklearn.model_selection import KFold, train_test_split
 from typing_extensions import TypedDict
 
 from kiliautoml.models._base_model import BaseModel
@@ -31,6 +34,7 @@ from kiliautoml.utils.helpers import (
     get_last_trained_model_path,
     kili_print,
 )
+from kiliautoml.utils.label_errors.label_errors_yolo import compute_per_image_map
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT
 
@@ -108,6 +112,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
         title: str,
         api_key: str,
         additional_train_args_yolo: AdditionalTrainingArgsT,
+        split_train_test: bool = True,
+        label_error_cv_fold: int = 0,
+        label_error_n_folds: int = 0,
     ):
         _ = verbose
 
@@ -122,7 +129,12 @@ class UltralyticsObjectDetectionModel(BaseModel):
         data_path = os.path.join(model_repository_dir, "data")
         config_data_path = os.path.join(yolov5_path, "data", "kili.yaml")
 
-        if clear_dataset_cache and os.path.exists(data_path) and os.path.isdir(data_path):
+        if (
+            clear_dataset_cache
+            and os.path.exists(data_path)
+            and os.path.isdir(data_path)
+            and (not label_error_n_folds or (label_error_n_folds and label_error_cv_fold == 0))
+        ):
             kili_print("Dataset cache for this project is being cleared.")
             shutil.rmtree(data_path)
 
@@ -132,12 +144,19 @@ class UltralyticsObjectDetectionModel(BaseModel):
         os.makedirs(model_output_path, exist_ok=True)
 
         os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
-        self._yaml_preparation(
-            data_path=data_path,
-            class_names=class_names,
-            kili_api_key=api_key,
-            assets=assets,
-        )
+        if not label_error_n_folds or (label_error_n_folds and label_error_cv_fold == 0):
+            self._yaml_preparation(
+                data_path=data_path,
+                class_names=class_names,
+                kili_api_key=api_key,
+                assets=assets,
+                split_train_test=split_train_test,
+            )
+
+        if label_error_n_folds:
+            self._label_errors_preparation(
+                cv_fold=label_error_cv_fold, data_path=data_path, n_folds=label_error_n_folds
+            )
 
         with open(config_data_path, "w") as f:
             f.write(
@@ -205,12 +224,77 @@ class UltralyticsObjectDetectionModel(BaseModel):
         return {"training_loss": train_loss}
 
     @staticmethod
+    def _label_errors_preparation(
+        cv_fold: int,
+        data_path: str,
+        n_folds: int,
+    ):
+        for type in ["images", "labels"]:
+            for folder in ["train", "val", "test"]:
+                shutil.rmtree(os.path.join(data_path, type, folder), ignore_errors=True)
+
+        path_all_images = os.path.join(data_path, "images", "all")
+        path_all_labels = os.path.join(data_path, "labels", "all")
+
+        images = [
+            f
+            for f in os.listdir(path_all_images)
+            if os.path.isfile(os.path.join(path_all_images, f)) and not f.startswith(".")
+        ]
+        labels = [
+            f
+            for f in os.listdir(path_all_labels)
+            if os.path.isfile(os.path.join(path_all_labels, f)) and not f.startswith(".")
+        ]
+
+        assert len(images) == len(labels)
+
+        kf = KFold(n_splits=n_folds, shuffle=True, random_state=42)
+
+        # Split train into train and holdout for particular cv_fold.
+        cv_train_idx, cv_holdout_idx = list(kf.split(range(len(images)), images))[cv_fold]
+        train_idx, val_idx = train_test_split(cv_train_idx, test_size=0.2)
+
+        train_images = [images[i] for i in train_idx]
+        val_images = [images[i] for i in val_idx]
+        test_images = [images[i] for i in cv_holdout_idx]
+
+        new_images = {
+            "train": train_images,
+            "val": val_images,
+            "test": test_images,
+        }
+
+        for name_split, assets_split in new_images.items():
+            split_dir = os.path.join(data_path, "images", name_split)
+            os.makedirs(split_dir)
+            for image in assets_split:
+                shutil.copy(os.path.join(path_all_images, image), os.path.join(split_dir, image))
+
+        train_labels = [labels[i] for i in train_idx]
+        val_labels = [labels[i] for i in val_idx]
+        test_labels = [labels[i] for i in cv_holdout_idx]
+
+        new_labels = {
+            "train": train_labels,
+            "val": val_labels,
+            "test": test_labels,
+        }
+
+        for name_split, assets_split in new_labels.items():
+            split_dir = os.path.join(data_path, "labels", name_split)
+            os.makedirs(split_dir)
+            for image in assets_split:
+                shutil.copy(os.path.join(path_all_labels, image), os.path.join(split_dir, image))
+
+    @staticmethod
     def _yaml_preparation(
         *,
         data_path: str,
         class_names: List[str],
         kili_api_key: str,
         assets,
+        split_train_test: bool = True,
     ):
 
         kili_print("Downloading datasets from Kili")
@@ -221,14 +305,18 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         n_train_assets = math.floor(len(assets) * train_val_proportions[0])
         n_val_assets = math.floor(len(assets) * train_val_proportions[1])
-        assert (
-            n_val_assets > 0
-        ), "Validation set must contain at least 2 assets. max_asset should be > 9"
-        assets_splits = {
-            "train": assets[:n_train_assets],
-            "val": assets[n_train_assets : n_train_assets + n_val_assets],
-            "test": assets[n_train_assets + n_val_assets :],
-        }
+
+        if split_train_test:
+            assert (
+                n_val_assets > 0
+            ), "Validation set must contain at least 2 assets. max_asset should be > 9"
+            assets_splits = {
+                "train": assets[:n_train_assets],
+                "val": assets[n_train_assets : n_train_assets + n_val_assets],
+                "test": assets[n_train_assets + n_val_assets :],
+            }
+        else:
+            assets_splits = {"all": assets}
 
         for name_split, assets_split in assets_splits.items():
             if len(assets_split) == 0:
@@ -430,8 +518,59 @@ class UltralyticsObjectDetectionModel(BaseModel):
         verbose: int = 0,
         clear_dataset_cache: bool = False,
         api_key: str = "",
+        disable_wandb: bool = True,
+        title: str = "",
+        additional_train_args_yolo: AdditionalTrainingArgsT = {},
     ) -> Any:
-        pass
+        metrics = []
+        for cv_fold in range(cv_n_folds):
+            loss = self.train(
+                assets=assets,
+                epochs=epochs,
+                clear_dataset_cache=clear_dataset_cache,
+                disable_wandb=disable_wandb,
+                verbose=verbose,
+                batch_size=batch_size,
+                api_key=api_key,
+                title=title,
+                additional_train_args_yolo=additional_train_args_yolo,
+                split_train_test=False,
+                label_error_cv_fold=cv_fold,
+                label_error_n_folds=cv_n_folds,
+            )
+            kili_print(f"Fold {cv_fold}: Loss ", loss)
+
+            model_path, _ = self._get_last_model_param(self.project_id, None)
+            data_yaml_path = os.path.join(model_path, "../../kili.yaml")
+            weights_path = os.path.join(model_path, "best.pt")
+
+            metrics_per_image_fold = compute_per_image_map(
+                model_path, data_yaml_path, weights_path, cv_fold
+            )
+            metrics.append(metrics_per_image_fold)
+
+        all_metrics_per_image = {}
+
+        for dictionary in metrics:
+            all_metrics_per_image.update(dictionary)
+
+        found_errors_json = json.dumps(all_metrics_per_image, sort_keys=True, indent=4)
+        if found_errors_json is not None:
+            model_path = os.path.join(HOME, self.project_id, self.job_name)
+            json_file_path = PathUltralytics.label_errors_dir(
+                str(PathlibPath(model_path).parent.absolute())
+            )
+            with open(json_file_path, "wb") as output_file:
+                output_file.write(found_errors_json.encode("utf-8"))
+                kili_print("Final per-image metric written to: ", json_file_path)
+
+        return all_metrics_per_image
+
+    def prioritize_label_errors(self, metrics_per_image, kili):
+        sorted_metrics = dict(sorted(metrics_per_image.items(), key=lambda item: -item[1]))
+        sorted_ids = list(sorted_metrics.keys())
+        priorities = list(range(len(sorted_ids)))
+        kili.update_properties_in_assets(asset_ids=sorted_ids, priorities=priorities)
 
 
 def save_annotations_to_yolo_format(names, handler, job):

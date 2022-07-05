@@ -11,13 +11,14 @@ exclude = '''
 
 [tool.pylint.master]
 suggestion-mode = true
-ignore-paths = [ "^kiliautoml/utils/ultralytics/yolov5/.*$"]
+ignore-paths = [ "^kiliautoml/utils/ultralytics/yolov5/.*$", "kiliautoml/utils/label_errors/yolo_general.py", "kiliautoml/utils/label_errors/yolo_metrics.py"]
 
 [tool.pyright]
 exclude = [
     "**/utils/ultralytics/yolov5/**",
     "**/__pycache__",
 ]
+ignore = ["**/utils/label_errors/yolo_*"]
 
 pythonVersion = "3.7"
 typeCheckingMode = "basic"
@@ -47,3 +48,9 @@ reportUnknownParameterType = false
 profile = "black"
 py_version=37
 skip_glob = ["**/utils/ultralytics/yolov5/**"]
+
+[mypy]
+exclude = [
+    "kiliautoml/utils/label_errors/yolo_general.py",
+    "kiliautoml/utils/label_errors/yolo_metrics.py",
+]

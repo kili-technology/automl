@@ -78,6 +78,11 @@ class PathUltralytics:
             Path.model_repository_dir(root_dir, project_id, job_name, model_repository), "inference"
         )
 
+    @staticmethod
+    @makedirs_exist_ok
+    def label_errors_dir(model_repository_dir: ModelRepositoryDirT):
+        return os.path.join(model_repository_dir, "label_errors")
+
     ULTRALYTICS_REL_PATH = os.path.join("kiliautoml", "utils", "ultralytics")
     YOLOV5_REL_PATH = os.path.join(ULTRALYTICS_REL_PATH, "yolov5")
 
