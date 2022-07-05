@@ -132,9 +132,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
         for asset in assets:
             labels = asset["labels"]
             number_labels = len(labels)
-            prime_label = random.choice(labels)
-            for _ in range(min(number_labels, 4)):
-                asset["labels"] = [prime_label]
+            # prime_label = random.choice(labels)
+            for i in range(min(number_labels, 4)):
+                asset["labels"] = [labels[i]]
                 newAssets.append(asset.copy())
         assets = newAssets
         print(len(assets))
