@@ -9,6 +9,8 @@ nltk>=3.3
 numpy
 requests
 scikit-learn
+evaluate
+seqeval
 tabulate
 tensorflow
 termcolor

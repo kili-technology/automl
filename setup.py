@@ -8,6 +8,8 @@ setup(
         "cleanlab>=2.0.0",
         "click",
         "datasets<=2.2",
+        "evaluate",
+        "seqeval",
         "kili",
         "jinja2",
         "nltk>=3.3",
@@ -42,7 +44,6 @@ setup(
         "tensorboard>=2.4.1",
         # wandb
         # Plotting ------------------------------------
-        "pandas>=1.1.4",
         "seaborn>=0.11.0",
         "thop",
     ],

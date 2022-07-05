@@ -3,7 +3,6 @@ from typing import List
 
 import click
 from kili.client import Kili
-from tabulate import tabulate
 
 from commands.common_args import Options, TrainOptions
 from kiliautoml.models import (
@@ -25,6 +24,7 @@ from kiliautoml.utils.helpers import (
     get_project,
     kili_print,
     not_implemented_job,
+    print_evaluation,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.type import (
@@ -81,7 +81,7 @@ def main(
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
 
-    training_losses = []
+    model_evaluations = []
 
     for job_name, job in jobs.items():
 
@@ -114,8 +114,7 @@ def main(
             )
         content_input = get_content_input_from_job(job)
         tools: List[ToolT] = job.get("tools")  # type: ignore
-        training_loss = None
-        print(job)
+        model_evaluation = {}
 
         if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
 
@@ -128,7 +127,7 @@ def main(
                 model_framework=model_framework,
             )
 
-            training_loss = model.train(
+            model_evaluation = model.train(
                 assets=assets,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
@@ -153,7 +152,7 @@ def main(
                 model_framework=model_framework,
             )
 
-            training_loss = model.train(
+            model_evaluation = model.train(
                 assets=assets,
                 batch_size=batch_size,
                 clear_dataset_cache=clear_dataset_cache,
@@ -176,7 +175,7 @@ def main(
                 model_framework=model_framework,
                 model_name=model_name,
             )
-            training_loss = model.train(
+            model_evaluation = model.train(
                 assets=assets,
                 epochs=epochs,
                 batch_size=batch_size,
@@ -198,7 +197,7 @@ def main(
                 project_id=project_id,
             )
 
-            training_loss = image_classification_model.train(
+            model_evaluation = image_classification_model.train(
                 assets=assets,
                 batch_size=batch_size,
                 epochs=epochs,
@@ -221,7 +220,7 @@ def main(
                 project_id=project_id,
             )
 
-            training_loss = image_classification_model.train(
+            model_evaluation = image_classification_model.train(
                 assets=assets,
                 label_merge_strategy=label_merge_strategy,
                 batch_size=batch_size,
@@ -235,7 +234,9 @@ def main(
 
         else:
             not_implemented_job(job_name, ml_task)
-        training_losses.append([job_name, training_loss])
+
+        model_evaluations.append((job_name, model_evaluation))
 
     kili_print()
-    print(tabulate(training_losses, headers=["job_name", "training_loss"]))
+    for job_name, evaluation in model_evaluations:
+        print_evaluation(job_name, evaluation)

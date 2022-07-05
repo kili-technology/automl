@@ -277,14 +277,14 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         # 3. Predict
         id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
         for image in downloaded_images:
-            im = cv2.imread(image.filename)
+            im = cv2.imread(image.filepath)
             outputs = predictor(im)
 
             annotations = self.get_annotations_from_instances(
                 outputs["instances"], class_names=full_classes
             )
             self._visualize_predictions(
-                visualization_dir, image.filename, dataset_metadata_predict, im, outputs
+                visualization_dir, image.filepath, dataset_metadata_predict, im, outputs
             )
             id_json_list.append((image.externalId, {self.job_name: {"annotations": annotations}}))
 
