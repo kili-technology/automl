@@ -1,26 +1,13 @@
-import json
-
 from click.testing import CliRunner
 
 import main
-from tests.e2e.utils_test_e2e import debug_subprocess_pytest
+from tests.e2e.utils_test_e2e import (
+    debug_subprocess_pytest,
+    mock__get_asset_memoized,
+    mock__projects,
+)
 
 MOCK_DIR = "cl4cisaq36awx0lpb8ql57mxk_segmentation"
-
-
-def mocked__get_assets(*_, max_assets=None, randomize=None):
-    _ = randomize
-    function_name = "assets"
-    path = f"tests/e2e/fixtures/{MOCK_DIR}/{function_name}.json"
-    return json.load(open(path))[:max_assets]
-
-
-def mocked__projects(*_, project_id, fields):
-    _ = project_id, fields
-
-    function_name = "projects"
-    path = f"tests/e2e/fixtures/{MOCK_DIR}/{function_name}.json"
-    return json.load(open(path))
 
 
 def mocked__throttled_request(api_key, asset_content):
@@ -38,8 +25,14 @@ def mocked__throttled_request(api_key, asset_content):
 def test_detectron2_image_segmentation(mocker):
 
     mocker.patch("kili.client.Kili.__init__", return_value=None)
-    mocker.patch("kili.client.Kili.projects", side_effect=mocked__projects)
-    mocker.patch("kiliautoml.utils.helpers.get_assets", side_effect=mocked__get_assets)
+    mocker.patch(
+        "kili.client.Kili.projects",
+        side_effect=mock__projects(f"tests/e2e/fixtures/{MOCK_DIR}/projects.json"),
+    )
+    mocker.patch(
+        "kiliautoml.utils.helpers.get_asset_memoized",
+        side_effect=mock__get_asset_memoized(f"tests/e2e/fixtures/{MOCK_DIR}/assets.json"),
+    )
     mocker.patch(
         "kiliautoml.utils.download_assets.throttled_request",
         side_effect=mocked__throttled_request,
@@ -64,7 +57,6 @@ def test_detectron2_image_segmentation(mocker):
     debug_subprocess_pytest(result)
 
     mock_create_predictions = mocker.patch("kili.client.Kili.create_predictions")
-    mocker.patch("commands.predict.get_assets", side_effect=mocked__get_assets)
     result = runner.invoke(
         main.kiliautoml,
         [

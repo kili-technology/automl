@@ -88,7 +88,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         model_repository_dir = Path.model_repository_dir(
             HOME, self.project_id, self.job_name, self.model_repository
         )
-
         model_name: ModelNameT = self.model_name  # type: ignore
         kili_print(f"Job Name: {self.job_name}")
         kili_print(f"Base model: {model_name}")
@@ -114,7 +113,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         ].train_test_split(  # type: ignore
             test_size=0.1
         )
-
         tokenizer, model = self._get_tokenizer_and_model_from_name(
             model_name, self.model_framework, label_list, self.ml_task
         )
@@ -272,7 +270,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         assets: List[AssetT],
         clear_dataset_cache: bool,
     ):
-
         if clear_dataset_cache and os.path.exists(path_dataset):
             kili_print("Dataset cache for this project is being cleared.")
             os.remove(path_dataset)
