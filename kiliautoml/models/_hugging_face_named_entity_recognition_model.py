@@ -171,7 +171,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             metric = datasets.load_metric("seqeval")
             logits, labels = eval_preds
             predictions = np.argmax(logits, axis=-1)
-            # Remove ignored index (special tokens) and convert to labels
+            # Remove ignored index (special tokens with label_id -100) and convert to labels
             true_labels = [
                 [label_list[label_id] for label_id in label if label_id != -100] for label in labels
             ]
@@ -494,7 +494,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def evaluation(self, trainer):
         train_metrics = trainer.evaluate(trainer.train_dataset)
-        val_metrics = trainer.evaluate()
+        val_metrics = trainer.evaluate(trainer.eval_dataset)
         model_evaluation = {}
         nb_train_ent = 0
         nb_val_ent = 0

@@ -28,7 +28,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.path import Path, PathHF
-from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT
+from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT, Model_Metric
 
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
@@ -241,27 +241,28 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         metric_res = {}
         for met in metrics:
             if met == "accuracy":
-                metric_res[met] = metric[met].compute(predictions=predictions, references=labels)[
-                    met
-                ]
+                metric_res[met] = Model_Metric(
+                    by_category=None,
+                    overall=metric[met].compute(predictions=predictions, references=labels)[met],
+                )
             elif met == "f1":
-                metric_res[met] = np.append(
-                    metric[met].compute(predictions=predictions, references=labels, average=None)[
-                        met
-                    ],
-                    metric[met].compute(
+                metric_res[met] = Model_Metric(
+                    by_category=metric[met].compute(
+                        predictions=predictions, references=labels, average=None
+                    )[met],
+                    overall=metric[met].compute(
                         predictions=predictions, references=labels, average="weighted"
                     )[met],
                 )
             else:
-                metric_res[met] = np.append(
-                    metric[met].compute(
+                metric_res[met] = Model_Metric(
+                    by_category=metric[met].compute(
                         predictions=predictions,
                         references=labels,
                         average=None,
                         zero_division=0,
                     )[met],
-                    metric[met].compute(
+                    overall=metric[met].compute(
                         predictions=predictions,
                         references=labels,
                         average="weighted",
@@ -272,34 +273,34 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def model_evaluation(self, trainer, job_categories):
         train_metrics = trainer.evaluate(trainer.train_dataset)
-        val_metrics = trainer.evaluate()
+        val_metrics = trainer.evaluate(trainer.eval_dataset)
         model_evaluation: Dict[str, Any] = {}
 
-        if len(train_metrics["eval_precision"]) == len(job_categories) + 1:
+        if len(train_metrics["eval_precision"]["by_category"]) == len(job_categories):
             for i, label in enumerate(job_categories):
                 train_label_metrics = {}
                 for metric in ["precision", "recall", "f1"]:
-                    train_label_metrics[metric] = train_metrics["eval_" + metric][i]  # type: ignore
+                    train_label_metrics[metric] = train_metrics["eval_" + metric]["by_category"][i]
                 model_evaluation["train_" + label] = train_label_metrics
-        if len(val_metrics["eval_precision"]) == len(job_categories) + 1:
+        if len(val_metrics["eval_precision"]["by_category"]) == len(job_categories):
             for i, label in enumerate(job_categories):
                 val_label_metrics = {}
                 for metric in ["precision", "recall", "f1"]:
-                    val_label_metrics[metric] = val_metrics["eval_" + metric][i]  # type: ignore
+                    val_label_metrics[metric] = val_metrics["eval_" + metric]["by_category"][i]
                 model_evaluation["val_" + label] = val_label_metrics
         model_evaluation["train__overall"] = {
             "loss": train_metrics["eval_loss"],
-            "accuracy": train_metrics["eval_accuracy"],
-            "precision": train_metrics["eval_precision"][-1],  # type: ignore
-            "recall": train_metrics["eval_recall"][-1],  # type: ignore
-            "f1": train_metrics["eval_f1"][-1],  # type: ignore
+            "accuracy": train_metrics["eval_accuracy"]["overall"],
+            "precision": train_metrics["eval_precision"]["overall"],
+            "recall": train_metrics["eval_recall"]["overall"],
+            "f1": train_metrics["eval_f1"]["overall"],
         }
         model_evaluation["val__overall"] = {
             "loss": val_metrics["eval_loss"],
-            "accuracy": val_metrics["eval_accuracy"],
-            "precision": val_metrics["eval_precision"][-1],  # type: ignore
-            "recall": val_metrics["eval_recall"][-1],  # type: ignore
-            "f1": val_metrics["eval_f1"][-1],  # type: ignore
+            "accuracy": val_metrics["eval_accuracy"]["overall"],
+            "precision": val_metrics["eval_precision"]["overall"],
+            "recall": val_metrics["eval_recall"]["overall"],
+            "f1": val_metrics["eval_f1"]["overall"],
         }
         return model_evaluation
 

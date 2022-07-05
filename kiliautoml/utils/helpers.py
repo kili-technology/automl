@@ -311,7 +311,7 @@ def not_implemented_job(job_name, ml_task):
     raise NotImplementedError
 
 
-def print_evaluation(evaluation: Tuple[str, DictTrainingInfosT]):
+def print_evaluation(job_name: str, evaluation: DictTrainingInfosT):
     def get_keys(my_dict):
         keys = list(my_dict.keys())
         keys_int = []
@@ -320,12 +320,12 @@ def print_evaluation(evaluation: Tuple[str, DictTrainingInfosT]):
         return list(set(keys_int))
 
     # get headers
-    keys = get_keys(evaluation[1])
+    keys = get_keys(evaluation)
     keys.sort()
     # get body
     table = []
     table_int = []
-    for k, values in evaluation[1].items():
+    for k, values in evaluation.items():
         table_int.append(k)
         for key in keys:
             if key in values.keys():
@@ -334,4 +334,4 @@ def print_evaluation(evaluation: Tuple[str, DictTrainingInfosT]):
                 table_int.append("nan")
         table.append(table_int)
         table_int = []
-    print(tabulate(table, headers=[evaluation[0]] + keys))
+    print(tabulate(table, headers=[job_name] + keys))

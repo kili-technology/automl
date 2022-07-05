@@ -234,5 +234,5 @@ def main(
         model_evaluations.append((job_name, model_evaluation))
 
     kili_print()
-    for evaluation in model_evaluations:
-        print_evaluation(evaluation)
+    for job_name, evaluation in model_evaluations:
+        print_evaluation(job_name, evaluation)
