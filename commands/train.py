@@ -19,8 +19,8 @@ from kiliautoml.utils.constants import (
     ToolT,
 )
 from kiliautoml.utils.helpers import (
+    get_assets,
     get_content_input_from_job,
-    get_labeled_assets,
     get_project,
     kili_print,
     not_implemented_job,
@@ -89,15 +89,14 @@ def main(
             continue
 
         ml_task = job.get("mlTask")
-        assets = get_labeled_assets(
+        assets = get_assets(
             kili,
             project_id=project_id,
-            job_name=job_name,
-            ml_task=ml_task,
             status_in=asset_status_in,
             max_assets=max_assets,
             randomize=randomize_assets,
             strategy=label_merge_strategy,
+            job_name=job_name,
         )
 
         kili_print(f"Training on job: {job_name}")

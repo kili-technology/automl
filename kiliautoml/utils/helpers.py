@@ -155,7 +155,12 @@ def get_assets(
     status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
     randomize: bool = False,
+    strategy: LabelMergeStrategyT = "last",
+    job_name: Optional[str] = None,
 ) -> List[AssetT]:
+    """
+    job_name is used if status_in does not have only unlabeled statuses
+    """
 
     if status_in is not None:
         for status in status_in:
@@ -192,16 +197,17 @@ def get_assets(
     if len(assets) == 0:
         kili_print(f"No {status_in} assets found in project {project_id}.")
         raise Exception("There is no asset matching the query.")
+
+    if status_in is not None:
+        only_labeled_status = not any(status in status_in for status in ["TO DO", "ONGOING"])
+        if job_name is not None and only_labeled_status:
+            assets = filter_labeled_assets(job_name, strategy, assets)
     return assets
 
 
-def get_label(
-    asset: AssetT, job_name: str, ml_task: Optional[MLTaskT], strategy: LabelMergeStrategyT
-):
+def get_label(asset: AssetT, job_name: str, strategy: LabelMergeStrategyT):
     labels = asset["labels"]
-    # for CLASSIFICATION task, we can only accept label with
-    if ml_task == "CLASSIFICATION":
-        labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
+    labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
         return min(labels, key=key)
@@ -210,20 +216,10 @@ def get_label(
         return None
 
 
-def get_labeled_assets(
-    kili,
-    project_id: str,
-    job_name: str,
-    ml_task: Optional[MLTaskT],
-    status_in: Optional[List[AssetStatusT]] = None,
-    max_assets: Optional[int] = None,
-    randomize: bool = False,
-    strategy: LabelMergeStrategyT = "last",
-) -> List[AssetT]:
-    assets = get_assets(kili, project_id, status_in, max_assets=max_assets, randomize=randomize)
+def filter_labeled_assets(job_name: str, strategy: LabelMergeStrategyT, assets: List[AssetT]):
     asset_id_to_remove = set()
     for asset in assets:
-        label = get_label(asset, job_name, ml_task, strategy)
+        label = get_label(asset, job_name, strategy)
         if label is None:
             asset_id = asset["id"]
             warnings.warn(f"${asset_id} removed because no labels where available")
