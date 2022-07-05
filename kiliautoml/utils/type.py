@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from typing_extensions import Literal, TypedDict
 
@@ -41,3 +41,9 @@ class AssetT(TypedDict):
 JobT = Dict[str, Any]
 JobsT = Dict[str, JobT]
 AdditionalTrainingArgsT = Dict[str, Any]
+DictTrainingInfosT = Dict[str, Any]
+
+
+class Model_Metric(TypedDict):
+    overall: float
+    by_category: Optional[List[float]]

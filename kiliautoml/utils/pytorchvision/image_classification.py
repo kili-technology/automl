@@ -114,8 +114,7 @@ def set_model_repository_image_classification(
         "model_repository",
         ["torchvision"],
     )
-
-    return model_repository
+    return model_repository  # type: ignore
 
 
 def get_trained_model_image_classif(
@@ -137,17 +136,18 @@ def get_trained_model_image_classif(
 
     model = initialize_model_img_class(model_name, class_names)
 
-    model, loss = train_model_pytorch(
+    model, model_evaluation = train_model_pytorch(
         model=model,
         dataloaders=dataloaders,
         verbose=verbose,
         epochs=epochs,
+        class_names=class_names,
     )
 
     if save_model_path is not None:
         torch.save(model.state_dict(), save_model_path)
 
-    return model, loss
+    return model, model_evaluation
 
 
 def initialize_model_img_class(model_name: ModelNameT, class_names):

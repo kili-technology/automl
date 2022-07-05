@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from kiliautoml.utils.constants import (
     MLTaskT,
@@ -8,9 +8,7 @@ from kiliautoml.utils.constants import (
     ModelRepositoryT,
 )
 from kiliautoml.utils.helpers import JobPredictions
-from kiliautoml.utils.type import AssetT, JobT
-
-DictTrainingInfos = Dict[str, Any]
+from kiliautoml.utils.type import AssetT, DictTrainingInfosT, JobT
 
 
 class BaseModel(metaclass=ABCMeta):
@@ -40,7 +38,7 @@ class BaseModel(metaclass=ABCMeta):
         disable_wandb: bool,
         verbose: int,
         **kwargs,
-    ) -> DictTrainingInfos:
+    ) -> DictTrainingInfosT:
         pass
 
     @abstractmethod

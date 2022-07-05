@@ -1,4 +1,5 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
+import csv
 import math
 import os
 import re
@@ -11,7 +12,6 @@ from functools import reduce
 from glob import glob
 from typing import Any, Dict, List, Optional, Tuple
 
-import pandas as pd
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from typing_extensions import TypedDict
@@ -198,11 +198,28 @@ class UltralyticsObjectDetectionModel(BaseModel):
             raise AutoMLYoloException()
 
         shutil.copy(config_data_path, model_output_path)
-        df_result = pd.read_csv(os.path.join(model_output_path, "exp", "results.csv"))
+        last_row = []
+        with open(os.path.join(model_output_path, "exp", "results.csv"), "r") as file:
+            csvreader = csv.reader(file)
+            for row in csvreader:
+                last_row = row
 
-        # we take the class loss as the main metric
-        train_loss = df_result.iloc[-1:][["        val/obj_loss"]].to_numpy()[0][0]  # type:ignore
-        return {"training_loss": train_loss}
+        model_evaluation = {}
+        model_evaluation["train__overall"] = {
+            "box_loss": float(last_row[1]),
+            "obj_loss": float(last_row[2]),
+            "cls_loss": float(last_row[3]),
+        }
+        model_evaluation["val__overall"] = {
+            "box_loss": float(last_row[7]),
+            "obj_loss": float(last_row[8]),
+            "cls_loss": float(last_row[9]),
+            "precision": float(last_row[4]),
+            "recall": float(last_row[5]),
+            "mAP_0.5": float(last_row[6]),
+            "mAP_0.5:0.95": float(last_row[7]),
+        }
+        return model_evaluation
 
     @staticmethod
     def _yaml_preparation(
@@ -214,21 +231,16 @@ class UltralyticsObjectDetectionModel(BaseModel):
     ):
 
         kili_print("Downloading datasets from Kili")
-        train_val_proportions = [0.8, 0.1]
+        train_val_proportions = [0.8, 0.2]
         path = data_path
         if "/kili/" not in path:
             raise ValueError("'path' field in config must contain '/kili/'")
 
         n_train_assets = math.floor(len(assets) * train_val_proportions[0])
-        n_val_assets = math.floor(len(assets) * train_val_proportions[1])
         assert (
-            n_val_assets > 0
+            n_train_assets > 8
         ), "Validation set must contain at least 2 assets. max_asset should be > 9"
-        assets_splits = {
-            "train": assets[:n_train_assets],
-            "val": assets[n_train_assets : n_train_assets + n_val_assets],
-            "test": assets[n_train_assets + n_val_assets :],
-        }
+        assets_splits = {"train": assets[:n_train_assets], "val": assets[n_train_assets:]}
 
         for name_split, assets_split in assets_splits.items():
             if len(assets_split) == 0:
