@@ -141,7 +141,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 asset["labels"] = [labels[i]]
                 newAssets.append(asset.copy())
         assets = newAssets
-        print(len(assets), len(newAssets)
+        print(len(assets), len(newAssets))
         batch_size = len(assets)
         os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
         self._yaml_preparation(
