@@ -100,7 +100,6 @@ def main(
         )
 
         kili_print(f"Training on job: {job_name}")
-        kili_print(job)
         os.environ["WANDB_PROJECT"] = title + "_" + job_name
 
         if clear_dataset_cache:
