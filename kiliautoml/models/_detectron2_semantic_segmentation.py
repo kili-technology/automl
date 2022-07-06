@@ -187,7 +187,9 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         kili_print("The logs and model are saved in ", cfg.OUTPUT_DIR)
 
         if "segm" not in eval_res:
-            kili_print("Your Epoch number is probably too low.")
+            kili_print(
+                "No prediction in the training evaluation: your Epoch number may be too low."
+            )
         return eval_res
 
     def _get_cfg_kili(

@@ -14,7 +14,7 @@ import pickle
 
 GENERATE_MOCK = os.getenv("KILI_AUTOML_MOCK", False)
 
-# Exemple : "cl56hzgbp0ix60lst97r56err_segmentation"
+# Example : "cl56hzgbp0ix60lst97r56err_segmentation"
 MOCK_DIR = os.getenv("KILI_AUTOML_MOCK_OUTPUT_DIR", None)
 
 if GENERATE_MOCK:

@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Optional
 
-from traitlets import Bool
 from typing_extensions import Literal, TypedDict
 
 from kiliautoml.utils.constants import MLTaskT
@@ -59,13 +58,13 @@ OntologyCategories = Dict[CategoryIdT, OntologyCategory]
 class JobT(TypedDict):
     content: Dict[Literal["categories"], OntologyCategories]
     instruction: str
-    isChild: Bool
+    isChild: bool
     tools: Any  # example: ["semantic"],
     mlTask: MLTaskT
     models: Any  # example: {"interactive-segmentation": {"job": "SEMANTIC_JOB_MARKER"}},
-    isVisible: Bool
+    isVisible: bool
     required: int
-    isNew: Bool
+    isNew: bool
 
 
 JobsT = Dict[str, JobT]
