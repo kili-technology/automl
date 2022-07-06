@@ -3,9 +3,17 @@
 This file enables to use the the debugger as follows:
 python -m pdb utils/debug.py
 """
-from main import kiliautoml
+from click.testing import CliRunner
+
+import main
 
 if __name__ == "__main__":
     # The command you want to debug
-    cmd = "predict --project-id XXX --max-assets 40"
-    kiliautoml(cmd.split(" "))
+    cmd = "train --project-id XXX"
+    cmd = cmd.replace("  ", " ")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main.kiliautoml,
+        cmd.split(" "),
+    )

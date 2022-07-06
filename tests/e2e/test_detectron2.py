@@ -7,7 +7,7 @@ from tests.e2e.utils_test_e2e import (
     mock__projects,
 )
 
-MOCK_DIR = "cl4cisaq36awx0lpb8ql57mxk_segmentation"
+MOCK_DIR = "cl56hzgbp0ix60lst97r56err_segmentation"
 
 
 def mocked__throttled_request(api_key, asset_content):

@@ -4,7 +4,7 @@ import random
 import warnings
 from datetime import datetime
 from glob import glob
-from typing import Any, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from warnings import warn
 
 import numpy as np
@@ -14,12 +14,14 @@ from termcolor import colored
 from tqdm import tqdm
 from typing_extensions import get_args
 
-from kiliautoml.utils.constants import HOME, InputTypeT
+from kiliautoml.utils.constants import AUTOML_CACHE, InputTypeT, MLTaskT
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.type import (
     AssetStatusT,
     AssetT,
+    CategoryIdT,
+    CategoryNameT,
     DictTrainingInfosT,
     JobsT,
     JobT,
@@ -57,7 +59,17 @@ def first_order(json_response):
 
 
 def categories_from_job(job: JobT):
-    return list(job["content"]["categories"].keys())
+    """Returns the category id.
+
+    Example:
+        - categoryId = "LIGHT_OF_THE_CAR"
+        - category name = "light of the car"
+    """
+    return [cat for cat in job["content"]["categories"].keys()]
+
+
+def get_content_input_from_job(job: JobT):
+    return job.get("content", {}).get("input")  # type:ignore
 
 
 def ensure_dir(file_path: str):
@@ -252,7 +264,9 @@ def get_last_trained_model_path(
     model_path: Optional[str],
 ) -> str:
     if model_path is None:
-        path_project_models = os.path.join(HOME, project_id, job_name, *project_path_wildcard)
+        path_project_models = os.path.join(
+            AUTOML_CACHE, project_id, job_name, *project_path_wildcard
+        )
         kili_print("Searching models in folder:", path_project_models)
         paths_project_sorted = sorted(glob(path_project_models), reverse=True)
         model_path = None
@@ -297,14 +311,23 @@ def upload_errors_to_kili(found_errors, kili):
         kili.update_properties_in_assets(asset_ids=asset_ids, json_metadatas=new_metadatas)
 
 
-def not_implemented_job(job_name, ml_task):
-    kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
-    kili_print(
-        "You can use the repeatable flag --target-job "
-        "(for example: --target-job job_name1 --target-job job_name2) "
-        "to select one or multiple jobs."
-    )
-    raise NotImplementedError
+def not_implemented_job(job_name: str, ml_task: MLTaskT):
+    if "_MARKER" not in job_name:
+        kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
+        kili_print(
+            "You can use the repeatable flag --target-job "
+            "(for example: --target-job job_name1 --target-job job_name2) "
+            "to select one or multiple jobs."
+        )
+        raise NotImplementedError
+
+
+def get_mapping_category_name_cat_kili_id(job: JobT):
+    cats = job["content"]["categories"]
+    mapping_category_name_category_ids: Dict[CategoryNameT, CategoryIdT] = {
+        cat["name"]: catId for catId, cat in cats.items()
+    }
+    return mapping_category_name_category_ids
 
 
 def print_evaluation(job_name: str, evaluation: DictTrainingInfosT):

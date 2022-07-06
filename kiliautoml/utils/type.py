@@ -2,6 +2,8 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Literal, TypedDict
 
+from kiliautoml.utils.constants import MLTaskT
+
 AssetStatusT = Literal["TODO", "ONGOING", "LABELED", "TO_REVIEW", "REVIEWED"]
 LabelTypeT = Literal["PREDICTION", "DEFAULT", "AUTOSAVE", "REVIEW", "INFERENCE"]
 CommandT = Literal["train", "predict", "label_errors", "prioritize"]
@@ -11,8 +13,12 @@ LabelMergeStrategyT = Literal["last", "first"]
 AnnotationsT = Any
 
 
+CategoryNameT = str
+CategoryIdT = str  # camelCase with first letter in minuscule
+
+
 class CategoryT(TypedDict):
-    name: str
+    name: CategoryIdT
     confidence: int  # between 0 and 100
 
 
@@ -38,7 +44,29 @@ class AssetT(TypedDict):
     status: AssetStatusT
 
 
-JobT = Dict[str, Any]
+class OntologyCategory(TypedDict):
+    children: Any
+    name: CategoryNameT
+    person: str
+    color: str
+    id: int
+
+
+OntologyCategories = Dict[CategoryIdT, OntologyCategory]
+
+
+class JobT(TypedDict):
+    content: Dict[Literal["categories"], OntologyCategories]
+    instruction: str
+    isChild: bool
+    tools: Any  # example: ["semantic"],
+    mlTask: MLTaskT
+    models: Any  # example: {"interactive-segmentation": {"job": "SEMANTIC_JOB_MARKER"}},
+    isVisible: bool
+    required: int
+    isNew: bool
+
+
 JobsT = Dict[str, JobT]
 AdditionalTrainingArgsT = Dict[str, Any]
 DictTrainingInfosT = Dict[str, Any]

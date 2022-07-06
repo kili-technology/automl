@@ -20,6 +20,7 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.helpers import (
     get_assets,
+    get_content_input_from_job,
     get_project,
     kili_print,
     not_implemented_job,
@@ -83,6 +84,7 @@ def main(
     model_evaluations = []
 
     for job_name, job in jobs.items():
+
         if target_job and job_name not in target_job:
             continue
 
@@ -108,7 +110,7 @@ def main(
                 model_framework=model_framework,
                 model_repository=model_repository,
             )
-        content_input = job.get("content", {}).get("input")
+        content_input = get_content_input_from_job(job)
         tools: List[ToolT] = job.get("tools")  # type: ignore
         model_evaluation = {}
 
@@ -225,6 +227,7 @@ def main(
                 disable_wandb=disable_wandb,
                 api_key=api_key,
                 verbose=verbose,
+                job=job,
             )
 
         else:

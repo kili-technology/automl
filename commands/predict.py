@@ -15,6 +15,7 @@ from kiliautoml.utils.constants import ModelFrameworkT
 from kiliautoml.utils.helpers import (
     JobPredictions,
     get_assets,
+    get_content_input_from_job,
     get_project,
     kili_print,
     not_implemented_job,
@@ -42,7 +43,8 @@ def predict_one_job(
     tools,
     job,
     clear_dataset_cache,
-) -> JobPredictions:
+) -> Optional[JobPredictions]:
+    job_predictions = None
     if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
         model = HuggingFaceTextClassificationModel(
             project_id,
@@ -147,6 +149,7 @@ def predict_one_job(
             clear_dataset_cache=clear_dataset_cache,
             api_key=api_key,
             verbose=verbose,
+            job=job,
         )
 
     else:
@@ -200,7 +203,7 @@ def main(
         if target_job and job_name not in target_job:
             continue
         kili_print(f"Predicting annotations for job: {job_name}")
-        content_input = job.get("content", {}).get("input")
+        content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")
         tools = job.get("tools")
 
@@ -225,7 +228,7 @@ def main(
             clear_dataset_cache=clear_dataset_cache,
         )
 
-        if not dry_run and job_predictions.external_id_array:
+        if not dry_run and job_predictions and job_predictions.external_id_array:
             kili.create_predictions(
                 project_id,
                 external_id_array=job_predictions.external_id_array,

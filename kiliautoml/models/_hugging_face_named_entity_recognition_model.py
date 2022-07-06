@@ -15,7 +15,7 @@ from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
-    HOME,
+    AUTOML_CACHE,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
@@ -86,10 +86,10 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(
-            HOME, self.project_id, self.job_name, self.model_repository
+            AUTOML_CACHE, self.project_id, self.job_name, self.model_repository
         )
         model_name: ModelNameT = self.model_name  # type: ignore
-        kili_print(f"Job Name: {self.job_name}")
+        kili_print(f"JobT Name: {self.job_name}")
         kili_print(f"Base model: {model_name}")
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
 
@@ -274,7 +274,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             kili_print("Dataset cache for this project is being cleared.")
             os.remove(path_dataset)
 
-        job_categories = list(job["content"]["categories"].keys())
+        job_categories = categories_from_job(job=job)
         label_list = (
             ["O"] + ["B-" + jc for jc in job_categories] + ["I-" + jc for jc in job_categories]
         )

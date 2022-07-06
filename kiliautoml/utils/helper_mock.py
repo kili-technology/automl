@@ -1,7 +1,12 @@
 """To generate new mocked data, just launch kiliautoml like this:
 
-KILI_AUTOML_MOCK=True KILI_AUTOML_MOCK_OUTPUT_DIR=cl4cisaq36awx0lpb8ql57mxk_segmentation \
-    kiliautoml train --clear-dataset-cache
+1. USE THIS COMMAND:
+KILI_AUTOML_MOCK=True KILI_AUTOML_MOCK_OUTPUT_DIR=cl56hzgbp0ix60lst97r56err_segmentation \
+    kiliautoml train \
+        --clear-dataset-cache --epochs 1 \
+        --project-id cl56hzgbp0ix60lst97r56err
+
+2. ADAPT THE TEST FILE
 """
 import json
 import os
@@ -9,7 +14,7 @@ import pickle
 
 GENERATE_MOCK = os.getenv("KILI_AUTOML_MOCK", False)
 
-# Exemple : "cl4cisaq36awx0lpb8ql57mxk_segmentation"
+# Example : "cl56hzgbp0ix60lst97r56err_segmentation"
 MOCK_DIR = os.getenv("KILI_AUTOML_MOCK_OUTPUT_DIR", None)
 
 if GENERATE_MOCK:

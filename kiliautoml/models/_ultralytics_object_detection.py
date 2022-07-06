@@ -18,7 +18,7 @@ from typing_extensions import TypedDict
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.constants import (
-    HOME,
+    AUTOML_CACHE,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
@@ -32,7 +32,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
-from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT
+from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, CategoryT, JobT
 
 env = Environment(
     loader=FileSystemLoader(os.path.abspath(PathUltralytics.ULTRALYTICS_REL_PATH)),
@@ -51,15 +51,9 @@ def get_id_from_path(path_yolov5_inference: str) -> str:
     return os.path.split(path_yolov5_inference)[-1].split(".")[0]
 
 
-class CategoryNameConfidence(TypedDict):
-    name: str
-    # confidence is a probability between 0 and 100.
-    confidence: int
-
-
 class BBoxAnnotation(TypedDict):
     boundingPoly: Any
-    categories: List[CategoryNameConfidence]
+    categories: List[CategoryT]
     type: str
 
 
@@ -112,7 +106,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         _ = verbose
 
         model_repository_dir = Path.model_repository_dir(
-            HOME, self.project_id, self.job_name, self.model_repository
+            AUTOML_CACHE, self.project_id, self.job_name, self.model_repository
         )
 
         yolov5_path = os.path.join(os.getcwd(), PathUltralytics.YOLOV5_REL_PATH)
@@ -339,7 +333,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
         with open(os.path.join(model_path, "..", "..", "kili.yaml")) as f:
             kili_data_dict = yaml.load(f, Loader=yaml.FullLoader)
 
-        inference_path = PathUltralytics.inference_dir(HOME, project_id, job_name, "ultralytics")
+        inference_path = PathUltralytics.inference_dir(
+            AUTOML_CACHE, project_id, job_name, "ultralytics"
+        )
         model_weights = os.path.join(model_path, filename_weights)
 
         # path needs to be cleaned-up to avoid inferring unnecessary items.
@@ -380,7 +376,10 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 if verbose >= 1:
                     kili_print(f"Asset {image.externalId}: {kili_predictions}")
                 id_json_list.append(
-                    (image.externalId, {job_name: {"annotations": kili_predictions}})
+                    (
+                        image.externalId,
+                        {job_name: {"annotations": kili_predictions}},
+                    )
                 )
 
         # TODO: move this check in the prioritizer
@@ -452,7 +451,8 @@ def save_annotations_to_yolo_format(names, handler, job):
         try:
             category = names.index(name)
         except ValueError:
-            pass
+            print("Warning: No annotation in image", name)
+            continue
         bounding_poly = annotation.get("boundingPoly", [])
         if len(bounding_poly) < 1:
             continue
@@ -465,7 +465,7 @@ def save_annotations_to_yolo_format(names, handler, job):
         x_max, y_max = max(x_s), max(y_s)
         _x_, _y_ = (x_max + x_min) / 2, (y_max + y_min) / 2
         _w_, _h_ = x_max - x_min, y_max - y_min
-        handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")  # type: ignore
+        handler.write(f"{category} {_x_} {_y_} {_w_} {_h_}\n")
 
 
 def yolov5_to_kili_json(
@@ -481,7 +481,7 @@ def yolov5_to_kili_json(
             c = int(c_)
             p = int(100.0 * float(p_))
 
-            category: CategoryNameConfidence = {
+            category: CategoryT = {
                 "name": ind_to_categories[c],
                 "confidence": p,
             }

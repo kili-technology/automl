@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 
 from kiliautoml.utils.constants import (
-    HOME,
+    AUTOML_CACHE,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
@@ -49,7 +49,7 @@ class Path:
     @staticmethod
     @makedirs_exist_ok
     def cache_memoization_dir(project_id, sub_dir):
-        cache_path = os.path.join(HOME, project_id, sub_dir)
+        cache_path = os.path.join(AUTOML_CACHE, project_id, sub_dir)
         return cache_path
 
     @staticmethod

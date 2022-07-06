@@ -15,6 +15,7 @@ from kiliautoml.utils.constants import (
 )
 from kiliautoml.utils.helpers import (
     get_assets,
+    get_content_input_from_job,
     get_project,
     kili_print,
     upload_errors_to_kili,
@@ -75,7 +76,7 @@ def main(
         if target_job and job_name not in target_job:
             continue
         kili_print(f"Detecting errors for job: {job_name}")
-        content_input = job.get("content", {}).get("input")
+        content_input = get_content_input_from_job(job)
         ml_task: MLTaskT = job.get("mlTask")  # type: ignore
         if clear_dataset_cache:
             clear_automl_cache(
