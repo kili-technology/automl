@@ -5,8 +5,7 @@ from typing import List
 import click
 from typing_extensions import get_args
 
-from kiliautoml.utils.constants import ModelFrameworkT, ModelNameT
-from kiliautoml.utils.type import AssetStatusT
+from kiliautoml.utils.type import AssetStatusT, ModelFrameworkT, ModelNameT
 
 
 class Options:

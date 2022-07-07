@@ -2,12 +2,33 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Literal, TypedDict
 
-from kiliautoml.utils.constants import MLTaskT
 
 AssetStatusT = Literal["TODO", "ONGOING", "LABELED", "TO_REVIEW", "REVIEWED"]
 LabelTypeT = Literal["PREDICTION", "DEFAULT", "AUTOSAVE", "REVIEW", "INFERENCE"]
 CommandT = Literal["train", "predict", "label_errors", "prioritize"]
 LabelMergeStrategyT = Literal["last", "first"]
+ContentInputT = Literal["checkbox", "radio"]
+InputTypeT = Literal["IMAGE", "TEXT"]
+ModelFrameworkT = Literal["pytorch", "tensorflow"]
+ModelRepositoryT = Literal["huggingface", "ultralytics", "torchvision", "detectron2"]
+MLTaskT = Literal["CLASSIFICATION", "NAMED_ENTITIES_RECOGNITION", "OBJECT_DETECTION"]
+ToolT = Literal["rectangle", "semantic"]
+
+ModelNameT = Literal[
+    "bert-base-multilingual-cased",
+    "distilbert-base-uncased",
+    "distilbert-base-cased",
+    "efficientnet_b0",
+    "resnet50",
+    "ultralytics/yolov5",
+    "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml",
+]
+
+
+class Job(TypedDict):
+    content: Dict  # type: ignore
+    ml_task: MLTaskT
+    tools: List[ToolT]
 
 
 AnnotationsT = Any

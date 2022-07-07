@@ -17,13 +17,6 @@ from detectron2.utils.visualizer import ColorMode, Visualizer
 from PIL import Image
 
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.constants import (
-    AUTOML_CACHE,
-    MLTaskT,
-    ModelFrameworkT,
-    ModelNameT,
-    ModelRepositoryT,
-)
 from kiliautoml.utils.detectron2.utils_detectron import (
     CocoFormat,
     NormalizedVertice,
@@ -34,7 +27,16 @@ from kiliautoml.utils.detectron2.utils_detectron import (
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import JobPredictions, categories_from_job, kili_print
 from kiliautoml.utils.path import ModelDirT, Path, PathDetectron2
-from kiliautoml.utils.type import AssetT, CategoryT, JobT, LabelMergeStrategyT
+from kiliautoml.utils.type import (
+    AssetT,
+    CategoryT,
+    JobT,
+    LabelMergeStrategyT,
+    MLTaskT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+)
 
 setup_logger()
 
@@ -128,7 +130,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         _ = label_merge_strategy
 
         model_path_repository_dir = Path.model_repository_dir(
-            AUTOML_CACHE, self.project_id, self.job_name, self.model_repository
+            self.project_id, self.job_name, self.model_repository
         )
         if clear_dataset_cache:
             shutil.rmtree(model_path_repository_dir, ignore_errors=True)
@@ -245,7 +247,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         else:
             project_id = self.project_id
         model_path_repository_dir = Path.model_repository_dir(
-            AUTOML_CACHE, project_id, self.job_name, self.model_repository
+            project_id, self.job_name, self.model_repository
         )
         if clear_dataset_cache:
             shutil.rmtree(model_path_repository_dir, ignore_errors=True)

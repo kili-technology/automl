@@ -7,12 +7,6 @@ from commands.common_args import LabelErrorOptions, Options, TrainOptions
 from kiliautoml.models._pytorchvision_image_classification import (
     PyTorchVisionImageClassificationModel,
 )
-from kiliautoml.utils.constants import (
-    MLTaskT,
-    ModelFrameworkT,
-    ModelNameT,
-    ModelRepositoryT,
-)
 from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
@@ -21,7 +15,14 @@ from kiliautoml.utils.helpers import (
     upload_errors_to_kili,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
-from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
+from kiliautoml.utils.type import (
+    AssetStatusT,
+    LabelMergeStrategyT,
+    MLTaskT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+)
 
 
 @click.command()

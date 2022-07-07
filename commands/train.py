@@ -12,12 +12,6 @@ from kiliautoml.models import (
     PyTorchVisionImageClassificationModel,
     UltralyticsObjectDetectionModel,
 )
-from kiliautoml.utils.constants import (
-    ModelFrameworkT,
-    ModelNameT,
-    ModelRepositoryT,
-    ToolT,
-)
 from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
@@ -31,6 +25,10 @@ from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetStatusT,
     LabelMergeStrategyT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+    ToolT,
 )
 
 
