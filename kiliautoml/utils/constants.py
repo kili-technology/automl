@@ -1,10 +1,4 @@
-import os
-
 from typing_extensions import Literal
-
-AUTOML_CACHE = os.getenv(
-    "KILIAUTOML_CACHE", os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type:ignore
-)
 
 ContentInputT = Literal["checkbox", "radio"]
 
