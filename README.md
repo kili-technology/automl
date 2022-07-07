@@ -16,6 +16,8 @@ Iterate.
 
 Once you are satisfied with the performance, in one line of code, **serve** the model and monitor the performance keeping a human in the loop with [Kili](https://www.kili-technology.com).
 
+Only works on Linux and Mac OS X
+
 ## Quickstart
 
 You can try automl on a simple image classification project with this notebook.
