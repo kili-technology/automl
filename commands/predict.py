@@ -11,7 +11,6 @@ from kiliautoml.models import (
     PyTorchVisionImageClassificationModel,
     UltralyticsObjectDetectionModel,
 )
-from kiliautoml.utils.constants import ModelFrameworkT
 from kiliautoml.utils.helpers import (
     JobPredictions,
     get_assets,
@@ -20,7 +19,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
     not_implemented_job,
 )
-from kiliautoml.utils.type import AssetStatusT
+from kiliautoml.utils.type import AssetStatusT, ModelFrameworkT
 
 
 def predict_one_job(

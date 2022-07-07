@@ -17,12 +17,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from typing_extensions import TypedDict
 
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.constants import (
-    MLTaskT,
-    ModelFrameworkT,
-    ModelNameT,
-    ModelRepositoryT,
-)
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
     JobPredictions,
@@ -31,7 +25,16 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
-from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, CategoryT, JobT
+from kiliautoml.utils.type import (
+    AdditionalTrainingArgsT,
+    AssetT,
+    CategoryT,
+    JobT,
+    MLTaskT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+)
 
 env = Environment(
     loader=FileSystemLoader(os.path.abspath(PathUltralytics.ULTRALYTICS_REL_PATH)),

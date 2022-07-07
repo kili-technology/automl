@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from kiliautoml.utils.constants import ModelFrameworkT, ModelNameT, ModelRepositoryT
+from kiliautoml.utils.type import ModelFrameworkT, ModelNameT, ModelRepositoryT
 
 AUTOML_CACHE = os.getenv(
     "KILIAUTOML_CACHE", os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type:ignore

@@ -5,9 +5,8 @@ from typing import List, Optional
 from joblib import Memory
 from typing_extensions import get_args
 
-from kiliautoml.utils.constants import ModelFrameworkT, ModelRepositoryT
 from kiliautoml.utils.path import AUTOML_CACHE, ModelRepositoryDirT, Path, PathHF
-from kiliautoml.utils.type import CommandT
+from kiliautoml.utils.type import CommandT, ModelFrameworkT, ModelRepositoryT
 
 
 def kili_project_memoizer(

@@ -15,7 +15,6 @@ from tqdm import tqdm
 
 from commands.common_args import Options, PredictOptions, PrioritizeOptions
 from commands.predict import predict_one_job
-from kiliautoml.utils.constants import MLTaskT, ModelFrameworkT, ToolT
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
     get_assets,
@@ -24,7 +23,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
-from kiliautoml.utils.type import AssetStatusT
+from kiliautoml.utils.type import AssetStatusT, MLTaskT, ModelFrameworkT, ToolT
 
 # Priorities
 Priorities = List[float]

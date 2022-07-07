@@ -14,12 +14,6 @@ from typing_extensions import Literal
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.constants import (
-    MLTaskT,
-    ModelFrameworkT,
-    ModelNameT,
-    ModelRepositoryT,
-)
 from kiliautoml.utils.helpers import (
     JobPredictions,
     categories_from_job,
@@ -27,7 +21,16 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.path import Path, PathHF
-from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT, Model_Metric
+from kiliautoml.utils.type import (
+    AdditionalTrainingArgsT,
+    AssetT,
+    JobT,
+    MLTaskT,
+    Model_Metric,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+)
 
 
 class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):

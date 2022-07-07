@@ -11,7 +11,6 @@ from sklearn.model_selection import StratifiedKFold, train_test_split
 from tqdm import tqdm
 
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.constants import ModelFrameworkT, ModelNameT, ModelRepositoryT
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import JobPredictions, kili_print
 from kiliautoml.utils.path import Path, PathPytorchVision
@@ -25,7 +24,13 @@ from kiliautoml.utils.pytorchvision.image_classification import (
     set_model_name_image_classification,
     set_model_repository_image_classification,
 )
-from kiliautoml.utils.type import AssetT, JobT
+from kiliautoml.utils.type import (
+    AssetT,
+    JobT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+)
 
 
 class PyTorchVisionImageClassificationModel(BaseModel):

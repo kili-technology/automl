@@ -17,12 +17,6 @@ from detectron2.utils.visualizer import ColorMode, Visualizer
 from PIL import Image
 
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.constants import (
-    MLTaskT,
-    ModelFrameworkT,
-    ModelNameT,
-    ModelRepositoryT,
-)
 from kiliautoml.utils.detectron2.utils_detectron import (
     CocoFormat,
     NormalizedVertice,
@@ -33,7 +27,16 @@ from kiliautoml.utils.detectron2.utils_detectron import (
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import JobPredictions, categories_from_job, kili_print
 from kiliautoml.utils.path import ModelDirT, Path, PathDetectron2
-from kiliautoml.utils.type import AssetT, CategoryT, JobT, LabelMergeStrategyT
+from kiliautoml.utils.type import (
+    AssetT,
+    CategoryT,
+    JobT,
+    LabelMergeStrategyT,
+    MLTaskT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+)
 
 setup_logger()
 
