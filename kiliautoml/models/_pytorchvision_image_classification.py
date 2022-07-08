@@ -8,7 +8,7 @@ import torch.backends.cudnn as cudnn
 import torch.utils.data as torch_Data
 from cleanlab.filter import find_label_issues
 from sklearn.model_selection import StratifiedKFold, train_test_split
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.download_assets import download_project_images

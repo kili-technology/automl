@@ -9,7 +9,7 @@ from PIL import Image
 from PIL.Image import Image as PILImage
 from ratelimit import limits, sleep_and_retry
 from requests import Response
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, save_mock_data
 from kiliautoml.utils.helpers import kili_print
