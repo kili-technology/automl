@@ -233,10 +233,11 @@ class UltralyticsObjectDetectionModel(BaseModel):
             raise ValueError("'path' field in config must contain '/kili/'")
 
         n_train_assets = math.floor(len(assets) * train_val_proportions[0])
-        assert (
-            n_train_assets > 8
-        ), "Validation set must contain at least 2 assets. max_asset should be > 9"
         assets_splits = {"train": assets[:n_train_assets], "val": assets[n_train_assets:]}
+        assert len(assets_splits["val"]) > 1, (
+            "Validation set must contain at least 2 assets. max_asset should be > 9. There are"
+            f" only {len(assets)} assets"
+        )
 
         for name_split, assets_split in assets_splits.items():
             if len(assets_split) == 0:
