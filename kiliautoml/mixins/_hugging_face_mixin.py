@@ -13,14 +13,9 @@ from transformers import (
     TrainingArguments,
 )
 
-from kiliautoml.utils.constants import (
-    MLTaskT,
-    ModelFrameworkT,
-    ModelNameT,
-    ModelRepositoryT,
-)
 from kiliautoml.utils.helpers import get_last_trained_model_path, kili_print
 from kiliautoml.utils.path import PathHF
+from kiliautoml.utils.type import MLTaskT, ModelFrameworkT, ModelNameT, ModelRepositoryT
 
 
 class HuggingFaceMixin(metaclass=ABCMeta):

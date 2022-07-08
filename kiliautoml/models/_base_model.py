@@ -1,14 +1,16 @@
 from abc import ABCMeta, abstractmethod
 from typing import List, Optional
 
-from kiliautoml.utils.constants import (
+from kiliautoml.utils.helpers import JobPredictions
+from kiliautoml.utils.type import (
+    AssetT,
+    DictTrainingInfosT,
+    JobT,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
 )
-from kiliautoml.utils.helpers import JobPredictions
-from kiliautoml.utils.type import AssetT, DictTrainingInfosT, JobT
 
 
 class BaseModel(metaclass=ABCMeta):

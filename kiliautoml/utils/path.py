@@ -1,11 +1,10 @@
 import os
 from datetime import datetime
 
-from kiliautoml.utils.constants import (
-    AUTOML_CACHE,
-    ModelFrameworkT,
-    ModelNameT,
-    ModelRepositoryT,
+from kiliautoml.utils.type import ModelFrameworkT, ModelNameT, ModelRepositoryT
+
+AUTOML_CACHE = os.getenv(
+    "KILIAUTOML_CACHE", os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type:ignore
 )
 
 
@@ -54,15 +53,15 @@ class Path:
 
     @staticmethod
     @makedirs_exist_ok
-    def job_dir(root_dir, project_id, job_name) -> JobDirT:
-        return os.path.join(root_dir, project_id, job_name)
+    def job_dir(project_id, job_name) -> JobDirT:
+        return os.path.join(AUTOML_CACHE, project_id, job_name)
 
     @staticmethod
     @makedirs_exist_ok
     def model_repository_dir(
-        root_dir, project_id: str, job_name, model_repository: ModelRepositoryT
+        project_id: str, job_name, model_repository: ModelRepositoryT
     ) -> ModelRepositoryDirT:
-        return os.path.join(Path.job_dir(root_dir, project_id, job_name), model_repository)
+        return os.path.join(Path.job_dir(project_id, job_name), model_repository)
 
 
 """
@@ -73,9 +72,10 @@ Once we have the model repository dir, we can create the following nested direct
 class PathUltralytics:
     @staticmethod
     @makedirs_exist_ok
-    def inference_dir(root_dir, project_id, job_name, model_repository: ModelRepositoryT):
+    def inference_dir(project_id, job_name, model_repository: ModelRepositoryT):
         return os.path.join(
-            Path.model_repository_dir(root_dir, project_id, job_name, model_repository), "inference"
+            Path.model_repository_dir(project_id, job_name, model_repository),
+            "inference",
         )
 
     ULTRALYTICS_REL_PATH = os.path.join("kiliautoml", "utils", "ultralytics")

@@ -14,13 +14,6 @@ from typing_extensions import Literal, TypedDict
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.constants import (
-    AUTOML_CACHE,
-    MLTaskT,
-    ModelFrameworkT,
-    ModelNameT,
-    ModelRepositoryT,
-)
 from kiliautoml.utils.helpers import (
     JobPredictions,
     categories_from_job,
@@ -28,7 +21,15 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.path import Path, PathHF
-from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, JobT
+from kiliautoml.utils.type import (
+    AdditionalTrainingArgsT,
+    AssetT,
+    JobT,
+    MLTaskT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+)
 
 
 class KiliNerAnnotations(TypedDict):
@@ -86,7 +87,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(
-            AUTOML_CACHE, self.project_id, self.job_name, self.model_repository
+            self.project_id, self.job_name, self.model_repository
         )
         model_name: ModelNameT = self.model_name  # type: ignore
         kili_print(f"JobT Name: {self.job_name}")

@@ -7,11 +7,11 @@ import torch.utils.data as torch_Data
 from torch.utils.data import Dataset
 from torchvision import models, transforms
 
-from kiliautoml.utils.constants import ModelNameT, ModelRepositoryT
 from kiliautoml.utils.download_assets import DownloadedImage
 from kiliautoml.utils.helpers import kili_print, set_default
 from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
+from kiliautoml.utils.type import ModelNameT, ModelRepositoryT
 
 data_transforms = {
     "train": transforms.Compose(

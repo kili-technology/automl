@@ -17,13 +17,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from typing_extensions import TypedDict
 
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.constants import (
-    AUTOML_CACHE,
-    MLTaskT,
-    ModelFrameworkT,
-    ModelNameT,
-    ModelRepositoryT,
-)
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
     JobPredictions,
@@ -32,7 +25,16 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
-from kiliautoml.utils.type import AdditionalTrainingArgsT, AssetT, CategoryT, JobT
+from kiliautoml.utils.type import (
+    AdditionalTrainingArgsT,
+    AssetT,
+    CategoryT,
+    JobT,
+    MLTaskT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+)
 
 env = Environment(
     loader=FileSystemLoader(os.path.abspath(PathUltralytics.ULTRALYTICS_REL_PATH)),
@@ -106,7 +108,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         _ = verbose
 
         model_repository_dir = Path.model_repository_dir(
-            AUTOML_CACHE, self.project_id, self.job_name, self.model_repository
+            self.project_id, self.job_name, self.model_repository
         )
 
         yolov5_path = os.path.join(os.getcwd(), PathUltralytics.YOLOV5_REL_PATH)
@@ -333,9 +335,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         with open(os.path.join(model_path, "..", "..", "kili.yaml")) as f:
             kili_data_dict = yaml.load(f, Loader=yaml.FullLoader)
 
-        inference_path = PathUltralytics.inference_dir(
-            AUTOML_CACHE, project_id, job_name, "ultralytics"
-        )
+        inference_path = PathUltralytics.inference_dir(project_id, job_name, "ultralytics")
         model_weights = os.path.join(model_path, filename_weights)
 
         # path needs to be cleaned-up to avoid inferring unnecessary items.

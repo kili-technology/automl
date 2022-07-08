@@ -14,18 +14,20 @@ from termcolor import colored
 from tqdm import tqdm
 from typing_extensions import get_args
 
-from kiliautoml.utils.constants import AUTOML_CACHE, InputTypeT, MLTaskT
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
+from kiliautoml.utils.path import AUTOML_CACHE
 from kiliautoml.utils.type import (
     AssetStatusT,
     AssetT,
     CategoryIdT,
     CategoryNameT,
     DictTrainingInfosT,
+    InputTypeT,
     JobsT,
     JobT,
     LabelMergeStrategyT,
+    MLTaskT,
 )
 
 
