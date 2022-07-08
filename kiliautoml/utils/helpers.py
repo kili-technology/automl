@@ -1,3 +1,4 @@
+from copy import deepcopy
 import json
 import os
 import random
@@ -230,7 +231,7 @@ def filter_labeled_assets(job_name: str, strategy: LabelMergeStrategyT, assets: 
         else:
             for label in label_list:
                 asset["labels"] = [label]
-                newAssets.append(asset.copy)
+                newAssets.append(deepcopy(asset))
     return newAssets
 
 
