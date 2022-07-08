@@ -127,20 +127,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
             title, model_repository_dir, self.model_framework
         )
         os.makedirs(model_output_path, exist_ok=True)
-        print(len(assets))
-        newAssets = []
-        for asset in assets:
-            labels = asset["labels"]
-            number_labels = len(labels)
-            # prime_label = random.choice(labels)
-            if number_labels > 1:
-                print(number_labels)
-            for i in range(min(number_labels, 4)):
-                asset["labels"] = [labels[i]]
-                newAssets.append(asset.copy())
-        assets = newAssets
-        print(len(assets), len(newAssets))
-        batch_size = len(assets)
         os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
         self._yaml_preparation(
             data_path=data_path,
