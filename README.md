@@ -72,10 +72,8 @@ Here are the supported ML frameworks and the tasks they are used for.
 
 - Hugging Face (NER, Text Classification)
 - YOLOv5 (Object Detection)
+- Detectron2 (Semantic Segmentation)
 - spaCy (coming soon)
-- Simple Transformers (coming soon)
-- Catalyst (coming soon)
-- XGBoost & LightGBM (coming soon)
 
 Compute model loss to infer when you can stop labeling.
 
