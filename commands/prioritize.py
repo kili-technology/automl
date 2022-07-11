@@ -11,7 +11,7 @@ from PIL.Image import Image as PILImage
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 
 from commands.common_args import Options, PredictOptions, PrioritizeOptions
 from commands.predict import predict_one_job

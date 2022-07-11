@@ -146,7 +146,8 @@ You can test the features of AutoML with these notebooks:
   - [Named Entity Recognition](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/named_entity_recognition.ipynb)
 - Image
   - [Image Classification](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/image_classification.ipynb)
-  - [Object Detection](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/object_detection.ipynb)
+  - [Object Detection - bbox](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/object_detection.ipynb)
+  - [Semantic segmentation](https://colab.research.google.com/github/kili-technology/automl/blob/main/notebooks/semantic_segmentation.ipynb)
 
 ## Disclaimer
 

@@ -7,7 +7,7 @@ import datasets
 import evaluate  # type: ignore
 import nltk
 import numpy as np
-from tqdm import tqdm
+from tqdm.autonotebook import tqdm
 from transformers import Trainer
 from typing_extensions import Literal
 
