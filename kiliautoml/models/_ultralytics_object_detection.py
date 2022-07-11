@@ -390,8 +390,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 f" {len(downloaded_images) - len(id_json_list)} assets."
             )
             if prioritization:
-                # TODO: Automatically tune the threshold
-                # TODO: Do not crash and put 0 probability for missing assets.
                 raise Exception(
                     "Not enough predictions for prioritization. You should either train longer the"
                     " model, or lower the --conf-thres "
@@ -404,7 +402,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=proba_list,
         )
-        kili_print("predictions_probability", job_predictions.predictions_probability)
         return job_predictions
 
     def _get_last_model_param(self, project_id, model_path) -> Tuple[ModelPathT, ModelFrameworkT]:
