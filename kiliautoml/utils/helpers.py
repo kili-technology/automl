@@ -29,6 +29,7 @@ from kiliautoml.utils.type import (
     JobT,
     LabelMergeStrategyT,
     MLTaskT,
+    ToolT,
 )
 
 
@@ -300,7 +301,8 @@ def save_errors(found_errors, job_path: str):
             kili_print("Asset IDs of wrong labels written to: ", json_path)
 
 
-def not_implemented_job(job_name: str, ml_task: MLTaskT):
+def not_implemented_job(job_name: str, ml_task: MLTaskT, tools: List[ToolT]):
+    _ = tools
     if "_MARKER" not in job_name:
         kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
         kili_print(
@@ -343,3 +345,13 @@ def print_evaluation(job_name: str, evaluation: DictTrainingInfosT):
         table.append(table_int)
         table_int = []
     print(tabulate(table, headers=[job_name] + keys))
+
+
+def is_contours_detection(input_type, ml_task, content_input, tools):
+    semantic_or_polygon = (
+        content_input == "radio"
+        and input_type == "IMAGE"
+        and ml_task == "OBJECT_DETECTION"
+        and any(tool in tools for tool in ["semantic", "polygon"])
+    )
+    return semantic_or_polygon

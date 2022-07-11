@@ -16,6 +16,7 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
+    is_contours_detection,
     kili_print,
     not_implemented_job,
     print_evaluation,
@@ -202,12 +203,7 @@ def main(
                 api_key=api_key,
                 verbose=verbose,
             )
-        elif (
-            content_input == "radio"
-            and input_type == "IMAGE"
-            and ml_task == "OBJECT_DETECTION"
-            and "semantic" in tools
-        ):
+        elif is_contours_detection(input_type, ml_task, content_input, tools):
             image_classification_model = Detectron2SemanticSegmentationModel(
                 model_name=model_name,
                 job=job,
@@ -229,7 +225,7 @@ def main(
             )
 
         else:
-            not_implemented_job(job_name, ml_task)
+            not_implemented_job(job_name, ml_task, tools)
 
         model_evaluations.append((job_name, model_evaluation))
 

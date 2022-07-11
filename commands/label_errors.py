@@ -5,14 +5,16 @@ from kili.client import Kili
 from tqdm.autonotebook import tqdm
 
 from commands.common_args import LabelErrorOptions, Options, TrainOptions
-from kiliautoml.models import UltralyticsObjectDetectionModel
-from kiliautoml.models._pytorchvision_image_classification import (
+from kiliautoml.models import (
+    Detectron2SemanticSegmentationModel,
     PyTorchVisionImageClassificationModel,
+    UltralyticsObjectDetectionModel,
 )
 from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
+    is_contours_detection,
     kili_print,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
@@ -150,6 +152,23 @@ def main(
         ):
 
             model = UltralyticsObjectDetectionModel(
+                project_id=project_id,
+                job=job,
+                job_name=job_name,
+                model_framework=model_framework,
+                model_name=model_name,
+            )
+            found_errors = model.find_errors(
+                cv_n_folds=cv_folds,
+                epochs=epochs,
+                batch_size=batch_size,
+                verbose=verbose,
+                api_key=api_key,
+                assets=assets,
+                clear_dataset_cache=clear_dataset_cache,
+            )
+        elif is_contours_detection(input_type, ml_task, content_input, tools):
+            model = Detectron2SemanticSegmentationModel(
                 project_id=project_id,
                 job=job,
                 job_name=job_name,
