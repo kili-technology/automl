@@ -213,6 +213,8 @@ def get_label(asset: AssetT, job_name: str, strategy: LabelMergeStrategyT):
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
     if LabelMergeStrategyT == "duplicate":
         return labels[:4]
+    if LabelMergeStrategyT == "copy":
+        return [labels[0] for _ in range(min(4, len(labels)))]
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
         return [min(labels, key=key)]
