@@ -31,14 +31,14 @@ if __name__ == "__main__":
     api_key = os.environ["KILI_API_KEY"]
     for a in assets:
         response = requests.get(
-            a["content"],
+            a["content"],  # type:ignore
             headers={
                 "Authorization": f"X-API-Key: {api_key}",
                 "PROJECT_ID": project_id,
             },
         )
 
-        id = a["content"].split("label/v2/files?id=")[-1]
+        id = a["content"].split("label/v2/files?id=")[-1]  # type:ignore
         with open(
             "tests/e2e/fixtures/download_asset_binary/image_classification/" + id + ".pkl",
             "wb",

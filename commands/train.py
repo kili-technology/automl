@@ -109,7 +109,7 @@ def main(
                 model_repository=model_repository,
             )
         content_input = get_content_input_from_job(job)
-        tools: List[ToolT] = job.get("tools")  # type: ignore
+        tools: List[ToolT] = job.get("tools")
         model_evaluation = {}
 
         if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
