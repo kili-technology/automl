@@ -29,6 +29,7 @@ setup(
         "ratelimit",
         "opencv-python",
         "detectron2 @ git+https://github.com/facebookresearch/detectron2.git",
+        "shapely",
         # ################################ yolo
         "matplotlib>=3.2.2",
         "numpy>=1.18.5",

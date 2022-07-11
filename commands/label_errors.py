@@ -2,8 +2,10 @@ from typing import List
 
 import click
 from kili.client import Kili
+from tqdm.autonotebook import tqdm
 
 from commands.common_args import LabelErrorOptions, Options, TrainOptions
+from kiliautoml.models import UltralyticsObjectDetectionModel
 from kiliautoml.models._pytorchvision_image_classification import (
     PyTorchVisionImageClassificationModel,
 )
@@ -12,7 +14,6 @@ from kiliautoml.utils.helpers import (
     get_content_input_from_job,
     get_project,
     kili_print,
-    upload_errors_to_kili,
 )
 from kiliautoml.utils.memoization import clear_automl_cache
 from kiliautoml.utils.type import (
@@ -22,7 +23,26 @@ from kiliautoml.utils.type import (
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ToolT,
 )
+
+
+def upload_errors_to_kili(found_errors: List[str], kili):
+    kili_print("Updating metadatas for the concerned assets")
+    first = min(100, len(found_errors))
+    for skip in tqdm(
+        range(0, len(found_errors), first), desc="Updating asset metadata with labeling error flag"
+    ):
+        error_assets = kili.assets(
+            asset_id_in=found_errors[skip : skip + first], fields=["id", "metadata"]
+        )
+        asset_ids = [asset["id"] for asset in error_assets]
+        new_metadatas = [asset["metadata"] for asset in error_assets]
+
+        for meta in new_metadatas:
+            meta["labeling_error"] = True
+
+        kili.update_properties_in_assets(asset_ids=asset_ids, json_metadatas=new_metadatas)
 
 
 @click.command()
@@ -79,6 +99,8 @@ def main(
         kili_print(f"Detecting errors for job: {job_name}")
         content_input = get_content_input_from_job(job)
         ml_task: MLTaskT = job.get("mlTask")  # type: ignore
+        tools: List[ToolT] = job.get("tools")
+
         if clear_dataset_cache:
             clear_automl_cache(
                 command="label_errors",
@@ -120,8 +142,32 @@ def main(
             print()
             kili_print("Number of wrong labels found: ", len(found_errors))
 
-            if found_errors:
-                if not dry_run:
-                    upload_errors_to_kili(found_errors, kili)
+        elif (
+            content_input == "radio"
+            and input_type == "IMAGE"
+            and ml_task == "OBJECT_DETECTION"
+            and "rectangle" in tools
+        ):
+
+            model = UltralyticsObjectDetectionModel(
+                project_id=project_id,
+                job=job,
+                job_name=job_name,
+                model_framework=model_framework,
+                model_name=model_name,
+            )
+            found_errors = model.find_errors(
+                cv_n_folds=cv_folds,
+                epochs=epochs,
+                batch_size=batch_size,
+                verbose=verbose,
+                api_key=api_key,
+                assets=assets,
+                clear_dataset_cache=clear_dataset_cache,
+            )
         else:
             raise NotImplementedError
+
+        if found_errors:
+            if not dry_run:
+                upload_errors_to_kili(found_errors, kili)

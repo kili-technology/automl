@@ -2,7 +2,7 @@
 import json
 import os
 import warnings
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import datasets
 import nltk
@@ -24,6 +24,8 @@ from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetT,
+    CategoriesT,
+    CategoryT,
     JobT,
     MLTaskT,
     ModelFrameworkT,
@@ -33,10 +35,10 @@ from kiliautoml.utils.type import (
 
 
 class KiliNerAnnotations(TypedDict):
-    beginOffset: Any
-    content: Any
-    endOffset: Any
-    categories: Any
+    beginOffset: int
+    content: str
+    endOffset: int
+    categories: CategoriesT
 
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
@@ -448,6 +450,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
             if label != null_category:
 
+                categories: CategoriesT = [CategoryT(name=label[2:], confidence=int(proba * 100))]
                 ann: KiliNerAnnotations = {
                     "beginOffset": offset_in_text + offset_in_sentence + ind_in_remaining_text,
                     "content": content,
@@ -455,7 +458,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                     + offset_in_sentence
                     + ind_in_remaining_text
                     + len(content),
-                    "categories": [{"name": label[2:], "confidence": int(proba * 100)}],
+                    "categories": categories,
                 }
 
                 if label.startswith("I-"):
