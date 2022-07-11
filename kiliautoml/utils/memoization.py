@@ -36,7 +36,7 @@ def kili_memoizer(some_function):
     return wrapper
 
 
-def clear_automl_cache(
+def clear_command_cache(
     command: CommandT,
     project_id: str,
     job_name: str,

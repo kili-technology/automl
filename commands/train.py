@@ -12,7 +12,7 @@ from kiliautoml.models import (
     PyTorchVisionImageClassificationModel,
     UltralyticsObjectDetectionModel,
 )
-from kiliautoml.models._base_model import BaseInitArgs
+from kiliautoml.models._base_model import BaseInitArgs, BaseTrainArgs
 from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
@@ -22,7 +22,7 @@ from kiliautoml.utils.helpers import (
     not_implemented_job,
     print_evaluation,
 )
-from kiliautoml.utils.memoization import clear_automl_cache
+from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetStatusT,
@@ -103,7 +103,7 @@ def main(
         os.environ["WANDB_PROJECT"] = title + "_" + job_name
 
         if clear_dataset_cache:
-            clear_automl_cache(
+            clear_command_cache(
                 command="train",
                 project_id=project_id,
                 job_name=job_name,
@@ -121,42 +121,31 @@ def main(
             "model_name": model_name,
         }
 
+        base_train_args = BaseTrainArgs(
+            assets=assets,
+            epochs=epochs,
+            batch_size=batch_size,
+            clear_dataset_cache=clear_dataset_cache,
+            disable_wandb=disable_wandb,
+            verbose=verbose,
+        )
         if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
             model = HuggingFaceTextClassificationModel(
                 project_id=project_id, api_key=api_key, api_endpoint=api_endpoint, **base_init_args
             )
-
             model_evaluation = model.train(
-                assets=assets,
-                batch_size=batch_size,
-                clear_dataset_cache=clear_dataset_cache,
-                epochs=epochs,
-                disable_wandb=disable_wandb,
-                verbose=verbose,
-                additional_train_args_hg=additional_train_args_hg,
+                **base_train_args, additional_train_args_hg=additional_train_args_hg
             )
-
         elif (
             content_input == "radio"
             and input_type == "TEXT"
             and ml_task == "NAMED_ENTITIES_RECOGNITION"
         ):
-
             model = HuggingFaceNamedEntityRecognitionModel(
-                project_id,
-                api_key,
-                api_endpoint,
-                **base_init_args,
+                project_id, api_key, api_endpoint, **base_init_args
             )
-
             model_evaluation = model.train(
-                assets=assets,
-                batch_size=batch_size,
-                clear_dataset_cache=clear_dataset_cache,
-                epochs=epochs,
-                disable_wandb=disable_wandb,
-                verbose=verbose,
-                additional_train_args_hg=additional_train_args_hg,
+                **base_train_args, additional_train_args_hg=additional_train_args_hg
             )
         elif (
             content_input == "radio"
@@ -164,54 +153,28 @@ def main(
             and ml_task == "OBJECT_DETECTION"
             and "rectangle" in tools
         ):
-
-            model = UltralyticsObjectDetectionModel(
-                project_id=project_id,
-                **base_init_args,
-            )
+            model = UltralyticsObjectDetectionModel(project_id=project_id, **base_init_args)
             model_evaluation = model.train(
-                assets=assets,
-                epochs=epochs,
-                batch_size=batch_size,
-                clear_dataset_cache=clear_dataset_cache,
-                disable_wandb=disable_wandb,
-                title=title,
-                api_key=api_key,
-                verbose=verbose,
+                **base_train_args,
+                title=title,  # TODO: delete
+                api_key=api_key,  # TODO: Moove to initialisation
                 additional_train_args_yolo=additional_train_args_yolo,
             )
         elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
-
             image_classification_model = PyTorchVisionImageClassificationModel(
-                model_repository=model_repository,
+                model_repository=model_repository,  # TODO: delete
                 project_id=project_id,
                 **base_init_args,
             )
-
-            model_evaluation = image_classification_model.train(
-                assets=assets,
-                batch_size=batch_size,
-                epochs=epochs,
-                clear_dataset_cache=clear_dataset_cache,
-                disable_wandb=disable_wandb,
-                api_key=api_key,
-                verbose=verbose,
-            )
+            model_evaluation = image_classification_model.train(**base_train_args, api_key=api_key)
         elif is_contours_detection(input_type, ml_task, content_input, tools):
             image_classification_model = Detectron2SemanticSegmentationModel(
-                project_id=project_id,
-                **base_init_args,
+                project_id=project_id, **base_init_args
             )
-
             model_evaluation = image_classification_model.train(
-                assets=assets,
-                label_merge_strategy=label_merge_strategy,
-                batch_size=batch_size,
-                epochs=epochs,
-                clear_dataset_cache=clear_dataset_cache,
-                disable_wandb=disable_wandb,
+                **base_train_args,
                 api_key=api_key,
-                verbose=verbose,
+                label_merge_strategy=label_merge_strategy,  # TODO: delete
                 job=job,
             )
 

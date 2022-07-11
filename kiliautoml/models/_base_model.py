@@ -23,6 +23,15 @@ class BaseInitArgs(TypedDict):
     # TODO: Add projet_id
 
 
+class BaseTrainArgs(TypedDict):
+    assets: List[AssetT]
+    epochs: int
+    batch_size: int
+    clear_dataset_cache: bool
+    disable_wandb: bool
+    verbose: int
+
+
 class BaseModel(metaclass=ABCMeta):
     ml_task: MLTaskT  # type: ignore
     model_repository: ModelRepositoryT  # type: ignore

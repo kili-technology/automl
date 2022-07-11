@@ -18,7 +18,7 @@ from kiliautoml.utils.helpers import (
     is_contours_detection,
     kili_print,
 )
-from kiliautoml.utils.memoization import clear_automl_cache
+from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AssetStatusT,
     LabelMergeStrategyT,
@@ -105,7 +105,7 @@ def main(
         tools: List[ToolT] = job.get("tools")
 
         if clear_dataset_cache:
-            clear_automl_cache(
+            clear_command_cache(
                 command="label_errors",
                 project_id=project_id,
                 job_name=job_name,
