@@ -10,6 +10,7 @@ from kiliautoml.models import (
     PyTorchVisionImageClassificationModel,
     UltralyticsObjectDetectionModel,
 )
+from kiliautoml.models._base_model import BaseInitArgs
 from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
@@ -122,15 +123,17 @@ def main(
             job_name=job_name,
         )
 
+        base_init_args: BaseInitArgs = {
+            "job": job,
+            "job_name": job_name,
+            "model_framework": model_framework,
+            "model_name": model_name,
+        }
+
         if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 
             image_classification_model = PyTorchVisionImageClassificationModel(
-                model_repository=model_repository,
-                model_name=model_name,
-                job_name=job_name,
-                job=job,
-                model_framework=model_framework,
-                project_id=project_id,
+                model_repository=model_repository, project_id=project_id, **base_init_args
             )
             found_errors = image_classification_model.find_errors(
                 assets=assets,
@@ -151,13 +154,7 @@ def main(
             and "rectangle" in tools
         ):
 
-            model = UltralyticsObjectDetectionModel(
-                project_id=project_id,
-                job=job,
-                job_name=job_name,
-                model_framework=model_framework,
-                model_name=model_name,
-            )
+            model = UltralyticsObjectDetectionModel(project_id=project_id, **base_init_args)
             found_errors = model.find_errors(
                 cv_n_folds=cv_folds,
                 epochs=epochs,
@@ -168,13 +165,7 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
             )
         elif is_contours_detection(input_type, ml_task, content_input, tools):
-            model = Detectron2SemanticSegmentationModel(
-                project_id=project_id,
-                job=job,
-                job_name=job_name,
-                model_framework=model_framework,
-                model_name=model_name,
-            )
+            model = Detectron2SemanticSegmentationModel(project_id=project_id, **base_init_args)
             found_errors = model.find_errors(
                 cv_n_folds=cv_folds,
                 epochs=epochs,

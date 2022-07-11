@@ -9,7 +9,7 @@ import nltk
 import numpy as np
 from tqdm.auto import tqdm
 from transformers import DataCollatorForTokenClassification, Trainer
-from typing_extensions import Literal, TypedDict
+from typing_extensions import TypedDict
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
@@ -46,6 +46,8 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"
     model_repository: ModelRepositoryT = "huggingface"
 
+    advised_model_name = ["bert-base-multilingual-cased", "distilbert-base-cased"]
+
     def __init__(
         self,
         project_id: str,
@@ -53,9 +55,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         api_endpoint: str,
         job: JobT,
         job_name: str,
-        model_name: Literal[
-            "bert-base-multilingual-cased", "distilbert-base-cased"
-        ] = "bert-base-multilingual-cased",
+        model_name: ModelNameT = "bert-base-multilingual-cased",
         model_framework: ModelFrameworkT = "pytorch",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)

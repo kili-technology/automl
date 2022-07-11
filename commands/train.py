@@ -12,6 +12,7 @@ from kiliautoml.models import (
     PyTorchVisionImageClassificationModel,
     UltralyticsObjectDetectionModel,
 )
+from kiliautoml.models._base_model import BaseInitArgs
 from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
@@ -113,15 +114,16 @@ def main(
         tools: List[ToolT] = job.get("tools")
         model_evaluation = {}
 
-        if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
+        base_init_args: BaseInitArgs = {
+            "job": job,
+            "job_name": job_name,
+            "model_framework": model_framework,
+            "model_name": model_name,
+        }
 
+        if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
             model = HuggingFaceTextClassificationModel(
-                project_id,
-                api_key,
-                api_endpoint,
-                job=job,
-                job_name=job_name,
-                model_framework=model_framework,
+                project_id=project_id, api_key=api_key, api_endpoint=api_endpoint, **base_init_args
             )
 
             model_evaluation = model.train(
@@ -144,9 +146,7 @@ def main(
                 project_id,
                 api_key,
                 api_endpoint,
-                job=job,
-                job_name=job_name,
-                model_framework=model_framework,
+                **base_init_args,
             )
 
             model_evaluation = model.train(
@@ -167,10 +167,7 @@ def main(
 
             model = UltralyticsObjectDetectionModel(
                 project_id=project_id,
-                job=job,
-                job_name=job_name,
-                model_framework=model_framework,
-                model_name=model_name,
+                **base_init_args,
             )
             model_evaluation = model.train(
                 assets=assets,
@@ -187,11 +184,8 @@ def main(
 
             image_classification_model = PyTorchVisionImageClassificationModel(
                 model_repository=model_repository,
-                model_name=model_name,
-                job=job,
-                model_framework=model_framework,
-                job_name=job_name,
                 project_id=project_id,
+                **base_init_args,
             )
 
             model_evaluation = image_classification_model.train(
@@ -205,11 +199,8 @@ def main(
             )
         elif is_contours_detection(input_type, ml_task, content_input, tools):
             image_classification_model = Detectron2SemanticSegmentationModel(
-                model_name=model_name,
-                job=job,
-                model_framework=model_framework,
-                job_name=job_name,
                 project_id=project_id,
+                **base_init_args,
             )
 
             model_evaluation = image_classification_model.train(

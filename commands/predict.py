@@ -11,6 +11,7 @@ from kiliautoml.models import (
     PyTorchVisionImageClassificationModel,
     UltralyticsObjectDetectionModel,
 )
+from kiliautoml.models._base_model import BaseInitArgs
 from kiliautoml.utils.helpers import (
     JobPredictions,
     get_assets,
@@ -45,14 +46,15 @@ def predict_one_job(
     clear_dataset_cache,
 ) -> Optional[JobPredictions]:
     job_predictions = None
+    base_init_args: BaseInitArgs = {
+        "job": job,
+        "job_name": job_name,
+        "model_framework": model_framework,
+        "model_name": model_name,
+    }
     if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
         model = HuggingFaceTextClassificationModel(
-            project_id,
-            api_key,
-            api_endpoint,
-            model_name=model_name,
-            job_name=job_name,
-            job=job,
+            project_id, api_key, api_endpoint, **base_init_args
         )
         job_predictions = model.predict(
             assets=assets,
@@ -69,12 +71,7 @@ def predict_one_job(
         and ml_task == "NAMED_ENTITIES_RECOGNITION"
     ):
         model = HuggingFaceNamedEntityRecognitionModel(
-            project_id,
-            api_key,
-            api_endpoint,
-            model_name=model_name,
-            job_name=job_name,
-            job=job,
+            project_id, api_key, api_endpoint, **base_init_args
         )
         job_predictions = model.predict(
             assets=assets,
@@ -92,11 +89,7 @@ def predict_one_job(
         and "rectangle" in tools
     ):
         image_classification_model = UltralyticsObjectDetectionModel(
-            job=job,
-            model_framework=model_framework,
-            model_name=model_name,
-            job_name=job_name,
-            project_id=project_id,
+            project_id=project_id, **base_init_args
         )
 
         job_predictions = image_classification_model.predict(
@@ -110,12 +103,7 @@ def predict_one_job(
         )
     elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
         image_classification_model = PyTorchVisionImageClassificationModel(
-            model_repository=model_repository,
-            job=job,
-            model_framework=model_framework,
-            model_name=model_name,
-            job_name=job_name,
-            project_id=project_id,
+            project_id=project_id, model_repository=model_repository, **base_init_args
         )
 
         job_predictions = image_classification_model.predict(
@@ -129,11 +117,7 @@ def predict_one_job(
         )
     elif is_contours_detection(input_type, ml_task, content_input, tools):
         image_classification_model = Detectron2SemanticSegmentationModel(
-            model_name=model_name,
-            job=job,
-            model_framework=model_framework,
-            job_name=job_name,
-            project_id=project_id,
+            project_id=project_id, **base_init_args
         )
 
         job_predictions = image_classification_model.predict(

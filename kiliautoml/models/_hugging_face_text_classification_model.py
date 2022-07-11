@@ -9,7 +9,6 @@ import nltk
 import numpy as np
 from tqdm.autonotebook import tqdm
 from transformers import Trainer
-from typing_extensions import Literal
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
@@ -38,6 +37,12 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     ml_task: MLTaskT = "CLASSIFICATION"
     model_repository: ModelRepositoryT = "huggingface"
 
+    advised_model_name = [
+        "bert-base-multilingual-cased",
+        "distilbert-base-cased",
+        "distilbert-base-uncased",
+    ]
+
     def __init__(
         self,
         project_id: str,
@@ -45,9 +50,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         api_endpoint: str,
         job_name: str,
         job: JobT,
-        model_name: Literal[
-            "bert-base-multilingual-cased", "distilbert-base-cased"
-        ] = "bert-base-multilingual-cased",
+        model_name: ModelNameT = "bert-base-multilingual-cased",
         model_framework: ModelFrameworkT = "pytorch",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
