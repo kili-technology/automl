@@ -26,8 +26,8 @@ from kiliautoml.utils.type import (
     AssetT,
     JobT,
     MLTaskT,
-    Model_Metric,
     ModelFrameworkT,
+    ModelMetricT,
     ModelNameT,
     ModelRepositoryT,
 )
@@ -243,12 +243,12 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         metric_res = {}
         for met in metrics:
             if met == "accuracy":
-                metric_res[met] = Model_Metric(
+                metric_res[met] = ModelMetricT(
                     by_category=None,
                     overall=metric[met].compute(predictions=predictions, references=labels)[met],
                 )
             elif met == "f1":
-                metric_res[met] = Model_Metric(
+                metric_res[met] = ModelMetricT(
                     by_category=metric[met].compute(
                         predictions=predictions, references=labels, average=None
                     )[met],
@@ -257,7 +257,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                     )[met],
                 )
             else:
-                metric_res[met] = Model_Metric(
+                metric_res[met] = ModelMetricT(
                     by_category=metric[met].compute(
                         predictions=predictions,
                         references=labels,

@@ -55,7 +55,7 @@ class AssetT(TypedDict):
     status: AssetStatusT
 
 
-class OntologyCategory(TypedDict):
+class OntologyCategoryT(TypedDict):
     children: Any
     name: CategoryNameT
     person: str
@@ -63,11 +63,11 @@ class OntologyCategory(TypedDict):
     id: int
 
 
-OntologyCategories = Dict[CategoryIdT, OntologyCategory]
+OntologyCategoriesT = Dict[CategoryIdT, OntologyCategoryT]
 
 
 class JobT(TypedDict):
-    content: Dict[Literal["categories"], OntologyCategories]
+    content: Dict[Literal["categories"], OntologyCategoriesT]
     instruction: str
     isChild: bool
     tools: Any  # example: ["semantic"],
@@ -83,6 +83,6 @@ AdditionalTrainingArgsT = Dict[str, Any]
 DictTrainingInfosT = Dict[str, Any]
 
 
-class Model_Metric(TypedDict):
+class ModelMetricT(TypedDict):
     overall: float
     by_category: Optional[List[float]]

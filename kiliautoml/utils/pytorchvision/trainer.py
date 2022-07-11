@@ -12,7 +12,7 @@ from torch.optim import lr_scheduler
 from tqdm.autonotebook import trange
 
 from kiliautoml.utils.helpers import kili_print
-from kiliautoml.utils.type import Model_Metric
+from kiliautoml.utils.type import ModelMetricT
 
 # Necessary on mac for train and predict.
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -43,7 +43,7 @@ def train_model_pytorch(
 
     best_model_wts = copy.deepcopy(model.state_dict())
     best_val_metrics = {}
-    best_val_metrics["loss"] = Model_Metric(overall=float("inf"), by_category=None)
+    best_val_metrics["loss"] = ModelMetricT(overall=float("inf"), by_category=None)
     epoch_train_evaluation = {}
     corresponding_train_metrics = {}
     for _ in trange(epochs, desc="Training - Epoch"):
@@ -165,11 +165,11 @@ def train_model_pytorch(
 
 def evaluate(running_loss, y_pred, y_true):
     evaluation = {}
-    evaluation["loss"] = Model_Metric(overall=running_loss / len(y_true), by_category=None)
-    evaluation["acc"] = Model_Metric(
+    evaluation["loss"] = ModelMetricT(overall=running_loss / len(y_true), by_category=None)
+    evaluation["acc"] = ModelMetricT(
         overall=np.sum(y_pred == y_true) / len(y_true), by_category=None
     )
-    evaluation["precision"] = Model_Metric(
+    evaluation["precision"] = ModelMetricT(
         by_category=precision_score(
             y_true, y_pred, average=None, zero_division=0  # type:ignore
         ),
@@ -177,13 +177,13 @@ def evaluate(running_loss, y_pred, y_true):
             y_true, y_pred, average="weighted", zero_division=0  # type:ignore
         ),
     )
-    evaluation["recall"] = Model_Metric(
+    evaluation["recall"] = ModelMetricT(
         by_category=recall_score(y_true, y_pred, average=None, zero_division=0),  # type:ignore
         overall=recall_score(
             y_true, y_pred, average="weighted", zero_division=0  # type:ignore
         ),
     )
-    evaluation["f1"] = Model_Metric(
+    evaluation["f1"] = ModelMetricT(
         by_category=f1_score(y_true, y_pred, average=None, zero_division=0),  # type:ignore
         overall=f1_score(
             y_true, y_pred, average="weighted", zero_division=0  # type:ignore
