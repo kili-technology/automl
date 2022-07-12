@@ -11,7 +11,6 @@ import numpy as np
 import torch
 from tabulate import tabulate
 from termcolor import colored
-from tqdm.autonotebook import tqdm
 from typing_extensions import get_args
 
 from kiliautoml.utils.helper_label_error import AssetAnnotationsT
