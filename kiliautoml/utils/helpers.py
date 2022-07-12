@@ -347,10 +347,9 @@ def print_evaluation(job_name: str, evaluation: DictTrainingInfosT):
 
 
 def is_contours_detection(input_type, ml_task, content_input, tools):
-    semantic_or_polygon = (
+    return (
         content_input == "radio"
         and input_type == "IMAGE"
         and ml_task == "OBJECT_DETECTION"
         and any(tool in tools for tool in ["semantic", "polygon"])
     )
-    return semantic_or_polygon

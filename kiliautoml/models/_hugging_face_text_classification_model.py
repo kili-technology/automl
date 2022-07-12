@@ -37,7 +37,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     ml_task: MLTaskT = "CLASSIFICATION"
     model_repository: ModelRepositoryT = "huggingface"
 
-    advised_model_name = [
+    advised_model_names: List[ModelNameT] = [
         "bert-base-multilingual-cased",
         "distilbert-base-cased",
         "distilbert-base-uncased",

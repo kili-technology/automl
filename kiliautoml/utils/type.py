@@ -11,7 +11,7 @@ InputTypeT = Literal["IMAGE", "TEXT"]
 ModelFrameworkT = Literal["pytorch", "tensorflow"]
 ModelRepositoryT = Literal["huggingface", "ultralytics", "torchvision", "detectron2"]
 MLTaskT = Literal["CLASSIFICATION", "NAMED_ENTITIES_RECOGNITION", "OBJECT_DETECTION"]
-ToolT = Literal["rectangle", "semantic", "polygone"]
+ToolT = Literal["rectangle", "semantic", "polygon"]
 ModelNameT = Literal[
     "bert-base-multilingual-cased",
     "distilbert-base-uncased",

@@ -46,7 +46,10 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"
     model_repository: ModelRepositoryT = "huggingface"
 
-    advised_model_name = ["bert-base-multilingual-cased", "distilbert-base-cased"]
+    advised_model_names: List[ModelNameT] = [
+        "bert-base-multilingual-cased",
+        "distilbert-base-cased",
+    ]
 
     def __init__(
         self,

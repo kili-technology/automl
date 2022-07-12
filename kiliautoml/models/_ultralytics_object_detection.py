@@ -18,7 +18,7 @@ from typing_extensions import TypedDict
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helper_label_error import AnnotationNERT, AssetAnnotationsT
+from kiliautoml.utils.helper_label_error import AnnotationBboxT, AssetAnnotationsT
 from kiliautoml.utils.helpers import (
     JobPredictions,
     categories_from_job,
@@ -387,7 +387,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 )
                 for bbox, proba in zip(kili_predictions, probabilities):
                     asset_annotations.append(
-                        AnnotationNERT(
+                        AnnotationBboxT(
                             confidence=float(proba / 100),
                             category_id=bbox["categories"][0]["name"],
                             position=bbox["boundingPoly"],

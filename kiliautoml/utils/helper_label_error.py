@@ -1,8 +1,5 @@
-"""This files contains types for annotations, but those types should be used only for label error.
-
-- Créer des unnitests
-- ecrire les fonctions iou
-- Tester sur les projets.
+"""
+This files contains types for annotations, but those types should be used only for label error.
 """
 from dataclasses import dataclass
 from typing import List
