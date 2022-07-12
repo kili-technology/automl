@@ -136,6 +136,7 @@ AutoML currently supports the following tasks:
 - Image
   - Object detection
   - Image Classification
+  - Semantic Segmentation
 
 ## Demos
 
