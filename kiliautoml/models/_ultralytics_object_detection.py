@@ -54,13 +54,13 @@ def get_id_from_path(path_yolov5_inference: str) -> str:
     return os.path.split(path_yolov5_inference)[-1].split(".")[0]
 
 
-class Point(TypedDict):
+class PointT(TypedDict):
     x: float
     y: float
 
 
-class boundingPOly(TypedDict):
-    normalizedVertices: List[Point]
+class BoundingPolyT(TypedDict):
+    normalizedVertices: List[PointT]
 
 
 class BBoxAnnotation(TypedDict):

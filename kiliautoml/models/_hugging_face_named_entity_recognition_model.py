@@ -444,7 +444,6 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             text_remaining = text[offset_in_sentence:]
             ind_in_remaining_text = text_remaining.lower().find(token.lower())
             if ind_in_remaining_text == -1:
-                print(f"token '{token}' not found in text '{text_remaining}'")
                 raise Exception(f"token '{token}' not found in text '{text_remaining}'")
 
             content = token

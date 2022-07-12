@@ -131,7 +131,10 @@ def main(
         )
         if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
             model = HuggingFaceTextClassificationModel(
-                project_id=project_id, api_key=api_key, api_endpoint=api_endpoint, **base_init_args
+                project_id=project_id,
+                api_key=api_key,
+                api_endpoint=api_endpoint,
+                **base_init_args,
             )
             model_evaluation = model.train(
                 **base_train_args, additional_train_args_hg=additional_train_args_hg
@@ -142,7 +145,10 @@ def main(
             and ml_task == "NAMED_ENTITIES_RECOGNITION"
         ):
             model = HuggingFaceNamedEntityRecognitionModel(
-                project_id=project_id, api_key=api_key, api_endpoint=api_endpoint, **base_init_args
+                project_id=project_id,
+                api_key=api_key,
+                api_endpoint=api_endpoint,
+                **base_init_args,
             )
             model_evaluation = model.train(
                 **base_train_args, additional_train_args_hg=additional_train_args_hg
