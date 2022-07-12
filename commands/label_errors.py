@@ -17,6 +17,7 @@ from kiliautoml.utils.helpers import (
     get_project,
     is_contours_detection,
     kili_print,
+    not_implemented_job,
 )
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
@@ -176,7 +177,8 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
             )
         else:
-            raise NotImplementedError
+            not_implemented_job(job_name, ml_task, tools)
+            raise Exception("Not implemented label_error MLtask.")
 
         if found_errors:
             if not dry_run:

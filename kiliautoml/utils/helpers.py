@@ -302,7 +302,9 @@ def save_errors(found_errors, job_path: str):
 
 def not_implemented_job(job_name: str, ml_task: MLTaskT, tools: List[ToolT]):
     _ = tools
-    if "_MARKER" not in job_name:
+    if "_MARKER" in job_name:
+        return
+    else:
         kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
         kili_print(
             "You can use the repeatable flag --target-job "
