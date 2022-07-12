@@ -2,14 +2,14 @@
 import json
 import os
 import warnings
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import datasets
 import nltk
 import numpy as np
 from tqdm.auto import tqdm
 from transformers import DataCollatorForTokenClassification, Trainer
-from typing_extensions import Literal, TypedDict
+from typing_extensions import TypedDict
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
@@ -24,6 +24,8 @@ from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetT,
+    CategoriesT,
+    CategoryT,
     JobT,
     MLTaskT,
     ModelFrameworkT,
@@ -33,10 +35,10 @@ from kiliautoml.utils.type import (
 
 
 class KiliNerAnnotations(TypedDict):
-    beginOffset: Any
-    content: Any
-    endOffset: Any
-    categories: Any
+    beginOffset: int
+    content: str
+    endOffset: int
+    categories: CategoriesT
 
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
@@ -44,16 +46,20 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"
     model_repository: ModelRepositoryT = "huggingface"
 
+    advised_model_names: List[ModelNameT] = [
+        "bert-base-multilingual-cased",
+        "distilbert-base-cased",
+    ]
+
     def __init__(
         self,
+        *,
         project_id: str,
         api_key: str,
         api_endpoint: str,
         job: JobT,
         job_name: str,
-        model_name: Literal[
-            "bert-base-multilingual-cased", "distilbert-base-cased"
-        ] = "bert-base-multilingual-cased",
+        model_name: ModelNameT = "bert-base-multilingual-cased",
         model_framework: ModelFrameworkT = "pytorch",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
@@ -439,15 +445,16 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             ):  # hash token annotations should be ignored when aligning tokens and text
                 token = token.replace("##", "")
             text_remaining = text[offset_in_sentence:]
-            ind_in_remaining_text = text_remaining.find(token)
+            ind_in_remaining_text = text_remaining.lower().find(token.lower())
             if ind_in_remaining_text == -1:
-                raise Exception(f"token {token} not found in text {text_remaining}")
+                raise Exception(f"token '{token}' not found in text '{text_remaining}'")
 
             content = token
             str_between_tokens = text_remaining[:ind_in_remaining_text]
 
             if label != null_category:
 
+                categories: CategoriesT = [CategoryT(name=label[2:], confidence=int(proba * 100))]
                 ann: KiliNerAnnotations = {
                     "beginOffset": offset_in_text + offset_in_sentence + ind_in_remaining_text,
                     "content": content,
@@ -455,7 +462,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                     + offset_in_sentence
                     + ind_in_remaining_text
                     + len(content),
-                    "categories": [{"name": label[2:], "confidence": int(proba * 100)}],
+                    "categories": categories,
                 }
 
                 if label.startswith("I-"):

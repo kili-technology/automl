@@ -9,7 +9,6 @@ import nltk
 import numpy as np
 from tqdm.autonotebook import tqdm
 from transformers import Trainer
-from typing_extensions import Literal
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
@@ -26,8 +25,8 @@ from kiliautoml.utils.type import (
     AssetT,
     JobT,
     MLTaskT,
-    Model_Metric,
     ModelFrameworkT,
+    ModelMetricT,
     ModelNameT,
     ModelRepositoryT,
 )
@@ -38,16 +37,21 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     ml_task: MLTaskT = "CLASSIFICATION"
     model_repository: ModelRepositoryT = "huggingface"
 
+    advised_model_names: List[ModelNameT] = [
+        "bert-base-multilingual-cased",
+        "distilbert-base-cased",
+        "distilbert-base-uncased",
+    ]
+
     def __init__(
         self,
+        *,
         project_id: str,
         api_key: str,
         api_endpoint: str,
         job_name: str,
         job: JobT,
-        model_name: Literal[
-            "bert-base-multilingual-cased", "distilbert-base-cased"
-        ] = "bert-base-multilingual-cased",
+        model_name: ModelNameT = "bert-base-multilingual-cased",
         model_framework: ModelFrameworkT = "pytorch",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
@@ -243,12 +247,12 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         metric_res = {}
         for met in metrics:
             if met == "accuracy":
-                metric_res[met] = Model_Metric(
+                metric_res[met] = ModelMetricT(
                     by_category=None,
                     overall=metric[met].compute(predictions=predictions, references=labels)[met],
                 )
             elif met == "f1":
-                metric_res[met] = Model_Metric(
+                metric_res[met] = ModelMetricT(
                     by_category=metric[met].compute(
                         predictions=predictions, references=labels, average=None
                     )[met],
@@ -257,7 +261,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                     )[met],
                 )
             else:
-                metric_res[met] = Model_Metric(
+                metric_res[met] = ModelMetricT(
                     by_category=metric[met].compute(
                         predictions=predictions,
                         references=labels,

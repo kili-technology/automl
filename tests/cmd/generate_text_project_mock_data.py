@@ -33,7 +33,7 @@ if __name__ == "__main__":
     api_key = os.environ["KILI_API_KEY"]
     for a in assets:
         response = requests.get(
-            a["content"],
+            a["content"],  # type: ignore
             headers={
                 "Authorization": f"X-API-Key: {api_key}",
                 "PROJECT_ID": project_id,
@@ -41,7 +41,7 @@ if __name__ == "__main__":
         )
         assert response.status_code == 200
         text = response.text
-        c[a["content"]] = text
+        c[a["content"]] = text  # type:ignore
 
     with open("tests/e2e/fixtures/text_content_fixture.json", "w") as f:
         json.dump(c, f)

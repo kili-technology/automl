@@ -22,7 +22,7 @@ from kiliautoml.utils.helpers import (
     get_project,
     kili_print,
 )
-from kiliautoml.utils.memoization import clear_automl_cache
+from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import AssetStatusT, MLTaskT, ModelFrameworkT, ToolT
 
 # Priorities
@@ -370,7 +370,7 @@ def main(
     tools: ToolT = job.get("tools")  # type: ignore
 
     if clear_dataset_cache:
-        clear_automl_cache(
+        clear_command_cache(
             command="prioritize", project_id=project_id, job_name=job_name, model_repository=None
         )
 

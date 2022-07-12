@@ -11,9 +11,9 @@ import numpy as np
 import torch
 from tabulate import tabulate
 from termcolor import colored
-from tqdm.autonotebook import tqdm
 from typing_extensions import get_args
 
+from kiliautoml.utils.helper_label_error import AssetAnnotationsT
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.path import AUTOML_CACHE
@@ -28,6 +28,7 @@ from kiliautoml.utils.type import (
     JobT,
     LabelMergeStrategyT,
     MLTaskT,
+    ToolT,
 )
 
 
@@ -89,6 +90,7 @@ class JobPredictions:
         json_response_array: List[Any],
         model_name_array: List[str],
         predictions_probability: List[float],
+        label_error: Optional[List[AssetAnnotationsT]] = None,
     ):
         self.job_name = job_name
         self.external_id_array = external_id_array
@@ -116,6 +118,9 @@ class JobPredictions:
         kili_print(
             f"JobPredictions: {n_assets} predictions successfully created for job {job_name}."
         )
+
+        if label_error:
+            self.label_error = label_error
 
     def __repr__(self):
         return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"
@@ -295,25 +300,8 @@ def save_errors(found_errors, job_path: str):
             kili_print("Asset IDs of wrong labels written to: ", json_path)
 
 
-def upload_errors_to_kili(found_errors, kili):
-    kili_print("Updating metadatas for the concerned assets")
-    first = min(100, len(found_errors))
-    for skip in tqdm(
-        range(0, len(found_errors), first), desc="Updating asset metadata with labeling error flag"
-    ):
-        error_assets = kili.assets(
-            asset_id_in=found_errors[skip : skip + first], fields=["id", "metadata"]
-        )
-        asset_ids = [asset["id"] for asset in error_assets]
-        new_metadatas = [asset["metadata"] for asset in error_assets]
-
-        for meta in new_metadatas:
-            meta["labeling_error"] = True
-
-        kili.update_properties_in_assets(asset_ids=asset_ids, json_metadatas=new_metadatas)
-
-
-def not_implemented_job(job_name: str, ml_task: MLTaskT):
+def not_implemented_job(job_name: str, ml_task: MLTaskT, tools: List[ToolT]):
+    _ = tools
     if "_MARKER" not in job_name:
         kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
         kili_print(
@@ -356,3 +344,12 @@ def print_evaluation(job_name: str, evaluation: DictTrainingInfosT):
         table.append(table_int)
         table_int = []
     print(tabulate(table, headers=[job_name] + keys))
+
+
+def is_contours_detection(input_type, ml_task, content_input, tools):
+    return (
+        content_input == "radio"
+        and input_type == "IMAGE"
+        and ml_task == "OBJECT_DETECTION"
+        and any(tool in tools for tool in ["semantic", "polygon"])
+    )

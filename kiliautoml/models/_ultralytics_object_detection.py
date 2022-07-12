@@ -18,6 +18,7 @@ from typing_extensions import TypedDict
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.download_assets import download_project_images
+from kiliautoml.utils.helper_label_error import AnnotationBboxT, AssetAnnotationsT
 from kiliautoml.utils.helpers import (
     JobPredictions,
     categories_from_job,
@@ -51,6 +52,15 @@ class AutoMLYoloException(Exception):
 # TODO: Move to PathUltralytics
 def get_id_from_path(path_yolov5_inference: str) -> str:
     return os.path.split(path_yolov5_inference)[-1].split(".")[0]
+
+
+class PointT(TypedDict):
+    x: float
+    y: float
+
+
+class BoundingPolyT(TypedDict):
+    normalizedVertices: List[PointT]
 
 
 class BBoxAnnotation(TypedDict):
@@ -367,12 +377,23 @@ class UltralyticsObjectDetectionModel(BaseModel):
         kili_print("Converting Ultralytics' YoloV5 inference to Kili JSON format...")
         id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
 
+        label_error_annotations: List[AssetAnnotationsT] = []
         proba_list: List[float] = []
         for image in downloaded_images:
+            asset_annotations = []
             if image.id in inference_files_by_id:
                 kili_predictions, probabilities = yolov5_to_kili_json(
                     inference_files_by_id[image.id], kili_data_dict["names"]
                 )
+                for bbox, proba in zip(kili_predictions, probabilities):
+                    asset_annotations.append(
+                        AnnotationBboxT(
+                            confidence=float(proba / 100),
+                            category_id=bbox["categories"][0]["name"],
+                            position=bbox["boundingPoly"],
+                        )
+                    )
+
                 proba_list.append(min(probabilities))
                 if verbose >= 1:
                     kili_print(f"Asset {image.externalId}: {kili_predictions}")
@@ -382,6 +403,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
                         {job_name: {"annotations": kili_predictions}},
                     )
                 )
+                label_error_annotations.append(
+                    AssetAnnotationsT(annotations=asset_annotations, externalId=image.externalId)
+                )
 
         # TODO: move this check in the prioritizer
         if len(id_json_list) < len(downloaded_images):
@@ -390,8 +414,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 f" {len(downloaded_images) - len(id_json_list)} assets."
             )
             if prioritization:
-                # TODO: Automatically tune the threshold
-                # TODO: Do not crash and put 0 probability for missing assets.
                 raise Exception(
                     "Not enough predictions for prioritization. You should either train longer the"
                     " model, or lower the --conf-thres "
@@ -403,8 +425,8 @@ class UltralyticsObjectDetectionModel(BaseModel):
             json_response_array=[a[1] for a in id_json_list],
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=proba_list,
+            label_error=label_error_annotations,
         )
-        kili_print("predictions_probability", job_predictions.predictions_probability)
         return job_predictions
 
     def _get_last_model_param(self, project_id, model_path) -> Tuple[ModelPathT, ModelFrameworkT]:
@@ -443,7 +465,20 @@ class UltralyticsObjectDetectionModel(BaseModel):
         clear_dataset_cache: bool = False,
         api_key: str = "",
     ) -> Any:
-        pass
+        assert cv_n_folds == 1
+        _ = epochs
+        kili_print("epochs is not used in label_error")
+        job_prediction = self.predict(
+            assets=assets,
+            model_path=None,
+            from_project=None,
+            batch_size=batch_size,
+            verbose=verbose,
+            clear_dataset_cache=clear_dataset_cache,
+            api_key=api_key,
+        )
+        list_externalId = [id.externalId for id in job_prediction.label_error]
+        return list_externalId
 
 
 def save_annotations_to_yolo_format(names, handler, job):
