@@ -50,6 +50,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     def __init__(
         self,
+        *,
         project_id: str,
         api_key: str,
         api_endpoint: str,
@@ -441,9 +442,10 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             ):  # hash token annotations should be ignored when aligning tokens and text
                 token = token.replace("##", "")
             text_remaining = text[offset_in_sentence:]
-            ind_in_remaining_text = text_remaining.find(token)
+            ind_in_remaining_text = text_remaining.lower().find(token.lower())
             if ind_in_remaining_text == -1:
-                raise Exception(f"token {token} not found in text {text_remaining}")
+                print(f"token '{token}' not found in text '{text_remaining}'")
+                raise Exception(f"token '{token}' not found in text '{text_remaining}'")
 
             content = token
             str_between_tokens = text_remaining[:ind_in_remaining_text]

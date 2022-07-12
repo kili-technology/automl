@@ -54,7 +54,7 @@ def predict_one_job(
     }
     if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
         model = HuggingFaceTextClassificationModel(
-            project_id, api_key, api_endpoint, **base_init_args
+            project_id=project_id, api_endpoint=api_endpoint, api_key=api_key, **base_init_args
         )
         job_predictions = model.predict(
             assets=assets,
@@ -71,7 +71,12 @@ def predict_one_job(
         and ml_task == "NAMED_ENTITIES_RECOGNITION"
     ):
         model = HuggingFaceNamedEntityRecognitionModel(
-            project_id, api_key, api_endpoint, **base_init_args
+            project_id=project_id,
+            api_key=api_key,
+            api_endpoint=api_endpoint,
+            job=job,
+            job_name=job_name,
+            model_framework=model_framework,
         )
         job_predictions = model.predict(
             assets=assets,

@@ -45,6 +45,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     def __init__(
         self,
+        *,
         project_id: str,
         api_key: str,
         api_endpoint: str,
