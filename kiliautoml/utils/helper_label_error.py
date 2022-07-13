@@ -35,12 +35,14 @@ class NERPositionT(PositionT):
 
 class AnnotationT:
     def __init__(
-        self, confidence: float, category_id: CategoryIdT, position: PositionT, externalId: str
+        self,
+        confidence: float,
+        category_id: CategoryIdT,
+        position: PositionT,
     ):
         self.confidence = confidence
         self.category_id = category_id
         self.position = position
-        self.externalId = externalId
 
 
 class AnnotationSemanticT(AnnotationT):
@@ -50,8 +52,7 @@ class AnnotationSemanticT(AnnotationT):
         category_id: CategoryIdT,
         position: SemanticPositionT,
     ):
-        self.confidence = confidence
-        self.category_id = category_id
+        super().__init__(confidence, category_id, position)
         self.position = position
 
 

@@ -90,7 +90,7 @@ class JobPredictions:
         json_response_array: List[Any],
         model_name_array: List[str],
         predictions_probability: List[float],
-        label_error: Optional[List[AssetAnnotationsT]] = None,
+        predicted_annotations: Optional[List[AssetAnnotationsT]] = None,
     ):
         self.job_name = job_name
         self.external_id_array = external_id_array
@@ -119,8 +119,8 @@ class JobPredictions:
             f"JobPredictions: {n_assets} predictions successfully created for job {job_name}."
         )
 
-        if label_error:
-            self.label_error = label_error
+        if predicted_annotations:
+            self.predicted_annotations = predicted_annotations
 
     def __repr__(self):
         return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"

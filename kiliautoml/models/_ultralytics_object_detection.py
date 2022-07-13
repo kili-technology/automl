@@ -425,7 +425,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             json_response_array=[a[1] for a in id_json_list],
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=proba_list,
-            label_error=label_error_annotations,
+            predicted_annotations=label_error_annotations,
         )
         return job_predictions
 
@@ -477,7 +477,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             clear_dataset_cache=clear_dataset_cache,
             api_key=api_key,
         )
-        list_externalId = [id.externalId for id in job_prediction.label_error]
+        list_externalId = [id.externalId for id in job_prediction.predicted_annotations]
         return list_externalId
 
 

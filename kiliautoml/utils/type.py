@@ -23,7 +23,7 @@ ModelNameT = Literal[
 ]
 
 
-AnnotationsT = Any
+AnnotationsT = Any  # TODO
 CategoryNameT = str
 CategoryIdT = str  # camelCase with first letter in minuscule
 
