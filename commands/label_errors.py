@@ -22,11 +22,13 @@ from kiliautoml.utils.helpers import (
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AssetStatusT,
+    JobNameT,
     LabelMergeStrategyT,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
     ToolT,
 )
 
@@ -68,12 +70,12 @@ def upload_errors_to_kili(found_errors: List[str], kili):
 @LabelErrorOptions.cv_folds
 @LabelErrorOptions.dry_run
 def main(
-    project_id: str,
+    project_id: ProjectIdT,
     api_endpoint: str,
     api_key: str,
     clear_dataset_cache: bool,
     model_framework: ModelFrameworkT,
-    target_job: List[str],
+    target_job: List[JobNameT],
     model_repository: ModelRepositoryT,
     dry_run: bool,
     epochs: int,

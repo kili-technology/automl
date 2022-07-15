@@ -26,10 +26,12 @@ from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetStatusT,
+    JobNameT,
     LabelMergeStrategyT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
     ToolT,
 )
 
@@ -59,11 +61,11 @@ def main(
     model_framework: ModelFrameworkT,
     model_name: ModelNameT,
     model_repository: ModelRepositoryT,
-    project_id: str,
+    project_id: ProjectIdT,
     epochs: int,
     asset_status_in: List[AssetStatusT],
     label_merge_strategy: LabelMergeStrategyT,
-    target_job: List[str],
+    target_job: List[JobNameT],
     max_assets: int,
     randomize_assets: bool,
     clear_dataset_cache: bool,

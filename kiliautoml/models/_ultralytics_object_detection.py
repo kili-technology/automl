@@ -33,11 +33,13 @@ from kiliautoml.utils.type import (
     AssetT,
     BBoxAnnotation,
     CategoryT,
+    JobNameT,
     JobT,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
 )
 
 env = Environment(
@@ -75,9 +77,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def __init__(
         self,
         *,
-        project_id: str,
+        project_id: ProjectIdT,
         job: JobT,
-        job_name: str,
+        job_name: JobNameT,
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
     ):
@@ -310,10 +312,10 @@ class UltralyticsObjectDetectionModel(BaseModel):
         self,
         api_key: str,
         assets: List[AssetT],
-        project_id: str,
+        project_id: ProjectIdT,
         model_framework: ModelFrameworkT,
         model_path: ModelPathT,
-        job_name: str,
+        job_name: JobNameT,
         verbose: int,
         batch_size: int,
         prioritization: bool,

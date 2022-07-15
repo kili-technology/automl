@@ -26,10 +26,12 @@ from kiliautoml.utils.pytorchvision.image_classification import (
 )
 from kiliautoml.utils.type import (
     AssetT,
+    JobNameT,
     JobT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
 )
 
 
@@ -37,10 +39,10 @@ class PyTorchVisionImageClassificationModel(BaseModel):
     def __init__(
         self,
         *,
-        project_id: str,
+        project_id: ProjectIdT,
         model_repository: Optional[ModelRepositoryT],
         job: JobT,
-        job_name: str,
+        job_name: JobNameT,
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
     ):

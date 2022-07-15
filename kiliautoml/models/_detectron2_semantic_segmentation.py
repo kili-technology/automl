@@ -35,6 +35,7 @@ from kiliautoml.utils.path import ModelDirT, Path, PathDetectron2
 from kiliautoml.utils.type import (
     AssetT,
     CategoryT,
+    JobNameT,
     JobT,
     JsonResponseSemanticT,
     LabelMergeStrategyT,
@@ -44,6 +45,7 @@ from kiliautoml.utils.type import (
     ModelRepositoryT,
     NormalizedVertice,
     NormalizedVertices,
+    ProjectIdT,
     SemanticAnnotation,
 )
 
@@ -58,9 +60,9 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
     def __init__(
         self,
         *,
-        project_id: str,
+        project_id: ProjectIdT,
         job: JobT,
-        job_name: str,
+        job_name: JobNameT,
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
     ):
@@ -436,7 +438,9 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         manual_annotations: List[AssetStandardizedAnnotationsT] = []
         for asset in assets:
             semantic_job = asset["labels"][0]["jsonResponse"][self.job_name]
-            annotation = self.convert_kili_semantic_to_label_error_semantic(semantic_job)
+            annotation = self.convert_kili_semantic_to_label_error_semantic(
+                semantic_job,  # type:ignore
+            )
             manual_annotations.append(
                 AssetStandardizedAnnotationsT(
                     annotations=annotation,

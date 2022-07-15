@@ -7,6 +7,7 @@ from kiliautoml.utils.helpers import JobPredictions
 from kiliautoml.utils.type import (
     AssetT,
     DictTrainingInfosT,
+    JobNameT,
     JobT,
     MLTaskT,
     ModelFrameworkT,
@@ -17,7 +18,7 @@ from kiliautoml.utils.type import (
 
 class BaseInitArgs(TypedDict):
     job: JobT
-    job_name: str
+    job_name: JobNameT
     model_name: ModelNameT
     model_framework: ModelFrameworkT
     # TODO: Add projet_id
@@ -40,7 +41,7 @@ class BaseModel(metaclass=ABCMeta):
         self,
         *,
         job: JobT,
-        job_name: str,
+        job_name: JobNameT,
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
         # TODO: Add projet_id

@@ -24,10 +24,12 @@ from kiliautoml.utils.type import (
     CategoryNameT,
     DictTrainingInfosT,
     InputTypeT,
+    JobNameT,
     JobsT,
     JobT,
     LabelMergeStrategyT,
     MLTaskT,
+    ProjectIdT,
     ToolT,
 )
 
@@ -86,7 +88,7 @@ def ensure_dir(file_path: str):
 class JobPredictions:
     def __init__(
         self,
-        job_name: str,
+        job_name: JobNameT,
         external_id_array: List[str],
         json_response_array: List[Any],
         model_name_array: List[str],
@@ -159,7 +161,7 @@ def get_asset_memoized(
 
 def get_assets(
     kili,
-    project_id: str,
+    project_id: ProjectIdT,
     status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
     randomize: bool = False,
@@ -213,7 +215,7 @@ def get_assets(
     return assets
 
 
-def get_label(asset: AssetT, job_name: str, strategy: LabelMergeStrategyT):
+def get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
     labels = asset["labels"]
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
     if len(labels) > 0:
@@ -224,7 +226,7 @@ def get_label(asset: AssetT, job_name: str, strategy: LabelMergeStrategyT):
         return None
 
 
-def filter_labeled_assets(job_name: str, strategy: LabelMergeStrategyT, assets: List[AssetT]):
+def filter_labeled_assets(job_name: JobNameT, strategy: LabelMergeStrategyT, assets: List[AssetT]):
     asset_id_to_remove = set()
     for asset in assets:
         label = get_label(asset, job_name, strategy)
@@ -238,7 +240,7 @@ def filter_labeled_assets(job_name: str, strategy: LabelMergeStrategyT, assets: 
     return [asset for asset in assets if asset["id"] not in asset_id_to_remove]
 
 
-def get_project(kili, project_id: str) -> Tuple[InputTypeT, JobsT, str]:
+def get_project(kili, project_id: ProjectIdT) -> Tuple[InputTypeT, JobsT, str]:
     projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface", "title"])
     if GENERATE_MOCK:
         jsonify_mock_data(projects, function_name="projects")
@@ -265,8 +267,8 @@ def set_default(x, x_default, x_name: str, x_range: List):  # type: ignore
 
 def get_last_trained_model_path(
     *,
-    project_id: str,
-    job_name: str,
+    project_id: ProjectIdT,
+    job_name: JobNameT,
     project_path_wildcard: List[str],
     weights_filename: str,
     model_path: Optional[str],
@@ -301,7 +303,7 @@ def save_errors(found_errors, job_path: str):
             kili_print("Asset IDs of wrong labels written to: ", json_path)
 
 
-def not_implemented_job(job_name: str, ml_task: MLTaskT, tools: List[ToolT]):
+def not_implemented_job(job_name: JobNameT, ml_task: MLTaskT, tools: List[ToolT]):
     _ = tools
     if "_MARKER" in job_name:
         return
@@ -323,7 +325,7 @@ def get_mapping_category_name_cat_kili_id(job: JobT):
     return mapping_category_name_category_ids
 
 
-def print_evaluation(job_name: str, evaluation: DictTrainingInfosT):
+def print_evaluation(job_name: JobNameT, evaluation: DictTrainingInfosT):
     def get_keys(my_dict):
         keys = list(my_dict.keys())
         keys_int = []

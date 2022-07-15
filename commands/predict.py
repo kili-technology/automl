@@ -21,7 +21,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
     not_implemented_job,
 )
-from kiliautoml.utils.type import AssetStatusT, ModelFrameworkT
+from kiliautoml.utils.type import AssetStatusT, JobNameT, ModelFrameworkT, ProjectIdT
 
 
 def predict_one_job(
@@ -159,11 +159,11 @@ def predict_one_job(
 @PredictOptions.from_project
 @PredictOptions.dry_run
 def main(
-    project_id: str,
+    project_id: ProjectIdT,
     api_endpoint: str,
     api_key: str,
     asset_status_in: List[AssetStatusT],
-    target_job: List[str],
+    target_job: List[JobNameT],
     dry_run: bool,
     from_model: Optional[ModelFrameworkT],
     verbose: bool,

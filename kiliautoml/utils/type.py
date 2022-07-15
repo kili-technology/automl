@@ -28,6 +28,7 @@ ModelNameT = Literal[
 CategoryNameT = str
 CategoryIdT = str  # camelCase with first letter in minuscule
 JobNameT = str
+ProjectIdT = str
 
 
 class CategoryT(TypedDict):
@@ -160,7 +161,7 @@ JobsT = Dict[JobNameT, JobT]
 class JobPredictions:
     def __init__(
         self,
-        job_name: str,
+        job_name: JobNameT,
         external_id_array: List[str],
         json_response_array: List[Dict[JobNameT, JsonResponseBaseT]],
         model_name_array: List[str],

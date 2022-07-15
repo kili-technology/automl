@@ -23,6 +23,7 @@ from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetT,
+    JobNameT,
     JobT,
     JsonResponseClassification,
     MLTaskT,
@@ -30,6 +31,7 @@ from kiliautoml.utils.type import (
     ModelMetricT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
 )
 
 
@@ -47,10 +49,10 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     def __init__(
         self,
         *,
-        project_id: str,
+        project_id: ProjectIdT,
         api_key: str,
         api_endpoint: str,
-        job_name: str,
+        job_name: JobNameT,
         job: JobT,
         model_name: ModelNameT = "bert-base-multilingual-cased",
         model_framework: ModelFrameworkT = "pytorch",

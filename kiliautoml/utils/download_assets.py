@@ -14,6 +14,7 @@ from tqdm.autonotebook import tqdm
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, save_mock_data
 from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.memoization import kili_memoizer
+from kiliautoml.utils.type import AssetT
 
 
 @dataclass
@@ -84,7 +85,7 @@ def download_image(api_key, asset_content):
     return image
 
 
-def download_image_retry(api_key, asset, n_try: int):
+def download_image_retry(api_key, asset: AssetT, n_try: int):
     while n_try < 20:
         try:
             img_data = download_asset_binary(api_key, asset["content"])

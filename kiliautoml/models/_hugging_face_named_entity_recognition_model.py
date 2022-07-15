@@ -25,12 +25,14 @@ from kiliautoml.utils.type import (
     AssetT,
     CategoriesT,
     CategoryT,
+    JobNameT,
     JobT,
     KiliNerAnnotations,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
 )
 
 
@@ -47,11 +49,11 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     def __init__(
         self,
         *,
-        project_id: str,
+        project_id: ProjectIdT,
         api_key: str,
         api_endpoint: str,
         job: JobT,
-        job_name: str,
+        job_name: JobNameT,
         model_name: ModelNameT = "bert-base-multilingual-cased",
         model_framework: ModelFrameworkT = "pytorch",
     ) -> None:
@@ -264,7 +266,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     def _kili_assets_to_hf_ner_dataset(
         self,
         job: JobT,
-        job_name: str,
+        job_name: JobNameT,
         path_dataset: str,
         assets: List[AssetT],
         clear_dataset_cache: bool,
@@ -289,7 +291,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
         return label_list
 
-    def _write_asset(self, job_name, labels_to_ids, handler, asset):
+    def _write_asset(self, job_name: JobNameT, labels_to_ids, handler, asset: AssetT):
         text = self._get_text_from(asset["content"])
         if job_name in asset["labels"][0]["jsonResponse"]:
             annotations = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
@@ -333,7 +335,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             offset = offset + sentence_tokens[-1][1] + 1
 
     @classmethod
-    def _compute_sentence_predictions(cls, model_framework, tokenizer, model, sentence, offset):
+    def _compute_sentence_predictions(
+        cls, model_framework: ModelFrameworkT, tokenizer, model, sentence: str, offset: int
+    ):
         # imposed by the model
         sequence = sentence[: model.config.max_position_embeddings]
 

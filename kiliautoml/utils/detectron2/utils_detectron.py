@@ -11,7 +11,13 @@ from typing_extensions import TypedDict
 
 from kiliautoml.utils.download_assets import download_asset_binary
 from kiliautoml.utils.helpers import get_mapping_category_name_cat_kili_id, kili_print
-from kiliautoml.utils.type import AssetT, CategoryIdT, JobT, SemanticAnnotation
+from kiliautoml.utils.type import (
+    AssetT,
+    CategoryIdT,
+    JobNameT,
+    JobT,
+    SemanticAnnotation,
+)
 
 # ## DETECTRON FORMAT
 
@@ -50,7 +56,7 @@ class CocoFormat(TypedDict):
 
 
 def convert_kili_semantic_to_coco(
-    job_name: str, assets: List[AssetT], output_dir, api_key: str, job: JobT
+    job_name: JobNameT, assets: List[AssetT], output_dir, api_key: str, job: JobT
 ) -> Tuple[CocoFormat, List[str]]:
     """
     creates the following structure on the disk:

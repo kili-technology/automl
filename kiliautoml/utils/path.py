@@ -1,7 +1,12 @@
 import os
 from datetime import datetime
 
-from kiliautoml.utils.type import ModelFrameworkT, ModelNameT, ModelRepositoryT
+from kiliautoml.utils.type import (
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+    ProjectIdT,
+)
 
 AUTOML_CACHE = os.getenv(
     "KILIAUTOML_CACHE", os.path.join(os.getenv("HOME"), ".cache", "kili", "automl")  # type:ignore
@@ -59,7 +64,7 @@ class Path:
     @staticmethod
     @makedirs_exist_ok
     def model_repository_dir(
-        project_id: str, job_name, model_repository: ModelRepositoryT
+        project_id: ProjectIdT, job_name, model_repository: ModelRepositoryT
     ) -> ModelRepositoryDirT:
         return os.path.join(Path.job_dir(project_id, job_name), model_repository)
 

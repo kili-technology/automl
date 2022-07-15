@@ -23,7 +23,13 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.memoization import clear_command_cache
-from kiliautoml.utils.type import AssetStatusT, MLTaskT, ModelFrameworkT, ToolT
+from kiliautoml.utils.type import (
+    AssetStatusT,
+    MLTaskT,
+    ModelFrameworkT,
+    ProjectIdT,
+    ToolT,
+)
 
 # Priorities
 Priorities = List[float]
@@ -326,7 +332,7 @@ def embedding_text(
 def main(
     api_endpoint: str,
     api_key: str,
-    project_id: str,
+    project_id: ProjectIdT,
     asset_status_in: List[AssetStatusT],
     max_assets: Optional[int],
     randomize_assets: bool,
