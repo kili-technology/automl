@@ -44,24 +44,6 @@ def set_all_seeds(seed):
 
 set_all_seeds(42)
 
-TYPE_ORDER = {
-    v: i for i, v in enumerate(["REVIEW", "DEFAULT", "PREDICTION", "INFERENCE", "AUTOSAVE"])
-}
-
-
-def last_order(json_response):
-    return (
-        TYPE_ORDER[json_response["labelType"]],
-        -datetime.strptime(json_response["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp(),
-    )
-
-
-def first_order(json_response):
-    return (
-        TYPE_ORDER[json_response["labelType"]],
-        datetime.strptime(json_response["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp(),
-    )
-
 
 def categories_from_job(job: JobT):
     """Returns the category id.
@@ -84,7 +66,7 @@ def ensure_dir(file_path: str):
     return file_path
 
 
-# TODO: Moove to type and delete predicted_annotations
+# TODO: Move to type and delete predicted_annotations
 class JobPredictions:
     def __init__(
         self,
@@ -133,9 +115,9 @@ class JobPredictions:
 def get_asset_memoized(
     *,
     kili,
-    project_id,
-    total,
-    skip,
+    project_id: ProjectIdT,
+    total: Optional[int],
+    skip: int,
     status_in: Optional[List[AssetStatusT]] = None,
 ) -> List[AssetT]:
     assets = kili.assets(
@@ -216,9 +198,26 @@ def get_assets(
     return assets
 
 
-def get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
+def _get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
     labels = asset.labels
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
+
+    TYPE_ORDER = {
+        v: i for i, v in enumerate(["REVIEW", "DEFAULT", "PREDICTION", "INFERENCE", "AUTOSAVE"])
+    }
+
+    def last_order(json_response):
+        return (
+            TYPE_ORDER[json_response["labelType"]],
+            -datetime.strptime(json_response["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp(),
+        )
+
+    def first_order(json_response):
+        return (
+            TYPE_ORDER[json_response["labelType"]],
+            datetime.strptime(json_response["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp(),
+        )
+
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
         return min(labels, key=key)
@@ -230,7 +229,7 @@ def get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
 def filter_labeled_assets(job_name: JobNameT, strategy: LabelMergeStrategyT, assets: List[AssetT]):
     asset_id_to_remove = set()
     for asset in assets:
-        label = get_label(asset, job_name, strategy)
+        label = _get_label(asset, job_name, strategy)
         if label is None:
             asset_id = asset.id
             warnings.warn(f"${asset_id} removed because no labels where available")
