@@ -9,7 +9,6 @@ import nltk
 import numpy as np
 from tqdm.auto import tqdm
 from transformers import DataCollatorForTokenClassification, Trainer
-from typing_extensions import TypedDict
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
@@ -27,18 +26,12 @@ from kiliautoml.utils.type import (
     CategoriesT,
     CategoryT,
     JobT,
+    KiliNerAnnotations,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
 )
-
-
-class KiliNerAnnotations(TypedDict):
-    beginOffset: int
-    content: str
-    endOffset: int
-    categories: CategoriesT
 
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
@@ -229,10 +222,10 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         predictions = []
         proba_assets = []
         for asset in assets:
-            text = self._get_text_from(asset["content"])  # type: ignore
+            text = self._get_text_from(asset["content"])
 
             offset = 0
-            predictions_asset: List[dict] = []  # type: ignore
+            predictions_asset: List[KiliNerAnnotations] = []
 
             probas_asset = []
             for sentence in nltk.sent_tokenize(text):
@@ -246,8 +239,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                 )
                 probas_asset.append(min(probas))
 
-                predictions_asset.extend(predictions_sentence)  # type:ignore
-
+                predictions_asset.extend(predictions_sentence)
             predictions.append({self.job_name: {"annotations": predictions_asset}})
             proba_assets.append(min(probas_asset))
 

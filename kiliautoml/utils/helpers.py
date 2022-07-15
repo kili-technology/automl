@@ -13,7 +13,7 @@ from tabulate import tabulate
 from termcolor import colored
 from typing_extensions import get_args
 
-from kiliautoml.utils.helper_label_error import AssetAnnotationsT
+from kiliautoml.utils.helper_label_error import AssetStandardizedAnnotationsT
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.path import AUTOML_CACHE
@@ -82,6 +82,7 @@ def ensure_dir(file_path: str):
     return file_path
 
 
+# TODO: Moove to type and delete predicted_annotations
 class JobPredictions:
     def __init__(
         self,
@@ -90,7 +91,7 @@ class JobPredictions:
         json_response_array: List[Any],
         model_name_array: List[str],
         predictions_probability: List[float],
-        predicted_annotations: Optional[List[AssetAnnotationsT]] = None,
+        predicted_annotations: Optional[List[AssetStandardizedAnnotationsT]] = None,
     ):
         self.job_name = job_name
         self.external_id_array = external_id_array

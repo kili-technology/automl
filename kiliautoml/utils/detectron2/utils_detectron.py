@@ -7,11 +7,11 @@ from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
-from typing_extensions import Literal, TypedDict
+from typing_extensions import TypedDict
 
 from kiliautoml.utils.download_assets import download_asset_binary
 from kiliautoml.utils.helpers import get_mapping_category_name_cat_kili_id, kili_print
-from kiliautoml.utils.type import AssetT, CategoryIdT, CategoryT, JobT
+from kiliautoml.utils.type import AssetT, CategoryIdT, JobT, SemanticAnnotation
 
 # ## DETECTRON FORMAT
 
@@ -47,29 +47,6 @@ class CocoFormat(TypedDict):
     categories: List[CategoryCoco]
     images: List[ImageCoco]
     annotations: List[AnnotationsCoco]
-
-
-# ## KILI Polygon Semantic Format
-
-
-class NormalizedVertice(TypedDict):
-    x: float
-    y: float
-
-
-class NormalizedVertices(TypedDict):
-    normalizedVertices: List[NormalizedVertice]
-
-
-class SemanticAnnotation(TypedDict):
-    boundingPoly: List[NormalizedVertices]  # len(self.boundingPoly) == 1
-    mid: str
-    type: Literal["semantic"]
-    categories: List[CategoryT]
-
-
-class SemanticJob(TypedDict):
-    annotations: List[SemanticAnnotation]
 
 
 def convert_kili_semantic_to_coco(

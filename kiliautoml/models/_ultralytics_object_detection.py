@@ -14,11 +14,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from typing_extensions import TypedDict
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helper_label_error import AnnotationBboxT, AssetAnnotationsT
+from kiliautoml.utils.helper_label_error import (
+    AnnotationStandardizedBboxT,
+    AssetStandardizedAnnotationsT,
+)
 from kiliautoml.utils.helpers import (
     JobPredictions,
     categories_from_job,
@@ -29,6 +31,7 @@ from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetT,
+    BBoxAnnotation,
     CategoryT,
     JobT,
     MLTaskT,
@@ -52,21 +55,6 @@ class AutoMLYoloException(Exception):
 # TODO: Move to PathUltralytics
 def get_id_from_path(path_yolov5_inference: str) -> str:
     return os.path.split(path_yolov5_inference)[-1].split(".")[0]
-
-
-class PointT(TypedDict):
-    x: float
-    y: float
-
-
-class BoundingPolyT(TypedDict):
-    normalizedVertices: List[PointT]
-
-
-class BBoxAnnotation(TypedDict):
-    boundingPoly: Any
-    categories: List[CategoryT]
-    type: str
 
 
 def inspect(e):
@@ -377,7 +365,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         kili_print("Converting Ultralytics' YoloV5 inference to Kili JSON format...")
         id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
 
-        label_error_annotations: List[AssetAnnotationsT] = []
+        label_error_annotations: List[AssetStandardizedAnnotationsT] = []
         proba_list: List[float] = []
         for image in downloaded_images:
             asset_annotations = []
@@ -387,7 +375,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 )
                 for bbox, proba in zip(kili_predictions, probabilities):
                     asset_annotations.append(
-                        AnnotationBboxT(
+                        AnnotationStandardizedBboxT(
                             confidence=float(proba / 100),
                             category_id=bbox["categories"][0]["name"],
                             position=bbox["boundingPoly"],
@@ -404,7 +392,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
                     )
                 )
                 label_error_annotations.append(
-                    AssetAnnotationsT(annotations=asset_annotations, externalId=image.externalId)
+                    AssetStandardizedAnnotationsT(
+                        annotations=asset_annotations, externalId=image.externalId
+                    )
                 )
 
         # TODO: move this check in the prioritizer

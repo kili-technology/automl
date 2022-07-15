@@ -167,9 +167,12 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             model_name_array=[self.model_name] * len(assets),
             json_response_array=[
                 {
-                    "CLASSIFICATION_JOB": {
+                    "CLASSIFICATION_JOB": {  # TODO: replace by self.job_name
                         "categories": [
-                            {"name": list(self.class_name_to_idx.keys())[np.argmax(prob_array)]}
+                            {
+                                "name": list(self.class_name_to_idx.keys())[np.argmax(prob_array)],
+                                "confidence": np.max(prob_array),
+                            }
                         ]
                     }
                 }

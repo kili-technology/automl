@@ -19,17 +19,13 @@ from PIL import Image
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.detectron2.utils_detectron import (
     CocoFormat,
-    NormalizedVertice,
-    NormalizedVertices,
-    SemanticAnnotation,
-    SemanticJob,
     convert_kili_semantic_to_coco,
 )
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import (
-    AnnotationSemanticT,
-    AnnotationT,
-    AssetAnnotationsT,
+    AnnotationStandardizedSemanticT,
+    AnnotationStandardizedT,
+    AssetStandardizedAnnotationsT,
     PointT,
     SemanticPositionT,
     find_label_errors,
@@ -40,11 +36,15 @@ from kiliautoml.utils.type import (
     AssetT,
     CategoryT,
     JobT,
+    JsonResponseSemanticT,
     LabelMergeStrategyT,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    NormalizedVertice,
+    NormalizedVertices,
+    SemanticAnnotation,
 )
 
 setup_logger()
@@ -288,9 +288,9 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         dataset_metadata_predict = MetadataCatalog.get("dataset_val")
 
         # 3. Predict
-        id_json_list: List[Tuple[str, Dict[str, SemanticJob]]] = []  # type: ignore
+        id_json_list: List[Tuple[str, Dict[str, JsonResponseSemanticT]]] = []  # type: ignore
 
-        predicted_annotations: List[AssetAnnotationsT] = []
+        predicted_annotations: List[AssetStandardizedAnnotationsT] = []
 
         for image in downloaded_images:
             im = cv2.imread(image.filepath)
@@ -302,13 +302,13 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             self._visualize_predictions(
                 visualization_dir, image.filepath, dataset_metadata_predict, im, outputs
             )
-            semantic_job: SemanticJob = {"annotations": annotations}
+            semantic_job: JsonResponseSemanticT = {"annotations": annotations}
             id_json_list.append((image.externalId, {self.job_name: semantic_job}))
 
             annotations_ = self.convert_kili_semantic_to_label_error_semantic(semantic_job)
 
             predicted_annotations.append(
-                AssetAnnotationsT(annotations=annotations_, externalId=image.externalId)
+                AssetStandardizedAnnotationsT(annotations=annotations_, externalId=image.externalId)
             )
 
         json_response_arrray = [a[1] for a in id_json_list]
@@ -324,16 +324,16 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
 
     @staticmethod
     def convert_kili_semantic_to_label_error_semantic(
-        semantic_job: SemanticJob,
-    ) -> List[AnnotationT]:
-        annotations_: List[AnnotationT] = []
+        semantic_job: JsonResponseSemanticT,
+    ) -> List[AnnotationStandardizedT]:
+        annotations_: List[AnnotationStandardizedT] = []
         for annot in semantic_job["annotations"]:
             normalized_vertices = annot["boundingPoly"][0]["normalizedVertices"]
             semantic_position = SemanticPositionT(
                 points=[PointT(x=vertice["x"], y=vertice["y"]) for vertice in normalized_vertices]
             )
             annotations_.append(
-                AnnotationSemanticT(
+                AnnotationStandardizedSemanticT(
                     confidence=annot["categories"][0]["confidence"],
                     category_id=annot["categories"][0]["name"],
                     position=semantic_position,
@@ -427,16 +427,18 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         )
 
         # PREDICTED ANNOTATIONS
-        predicted_annotations: List[AssetAnnotationsT] = job_predictions.predicted_annotations
+        predicted_annotations: List[
+            AssetStandardizedAnnotationsT
+        ] = job_predictions.predicted_annotations
         assert len(predicted_annotations) == len(assets)
 
         # MANUAL ANNOTATIONS
-        manual_annotations: List[AssetAnnotationsT] = []
+        manual_annotations: List[AssetStandardizedAnnotationsT] = []
         for asset in assets:
-            semantic_job = asset["labels"][0]["jsonResponse"]
+            semantic_job = asset["labels"][0]["jsonResponse"][self.job_name]
             annotation = self.convert_kili_semantic_to_label_error_semantic(semantic_job)
             manual_annotations.append(
-                AssetAnnotationsT(
+                AssetStandardizedAnnotationsT(
                     annotations=annotation,
                     externalId=asset["externalId"],
                 )

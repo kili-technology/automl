@@ -24,6 +24,7 @@ from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetT,
     JobT,
+    JsonResponseClassification,
     MLTaskT,
     ModelFrameworkT,
     ModelMetricT,
@@ -206,7 +207,9 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                 )
 
     @staticmethod
-    def _compute_asset_classification(model_framework, tokenizer, model, asset):
+    def _compute_asset_classification(
+        model_framework, tokenizer, model, asset
+    ) -> JsonResponseClassification:
         # imposed by the model
         asset = asset[: model.config.max_position_embeddings]
 

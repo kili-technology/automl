@@ -33,7 +33,7 @@ class NERPositionT(PositionT):
     page: int
 
 
-class AnnotationT:
+class AnnotationStandardizedT:
     def __init__(
         self,
         confidence: float,
@@ -45,7 +45,7 @@ class AnnotationT:
         self.position = position
 
 
-class AnnotationSemanticT(AnnotationT):
+class AnnotationStandardizedSemanticT(AnnotationStandardizedT):
     def __init__(
         self,
         confidence: float,
@@ -56,14 +56,14 @@ class AnnotationSemanticT(AnnotationT):
         self.position = position
 
 
-class AnnotationBboxT(AnnotationSemanticT):
+class AnnotationStandardizedBboxT(AnnotationStandardizedSemanticT):
     def __init__(self, confidence: float, category_id: CategoryIdT, position: BBoxPositionT):
         self.confidence = confidence
         self.category_id = category_id
         self.position = position
 
 
-class AnnotationNERT(AnnotationT):
+class AnnotationStandardizedNERT(AnnotationStandardizedT):
     def __init__(self, confidence: float, category_id: CategoryIdT, position: NERPositionT):
         self.confidence = confidence
         self.category_id = category_id
@@ -71,17 +71,20 @@ class AnnotationNERT(AnnotationT):
 
 
 @dataclass
-class AssetAnnotationsT:
-    annotations: List[AnnotationT]
+class AssetStandardizedAnnotationsT:
+    annotations: List[AnnotationStandardizedT]
     externalId: str
 
 
-def _iou_ner(annotation_ner_1: AnnotationNERT, annotation_ner_2: AnnotationNERT) -> float:
+def _iou_ner(
+    annotation_ner_1: AnnotationStandardizedNERT, annotation_ner_2: AnnotationStandardizedNERT
+) -> float:
     ...
 
 
 def _iou_semantic(
-    annotation_semantic_1: AnnotationSemanticT, annotation_semantic_2: AnnotationSemanticT
+    annotation_semantic_1: AnnotationStandardizedSemanticT,
+    annotation_semantic_2: AnnotationStandardizedSemanticT,
 ) -> float:
     polygon1 = Polygon(annotation_semantic_1.position["points"])  # type:ignore
     polygon2 = Polygon(annotation_semantic_2.position["points"])  # type:ignore
@@ -91,18 +94,26 @@ def _iou_semantic(
     return iou
 
 
-def _iou_bbox(annotation_bbox_1: AnnotationBboxT, annotation_bbox_2: AnnotationBboxT) -> float:
+def _iou_bbox(
+    annotation_bbox_1: AnnotationStandardizedBboxT, annotation_bbox_2: AnnotationStandardizedBboxT
+) -> float:
     return _iou_semantic(annotation_bbox_1, annotation_bbox_2)
 
 
-def compute_iou(annotation_1: AnnotationT, annotation_2: AnnotationT) -> float:
+def compute_iou(
+    annotation_1: AnnotationStandardizedT, annotation_2: AnnotationStandardizedT
+) -> float:
     # TypedDict
-    if isinstance(annotation_1, AnnotationNERT) and isinstance(annotation_2, AnnotationNERT):
+    if isinstance(annotation_1, AnnotationStandardizedNERT) and isinstance(
+        annotation_2, AnnotationStandardizedNERT
+    ):
         return _iou_ner(annotation_1, annotation_2)
-    elif isinstance(annotation_1, AnnotationBboxT) and isinstance(annotation_2, AnnotationBboxT):
+    elif isinstance(annotation_1, AnnotationStandardizedBboxT) and isinstance(
+        annotation_2, AnnotationStandardizedBboxT
+    ):
         return _iou_bbox(annotation_1, annotation_2)
-    elif isinstance(annotation_1, AnnotationSemanticT) and isinstance(
-        annotation_2, AnnotationSemanticT
+    elif isinstance(annotation_1, AnnotationStandardizedSemanticT) and isinstance(
+        annotation_2, AnnotationStandardizedSemanticT
     ):
         return _iou_semantic(annotation_1, annotation_2)
     else:
@@ -113,7 +124,8 @@ ErrorT = Literal["omission", "hallucination", "misclassification", "imprecise"]
 
 
 def find_label_errors(
-    predicted_annotations: AssetAnnotationsT, manual_annotations: AssetAnnotationsT
+    predicted_annotations: AssetStandardizedAnnotationsT,
+    manual_annotations: AssetStandardizedAnnotationsT,
 ):
     """We compare the prediction of the model and the manual annotations."""
     for manual_annotation in manual_annotations.annotations:

@@ -2,6 +2,8 @@ from typing import Any, Dict, List, Optional
 
 from typing_extensions import Literal, TypedDict
 
+from kiliautoml.utils.helpers import kili_print
+
 AssetStatusT = Literal["TODO", "ONGOING", "LABELED", "TO_REVIEW", "REVIEWED"]
 LabelTypeT = Literal["PREDICTION", "DEFAULT", "AUTOSAVE", "REVIEW", "INFERENCE"]
 CommandT = Literal["train", "predict", "label_errors", "prioritize"]
@@ -23,9 +25,9 @@ ModelNameT = Literal[
 ]
 
 
-AnnotationsT = Any  # TODO
 CategoryNameT = str
 CategoryIdT = str  # camelCase with first letter in minuscule
+JobNameT = str
 
 
 class CategoryT(TypedDict):
@@ -35,10 +37,82 @@ class CategoryT(TypedDict):
 
 CategoriesT = List[CategoryT]
 
+# ### ANNNOTATIONS #####################################
 
-class JsonResponseT(TypedDict):
-    annotations: AnnotationsT
+# KILI Polygon Semantic Format
+
+
+class NormalizedVertice(TypedDict):
+    x: float
+    y: float
+
+
+class NormalizedVertices(TypedDict):
+    normalizedVertices: List[NormalizedVertice]
+
+
+class SemanticAnnotation(TypedDict):
+    boundingPoly: List[NormalizedVertices]  # len(self.boundingPoly) == 1
+    mid: str
+    type: Literal["semantic"]
+    categories: List[CategoryT]
+
+
+# BBOX
+
+
+class PointT(TypedDict):
+    x: float
+    y: float
+
+
+class BoundingPolyT(TypedDict):
+    normalizedVertices: List[PointT]
+
+
+class BBoxAnnotation(TypedDict):
+    boundingPoly: Any
+    categories: List[CategoryT]
+    type: str
+
+
+# KILI NER Format
+
+
+class KiliNerAnnotations(TypedDict):
+    beginOffset: int
+    content: str
+    endOffset: int
     categories: CategoriesT
+
+
+# KILI Text and Image Classification Format
+
+
+class JsonResponseBaseT(TypedDict):
+    ...
+
+
+class JsonResponseSemanticT(JsonResponseBaseT, TypedDict):
+    annotations: List[SemanticAnnotation]
+
+
+class JsonResponseBbox(JsonResponseBaseT, TypedDict):
+    annotations: List[BBoxAnnotation]
+
+
+class JsonResponseNERT(JsonResponseBaseT, TypedDict):
+    annotations: KiliNerAnnotations  # missing List here?
+
+
+class JsonResponseClassification(JsonResponseBaseT, TypedDict):
+    categories: CategoriesT
+
+
+# ### KILI TYPING
+
+
+JsonResponseT = Dict[JobNameT, JsonResponseBaseT]
 
 
 class LabelT(TypedDict):
@@ -67,7 +141,7 @@ OntologyCategoriesT = Dict[CategoryIdT, OntologyCategoryT]
 
 
 class JobT(TypedDict):
-    content: Dict[Literal["categories"], OntologyCategoriesT]
+    content: Dict[Literal["categories"], OntologyCategoriesT]  # Is this general?
     instruction: str
     isChild: bool
     tools: Any  # example: ["semantic"],
@@ -78,7 +152,55 @@ class JobT(TypedDict):
     isNew: bool
 
 
-JobsT = Dict[str, JobT]
+JobsT = Dict[JobNameT, JobT]
+
+# AUTOML IDIOSYNCRATIC SPECIFIC TYPING
+
+
+class JobPredictions:
+    def __init__(
+        self,
+        job_name: str,
+        external_id_array: List[str],
+        json_response_array: List[Dict[JobNameT, JsonResponseBaseT]],
+        model_name_array: List[str],
+        predictions_probability: List[float],
+        predicted_annotations: Optional[List[Any]] = None,
+    ):
+        self.job_name = job_name
+        self.external_id_array = external_id_array
+        self.json_response_array = json_response_array
+        self.model_name_array = model_name_array
+        self.predictions_probability = predictions_probability
+
+        n_assets = len(external_id_array)
+
+        # assert all lists are compatible
+        same_len = n_assets == len(json_response_array)
+        assert same_len, "external_id_array and json_response_array must have the same length"
+
+        same_len = n_assets == len(model_name_array)
+        assert same_len, "external_id_array and model_name_array must have the same length"
+
+        same_len = n_assets == len(predictions_probability)
+        assert same_len, "external_id_array and predictions_probability must have the same length"
+
+        # assert no duplicates
+        assert (
+            len(set(external_id_array)) == n_assets
+        ), "external_id_array must not contain duplicates"
+
+        kili_print(
+            f"JobPredictions: {n_assets} predictions successfully created for job {job_name}."
+        )
+
+        if predicted_annotations:
+            self.predicted_annotations = predicted_annotations
+
+    def __repr__(self):
+        return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"
+
+
 AdditionalTrainingArgsT = Dict[str, Any]
 DictTrainingInfosT = Dict[str, Any]
 
