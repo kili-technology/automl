@@ -137,7 +137,7 @@ class Prioritizer:
 
         pipe = Pipeline([("pca", PCA(n_components=10)), ("kmeans", KMeans(n_clusters=5))])
 
-        X_clusters = pipe.fit_transform(embeddings)[:, 0]
+        X_clusters = pipe.fit_transform(embeddings)[:, 0]  # type:ignore
 
         index_clusters = {i: np.where(X_clusters == i)[0] for i in np.unique(X_clusters)}
         index_clusters_permuted = {

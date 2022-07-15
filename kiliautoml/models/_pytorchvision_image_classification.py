@@ -28,6 +28,7 @@ from kiliautoml.utils.type import (
     AssetT,
     JobNameT,
     JobT,
+    JsonResponseClassification,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
@@ -168,21 +169,21 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             external_id_array=[asset.externalId for asset in assets],
             model_name_array=[self.model_name] * len(assets),
             json_response_array=[
-                {
-                    "CLASSIFICATION_JOB": {  # TODO: replace by self.job_name
-                        "categories": [
-                            {
-                                "name": list(self.class_name_to_idx.keys())[np.argmax(prob_array)],
-                                "confidence": np.max(prob_array),
-                            }
-                        ]
-                    }
-                }
-                for prob_array in prob_arrays
+                {self.job_name: self.create_categories(prob_array)} for prob_array in prob_arrays
             ],
             predictions_probability=prob_arrays,
         )
         return job_predictions
+
+    def create_categories(self, prob_array) -> JsonResponseClassification:
+        return {
+            "categories": [
+                {
+                    "name": list(self.class_name_to_idx.keys())[np.argmax(prob_array)],
+                    "confidence": np.max(prob_array),
+                }
+            ]
+        }
 
     def get_model_path(self, model_path, from_project):
         model_name: ModelNameT = self.model_name  # type: ignore
@@ -212,7 +213,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         verbose: int = 0,
         clear_dataset_cache: bool = False,
         api_key: str = "",
-    ) -> Any:
+    ) -> Any:  # maybe externalId
         _ = clear_dataset_cache
 
         images = download_project_images(

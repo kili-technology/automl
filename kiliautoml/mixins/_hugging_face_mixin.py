@@ -110,7 +110,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         epochs: int,
         disable_wandb: bool,
         batch_size: int,
-        additional_train_args_hg: Dict[Any, Any],
+        additional_train_args_hg: Dict[str, Any],
     ):
         date = datetime.now().strftime("%Y-%m-%d_%H:%M")
         default_args = {

@@ -73,7 +73,7 @@ class BoundingPolyT(TypedDict):
 
 
 class BBoxAnnotation(TypedDict):
-    boundingPoly: Any
+    boundingPoly: List[BoundingPolyT]
     categories: List[CategoryT]
     type: str
 

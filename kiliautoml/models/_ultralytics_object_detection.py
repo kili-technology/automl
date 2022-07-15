@@ -32,9 +32,11 @@ from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetT,
     BBoxAnnotation,
+    BoundingPolyT,
     CategoryT,
     JobNameT,
     JobT,
+    JsonResponseBboxT,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
@@ -365,7 +367,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         inference_files_by_id = {get_id_from_path(pf): pf for pf in inference_files}
 
         kili_print("Converting Ultralytics' YoloV5 inference to Kili JSON format...")
-        id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
+        id_json_list: List[Tuple[str, Dict[JobNameT, JsonResponseBboxT]]] = []
 
         label_error_annotations: List[AssetStandardizedAnnotationsT] = []
         proba_list: List[float] = []
@@ -380,7 +382,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                         AnnotationStandardizedBboxT(
                             confidence=float(proba / 100),
                             category_id=bbox["categories"][0]["name"],
-                            position=bbox["boundingPoly"],
+                            position=bbox["boundingPoly"][0],  # type:ignore
                         )
                     )
 
@@ -414,7 +416,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         job_predictions = JobPredictions(
             job_name=job_name,
             external_id_array=[a[0] for a in id_json_list],
-            json_response_array=[a[1] for a in id_json_list],
+            json_response_array=[a[1] for a in id_json_list],  # type:ignore
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=proba_list,
             predicted_annotations=label_error_annotations,
@@ -515,20 +517,20 @@ def yolov5_to_kili_json(
             }
             probabilities.append(p)
 
-            bbox_annotation: BBoxAnnotation = {
-                "boundingPoly": [
-                    {
-                        "normalizedVertices": [
+            bbox_annotation = BBoxAnnotation(
+                boundingPoly=[
+                    BoundingPolyT(
+                        normalizedVertices=[
                             {"x": x - w / 2, "y": y + h / 2},
                             {"x": x - w / 2, "y": y - h / 2},
                             {"x": x + w / 2, "y": y - h / 2},
                             {"x": x + w / 2, "y": y + h / 2},
                         ]
-                    }
+                    )
                 ],
-                "categories": [category],
-                "type": "rectangle",
-            }
+                categories=[category],
+                type="rectangle",
+            )
 
             annotations.append(bbox_annotation)
 

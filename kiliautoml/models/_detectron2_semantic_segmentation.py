@@ -290,7 +290,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         dataset_metadata_predict = MetadataCatalog.get("dataset_val")
 
         # 3. Predict
-        id_json_list: List[Tuple[str, Dict[str, JsonResponseSemanticT]]] = []  # type: ignore
+        id_json_list: List[Tuple[str, Dict[JobNameT, JsonResponseSemanticT]]] = []  # type: ignore
 
         predicted_annotations: List[AssetStandardizedAnnotationsT] = []
 
@@ -313,11 +313,11 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
                 AssetStandardizedAnnotationsT(annotations=annotations_, externalId=image.externalId)
             )
 
-        json_response_arrray = [a[1] for a in id_json_list]
+        json_response_array = [a[1] for a in id_json_list]
         job_predictions = JobPredictions(
             job_name=self.job_name,
             external_id_array=[asset.externalId for asset in assets],
-            json_response_array=json_response_arrray,
+            json_response_array=json_response_array,  # type:ignore
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=[100] * len(id_json_list),
             predicted_annotations=predicted_annotations,

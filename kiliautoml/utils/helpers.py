@@ -4,7 +4,7 @@ import random
 import warnings
 from datetime import datetime
 from glob import glob
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from warnings import warn
 
 import numpy as np
@@ -27,6 +27,7 @@ from kiliautoml.utils.type import (
     JobNameT,
     JobsT,
     JobT,
+    JsonResponseT,
     LabelMergeStrategyT,
     MLTaskT,
     ProjectIdT,
@@ -72,7 +73,7 @@ class JobPredictions:
         self,
         job_name: JobNameT,
         external_id_array: List[str],
-        json_response_array: List[Any],
+        json_response_array: List[JsonResponseT],
         model_name_array: List[str],
         predictions_probability: List[float],
         predicted_annotations: Optional[List[AssetStandardizedAnnotationsT]] = None,
