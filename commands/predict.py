@@ -13,7 +13,6 @@ from kiliautoml.models import (
 )
 from kiliautoml.models._base_model import BaseInitArgs
 from kiliautoml.utils.helpers import (
-    JobPredictions,
     get_assets,
     get_content_input_from_job,
     get_project,
@@ -21,7 +20,13 @@ from kiliautoml.utils.helpers import (
     kili_print,
     not_implemented_job,
 )
-from kiliautoml.utils.type import AssetStatusT, JobNameT, ModelFrameworkT, ProjectIdT
+from kiliautoml.utils.type import (
+    AssetStatusT,
+    JobNameT,
+    JobPredictions,
+    ModelFrameworkT,
+    ProjectIdT,
+)
 
 
 def predict_one_job(

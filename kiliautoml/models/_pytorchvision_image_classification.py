@@ -12,7 +12,7 @@ from tqdm.autonotebook import tqdm
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helpers import JobPredictions, kili_print
+from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.path import Path, PathPytorchVision
 from kiliautoml.utils.pytorchvision.image_classification import (
     ClassificationPredictDataset,
@@ -27,6 +27,7 @@ from kiliautoml.utils.pytorchvision.image_classification import (
 from kiliautoml.utils.type import (
     AssetT,
     JobNameT,
+    JobPredictions,
     JobT,
     JsonResponseClassification,
     ModelFrameworkT,

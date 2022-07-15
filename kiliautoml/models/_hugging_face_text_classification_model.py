@@ -13,17 +13,13 @@ from transformers import Trainer
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.helpers import (
-    JobPredictions,
-    categories_from_job,
-    ensure_dir,
-    kili_print,
-)
+from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetT,
     JobNameT,
+    JobPredictions,
     JobT,
     JsonResponseClassification,
     MLTaskT,

@@ -3,11 +3,11 @@ from typing import List, Optional
 
 from typing_extensions import TypedDict
 
-from kiliautoml.utils.helpers import JobPredictions
 from kiliautoml.utils.type import (
     AssetT,
     DictTrainingInfosT,
     JobNameT,
+    JobPredictions,
     JobT,
     MLTaskT,
     ModelFrameworkT,

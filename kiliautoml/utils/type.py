@@ -53,7 +53,7 @@ class NormalizedVertices(TypedDict):
     normalizedVertices: List[NormalizedVertice]
 
 
-class SemanticAnnotation(TypedDict):
+class KiliSemantic(TypedDict):
     boundingPoly: List[NormalizedVertices]  # len(self.boundingPoly) == 1
     mid: str
     type: Literal["semantic"]
@@ -72,16 +72,16 @@ class BoundingPolyT(TypedDict):
     normalizedVertices: List[PointT]
 
 
-class BBoxAnnotation(TypedDict):
+class KiliBBox(TypedDict):
     boundingPoly: List[BoundingPolyT]
-    categories: List[CategoryT]
     type: str
+    categories: List[CategoryT]
 
 
 # KILI NER Format
 
 
-class KiliNerAnnotations(TypedDict):
+class KiliNer(TypedDict):
     beginOffset: int
     content: str
     endOffset: int
@@ -92,19 +92,21 @@ class KiliNerAnnotations(TypedDict):
 
 
 class JsonResponseBaseT(TypedDict):
+    """Compatible with JsonResponseSemanticT, ..."""
+
     ...
 
 
 class JsonResponseSemanticT(JsonResponseBaseT, TypedDict):
-    annotations: List[SemanticAnnotation]
+    annotations: List[KiliSemantic]
 
 
 class JsonResponseBboxT(JsonResponseBaseT, TypedDict):
-    annotations: List[BBoxAnnotation]
+    annotations: List[KiliBBox]
 
 
 class JsonResponseNERT(JsonResponseBaseT, TypedDict):
-    annotations: List[KiliNerAnnotations]
+    annotations: List[KiliNer]
 
 
 class JsonResponseClassification(JsonResponseBaseT, TypedDict):
@@ -182,7 +184,6 @@ class JobPredictions:
         json_response_array: List[Dict[JobNameT, JsonResponseBaseT]],
         model_name_array: List[str],
         predictions_probability: List[float],
-        predicted_annotations: Optional[List[Any]] = None,
     ):
         self.job_name = job_name
         self.external_id_array = external_id_array
@@ -210,9 +211,6 @@ class JobPredictions:
         kili_print(
             f"JobPredictions: {n_assets} predictions successfully created for job {job_name}."
         )
-
-        if predicted_annotations:
-            self.predicted_annotations = predicted_annotations
 
     def __repr__(self):
         return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"

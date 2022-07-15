@@ -13,12 +13,7 @@ from transformers import DataCollatorForTokenClassification, Trainer
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.helpers import (
-    JobPredictions,
-    categories_from_job,
-    ensure_dir,
-    kili_print,
-)
+from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -26,8 +21,9 @@ from kiliautoml.utils.type import (
     CategoriesT,
     CategoryT,
     JobNameT,
+    JobPredictions,
     JobT,
-    KiliNerAnnotations,
+    KiliNer,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
@@ -227,7 +223,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             text = self._get_text_from(asset.content)
 
             offset = 0
-            predictions_asset: List[KiliNerAnnotations] = []
+            predictions_asset: List[KiliNer] = []
 
             probas_asset = []
             for sentence in nltk.sent_tokenize(text):
@@ -424,10 +420,10 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         tokens: List[str],
         null_category: str,
         offset_in_text: int,
-    ) -> List[KiliNerAnnotations]:
+    ) -> List[KiliNer]:
 
         offset_in_sentence: int = 0
-        kili_annotations: List[KiliNerAnnotations] = []
+        kili_annotations: List[KiliNer] = []
 
         for label, proba, token in zip(labels, probas, tokens):
             if token in [
@@ -451,7 +447,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             if label != null_category:
 
                 categories: CategoriesT = [CategoryT(name=label[2:], confidence=int(proba * 100))]
-                ann: KiliNerAnnotations = {
+                ann: KiliNer = {
                     "beginOffset": offset_in_text + offset_in_sentence + ind_in_remaining_text,
                     "content": content,
                     "endOffset": offset_in_text
@@ -482,7 +478,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         tokens: List[str],
         null_category: str,
         offset_in_text: int,
-    ) -> List[KiliNerAnnotations]:
+    ) -> List[KiliNer]:
         """
         Format token predictions into a the kili format.
         :param: text:
