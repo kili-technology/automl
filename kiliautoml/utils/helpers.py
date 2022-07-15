@@ -156,7 +156,8 @@ def get_asset_memoized(
 
     if GENERATE_MOCK:
         jsonify_mock_data(assets, function_name="assets")
-    return assets
+
+    return [AssetT(**asset) for asset in assets]
 
 
 def get_assets(
