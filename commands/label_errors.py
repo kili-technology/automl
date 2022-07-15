@@ -42,7 +42,7 @@ def upload_errors_to_kili(found_errors: List[str], kili):
         error_assets = kili.assets(
             asset_id_in=found_errors[skip : skip + first], fields=["id", "metadata"]
         )
-        asset_ids = [asset["id"] for asset in error_assets]
+        asset_ids = [asset.id for asset in error_assets]
         new_metadatas = [asset["metadata"] for asset in error_assets]
 
         for meta in new_metadatas:

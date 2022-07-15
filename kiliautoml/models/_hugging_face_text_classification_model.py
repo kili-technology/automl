@@ -167,7 +167,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         for asset in assets:
-            text = self._get_text_from(asset["content"])
+            text = self._get_text_from(asset.content)
 
             predictions_asset = self._compute_asset_classification(
                 self.model_framework, tokenizer, model, text
@@ -184,7 +184,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
             job_name=self.job_name,
-            external_id_array=[a["externalId"] for a in assets],
+            external_id_array=[a.externalId for a in assets],
             json_response_array=predictions,
             model_name_array=["Kili AutoML"] * len(assets),
             predictions_probability=proba_assets,
@@ -195,13 +195,11 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     def _write_dataset(self, assets, job_name, path_dataset, job_categories):
         with open(ensure_dir(path_dataset), "w") as handler:
             for asset in tqdm(assets, desc="Downloading content"):
-                label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0][
-                    "name"
-                ]
+                label_category = asset.labels[0]["jsonResponse"][job_name]["categories"][0]["name"]
                 handler.write(
                     json.dumps(
                         {
-                            "text": self._get_text_from(asset["content"]),
+                            "text": self._get_text_from(asset.content),
                             "label": job_categories.index(label_category),
                         }
                     )

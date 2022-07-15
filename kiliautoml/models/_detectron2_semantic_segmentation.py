@@ -316,7 +316,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         json_response_arrray = [a[1] for a in id_json_list]
         job_predictions = JobPredictions(
             job_name=self.job_name,
-            external_id_array=[asset["externalId"] for asset in assets],
+            external_id_array=[asset.externalId for asset in assets],
             json_response_array=json_response_arrray,
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=[100] * len(id_json_list),
@@ -437,14 +437,14 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         # MANUAL ANNOTATIONS
         manual_annotations: List[AssetStandardizedAnnotationsT] = []
         for asset in assets:
-            semantic_job = asset["labels"][0]["jsonResponse"][self.job_name]
+            semantic_job = asset.labels[0]["jsonResponse"][self.job_name]
             annotation = self.convert_kili_semantic_to_label_error_semantic(
                 semantic_job,  # type:ignore
             )
             manual_annotations.append(
                 AssetStandardizedAnnotationsT(
                     annotations=annotation,
-                    externalId=asset["externalId"],
+                    externalId=asset.externalId,
                 )
             )
 

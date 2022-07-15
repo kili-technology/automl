@@ -224,7 +224,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         predictions = []
         proba_assets = []
         for asset in assets:
-            text = self._get_text_from(asset["content"])
+            text = self._get_text_from(asset.content)
 
             offset = 0
             predictions_asset: List[KiliNerAnnotations] = []
@@ -255,7 +255,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
             job_name=self.job_name,
-            external_id_array=[a["externalId"] for a in assets],  # type:ignore
+            external_id_array=[a.externalId for a in assets],  # type:ignore
             json_response_array=predictions,
             model_name_array=["Kili AutoML"] * len(assets),
             predictions_probability=proba_assets,
@@ -292,9 +292,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         return label_list
 
     def _write_asset(self, job_name: JobNameT, labels_to_ids, handler, asset: AssetT):
-        text = self._get_text_from(asset["content"])
-        if job_name in asset["labels"][0]["jsonResponse"]:
-            annotations = asset["labels"][0]["jsonResponse"][job_name]["annotations"]
+        text = self._get_text_from(asset.content)
+        if job_name in asset.labels[0]["jsonResponse"]:
+            annotations = asset.get_annotations_ner(job_name)["annotations"]
         else:
             annotations = []
         sentences = nltk.sent_tokenize(text)

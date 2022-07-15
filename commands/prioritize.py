@@ -422,7 +422,7 @@ def main(
         return
     predictions_probability = job_predictions.predictions_probability
     kili_print("Predictions probability shape: ", predictions_probability)
-    asset_ids = [asset["id"] for asset in unlabeled_assets]
+    asset_ids = [asset.id for asset in unlabeled_assets]
     prioritizer = Prioritizer(embeddings, predictions_probability=predictions_probability)
     priorities = prioritizer.get_priorities(
         diversity_sampling=diversity_sampling, uncertainty_sampling=uncertainty_sampling

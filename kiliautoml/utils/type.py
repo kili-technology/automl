@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+from pydantic import BaseModel
 from typing_extensions import Literal, TypedDict
 
 from kiliautoml.utils.helpers import kili_print
@@ -98,12 +99,12 @@ class JsonResponseSemanticT(JsonResponseBaseT, TypedDict):
     annotations: List[SemanticAnnotation]
 
 
-class JsonResponseBbox(JsonResponseBaseT, TypedDict):
+class JsonResponseBboxT(JsonResponseBaseT, TypedDict):
     annotations: List[BBoxAnnotation]
 
 
 class JsonResponseNERT(JsonResponseBaseT, TypedDict):
-    annotations: KiliNerAnnotations  # missing List here?
+    annotations: List[KiliNerAnnotations]
 
 
 class JsonResponseClassification(JsonResponseBaseT, TypedDict):
@@ -122,12 +123,27 @@ class LabelT(TypedDict):
     labelType: LabelTypeT
 
 
-class AssetT(TypedDict):
+class AssetT(BaseModel):
     labels: List[LabelT]
     id: str
     externalId: str
     content: Any
     status: AssetStatusT
+
+    def _get_annotations(self, job_name: JobNameT) -> JsonResponseBaseT:
+        return self.labels[0]["jsonResponse"][job_name]
+
+    def get_annotations_ner(self, job_name: JobNameT) -> JsonResponseNERT:
+        return self._get_annotations(job_name)  # type:ignore
+
+    def get_annotations_bbox(self, job_name: JobNameT) -> JsonResponseBboxT:
+        return self._get_annotations(job_name)  # type:ignore
+
+    def get_annotations_semantic(self, job_name: JobNameT) -> JsonResponseSemanticT:
+        return self._get_annotations(job_name)  # type:ignore
+
+    def get_annotations_classification(self, job_name: JobNameT) -> JsonResponseClassification:
+        return self._get_annotations(job_name)  # type:ignore
 
 
 class OntologyCategoryT(TypedDict):

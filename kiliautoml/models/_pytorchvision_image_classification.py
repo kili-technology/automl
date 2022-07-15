@@ -97,7 +97,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         labels = []
         for asset in assets:
             labels.append(
-                asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
+                asset.get_annotations_classification(self.job_name)["categories"][0]["name"]
             )
 
         splits = {}
@@ -165,7 +165,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
 
         job_predictions = JobPredictions(
             job_name=self.job_name,
-            external_id_array=[asset["externalId"] for asset in assets],
+            external_id_array=[asset.externalId for asset in assets],
             model_name_array=[self.model_name] * len(assets),
             json_response_array=[
                 {
@@ -221,7 +221,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         labels = []
         for asset in assets:
             labels.append(
-                asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
+                asset.get_annotations_classification(self.job_name)["categories"][0]["name"]
             )
 
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)

@@ -88,7 +88,7 @@ def download_image(api_key, asset_content):
 def download_image_retry(api_key, asset: AssetT, n_try: int):
     while n_try < 20:
         try:
-            img_data = download_asset_binary(api_key, asset["content"])
+            img_data = download_asset_binary(api_key, asset.content)
             break
         except Exception:
             time.sleep(1)
@@ -105,18 +105,18 @@ def download_project_images(
     downloaded_images = []
 
     for asset in tqdm(assets, desc="Downloading images"):
-        image = download_image(api_key, asset["content"])
+        image = download_image(api_key, asset.content)
         format = str(image.format or "")
         filepath = ""
         if output_folder:
-            filepath = os.path.join(output_folder, asset["id"] + "." + format.lower())
+            filepath = os.path.join(output_folder, asset.id + "." + format.lower())
             os.makedirs(output_folder, exist_ok=True)
             with open(filepath, "wb") as fp:
                 image.save(fp, format)  # type: ignore
         downloaded_images.append(
             DownloadedImage(
-                id=asset["id"],
-                externalId=asset["externalId"],
+                id=asset.id,
+                externalId=asset.externalId,
                 filepath=filepath or "",
             )
         )
@@ -130,11 +130,11 @@ def download_project_text(
     kili_print("Downloading project text...")
     downloaded_text = []
     for asset in tqdm(assets, desc="Downloading text content"):
-        content = download_asset_unicode(api_key, asset["content"])
+        content = download_asset_unicode(api_key, asset.content)
         downloaded_text.append(
             DownloadedText(
-                id=asset["id"],
-                externalId=asset["externalId"],
+                id=asset.id,
+                externalId=asset.externalId,
                 content=content,
             )
         )

@@ -11,13 +11,7 @@ from typing_extensions import TypedDict
 
 from kiliautoml.utils.download_assets import download_asset_binary
 from kiliautoml.utils.helpers import get_mapping_category_name_cat_kili_id, kili_print
-from kiliautoml.utils.type import (
-    AssetT,
-    CategoryIdT,
-    JobNameT,
-    JobT,
-    SemanticAnnotation,
-)
+from kiliautoml.utils.type import AssetT, CategoryIdT, JobNameT, JobT
 
 # ## DETECTRON FORMAT
 
@@ -107,12 +101,10 @@ def convert_kili_semantic_to_coco(
     # Fill labels_json
     annotation_j = -1
     for asset_i, asset in enumerate(assets):
-        annotations_: List[SemanticAnnotation] = asset["labels"][0]["jsonResponse"][job_name][
-            "annotations"
-        ]
+        annotations_ = asset.get_annotations_semantic(job_name)["annotations"]
 
         # Add a new image
-        img_data = download_asset_binary(api_key, asset["content"])  # jpg
+        img_data = download_asset_binary(api_key, asset.content)  # jpg
         img = cv2.imdecode(np.frombuffer(img_data, np.uint8), cv2.IMREAD_COLOR)
         file_name = os.path.join(data_dir, f"{asset_i}.jpg")
         cv2.imwrite(file_name, img)

@@ -255,9 +255,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
             print(path_labels)
             os.makedirs(path_labels, exist_ok=True)
             for asset in assets_split:
-                asset_id = asset["id"] + ".txt"  # type: ignore
+                asset_id = asset.id + ".txt"  # type: ignore
                 with open(os.path.join(path_labels, asset_id), "w") as handler:
-                    json_response = asset["labels"][0]["jsonResponse"]
+                    json_response = asset.labels[0]["jsonResponse"]
                     for job in json_response.values():
                         save_annotations_to_yolo_format(names, handler, job)
 

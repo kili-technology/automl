@@ -216,13 +216,13 @@ def get_assets(
 
 
 def get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
-    labels = asset["labels"]
+    labels = asset.labels
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
         return min(labels, key=key)
     else:
-        warn(f"Asset {asset['id']} does not have any label available")
+        warn(f"Asset {asset.id} does not have any label available")
         return None
 
 
@@ -231,13 +231,13 @@ def filter_labeled_assets(job_name: JobNameT, strategy: LabelMergeStrategyT, ass
     for asset in assets:
         label = get_label(asset, job_name, strategy)
         if label is None:
-            asset_id = asset["id"]
+            asset_id = asset.id
             warnings.warn(f"${asset_id} removed because no labels where available")
             asset_id_to_remove.add(asset_id)
         else:
-            asset["labels"] = [label]
+            asset.labels = [label]
 
-    return [asset for asset in assets if asset["id"] not in asset_id_to_remove]
+    return [asset for asset in assets if asset.id not in asset_id_to_remove]
 
 
 def get_project(kili, project_id: ProjectIdT) -> Tuple[InputTypeT, JobsT, str]:
