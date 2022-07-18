@@ -188,10 +188,12 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         return job_predictions
 
-    def _write_dataset(self, assets, job_name, path_dataset, job_categories):
+    def _write_dataset(self, assets: List[AssetT], job_name, path_dataset, job_categories):
         with open(ensure_dir(path_dataset), "w") as handler:
             for asset in tqdm(assets, desc="Downloading content"):
-                label_category = asset.labels[0]["jsonResponse"][job_name]["categories"][0]["name"]
+                label_category = asset.get_annotations_classification(job_name)["categories"][0][
+                    "name"
+                ]
                 handler.write(
                     json.dumps(
                         {

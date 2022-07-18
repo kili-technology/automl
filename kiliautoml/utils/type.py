@@ -3,10 +3,8 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 from typing_extensions import Literal, TypedDict
 
-from kiliautoml.utils.helpers import kili_print
-
 AssetStatusT = Literal["TODO", "ONGOING", "LABELED", "TO_REVIEW", "REVIEWED"]
-LabelTypeT = Literal["PREDICTION", "DEFAULT", "AUTOSAVE", "REVIEW", "INFERENCE"]
+LabelTypeT = Literal["AUTOSAVE", "DEFAULT", "PREDICTION", "INFERENCE", "REVIEW"]
 CommandT = Literal["train", "predict", "label_errors", "prioritize"]
 LabelMergeStrategyT = Literal["last", "first"]
 ContentInputT = Literal["checkbox", "radio"]
@@ -130,7 +128,6 @@ class AssetT(BaseModel):
     id: str
     externalId: str
     content: Any
-    status: AssetStatusT
 
     def _get_annotations(self, job_name: JobNameT) -> JsonResponseBaseT:
         return self.labels[0]["jsonResponse"][job_name]
@@ -207,10 +204,6 @@ class JobPredictions:
         assert (
             len(set(external_id_array)) == n_assets
         ), "external_id_array must not contain duplicates"
-
-        kili_print(
-            f"JobPredictions: {n_assets} predictions successfully created for job {job_name}."
-        )
 
     def __repr__(self):
         return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"
