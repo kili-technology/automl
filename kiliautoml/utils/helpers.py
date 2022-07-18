@@ -212,9 +212,10 @@ def get_label(asset: AssetT, job_name: str, strategy: LabelMergeStrategyT):
     labels = asset["labels"]
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
     if LabelMergeStrategyT == "duplicate":
-        return labels[:4]
+        return labels
     if LabelMergeStrategyT == "copy":
-        return [labels[0] for _ in range(min(4, len(labels)))]
+        chosen_label = random.choice(labels)
+        return [chosen_label for _ in range(len(labels))]
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
         return [min(labels, key=key)]
@@ -225,6 +226,7 @@ def get_label(asset: AssetT, job_name: str, strategy: LabelMergeStrategyT):
 
 def filter_labeled_assets(job_name: str, strategy: LabelMergeStrategyT, assets: List[AssetT]):
     newAssets = []
+    print(f"Merge strategy used: ${strategy}")
     for asset in assets:
         label_list = get_label(asset, job_name, strategy)
         if len(label_list) == 0:
