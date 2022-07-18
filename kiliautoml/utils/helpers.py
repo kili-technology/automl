@@ -4,7 +4,7 @@ import random
 import warnings
 from datetime import datetime
 from glob import glob
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from warnings import warn
 
 import numpy as np
@@ -73,7 +73,7 @@ def get_asset_memoized(
     total: Optional[int],
     skip: int,
     status_in: Optional[List[AssetStatusT]] = None,
-) -> List[AssetT]:
+) -> List[Any]:
     assets = kili.assets(
         project_id=project_id,
         first=total,
@@ -93,7 +93,7 @@ def get_asset_memoized(
     if GENERATE_MOCK:
         jsonify_mock_data(assets, function_name="assets")
 
-    return [AssetT(**asset) for asset in assets]
+    return assets
 
 
 def get_assets(
@@ -141,20 +141,22 @@ def get_assets(
             status_in=status_in,
         )
 
-    if len(assets) == 0:
-        kili_print(f"No {status_in} assets found in project {project_id}.")
-        raise Exception("There is no asset matching the query.")
+    assets = [AssetT.construct(**asset) for asset in assets]
 
     if status_in is not None:
         only_labeled_status = not any(status in status_in for status in ["TO DO", "ONGOING"])
         if job_name is not None and only_labeled_status:
             assets = filter_labeled_assets(job_name, strategy, assets)
+    if len(assets) == 0:
+        kili_print(f"No {status_in} assets found in project {project_id}.")
+        raise Exception("There is no asset matching the query.")
     return assets
 
 
 def _get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
     labels = asset.labels
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
+    labels = [label for label in labels if label["labelType"] in ["DEFAULT", "REVIEW"]]
 
     TYPE_ORDER = {
         v: i for i, v in enumerate(["REVIEW", "DEFAULT", "PREDICTION", "INFERENCE", "AUTOSAVE"])
@@ -174,7 +176,8 @@ def _get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT)
 
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
-        return min(labels, key=key)
+        label = min(labels, key=key)
+        return label
     else:
         warn(f"Asset {asset.id} does not have any label available")
         return None
