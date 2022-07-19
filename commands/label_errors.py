@@ -131,12 +131,13 @@ def main(
             "job_name": job_name,
             "model_framework": model_framework,
             "model_name": model_name,
+            "project_id": project_id,
         }
 
         if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 
             image_classification_model = PyTorchVisionImageClassificationModel(
-                model_repository=model_repository, project_id=project_id, **base_init_args
+                model_repository=model_repository, **base_init_args
             )
             found_errors = image_classification_model.find_errors(
                 assets=assets,
@@ -157,7 +158,7 @@ def main(
             and "rectangle" in tools
         ):
 
-            model = UltralyticsObjectDetectionModel(project_id=project_id, **base_init_args)
+            model = UltralyticsObjectDetectionModel(**base_init_args)
             found_errors = model.find_errors(
                 cv_n_folds=cv_folds,
                 epochs=epochs,
@@ -168,7 +169,7 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
             )
         elif is_contours_detection(input_type, ml_task, content_input, tools):
-            model = Detectron2SemanticSegmentationModel(project_id=project_id, **base_init_args)
+            model = Detectron2SemanticSegmentationModel(**base_init_args)
             found_errors = model.find_errors(
                 cv_n_folds=cv_folds,
                 epochs=epochs,

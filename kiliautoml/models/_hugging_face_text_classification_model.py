@@ -55,7 +55,12 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(
-            self, job=job, job_name=job_name, model_name=model_name, model_framework=model_framework
+            self,
+            job=job,
+            job_name=job_name,
+            model_name=model_name,
+            model_framework=model_framework,
+            project_id=project_id,
         )
 
     def train(

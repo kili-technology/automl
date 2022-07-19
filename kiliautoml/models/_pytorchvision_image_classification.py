@@ -66,6 +66,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             job_name=job_name,
             model_name=model_name,
             model_framework=model_framework,
+            project_id=project_id,
         )
 
         self.model_dir = model_dir

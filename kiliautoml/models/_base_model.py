@@ -13,6 +13,7 @@ from kiliautoml.utils.type import (
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
 )
 
 
@@ -21,7 +22,7 @@ class BaseInitArgs(TypedDict):
     job_name: JobNameT
     model_name: ModelNameT
     model_framework: ModelFrameworkT
-    # TODO: Add projet_id
+    project_id: ProjectIdT
 
 
 class BaseTrainArgs(TypedDict):
@@ -44,12 +45,13 @@ class BaseModel(metaclass=ABCMeta):
         job_name: JobNameT,
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
-        # TODO: Add projet_id
+        project_id: ProjectIdT,
     ) -> None:
         self.job = job
         self.job_name = job_name
         self.model_name = model_name
         self.model_framework: ModelFrameworkT = model_framework
+        self.project_id: ProjectIdT = project_id
 
     @abstractmethod
     def train(

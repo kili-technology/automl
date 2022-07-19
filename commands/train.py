@@ -121,6 +121,7 @@ def main(
             "job_name": job_name,
             "model_framework": model_framework,
             "model_name": model_name,
+            "project_id": project_id,
         }
 
         base_train_args = BaseTrainArgs(
@@ -133,7 +134,6 @@ def main(
         )
         if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
             model = HuggingFaceTextClassificationModel(
-                project_id=project_id,
                 api_key=api_key,
                 api_endpoint=api_endpoint,
                 **base_init_args,
@@ -147,7 +147,6 @@ def main(
             and ml_task == "NAMED_ENTITIES_RECOGNITION"
         ):
             model = HuggingFaceNamedEntityRecognitionModel(
-                project_id=project_id,
                 api_key=api_key,
                 api_endpoint=api_endpoint,
                 **base_init_args,
@@ -161,7 +160,7 @@ def main(
             and ml_task == "OBJECT_DETECTION"
             and "rectangle" in tools
         ):
-            model = UltralyticsObjectDetectionModel(project_id=project_id, **base_init_args)
+            model = UltralyticsObjectDetectionModel(**base_init_args)
             model_evaluation = model.train(
                 **base_train_args,
                 title=title,  # TODO: delete
@@ -171,14 +170,11 @@ def main(
         elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
             image_classification_model = PyTorchVisionImageClassificationModel(
                 model_repository=model_repository,  # TODO: delete
-                project_id=project_id,
                 **base_init_args,
             )
             model_evaluation = image_classification_model.train(**base_train_args, api_key=api_key)
         elif is_contours_detection(input_type, ml_task, content_input, tools):
-            image_classification_model = Detectron2SemanticSegmentationModel(
-                project_id=project_id, **base_init_args
-            )
+            image_classification_model = Detectron2SemanticSegmentationModel(**base_init_args)
             model_evaluation = image_classification_model.train(
                 **base_train_args,
                 api_key=api_key,

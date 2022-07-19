@@ -61,6 +61,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             job_name=job_name,
             model_name=model_name,
             model_framework=model_framework,
+            project_id=project_id,
         )
 
     def train(

@@ -69,6 +69,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             job_name=job_name,
             model_name=model_name,
             model_framework=model_framework,
+            project_id=project_id,
         )
         self.project_id = project_id
 
