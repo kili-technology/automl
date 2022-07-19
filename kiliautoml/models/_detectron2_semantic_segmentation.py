@@ -32,7 +32,7 @@ from kiliautoml.utils.type import (
     JobPredictions,
     JobT,
     JsonResponseSemanticT,
-    KiliSemantic,
+    KiliSemanticAnnotation,
     LabelMergeStrategyT,
     MLTaskT,
     ModelFrameworkT,
@@ -340,7 +340,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
                     ]
                 )
             ]
-            annotation = KiliSemantic(
+            annotation = KiliSemanticAnnotation(
                 boundingPoly=boundingPoly,
                 mid=None,  # type:ignore
                 type="semantic",

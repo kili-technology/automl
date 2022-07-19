@@ -153,14 +153,15 @@ def get_assets(
     return assets
 
 
+TYPE_ORDER = {
+    v: i for i, v in enumerate(["REVIEW", "DEFAULT", "PREDICTION", "INFERENCE", "AUTOSAVE"])
+}
+
+
 def _get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
     labels = asset.labels
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
     labels = [label for label in labels if label["labelType"] in ["DEFAULT", "REVIEW"]]
-
-    TYPE_ORDER = {
-        v: i for i, v in enumerate(["REVIEW", "DEFAULT", "PREDICTION", "INFERENCE", "AUTOSAVE"])
-    }
 
     def last_order(json_response):
         return (

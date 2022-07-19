@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 
 from kiliautoml.utils.type import (
+    JobNameT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
@@ -58,13 +59,13 @@ class Path:
 
     @staticmethod
     @makedirs_exist_ok
-    def job_dir(project_id, job_name) -> JobDirT:
+    def job_dir(project_id, job_name: JobNameT) -> JobDirT:
         return os.path.join(AUTOML_CACHE, project_id, job_name)
 
     @staticmethod
     @makedirs_exist_ok
     def model_repository_dir(
-        project_id: ProjectIdT, job_name, model_repository: ModelRepositoryT
+        project_id: ProjectIdT, job_name: JobNameT, model_repository: ModelRepositoryT
     ) -> ModelRepositoryDirT:
         return os.path.join(Path.job_dir(project_id, job_name), model_repository)
 
@@ -77,7 +78,7 @@ Once we have the model repository dir, we can create the following nested direct
 class PathUltralytics:
     @staticmethod
     @makedirs_exist_ok
-    def inference_dir(project_id, job_name, model_repository: ModelRepositoryT):
+    def inference_dir(project_id, job_name: JobNameT, model_repository: ModelRepositoryT):
         return os.path.join(
             Path.model_repository_dir(project_id, job_name, model_repository),
             "inference",

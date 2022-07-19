@@ -15,9 +15,9 @@ from kiliautoml.utils.type import (
     JsonResponseBaseT,
     JsonResponseNERT,
     JsonResponseT,
-    KiliBBox,
-    KiliNer,
-    KiliSemantic,
+    KiliBBoxAnnotation,
+    KiliNerAnnotation,
+    KiliSemanticAnnotation,
     MLTaskT,
     NormalizedVertice,
 )
@@ -85,7 +85,9 @@ class AnnotationStandardizedSemanticT(AnnotationStandardizedT, BaseModel):
         return iou_polygons(self.position.points, position.points)
 
     @classmethod
-    def from_annotation(cls, annotation: KiliSemantic) -> "AnnotationStandardizedSemanticT":
+    def from_annotation(
+        cls, annotation: KiliSemanticAnnotation
+    ) -> "AnnotationStandardizedSemanticT":
         position = SemanticPositionT(points=annotation["boundingPoly"][0]["normalizedVertices"])
         return cls(
             confidence=annotation["categories"][0]["confidence"],
@@ -102,7 +104,7 @@ class AnnotationStandardizedBboxT(AnnotationStandardizedT, BaseModel):
         return iou_polygons(self.position.points, position.points)
 
     @classmethod
-    def from_annotation(cls, annotation: KiliBBox) -> "AnnotationStandardizedBboxT":
+    def from_annotation(cls, annotation: KiliBBoxAnnotation) -> "AnnotationStandardizedBboxT":
         position = BBoxPositionT(points=annotation["boundingPoly"][0]["normalizedVertices"])
         return cls(
             confidence=annotation["categories"][0]["confidence"],
@@ -119,7 +121,7 @@ class AnnotationStandardizedNERT(AnnotationStandardizedT, BaseModel):
         ...
 
     @classmethod
-    def from_annotation(cls, annotation: KiliNer) -> "AnnotationStandardizedNERT":
+    def from_annotation(cls, annotation: KiliNerAnnotation) -> "AnnotationStandardizedNERT":
         position = NERPositionT(
             beginOffset=annotation["beginOffset"],
             content=annotation["content"],

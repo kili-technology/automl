@@ -33,7 +33,7 @@ from kiliautoml.utils.type import (
     JobPredictions,
     JobT,
     JsonResponseBboxT,
-    KiliBBox,
+    KiliBBoxAnnotation,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
@@ -485,7 +485,7 @@ def save_annotations_to_yolo_format(names, handler, job):
 
 def yolov5_to_kili_json(
     path_yolov5_inference: str, ind_to_categories: List[str]
-) -> Tuple[List[KiliBBox], List[int]]:
+) -> Tuple[List[KiliBBoxAnnotation], List[int]]:
     """Returns a list of annotations and of probabilities"""
     annotations = []
     probabilities = []
@@ -502,7 +502,7 @@ def yolov5_to_kili_json(
             }
             probabilities.append(p)
 
-            bbox_annotation = KiliBBox(
+            bbox_annotation = KiliBBoxAnnotation(
                 boundingPoly=[
                     BoundingPolyT(
                         normalizedVertices=[

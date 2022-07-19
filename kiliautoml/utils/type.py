@@ -51,7 +51,7 @@ class NormalizedVertices(TypedDict):
     normalizedVertices: List[NormalizedVertice]
 
 
-class KiliSemantic(TypedDict):
+class KiliSemanticAnnotation(TypedDict):
     boundingPoly: List[NormalizedVertices]  # len(self.boundingPoly) == 1
     mid: str
     type: Literal["semantic"]
@@ -70,7 +70,7 @@ class BoundingPolyT(TypedDict):
     normalizedVertices: List[PointT]
 
 
-class KiliBBox(TypedDict):
+class KiliBBoxAnnotation(TypedDict):
     boundingPoly: List[BoundingPolyT]
     type: str
     categories: List[CategoryT]
@@ -79,7 +79,7 @@ class KiliBBox(TypedDict):
 # KILI NER Format
 
 
-class KiliNer(TypedDict):
+class KiliNerAnnotation(TypedDict):
     beginOffset: int
     content: str
     endOffset: int
@@ -96,15 +96,15 @@ class JsonResponseBaseT(TypedDict):
 
 
 class JsonResponseSemanticT(JsonResponseBaseT, TypedDict):
-    annotations: List[KiliSemantic]
+    annotations: List[KiliSemanticAnnotation]
 
 
 class JsonResponseBboxT(JsonResponseBaseT, TypedDict):
-    annotations: List[KiliBBox]
+    annotations: List[KiliBBoxAnnotation]
 
 
 class JsonResponseNERT(JsonResponseBaseT, TypedDict):
-    annotations: List[KiliNer]
+    annotations: List[KiliNerAnnotation]
 
 
 class JsonResponseClassification(JsonResponseBaseT, TypedDict):
@@ -143,6 +143,9 @@ class AssetT(BaseModel):
 
     def get_annotations_classification(self, job_name: JobNameT) -> JsonResponseClassification:
         return self._get_annotations(job_name)  # type:ignore
+
+    def has_asset_for(self, job_name: JobNameT):
+        return job_name in self.labels[0]["jsonResponse"] and self._get_annotations(job_name)
 
 
 class OntologyCategoryT(TypedDict):
