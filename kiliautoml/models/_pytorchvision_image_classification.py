@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import torch
@@ -12,7 +12,8 @@ from tqdm.autonotebook import tqdm
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helpers import JobPredictions, kili_print
+from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
+from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.path import Path, PathPytorchVision
 from kiliautoml.utils.pytorchvision.image_classification import (
     ClassificationPredictDataset,
@@ -26,10 +27,14 @@ from kiliautoml.utils.pytorchvision.image_classification import (
 )
 from kiliautoml.utils.type import (
     AssetT,
+    JobNameT,
+    JobPredictions,
     JobT,
+    JsonResponseClassification,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
 )
 
 
@@ -37,10 +42,10 @@ class PyTorchVisionImageClassificationModel(BaseModel):
     def __init__(
         self,
         *,
-        project_id: str,
+        project_id: ProjectIdT,
         model_repository: Optional[ModelRepositoryT],
         job: JobT,
-        job_name: str,
+        job_name: JobNameT,
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
     ):
@@ -62,6 +67,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             job_name=job_name,
             model_name=model_name,
             model_framework=model_framework,
+            project_id=project_id,
         )
 
         self.model_dir = model_dir
@@ -95,7 +101,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         labels = []
         for asset in assets:
             labels.append(
-                asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
+                asset.get_annotations_classification(self.job_name)["categories"][0]["name"]
             )
 
         splits = {}
@@ -125,7 +131,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             model_name=self.model_name,  # type: ignore
             batch_size=batch_size,
             verbose=verbose,
-            class_names=self.class_names,
+            category_ids=self.class_names,
             image_datasets=image_datasets,
             save_model_path=self.model_path,
         )
@@ -136,7 +142,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
@@ -163,21 +169,24 @@ class PyTorchVisionImageClassificationModel(BaseModel):
 
         job_predictions = JobPredictions(
             job_name=self.job_name,
-            external_id_array=[asset["externalId"] for asset in assets],
+            external_id_array=[asset.externalId for asset in assets],
             model_name_array=[self.model_name] * len(assets),
             json_response_array=[
-                {
-                    "CLASSIFICATION_JOB": {
-                        "categories": [
-                            {"name": list(self.class_name_to_idx.keys())[np.argmax(prob_array)]}
-                        ]
-                    }
-                }
-                for prob_array in prob_arrays
+                {self.job_name: self.create_categories(prob_array)} for prob_array in prob_arrays
             ],
             predictions_probability=prob_arrays,
         )
         return job_predictions
+
+    def create_categories(self, prob_array) -> JsonResponseClassification:
+        return {
+            "categories": [
+                {
+                    "name": list(self.class_name_to_idx.keys())[np.argmax(prob_array)],
+                    "confidence": np.max(prob_array),
+                }
+            ]
+        }
 
     def get_model_path(self, model_path, from_project):
         model_name: ModelNameT = self.model_name  # type: ignore
@@ -207,7 +216,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         verbose: int = 0,
         clear_dataset_cache: bool = False,
         api_key: str = "",
-    ) -> Any:
+    ):
         _ = clear_dataset_cache
 
         images = download_project_images(
@@ -216,7 +225,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         labels = []
         for asset in assets:
             labels.append(
-                asset["labels"][0]["jsonResponse"][self.job_name]["categories"][0]["name"]
+                asset.get_annotations_classification(self.job_name)["categories"][0]["name"]
             )
 
         kf = StratifiedKFold(n_splits=cv_n_folds, shuffle=True, random_state=42)
@@ -255,7 +264,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 model_name=model_name,
                 batch_size=batch_size,
                 verbose=verbose,
-                class_names=self.class_names,
+                category_ids=self.class_names,
                 epochs=epochs,
                 image_datasets=image_datasets,
                 save_model_path=None,
@@ -282,4 +291,14 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         noise_paths = []
         for idx in noise_indices:
             noise_paths.append(images[idx].id)
-        return noise_paths
+
+        return ErrorRecap(
+            id_array=noise_paths,
+            external_id_array=[asset.externalId for asset in assets],
+            errors_by_asset=[
+                [
+                    LabelingError(error_type="misclassification", error_probability=0.4)
+                ]  # TODO: use true proba
+                for _ in noise_paths
+            ],
+        )

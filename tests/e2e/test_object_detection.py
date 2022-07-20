@@ -47,7 +47,7 @@ def test_object_detection(mocker):
             "--project-id",
             project_id,
             "--max-assets",
-            "300",
+            "10",
             "--disable-wandb",
             "--epochs",
             "1",
@@ -62,7 +62,7 @@ def test_object_detection(mocker):
             "--project-id",
             project_id,
             "--max-assets",
-            "300",
+            "10",
         ],
     )
     debug_subprocess_pytest(result)

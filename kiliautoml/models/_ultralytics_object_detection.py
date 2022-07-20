@@ -14,13 +14,11 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from typing_extensions import TypedDict
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helper_label_error import AnnotationBboxT, AssetAnnotationsT
+from kiliautoml.utils.helper_label_error import find_all_label_errors
 from kiliautoml.utils.helpers import (
-    JobPredictions,
     categories_from_job,
     get_last_trained_model_path,
     kili_print,
@@ -28,13 +26,21 @@ from kiliautoml.utils.helpers import (
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
+    AssetExternalIdT,
     AssetT,
+    BoundingPolyT,
+    CategoryIdT,
     CategoryT,
+    JobNameT,
+    JobPredictions,
     JobT,
+    JsonResponseBboxT,
+    KiliBBoxAnnotation,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
 )
 
 env = Environment(
@@ -52,21 +58,6 @@ class AutoMLYoloException(Exception):
 # TODO: Move to PathUltralytics
 def get_id_from_path(path_yolov5_inference: str) -> str:
     return os.path.split(path_yolov5_inference)[-1].split(".")[0]
-
-
-class PointT(TypedDict):
-    x: float
-    y: float
-
-
-class BoundingPolyT(TypedDict):
-    normalizedVertices: List[PointT]
-
-
-class BBoxAnnotation(TypedDict):
-    boundingPoly: Any
-    categories: List[CategoryT]
-    type: str
 
 
 def inspect(e):
@@ -87,9 +78,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def __init__(
         self,
         *,
-        project_id: str,
+        project_id: ProjectIdT,
         job: JobT,
-        job_name: str,
+        job_name: JobNameT,
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
     ):
@@ -99,6 +90,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             job_name=job_name,
             model_name=model_name,
             model_framework=model_framework,
+            project_id=project_id,
         )
         self.project_id = project_id
 
@@ -231,7 +223,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def _yaml_preparation(
         *,
         data_path: str,
-        class_names: List[str],
+        class_names: List[CategoryIdT],
         kili_api_key: str,
         assets,
     ):
@@ -265,9 +257,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
             print(path_labels)
             os.makedirs(path_labels, exist_ok=True)
             for asset in assets_split:
-                asset_id = asset["id"] + ".txt"  # type: ignore
+                asset_id = asset.id + ".txt"  # type: ignore
                 with open(os.path.join(path_labels, asset_id), "w") as handler:
-                    json_response = asset["labels"][0]["jsonResponse"]
+                    json_response = asset.labels[0]["jsonResponse"]
                     for job in json_response.values():
                         save_annotations_to_yolo_format(names, handler, job)
 
@@ -294,7 +286,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
@@ -322,10 +314,10 @@ class UltralyticsObjectDetectionModel(BaseModel):
         self,
         api_key: str,
         assets: List[AssetT],
-        project_id: str,
+        project_id: ProjectIdT,
         model_framework: ModelFrameworkT,
         model_path: ModelPathT,
-        job_name: str,
+        job_name: JobNameT,
         verbose: int,
         batch_size: int,
         prioritization: bool,
@@ -375,25 +367,14 @@ class UltralyticsObjectDetectionModel(BaseModel):
         inference_files_by_id = {get_id_from_path(pf): pf for pf in inference_files}
 
         kili_print("Converting Ultralytics' YoloV5 inference to Kili JSON format...")
-        id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
+        id_json_list: List[Tuple[AssetExternalIdT, Dict[JobNameT, JsonResponseBboxT]]] = []
 
-        label_error_annotations: List[AssetAnnotationsT] = []
         proba_list: List[float] = []
         for image in downloaded_images:
-            asset_annotations = []
             if image.id in inference_files_by_id:
                 kili_predictions, probabilities = yolov5_to_kili_json(
                     inference_files_by_id[image.id], kili_data_dict["names"]
                 )
-                for bbox, proba in zip(kili_predictions, probabilities):
-                    asset_annotations.append(
-                        AnnotationBboxT(
-                            confidence=float(proba / 100),
-                            category_id=bbox["categories"][0]["name"],
-                            position=bbox["boundingPoly"],
-                        )
-                    )
-
                 proba_list.append(min(probabilities))
                 if verbose >= 1:
                     kili_print(f"Asset {image.externalId}: {kili_predictions}")
@@ -402,9 +383,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
                         image.externalId,
                         {job_name: {"annotations": kili_predictions}},
                     )
-                )
-                label_error_annotations.append(
-                    AssetAnnotationsT(annotations=asset_annotations, externalId=image.externalId)
                 )
 
         # TODO: move this check in the prioritizer
@@ -422,10 +400,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
         job_predictions = JobPredictions(
             job_name=job_name,
             external_id_array=[a[0] for a in id_json_list],
-            json_response_array=[a[1] for a in id_json_list],
+            json_response_array=[a[1] for a in id_json_list],  # type:ignore
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=proba_list,
-            label_error=label_error_annotations,
         )
         return job_predictions
 
@@ -468,7 +445,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         assert cv_n_folds == 1
         _ = epochs
         kili_print("epochs is not used in label_error")
-        job_prediction = self.predict(
+        job_predictions = self.predict(
             assets=assets,
             model_path=None,
             from_project=None,
@@ -477,8 +454,13 @@ class UltralyticsObjectDetectionModel(BaseModel):
             clear_dataset_cache=clear_dataset_cache,
             api_key=api_key,
         )
-        list_externalId = [id.externalId for id in job_prediction.label_error]
-        return list_externalId
+        find_all_label_errors(
+            assets=assets,
+            json_response_array=job_predictions.json_response_array,
+            external_id_array=job_predictions.external_id_array,
+            job_name=self.job_name,
+            ml_task=self.ml_task,
+        )
 
 
 def save_annotations_to_yolo_format(names, handler, job):
@@ -505,8 +487,8 @@ def save_annotations_to_yolo_format(names, handler, job):
 
 
 def yolov5_to_kili_json(
-    path_yolov5_inference: str, ind_to_categories: List[str]
-) -> Tuple[List[BBoxAnnotation], List[int]]:
+    path_yolov5_inference: str, ind_to_categories: List[CategoryIdT]
+) -> Tuple[List[KiliBBoxAnnotation], List[int]]:
     """Returns a list of annotations and of probabilities"""
     annotations = []
     probabilities = []
@@ -523,20 +505,20 @@ def yolov5_to_kili_json(
             }
             probabilities.append(p)
 
-            bbox_annotation: BBoxAnnotation = {
-                "boundingPoly": [
-                    {
-                        "normalizedVertices": [
+            bbox_annotation = KiliBBoxAnnotation(
+                boundingPoly=[
+                    BoundingPolyT(
+                        normalizedVertices=[
                             {"x": x - w / 2, "y": y + h / 2},
                             {"x": x - w / 2, "y": y - h / 2},
                             {"x": x + w / 2, "y": y - h / 2},
                             {"x": x + w / 2, "y": y + h / 2},
                         ]
-                    }
+                    )
                 ],
-                "categories": [category],
-                "type": "rectangle",
-            }
+                categories=[category],
+                type="rectangle",
+            )
 
             annotations.append(bbox_annotation)
 

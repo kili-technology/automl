@@ -15,7 +15,15 @@ from transformers import (
 
 from kiliautoml.utils.helpers import get_last_trained_model_path, kili_print
 from kiliautoml.utils.path import PathHF
-from kiliautoml.utils.type import MLTaskT, ModelFrameworkT, ModelNameT, ModelRepositoryT
+from kiliautoml.utils.type import (
+    CategoryIdT,
+    JobNameT,
+    MLTaskT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+    ProjectIdT,
+)
 
 
 class HuggingFaceMixin(metaclass=ABCMeta):
@@ -53,7 +61,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         self,
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
-        label_list: List[str],
+        label_list: List[CategoryIdT],
         ml_task: MLTaskT,
     ):
         tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -75,7 +83,13 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         return tokenizer, model
 
     @classmethod
-    def _extract_model_info(cls, job_name, project_id, model_path, from_project: Optional[str]):
+    def _extract_model_info(
+        cls,
+        job_name: JobNameT,
+        project_id: ProjectIdT,
+        model_path,
+        from_project: Optional[ProjectIdT],
+    ):
         if from_project is not None:
             if model_path is None:
                 project_id = from_project
@@ -110,7 +124,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
         epochs: int,
         disable_wandb: bool,
         batch_size: int,
-        additional_train_args_hg: Dict[Any, Any],
+        additional_train_args_hg: Dict[str, Any],
     ):
         date = datetime.now().strftime("%Y-%m-%d_%H:%M")
         default_args = {

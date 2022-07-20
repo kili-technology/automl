@@ -3,24 +3,27 @@ from typing import List, Optional
 
 from typing_extensions import TypedDict
 
-from kiliautoml.utils.helpers import JobPredictions
+from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.type import (
     AssetT,
     DictTrainingInfosT,
+    JobNameT,
+    JobPredictions,
     JobT,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
 )
 
 
 class BaseInitArgs(TypedDict):
     job: JobT
-    job_name: str
+    job_name: JobNameT
     model_name: ModelNameT
     model_framework: ModelFrameworkT
-    # TODO: Add projet_id
+    project_id: ProjectIdT
 
 
 class BaseTrainArgs(TypedDict):
@@ -40,15 +43,16 @@ class BaseModel(metaclass=ABCMeta):
         self,
         *,
         job: JobT,
-        job_name: str,
+        job_name: JobNameT,
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
-        # TODO: Add projet_id
+        project_id: ProjectIdT,
     ) -> None:
         self.job = job
         self.job_name = job_name
         self.model_name = model_name
         self.model_framework: ModelFrameworkT = model_framework
+        self.project_id: ProjectIdT = project_id
 
     @abstractmethod
     def train(
@@ -70,7 +74,7 @@ class BaseModel(metaclass=ABCMeta):
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
@@ -87,5 +91,5 @@ class BaseModel(metaclass=ABCMeta):
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
-    ):
+    ) -> ErrorRecap:
         pass

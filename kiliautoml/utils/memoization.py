@@ -6,7 +6,13 @@ from joblib import Memory
 from typing_extensions import get_args
 
 from kiliautoml.utils.path import AUTOML_CACHE, ModelRepositoryDirT, Path, PathHF
-from kiliautoml.utils.type import CommandT, ModelFrameworkT, ModelRepositoryT
+from kiliautoml.utils.type import (
+    CommandT,
+    JobNameT,
+    ModelFrameworkT,
+    ModelRepositoryT,
+    ProjectIdT,
+)
 
 
 def kili_project_memoizer(
@@ -38,8 +44,8 @@ def kili_memoizer(some_function):
 
 def clear_command_cache(
     command: CommandT,
-    project_id: str,
-    job_name: str,
+    project_id: ProjectIdT,
+    job_name: JobNameT,
     model_repository: Optional[ModelRepositoryT] = None,
     model_framework: Optional[ModelFrameworkT] = None,
 ):

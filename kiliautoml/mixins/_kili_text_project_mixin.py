@@ -3,10 +3,11 @@ from abc import ABCMeta
 from kili.client import Kili
 
 from kiliautoml.utils.download_assets import download_asset_unicode
+from kiliautoml.utils.type import ProjectIdT
 
 
 class KiliTextProjectMixin(metaclass=ABCMeta):
-    def __init__(self, project_id: str, api_key: str, api_endpoint: str) -> None:
+    def __init__(self, project_id: ProjectIdT, api_key: str, api_endpoint: str) -> None:
         self.project_id = project_id
         self.api_key = api_key
 

@@ -13,7 +13,6 @@ from tabulate import tabulate
 from termcolor import colored
 from typing_extensions import get_args
 
-from kiliautoml.utils.helper_label_error import AssetAnnotationsT
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.path import AUTOML_CACHE
@@ -24,10 +23,12 @@ from kiliautoml.utils.type import (
     CategoryNameT,
     DictTrainingInfosT,
     InputTypeT,
+    JobNameT,
     JobsT,
     JobT,
     LabelMergeStrategyT,
     MLTaskT,
+    ProjectIdT,
     ToolT,
 )
 
@@ -42,26 +43,8 @@ def set_all_seeds(seed):
 
 set_all_seeds(42)
 
-TYPE_ORDER = {
-    v: i for i, v in enumerate(["REVIEW", "DEFAULT", "PREDICTION", "INFERENCE", "AUTOSAVE"])
-}
 
-
-def last_order(json_response):
-    return (
-        TYPE_ORDER[json_response["labelType"]],
-        -datetime.strptime(json_response["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp(),
-    )
-
-
-def first_order(json_response):
-    return (
-        TYPE_ORDER[json_response["labelType"]],
-        datetime.strptime(json_response["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp(),
-    )
-
-
-def categories_from_job(job: JobT):
+def categories_from_job(job: JobT) -> List[CategoryIdT]:
     """Returns the category id.
 
     Example:
@@ -82,59 +65,15 @@ def ensure_dir(file_path: str):
     return file_path
 
 
-class JobPredictions:
-    def __init__(
-        self,
-        job_name: str,
-        external_id_array: List[str],
-        json_response_array: List[Any],
-        model_name_array: List[str],
-        predictions_probability: List[float],
-        label_error: Optional[List[AssetAnnotationsT]] = None,
-    ):
-        self.job_name = job_name
-        self.external_id_array = external_id_array
-        self.json_response_array = json_response_array
-        self.model_name_array = model_name_array
-        self.predictions_probability = predictions_probability
-
-        n_assets = len(external_id_array)
-
-        # assert all lists are compatible
-        same_len = n_assets == len(json_response_array)
-        assert same_len, "external_id_array and json_response_array must have the same length"
-
-        same_len = n_assets == len(model_name_array)
-        assert same_len, "external_id_array and model_name_array must have the same length"
-
-        same_len = n_assets == len(predictions_probability)
-        assert same_len, "external_id_array and predictions_probability must have the same length"
-
-        # assert no duplicates
-        assert (
-            len(set(external_id_array)) == n_assets
-        ), "external_id_array must not contain duplicates"
-
-        kili_print(
-            f"JobPredictions: {n_assets} predictions successfully created for job {job_name}."
-        )
-
-        if label_error:
-            self.label_error = label_error
-
-    def __repr__(self):
-        return f"JobPredictions(job_name={self.job_name}, nb_assets={len(self.external_id_array)})"
-
-
 @kili_project_memoizer(sub_dir="get_asset_memoized")
 def get_asset_memoized(
     *,
     kili,
-    project_id,
-    total,
-    skip,
+    project_id: ProjectIdT,
+    total: Optional[int],
+    skip: int,
     status_in: Optional[List[AssetStatusT]] = None,
-) -> List[AssetT]:
+) -> List[Any]:
     assets = kili.assets(
         project_id=project_id,
         first=total,
@@ -153,17 +92,18 @@ def get_asset_memoized(
 
     if GENERATE_MOCK:
         jsonify_mock_data(assets, function_name="assets")
+
     return assets
 
 
 def get_assets(
     kili,
-    project_id: str,
+    project_id: ProjectIdT,
     status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
     randomize: bool = False,
     strategy: LabelMergeStrategyT = "last",
-    job_name: Optional[str] = None,
+    job_name: Optional[JobNameT] = None,
 ) -> List[AssetT]:
     """
     job_name is used if status_in does not have only unlabeled statuses
@@ -201,43 +141,64 @@ def get_assets(
             status_in=status_in,
         )
 
-    if len(assets) == 0:
-        kili_print(f"No {status_in} assets found in project {project_id}.")
-        raise Exception("There is no asset matching the query.")
+    assets = [AssetT.construct(**asset) for asset in assets]
 
     if status_in is not None:
         only_labeled_status = not any(status in status_in for status in ["TO DO", "ONGOING"])
         if job_name is not None and only_labeled_status:
             assets = filter_labeled_assets(job_name, strategy, assets)
+    if len(assets) == 0:
+        kili_print(f"No {status_in} assets found in project {project_id}.")
+        raise Exception("There is no asset matching the query.")
     return assets
 
 
-def get_label(asset: AssetT, job_name: str, strategy: LabelMergeStrategyT):
-    labels = asset["labels"]
+TYPE_ORDER = {
+    v: i for i, v in enumerate(["REVIEW", "DEFAULT", "PREDICTION", "INFERENCE", "AUTOSAVE"])
+}
+
+
+def _get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
+    labels = asset.labels
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
+    labels = [label for label in labels if label["labelType"] in ["DEFAULT", "REVIEW"]]
+
+    def last_order(json_response):
+        return (
+            TYPE_ORDER[json_response["labelType"]],
+            -datetime.strptime(json_response["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp(),
+        )
+
+    def first_order(json_response):
+        return (
+            TYPE_ORDER[json_response["labelType"]],
+            datetime.strptime(json_response["createdAt"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp(),
+        )
+
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
-        return min(labels, key=key)
+        label = min(labels, key=key)
+        return label
     else:
-        warn(f"Asset {asset['id']} does not have any label available")
+        warn(f"Asset {asset.id} does not have any label available")
         return None
 
 
-def filter_labeled_assets(job_name: str, strategy: LabelMergeStrategyT, assets: List[AssetT]):
+def filter_labeled_assets(job_name: JobNameT, strategy: LabelMergeStrategyT, assets: List[AssetT]):
     asset_id_to_remove = set()
     for asset in assets:
-        label = get_label(asset, job_name, strategy)
+        label = _get_label(asset, job_name, strategy)
         if label is None:
-            asset_id = asset["id"]
+            asset_id = asset.id
             warnings.warn(f"${asset_id} removed because no labels where available")
             asset_id_to_remove.add(asset_id)
         else:
-            asset["labels"] = [label]
+            asset.labels = [label]
 
-    return [asset for asset in assets if asset["id"] not in asset_id_to_remove]
+    return [asset for asset in assets if asset.id not in asset_id_to_remove]
 
 
-def get_project(kili, project_id: str) -> Tuple[InputTypeT, JobsT, str]:
+def get_project(kili, project_id: ProjectIdT) -> Tuple[InputTypeT, JobsT, str]:
     projects = kili.projects(project_id=project_id, fields=["inputType", "jsonInterface", "title"])
     if GENERATE_MOCK:
         jsonify_mock_data(projects, function_name="projects")
@@ -264,8 +225,8 @@ def set_default(x, x_default, x_name: str, x_range: List):  # type: ignore
 
 def get_last_trained_model_path(
     *,
-    project_id: str,
-    job_name: str,
+    project_id: ProjectIdT,
+    job_name: JobNameT,
     project_path_wildcard: List[str],
     weights_filename: str,
     model_path: Optional[str],
@@ -300,9 +261,11 @@ def save_errors(found_errors, job_path: str):
             kili_print("Asset IDs of wrong labels written to: ", json_path)
 
 
-def not_implemented_job(job_name: str, ml_task: MLTaskT, tools: List[ToolT]):
+def not_implemented_job(job_name: JobNameT, ml_task: MLTaskT, tools: List[ToolT]):
     _ = tools
-    if "_MARKER" not in job_name:
+    if "_MARKER" in job_name:
+        return
+    else:
         kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
         kili_print(
             "You can use the repeatable flag --target-job "
@@ -320,7 +283,7 @@ def get_mapping_category_name_cat_kili_id(job: JobT):
     return mapping_category_name_category_ids
 
 
-def print_evaluation(job_name: str, evaluation: DictTrainingInfosT):
+def print_evaluation(job_name: JobNameT, evaluation: DictTrainingInfosT):
     def get_keys(my_dict):
         keys = list(my_dict.keys())
         keys_int = []

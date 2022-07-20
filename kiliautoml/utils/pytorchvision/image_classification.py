@@ -11,7 +11,7 @@ from kiliautoml.utils.download_assets import DownloadedImage
 from kiliautoml.utils.helpers import kili_print, set_default
 from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
-from kiliautoml.utils.type import ModelNameT, ModelRepositoryT
+from kiliautoml.utils.type import CategoryIdT, ModelNameT, ModelRepositoryT
 
 data_transforms = {
     "train": transforms.Compose(
@@ -37,8 +37,8 @@ class ClassificationTrainDataset(Dataset):  # type: ignore
     def __init__(
         self,
         images: List[DownloadedImage],
-        labels: List[str],
-        class_name_to_idx: Dict[str, int],
+        labels: List[CategoryIdT],
+        class_name_to_idx: Dict[CategoryIdT, int],
         transform=None,
     ):
         """
@@ -123,7 +123,7 @@ def get_trained_model_image_classif(
     model_name: ModelNameT,
     batch_size: int,
     verbose: int,
-    class_names: List[str],
+    category_ids: List[CategoryIdT],
     image_datasets: dict,  # type: ignore
     save_model_path: Optional[ModelPathT] = None,
 ):
@@ -134,14 +134,14 @@ def get_trained_model_image_classif(
         for x in ["train", "val"]
     }
 
-    model = initialize_model_img_class(model_name, class_names)
+    model = initialize_model_img_class(model_name, category_ids)
 
     model, model_evaluation = train_model_pytorch(
         model=model,
         dataloaders=dataloaders,
         verbose=verbose,
         epochs=epochs,
-        class_names=class_names,
+        class_names=category_ids,
     )
 
     if save_model_path is not None:

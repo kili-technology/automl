@@ -23,7 +23,13 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.memoization import clear_command_cache
-from kiliautoml.utils.type import AssetStatusT, MLTaskT, ModelFrameworkT, ToolT
+from kiliautoml.utils.type import (
+    AssetStatusT,
+    MLTaskT,
+    ModelFrameworkT,
+    ProjectIdT,
+    ToolT,
+)
 
 # Priorities
 Priorities = List[float]
@@ -131,7 +137,7 @@ class Prioritizer:
 
         pipe = Pipeline([("pca", PCA(n_components=10)), ("kmeans", KMeans(n_clusters=5))])
 
-        X_clusters = pipe.fit_transform(embeddings)[:, 0]
+        X_clusters = pipe.fit_transform(embeddings)[:, 0]  # type:ignore
 
         index_clusters = {i: np.where(X_clusters == i)[0] for i in np.unique(X_clusters)}
         index_clusters_permuted = {
@@ -326,7 +332,7 @@ def embedding_text(
 def main(
     api_endpoint: str,
     api_key: str,
-    project_id: str,
+    project_id: ProjectIdT,
     asset_status_in: List[AssetStatusT],
     max_assets: Optional[int],
     randomize_assets: bool,
@@ -336,7 +342,7 @@ def main(
     from_model: ModelFrameworkT,
     verbose: bool,
     clear_dataset_cache: bool,
-    from_project: Optional[str],
+    from_project: Optional[ProjectIdT],
     model_name: Optional[str],
     model_repository: Optional[str],
     model_framework: str,
@@ -416,13 +422,16 @@ def main(
         return
     predictions_probability = job_predictions.predictions_probability
     kili_print("Predictions probability shape: ", predictions_probability)
-    asset_ids = [asset["id"] for asset in unlabeled_assets]
+    asset_ids = [asset.id for asset in unlabeled_assets]
     prioritizer = Prioritizer(embeddings, predictions_probability=predictions_probability)
     priorities = prioritizer.get_priorities(
         diversity_sampling=diversity_sampling, uncertainty_sampling=uncertainty_sampling
     )
     if not dry_run:
-        kili.update_properties_in_assets(asset_ids=asset_ids, priorities=priorities)
+        kili.update_properties_in_assets(
+            asset_ids=asset_ids,  # type:ignore
+            priorities=priorities,
+        )
 
 
 if __name__ == "__main__":

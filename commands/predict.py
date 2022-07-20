@@ -13,7 +13,6 @@ from kiliautoml.models import (
 )
 from kiliautoml.models._base_model import BaseInitArgs
 from kiliautoml.utils.helpers import (
-    JobPredictions,
     get_assets,
     get_content_input_from_job,
     get_project,
@@ -21,7 +20,13 @@ from kiliautoml.utils.helpers import (
     kili_print,
     not_implemented_job,
 )
-from kiliautoml.utils.type import AssetStatusT, ModelFrameworkT
+from kiliautoml.utils.type import (
+    AssetStatusT,
+    JobNameT,
+    JobPredictions,
+    ModelFrameworkT,
+    ProjectIdT,
+)
 
 
 def predict_one_job(
@@ -30,7 +35,7 @@ def predict_one_job(
     api_endpoint,
     project_id,
     from_model,
-    from_project: Optional[str],
+    from_project: Optional[ProjectIdT],
     verbose,
     input_type,
     assets,
@@ -51,10 +56,11 @@ def predict_one_job(
         "job_name": job_name,
         "model_framework": model_framework,
         "model_name": model_name,
+        "project_id": project_id,
     }
     if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
         model = HuggingFaceTextClassificationModel(
-            project_id=project_id, api_endpoint=api_endpoint, api_key=api_key, **base_init_args
+            api_endpoint=api_endpoint, api_key=api_key, **base_init_args
         )
         job_predictions = model.predict(
             assets=assets,
@@ -93,9 +99,7 @@ def predict_one_job(
         and ml_task == "OBJECT_DETECTION"
         and "rectangle" in tools
     ):
-        image_classification_model = UltralyticsObjectDetectionModel(
-            project_id=project_id, **base_init_args
-        )
+        image_classification_model = UltralyticsObjectDetectionModel(**base_init_args)
 
         job_predictions = image_classification_model.predict(
             verbose=verbose,
@@ -108,7 +112,7 @@ def predict_one_job(
         )
     elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
         image_classification_model = PyTorchVisionImageClassificationModel(
-            project_id=project_id, model_repository=model_repository, **base_init_args
+            model_repository=model_repository, **base_init_args
         )
 
         job_predictions = image_classification_model.predict(
@@ -121,9 +125,7 @@ def predict_one_job(
             api_key=api_key,
         )
     elif is_contours_detection(input_type, ml_task, content_input, tools):
-        image_classification_model = Detectron2SemanticSegmentationModel(
-            project_id=project_id, **base_init_args
-        )
+        image_classification_model = Detectron2SemanticSegmentationModel(**base_init_args)
 
         job_predictions = image_classification_model.predict(
             assets=assets,
@@ -159,17 +161,17 @@ def predict_one_job(
 @PredictOptions.from_project
 @PredictOptions.dry_run
 def main(
-    project_id: str,
+    project_id: ProjectIdT,
     api_endpoint: str,
     api_key: str,
     asset_status_in: List[AssetStatusT],
-    target_job: List[str],
+    target_job: List[JobNameT],
     dry_run: bool,
     from_model: Optional[ModelFrameworkT],
     verbose: bool,
     max_assets: Optional[int],
     randomize_assets: bool,
-    from_project: Optional[str],
+    from_project: Optional[ProjectIdT],
     model_name: Optional[str],
     model_repository: Optional[str],
     model_framework: ModelFrameworkT,
@@ -215,7 +217,7 @@ def main(
         if not dry_run and job_predictions and job_predictions.external_id_array:
             kili.create_predictions(
                 project_id,
-                external_id_array=job_predictions.external_id_array,
+                external_id_array=job_predictions.external_id_array,  # type:ignore
                 json_response_array=job_predictions.json_response_array,
                 model_name_array=job_predictions.model_name_array,
             )

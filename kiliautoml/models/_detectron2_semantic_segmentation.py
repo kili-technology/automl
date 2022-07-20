@@ -19,23 +19,29 @@ from PIL import Image
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.detectron2.utils_detectron import (
     CocoFormat,
-    NormalizedVertice,
-    NormalizedVertices,
-    SemanticAnnotation,
     convert_kili_semantic_to_coco,
 )
 from kiliautoml.utils.download_assets import download_project_images
-from kiliautoml.utils.helpers import JobPredictions, categories_from_job, kili_print
+from kiliautoml.utils.helper_label_error import find_all_label_errors
+from kiliautoml.utils.helpers import categories_from_job, kili_print
 from kiliautoml.utils.path import ModelDirT, Path, PathDetectron2
 from kiliautoml.utils.type import (
     AssetT,
+    CategoryIdT,
     CategoryT,
+    JobNameT,
+    JobPredictions,
     JobT,
+    JsonResponseSemanticT,
+    KiliSemanticAnnotation,
     LabelMergeStrategyT,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    NormalizedVertice,
+    NormalizedVertices,
+    ProjectIdT,
 )
 
 setup_logger()
@@ -49,9 +55,9 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
     def __init__(
         self,
         *,
-        project_id: str,
+        project_id: ProjectIdT,
         job: JobT,
-        job_name: str,
+        job_name: JobNameT,
         model_name: ModelNameT,
         model_framework: ModelFrameworkT,
     ):
@@ -64,6 +70,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             job_name=job_name,
             model_name=model_name,
             model_framework=model_framework,
+            project_id=project_id,
         )
         self.project_id = project_id
 
@@ -200,7 +207,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         epochs: Optional[int],
         batch_size: int,
         model_dir: ModelDirT,
-        classes: List[str],
+        classes: List[CategoryIdT],
     ):
         cfg = get_cfg()
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -234,7 +241,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
@@ -279,7 +286,8 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         dataset_metadata_predict = MetadataCatalog.get("dataset_val")
 
         # 3. Predict
-        id_json_list: List[Tuple[str, Dict]] = []  # type: ignore
+        id_json_list: List[Tuple[str, Dict[JobNameT, JsonResponseSemanticT]]] = []  # type: ignore
+
         for image in downloaded_images:
             im = cv2.imread(image.filepath)
             outputs = predictor(im)
@@ -290,12 +298,14 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             self._visualize_predictions(
                 visualization_dir, image.filepath, dataset_metadata_predict, im, outputs
             )
-            id_json_list.append((image.externalId, {self.job_name: {"annotations": annotations}}))
+            semantic_job: JsonResponseSemanticT = {"annotations": annotations}
+            id_json_list.append((image.externalId, {self.job_name: semantic_job}))
 
+        json_response_array = [a[1] for a in id_json_list]
         job_predictions = JobPredictions(
             job_name=self.job_name,
-            external_id_array=[asset["externalId"] for asset in assets],
-            json_response_array=[a[1] for a in id_json_list],
+            external_id_array=[asset.externalId for asset in assets],
+            json_response_array=json_response_array,  # type:ignore
             model_name_array=["Kili AutoML"] * len(id_json_list),
             predictions_probability=[100] * len(id_json_list),
         )
@@ -303,6 +313,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
 
     @staticmethod
     def get_contours_instance(instances, i: int):
+        """Output of detectron is an image. We only want the contours."""
         pred_masks = instances.pred_masks
         masks = np.int8(pred_masks.cpu().detach().numpy())
 
@@ -312,7 +323,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         list_x_y = idx[0][0]
         return list_x_y.reshape(-1, 2)
 
-    def get_annotations_from_instances(self, instances, class_names: List[str]):
+    def get_annotations_from_instances(self, instances, class_names: List[CategoryIdT]):
         """instances contains multiples bbox and object corresponding to one image"""
         annotations = []
         h, w = instances._image_size
@@ -331,7 +342,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
                     ]
                 )
             ]
-            annotation = SemanticAnnotation(
+            annotation = KiliSemanticAnnotation(
                 boundingPoly=boundingPoly,
                 mid=None,  # type:ignore
                 type="semantic",
@@ -371,4 +382,24 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         clear_dataset_cache: bool = False,
         api_key: str = "",
     ):
-        raise NotImplementedError
+        _ = cv_n_folds
+        _ = epochs
+
+        job_predictions = self.predict(
+            assets=assets,
+            model_path=None,
+            from_project=None,
+            batch_size=batch_size,
+            verbose=verbose,
+            clear_dataset_cache=clear_dataset_cache,
+            api_key=api_key,
+            job=self.job,  # TODO: self here is not clean
+        )
+
+        return find_all_label_errors(
+            assets=assets,
+            json_response_array=job_predictions.json_response_array,
+            external_id_array=job_predictions.external_id_array,
+            job_name=self.job_name,
+            ml_task=self.ml_task,
+        )

@@ -13,22 +13,21 @@ from transformers import Trainer
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import BaseModel
-from kiliautoml.utils.helpers import (
-    JobPredictions,
-    categories_from_job,
-    ensure_dir,
-    kili_print,
-)
+from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetT,
+    JobNameT,
+    JobPredictions,
     JobT,
+    JsonResponseClassification,
     MLTaskT,
     ModelFrameworkT,
     ModelMetricT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
 )
 
 
@@ -46,17 +45,22 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     def __init__(
         self,
         *,
-        project_id: str,
+        project_id: ProjectIdT,
         api_key: str,
         api_endpoint: str,
-        job_name: str,
+        job_name: JobNameT,
         job: JobT,
         model_name: ModelNameT = "bert-base-multilingual-cased",
         model_framework: ModelFrameworkT = "pytorch",
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(
-            self, job=job, job_name=job_name, model_name=model_name, model_framework=model_framework
+            self,
+            job=job,
+            job_name=job_name,
+            model_name=model_name,
+            model_framework=model_framework,
+            project_id=project_id,
         )
 
     def train(
@@ -144,7 +148,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
@@ -164,7 +168,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         for asset in assets:
-            text = self._get_text_from(asset["content"])
+            text = self._get_text_from(asset.content)
 
             predictions_asset = self._compute_asset_classification(
                 self.model_framework, tokenizer, model, text
@@ -181,7 +185,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
             job_name=self.job_name,
-            external_id_array=[a["externalId"] for a in assets],
+            external_id_array=[a.externalId for a in assets],
             json_response_array=predictions,
             model_name_array=["Kili AutoML"] * len(assets),
             predictions_probability=proba_assets,
@@ -189,16 +193,16 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         return job_predictions
 
-    def _write_dataset(self, assets, job_name, path_dataset, job_categories):
+    def _write_dataset(self, assets: List[AssetT], job_name, path_dataset, job_categories):
         with open(ensure_dir(path_dataset), "w") as handler:
             for asset in tqdm(assets, desc="Downloading content"):
-                label_category = asset["labels"][0]["jsonResponse"][job_name]["categories"][0][
+                label_category = asset.get_annotations_classification(job_name)["categories"][0][
                     "name"
                 ]
                 handler.write(
                     json.dumps(
                         {
-                            "text": self._get_text_from(asset["content"]),
+                            "text": self._get_text_from(asset.content),
                             "label": job_categories.index(label_category),
                         }
                     )
@@ -206,7 +210,9 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
                 )
 
     @staticmethod
-    def _compute_asset_classification(model_framework, tokenizer, model, asset):
+    def _compute_asset_classification(
+        model_framework, tokenizer, model, asset
+    ) -> JsonResponseClassification:
         # imposed by the model
         asset = asset[: model.config.max_position_embeddings]
 

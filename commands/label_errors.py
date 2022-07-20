@@ -11,33 +11,44 @@ from kiliautoml.models import (
     UltralyticsObjectDetectionModel,
 )
 from kiliautoml.models._base_model import BaseInitArgs
+from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
     is_contours_detection,
     kili_print,
+    not_implemented_job,
 )
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AssetStatusT,
+    JobNameT,
     LabelMergeStrategyT,
     MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
+    ProjectIdT,
     ToolT,
 )
 
 
-def upload_errors_to_kili(found_errors: List[str], kili):
+def upload_errors_to_kili(error_recap: ErrorRecap, kili):
     kili_print("Updating metadatas for the concerned assets")
-    first = min(100, len(found_errors))
+
+    print()
+    found_errors = [asset_error for asset_error in error_recap if asset_error]
+    kili_print("Number of wrong labels found: ", len(found_errors))
+
+    asset_ids = error_recap.id_array
+    first = min(100, len(asset_ids))
     for skip in tqdm(
-        range(0, len(found_errors), first), desc="Updating asset metadata with labeling error flag"
+        range(0, len(asset_ids), first),
+        desc="Updating asset metadata with labeling error flag",
     ):
         error_assets = kili.assets(
-            asset_id_in=found_errors[skip : skip + first], fields=["id", "metadata"]
+            asset_id_in=asset_ids[skip : skip + first], fields=["id", "metadata"]
         )
         asset_ids = [asset["id"] for asset in error_assets]
         new_metadatas = [asset["metadata"] for asset in error_assets]
@@ -67,12 +78,12 @@ def upload_errors_to_kili(found_errors: List[str], kili):
 @LabelErrorOptions.cv_folds
 @LabelErrorOptions.dry_run
 def main(
-    project_id: str,
+    project_id: ProjectIdT,
     api_endpoint: str,
     api_key: str,
     clear_dataset_cache: bool,
     model_framework: ModelFrameworkT,
-    target_job: List[str],
+    target_job: List[JobNameT],
     model_repository: ModelRepositoryT,
     dry_run: bool,
     epochs: int,
@@ -128,12 +139,13 @@ def main(
             "job_name": job_name,
             "model_framework": model_framework,
             "model_name": model_name,
+            "project_id": project_id,
         }
 
         if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 
             image_classification_model = PyTorchVisionImageClassificationModel(
-                model_repository=model_repository, project_id=project_id, **base_init_args
+                model_repository=model_repository, **base_init_args
             )
             found_errors = image_classification_model.find_errors(
                 assets=assets,
@@ -144,9 +156,6 @@ def main(
                 api_key=api_key,
             )
 
-            print()
-            kili_print("Number of wrong labels found: ", len(found_errors))
-
         elif (
             content_input == "radio"
             and input_type == "IMAGE"
@@ -154,7 +163,7 @@ def main(
             and "rectangle" in tools
         ):
 
-            model = UltralyticsObjectDetectionModel(project_id=project_id, **base_init_args)
+            model = UltralyticsObjectDetectionModel(**base_init_args)
             found_errors = model.find_errors(
                 cv_n_folds=cv_folds,
                 epochs=epochs,
@@ -165,7 +174,7 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
             )
         elif is_contours_detection(input_type, ml_task, content_input, tools):
-            model = Detectron2SemanticSegmentationModel(project_id=project_id, **base_init_args)
+            model = Detectron2SemanticSegmentationModel(**base_init_args)
             found_errors = model.find_errors(
                 cv_n_folds=cv_folds,
                 epochs=epochs,
@@ -176,7 +185,8 @@ def main(
                 clear_dataset_cache=clear_dataset_cache,
             )
         else:
-            raise NotImplementedError
+            not_implemented_job(job_name, ml_task, tools)
+            raise Exception("Not implemented label_error MLtask.")
 
         if found_errors:
             if not dry_run:
