@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, NewType, Optional
 
 from pydantic import BaseModel
 from typing_extensions import Literal, TypedDict
@@ -24,10 +24,12 @@ ModelNameT = Literal[
 ]
 
 
-CategoryNameT = str
-CategoryIdT = str  # camelCase with first letter in minuscule
-JobNameT = str
-ProjectIdT = str
+CategoryNameT = NewType("CategoryNameT", str)
+CategoryIdT = NewType("CategoryIdT", str)  # camelCase with first letter in minuscule
+JobNameT = NewType("JobNameT", str)
+ProjectIdT = NewType("ProjectIdT", str)
+AssetExternalIdT = NewType("AssetExternalIdT", str)
+AssetIdT = NewType("AssetIdT", str)
 
 
 class CategoryT(TypedDict):
@@ -125,8 +127,8 @@ class LabelT(TypedDict):
 
 class AssetT(BaseModel):
     labels: List[LabelT]
-    id: str
-    externalId: str
+    id: AssetIdT
+    externalId: AssetExternalIdT
     content: Any
 
     def _get_annotations(self, job_name: JobNameT) -> JsonResponseBaseT:
@@ -180,7 +182,7 @@ class JobPredictions:
     def __init__(
         self,
         job_name: JobNameT,
-        external_id_array: List[str],
+        external_id_array: List[AssetExternalIdT],
         json_response_array: List[Dict[JobNameT, JsonResponseBaseT]],
         model_name_array: List[str],
         predictions_probability: List[float],

@@ -44,7 +44,7 @@ def set_all_seeds(seed):
 set_all_seeds(42)
 
 
-def categories_from_job(job: JobT):
+def categories_from_job(job: JobT) -> List[CategoryIdT]:
     """Returns the category id.
 
     Example:
@@ -103,7 +103,7 @@ def get_assets(
     max_assets: Optional[int] = None,
     randomize: bool = False,
     strategy: LabelMergeStrategyT = "last",
-    job_name: Optional[str] = None,
+    job_name: Optional[JobNameT] = None,
 ) -> List[AssetT]:
     """
     job_name is used if status_in does not have only unlabeled statuses

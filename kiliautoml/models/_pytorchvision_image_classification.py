@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import torch
@@ -12,6 +12,7 @@ from tqdm.autonotebook import tqdm
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.download_assets import download_project_images
+from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
 from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.path import Path, PathPytorchVision
 from kiliautoml.utils.pytorchvision.image_classification import (
@@ -130,7 +131,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
             model_name=self.model_name,  # type: ignore
             batch_size=batch_size,
             verbose=verbose,
-            class_names=self.class_names,
+            category_ids=self.class_names,
             image_datasets=image_datasets,
             save_model_path=self.model_path,
         )
@@ -141,7 +142,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
@@ -215,7 +216,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         verbose: int = 0,
         clear_dataset_cache: bool = False,
         api_key: str = "",
-    ) -> Any:  # maybe externalId
+    ):
         _ = clear_dataset_cache
 
         images = download_project_images(
@@ -263,7 +264,7 @@ class PyTorchVisionImageClassificationModel(BaseModel):
                 model_name=model_name,
                 batch_size=batch_size,
                 verbose=verbose,
-                class_names=self.class_names,
+                category_ids=self.class_names,
                 epochs=epochs,
                 image_datasets=image_datasets,
                 save_model_path=None,
@@ -290,4 +291,14 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         noise_paths = []
         for idx in noise_indices:
             noise_paths.append(images[idx].id)
-        return noise_paths
+
+        return ErrorRecap(
+            id_array=noise_paths,
+            external_id_array=[asset.externalId for asset in assets],
+            errors_by_asset=[
+                [
+                    LabelingError(error_type="misclassification", error_probability=0.4)
+                ]  # TODO: use true proba
+                for _ in noise_paths
+            ],
+        )

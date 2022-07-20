@@ -148,7 +148,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,

@@ -35,7 +35,7 @@ def predict_one_job(
     api_endpoint,
     project_id,
     from_model,
-    from_project: Optional[str],
+    from_project: Optional[ProjectIdT],
     verbose,
     input_type,
     assets,
@@ -171,7 +171,7 @@ def main(
     verbose: bool,
     max_assets: Optional[int],
     randomize_assets: bool,
-    from_project: Optional[str],
+    from_project: Optional[ProjectIdT],
     model_name: Optional[str],
     model_repository: Optional[str],
     model_framework: ModelFrameworkT,
@@ -217,7 +217,7 @@ def main(
         if not dry_run and job_predictions and job_predictions.external_id_array:
             kili.create_predictions(
                 project_id,
-                external_id_array=job_predictions.external_id_array,
+                external_id_array=job_predictions.external_id_array,  # type:ignore
                 json_response_array=job_predictions.json_response_array,
                 model_name_array=job_predictions.model_name_array,
             )

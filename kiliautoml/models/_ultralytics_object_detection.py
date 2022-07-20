@@ -26,8 +26,10 @@ from kiliautoml.utils.helpers import (
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
+    AssetExternalIdT,
     AssetT,
     BoundingPolyT,
+    CategoryIdT,
     CategoryT,
     JobNameT,
     JobPredictions,
@@ -221,7 +223,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def _yaml_preparation(
         *,
         data_path: str,
-        class_names: List[str],
+        class_names: List[CategoryIdT],
         kili_api_key: str,
         assets,
     ):
@@ -284,7 +286,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
@@ -365,7 +367,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         inference_files_by_id = {get_id_from_path(pf): pf for pf in inference_files}
 
         kili_print("Converting Ultralytics' YoloV5 inference to Kili JSON format...")
-        id_json_list: List[Tuple[str, Dict[JobNameT, JsonResponseBboxT]]] = []
+        id_json_list: List[Tuple[AssetExternalIdT, Dict[JobNameT, JsonResponseBboxT]]] = []
 
         proba_list: List[float] = []
         for image in downloaded_images:
@@ -485,7 +487,7 @@ def save_annotations_to_yolo_format(names, handler, job):
 
 
 def yolov5_to_kili_json(
-    path_yolov5_inference: str, ind_to_categories: List[str]
+    path_yolov5_inference: str, ind_to_categories: List[CategoryIdT]
 ) -> Tuple[List[KiliBBoxAnnotation], List[int]]:
     """Returns a list of annotations and of probabilities"""
     annotations = []

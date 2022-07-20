@@ -9,6 +9,8 @@ from shapely.geometry import Polygon
 from typing_extensions import Literal
 
 from kiliautoml.utils.type import (
+    AssetExternalIdT,
+    AssetIdT,
     AssetT,
     CategoryIdT,
     JobNameT,
@@ -200,14 +202,15 @@ def create_normalized_annotation(
 
 
 class ErrorRecap(BaseModel):
-    external_id_array: List[str]
+    external_id_array: List[AssetExternalIdT]
+    id_array: List[AssetIdT]
     errors_by_asset: List[List[LabelingError]]
 
 
 def find_all_label_errors(
     assets: List[AssetT],
     json_response_array: List[JsonResponseT],
-    external_id_array: List[str],
+    external_id_array: List[AssetExternalIdT],
     job_name: JobNameT,
     ml_task: MLTaskT,
 ) -> ErrorRecap:
@@ -235,6 +238,7 @@ def find_all_label_errors(
         errors_by_asset.append(labeling_errors)
 
     return ErrorRecap(
+        id_array=[asset.id for asset in assets],
         external_id_array=external_id_array,
         errors_by_asset=errors_by_asset,
     )

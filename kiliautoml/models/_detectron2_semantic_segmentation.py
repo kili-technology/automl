@@ -27,6 +27,7 @@ from kiliautoml.utils.helpers import categories_from_job, kili_print
 from kiliautoml.utils.path import ModelDirT, Path, PathDetectron2
 from kiliautoml.utils.type import (
     AssetT,
+    CategoryIdT,
     CategoryT,
     JobNameT,
     JobPredictions,
@@ -206,7 +207,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         epochs: Optional[int],
         batch_size: int,
         model_dir: ModelDirT,
-        classes: List[str],
+        classes: List[CategoryIdT],
     ):
         cfg = get_cfg()
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -240,7 +241,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
@@ -322,7 +323,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         list_x_y = idx[0][0]
         return list_x_y.reshape(-1, 2)
 
-    def get_annotations_from_instances(self, instances, class_names: List[str]):
+    def get_annotations_from_instances(self, instances, class_names: List[CategoryIdT]):
         """instances contains multiples bbox and object corresponding to one image"""
         annotations = []
         h, w = instances._image_size
@@ -395,7 +396,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             job=self.job,  # TODO: self here is not clean
         )
 
-        find_all_label_errors(
+        return find_all_label_errors(
             assets=assets,
             json_response_array=job_predictions.json_response_array,
             external_id_array=job_predictions.external_id_array,

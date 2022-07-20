@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from typing_extensions import TypedDict
 
+from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.type import (
     AssetT,
     DictTrainingInfosT,
@@ -73,7 +74,7 @@ class BaseModel(metaclass=ABCMeta):
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
@@ -90,5 +91,5 @@ class BaseModel(metaclass=ABCMeta):
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
-    ):
+    ) -> ErrorRecap:
         pass

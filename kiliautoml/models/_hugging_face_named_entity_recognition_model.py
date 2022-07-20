@@ -19,6 +19,7 @@ from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetT,
     CategoriesT,
+    CategoryIdT,
     CategoryT,
     JobNameT,
     JobPredictions,
@@ -199,7 +200,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         *,
         assets: List[AssetT],
         model_path: Optional[str],
-        from_project: Optional[str],
+        from_project: Optional[ProjectIdT],
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
@@ -267,7 +268,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         path_dataset: str,
         assets: List[AssetT],
         clear_dataset_cache: bool,
-    ):
+    ) -> List[CategoryIdT]:
         if clear_dataset_cache and os.path.exists(path_dataset):
             kili_print("Dataset cache for this project is being cleared.")
             os.remove(path_dataset)
@@ -286,7 +287,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                 for asset in tqdm(assets, desc="Converting assets to huggingface dataset"):
                     self._write_asset(job_name, labels_to_ids, handler, asset)
 
-        return label_list
+        return [CategoryIdT(cat) for cat in label_list]
 
     def _write_asset(self, job_name: JobNameT, labels_to_ids, handler, asset: AssetT):
         text = self._get_text_from(asset.content)
@@ -447,7 +448,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
             if label != null_category:
 
-                categories: CategoriesT = [CategoryT(name=label[2:], confidence=int(proba * 100))]
+                categories: CategoriesT = [
+                    CategoryT(name=CategoryIdT(label[2:]), confidence=int(proba * 100))
+                ]
                 ann: KiliNerAnnotation = {
                     "beginOffset": offset_in_text + offset_in_sentence + ind_in_remaining_text,
                     "content": content,

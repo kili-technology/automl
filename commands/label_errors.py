@@ -11,6 +11,7 @@ from kiliautoml.models import (
     UltralyticsObjectDetectionModel,
 )
 from kiliautoml.models._base_model import BaseInitArgs
+from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
@@ -33,16 +34,23 @@ from kiliautoml.utils.type import (
 )
 
 
-def upload_errors_to_kili(found_errors: List[str], kili):
+def upload_errors_to_kili(error_recap: ErrorRecap, kili):
     kili_print("Updating metadatas for the concerned assets")
-    first = min(100, len(found_errors))
+
+    print()
+    found_errors = [asset_error for asset_error in error_recap if asset_error]
+    kili_print("Number of wrong labels found: ", len(found_errors))
+
+    asset_ids = error_recap.id_array
+    first = min(100, len(asset_ids))
     for skip in tqdm(
-        range(0, len(found_errors), first), desc="Updating asset metadata with labeling error flag"
+        range(0, len(asset_ids), first),
+        desc="Updating asset metadata with labeling error flag",
     ):
         error_assets = kili.assets(
-            asset_id_in=found_errors[skip : skip + first], fields=["id", "metadata"]
+            asset_id_in=asset_ids[skip : skip + first], fields=["id", "metadata"]
         )
-        asset_ids = [asset.id for asset in error_assets]
+        asset_ids = [asset["id"] for asset in error_assets]
         new_metadatas = [asset["metadata"] for asset in error_assets]
 
         for meta in new_metadatas:
@@ -147,9 +155,6 @@ def main(
                 verbose=verbose,
                 api_key=api_key,
             )
-
-            print()
-            kili_print("Number of wrong labels found: ", len(found_errors))
 
         elif (
             content_input == "radio"

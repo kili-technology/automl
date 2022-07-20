@@ -342,7 +342,7 @@ def main(
     from_model: ModelFrameworkT,
     verbose: bool,
     clear_dataset_cache: bool,
-    from_project: Optional[str],
+    from_project: Optional[ProjectIdT],
     model_name: Optional[str],
     model_repository: Optional[str],
     model_framework: str,
@@ -428,7 +428,10 @@ def main(
         diversity_sampling=diversity_sampling, uncertainty_sampling=uncertainty_sampling
     )
     if not dry_run:
-        kili.update_properties_in_assets(asset_ids=asset_ids, priorities=priorities)
+        kili.update_properties_in_assets(
+            asset_ids=asset_ids,  # type:ignore
+            priorities=priorities,
+        )
 
 
 if __name__ == "__main__":

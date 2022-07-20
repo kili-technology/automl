@@ -14,13 +14,13 @@ from tqdm.autonotebook import tqdm
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, save_mock_data
 from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.memoization import kili_memoizer
-from kiliautoml.utils.type import AssetT
+from kiliautoml.utils.type import AssetExternalIdT, AssetIdT, AssetT
 
 
 @dataclass
 class DownloadedImage:
-    id: str
-    externalId: str
+    id: AssetIdT
+    externalId: AssetExternalIdT
     filepath: str
 
     def get_image(self) -> PILImage:
@@ -98,7 +98,7 @@ def download_image_retry(api_key, asset: AssetT, n_try: int):
 
 def download_project_images(
     api_key: str,
-    assets,
+    assets: List[AssetT],
     output_folder: Optional[str] = None,
 ) -> List[DownloadedImage]:
     kili_print("Downloading images to folder {}".format(output_folder))
@@ -125,7 +125,7 @@ def download_project_images(
 
 def download_project_text(
     api_key: str,
-    assets,
+    assets: List[AssetT],
 ) -> List[DownloadedText]:
     kili_print("Downloading project text...")
     downloaded_text = []
