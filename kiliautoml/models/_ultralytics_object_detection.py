@@ -75,7 +75,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
     model_repository: ModelRepositoryT = "ultralytics"
     tensor_backend: TensorBackendT = "pytorch"
     advised_model_names: List[ModelNameT] = [
-        # https://github.com/facebookresearch/detectron2/tree/main/configs/COCO-InstanceSegmentation
         "yolov5n",
         "yolov5s",
         "yolov5m",

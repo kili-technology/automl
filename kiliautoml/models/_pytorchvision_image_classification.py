@@ -69,7 +69,8 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         self.model_path = PathPytorchVision.append_model_path(model_repository_dir, self.model_name)
         self.data_dir = PathPytorchVision.append_data_dir(model_repository_dir)
 
-        # TODO: We should add class_names in every __init__
+        # TODO: The list of classes the model has to deal with should be stored during
+        # the initialization of each model, and not just for PyTorchVisionImageClassificationModel
         self.class_name_to_idx = {
             category: i for i, category in enumerate(job["content"]["categories"])
         }
