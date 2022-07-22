@@ -30,17 +30,17 @@ from kiliautoml.utils.type import (
     JobT,
     JsonResponseClassification,
     MLTaskT,
-    ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
+    TensorBackendT,
 )
 
 
 class PyTorchVisionImageClassificationModel(BaseModel):
     ml_task: MLTaskT = "CLASSIFICATION"
     model_repository: ModelRepositoryT = "torchvision"
-    model_framework: ModelFrameworkT = "pytorch"  # rename framework to backend
+    tensor_backend: TensorBackendT = "pytorch"
     advised_model_names: List[ModelNameT] = ["efficientnet_b0", "resnet50"]
 
     def __init__(

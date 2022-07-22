@@ -26,17 +26,17 @@ from kiliautoml.utils.type import (
     JobT,
     KiliNerAnnotation,
     MLTaskT,
-    ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
+    TensorBackendT,
 )
 
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
     ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"
     model_repository: ModelRepositoryT = "huggingface"
-    model_framework: ModelFrameworkT = "pytorch"
+    tensor_backend: TensorBackendT = "pytorch"
     advised_model_names: List[ModelNameT] = [
         "bert-base-cased",
         "bert-base-multilingual-cased",
@@ -112,7 +112,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             test_size=0.1
         )
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.model_framework, label_list, self.ml_task
+            model_name, self.tensor_backend, label_list, self.ml_task
         )
 
         label_all_tokens = True
@@ -150,7 +150,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
         train_dataset = tokenized_datasets["train"]  # type:  ignore
         eval_dataset = tokenized_datasets["test"]
-        path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
+        path_model = PathHF.append_model_folder(model_repository_dir, self.tensor_backend)
 
         training_arguments = self._get_training_args(
             path_model,
@@ -206,7 +206,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         _ = clear_dataset_cache
         warnings.warn("Warning, this method does not support custom batch_size")
         _ = batch_size
-        model_path_res, _, self.model_framework = self._extract_model_info(
+        model_path_res, _, self.tensor_backend = self._extract_model_info(
             self.job_name,
             self.project_id,
             model_path,
@@ -214,7 +214,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
 
         tokenizer, model = self._get_tokenizer_and_model(
-            self.model_framework, model_path_res, self.ml_task
+            self.tensor_backend, model_path_res, self.ml_task
         )
 
         predictions = []
@@ -233,7 +233,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                 offset += offset_inc
 
                 predictions_sentence, probas = self._compute_sentence_predictions(
-                    self.model_framework, tokenizer, model, sentence, offset
+                    self.tensor_backend, tokenizer, model, sentence, offset
                 )
                 probas_asset.append(min(probas))
 
@@ -332,12 +332,12 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     @classmethod
     def _compute_sentence_predictions(
-        cls, model_framework: ModelFrameworkT, tokenizer, model, sentence: str, offset: int
+        cls, tensor_backend: TensorBackendT, tokenizer, model, sentence: str, offset: int
     ):
         # imposed by the model
         sequence = sentence[: model.config.max_position_embeddings]
 
-        if model_framework == "pytorch":
+        if tensor_backend == "pytorch":
             tokens = tokenizer(
                 sequence,
                 return_tensors="pt",

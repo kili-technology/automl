@@ -13,10 +13,10 @@ from kiliautoml.utils.type import (
     JobPredictions,
     JobT,
     MLTaskT,
-    ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
+    TensorBackendT,
 )
 
 
@@ -39,7 +39,7 @@ class BaseTrainArgs(TypedDict):
 class BaseModel:
     ml_task: MLTaskT  # type: ignore
     model_repository: ModelRepositoryT  # type: ignore
-    model_framework: ModelFrameworkT  # type: ignore
+    tensor_backend: TensorBackendT  # type: ignore
     advised_model_names: List[ModelNameT]  # type: ignore
 
     def __init__(

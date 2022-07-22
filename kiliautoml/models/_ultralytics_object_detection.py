@@ -37,10 +37,10 @@ from kiliautoml.utils.type import (
     JsonResponseBboxT,
     KiliBBoxAnnotation,
     MLTaskT,
-    ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
+    TensorBackendT,
 )
 
 env = Environment(
@@ -73,7 +73,7 @@ def inspect(e):
 class UltralyticsObjectDetectionModel(BaseModel):
     ml_task: MLTaskT = "OBJECT_DETECTION"
     model_repository: ModelRepositoryT = "ultralytics"
-    model_framework: ModelFrameworkT = "pytorch"
+    tensor_backend: TensorBackendT = "pytorch"
     advised_model_names: List[ModelNameT] = [
         # https://github.com/facebookresearch/detectron2/tree/main/configs/COCO-InstanceSegmentation
         "yolov5n",
@@ -136,7 +136,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             shutil.rmtree(data_path)
 
         model_output_path = self._get_output_path_bbox(
-            title, model_repository_dir, self.model_framework
+            title, model_repository_dir, self.tensor_backend
         )
         os.makedirs(model_output_path, exist_ok=True)
 
@@ -276,13 +276,13 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
     # TODO: Move to Paths
     @staticmethod
-    def _get_output_path_bbox(title: str, path: str, model_framework: str) -> str:
+    def _get_output_path_bbox(title: str, path: str, tensor_backend: str) -> str:
         """Output folder path for the model."""
         # wandb splits the output_path according to "/" and uses the title as name of the project.
         model_output_path = os.path.join(
             path,
             "model",
-            model_framework,
+            tensor_backend,
             datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
             title,  # <-- name of the project in wandb
         )
@@ -307,13 +307,13 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         project_id = from_project if from_project else self.project_id
 
-        model_path, model_framework = self._get_last_model_param(project_id, model_path)
+        model_path, tensor_backend = self._get_last_model_param(project_id, model_path)
 
         return self._predict(
             api_key,
             assets,
             project_id,
-            model_framework,
+            tensor_backend,
             model_path,
             self.job_name,
             verbose,
@@ -326,7 +326,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         api_key: str,
         assets: List[AssetT],
         project_id: ProjectIdT,
-        model_framework: ModelFrameworkT,
+        tensor_backend: TensorBackendT,
         model_path: ModelPathT,
         job_name: JobNameT,
         verbose: int,
@@ -337,11 +337,11 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         warnings.warn("This function does not support custom batch_size")
 
-        if model_framework == "pytorch":
+        if tensor_backend == "pytorch":
             filename_weights = "best.pt"
         else:
             raise NotImplementedError(
-                f"Predictions with model framework {model_framework} not implemented"
+                f"Predictions with tensor backend {tensor_backend} not implemented"
             )
 
         kili_print(f"Loading model {model_path}")
@@ -417,7 +417,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         )
         return job_predictions
 
-    def _get_last_model_param(self, project_id, model_path) -> Tuple[ModelPathT, ModelFrameworkT]:
+    def _get_last_model_param(self, project_id, model_path) -> Tuple[ModelPathT, TensorBackendT]:
         model_path = get_last_trained_model_path(
             project_id=project_id,
             job_name=self.job_name,
@@ -436,11 +436,11 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         split_path = os.path.normpath(model_path).split(os.path.sep)  # type: ignore
 
-        model_framework: ModelFrameworkT = split_path[-5]  # type: ignore
-        kili_print(f"Model framework: {model_framework}")
-        if model_framework not in ["pytorch", "tensorflow"]:
-            raise ValueError(f"Unknown model framework: {model_framework}")
-        return model_path, model_framework
+        tensor_backend: TensorBackendT = split_path[-5]  # type: ignore
+        kili_print(f"Tensor backend: {tensor_backend}")
+        if tensor_backend not in ["pytorch", "tensorflow"]:
+            raise ValueError(f"Unknown tensor backend: {tensor_backend}")
+        return model_path, tensor_backend
 
     def find_errors(
         self,

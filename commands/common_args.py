@@ -5,7 +5,7 @@ from typing import List
 import click
 from typing_extensions import get_args
 
-from kiliautoml.utils.type import AssetStatusT, ModelFrameworkT, ModelNameT
+from kiliautoml.utils.type import AssetStatusT, ModelNameT, TensorBackendT
 
 
 class Options:
@@ -24,11 +24,11 @@ class Options:
         help="Kili API Key",
     )
 
-    model_framework = click.option(
-        "--model-framework",
+    tensor_backend = click.option(
+        "--tensor-backend",
         default="pytorch",
-        help="Model framework (eg. pytorch, tensorflow)",
-        type=click.Choice(get_args(ModelFrameworkT)),
+        help="Tensor backend (eg. pytorch, tensorflow)",
+        type=click.Choice(get_args(TensorBackendT)),
     )
     model_name = click.option(
         "--model-name",
