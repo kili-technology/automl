@@ -128,7 +128,10 @@ def convert_kili_semantic_to_coco(
                 float(v["y"]) * height for v in boundingPoly[0]["normalizedVertices"]
             ]
             poly_ = [(float(x), float(y)) for x, y in zip(px, py)]
-            assert len(poly_) > 2, "A polygon must contain more than 2 points"
+            if len(poly_) < 3:
+                print("A polygon must contain more than 2 points. Skipping this polygon...")
+                continue
+
             poly = [p for x in poly_ for p in x]
 
             categories = annotation["categories"]
