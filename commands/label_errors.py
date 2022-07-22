@@ -13,6 +13,7 @@ from kiliautoml.models import (
 from kiliautoml.models._base_model import BaseInitArgs
 from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
 from kiliautoml.utils.helpers import (
+    curated_job,
     get_assets,
     get_content_input_from_job,
     get_project,
@@ -25,12 +26,10 @@ from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
     LabelMergeStrategyT,
-    MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
-    ToolT,
 )
 
 
@@ -104,6 +103,7 @@ def update_asset_metadata(meta: Dict[str, Any], errors: List[LabelingError]):
 @Options.model_name
 @Options.model_repository
 @Options.target_job
+@Options.ignore_job
 @Options.max_assets
 @Options.clear_dataset_cache
 @Options.randomize_assets
@@ -121,6 +121,7 @@ def main(
     clear_dataset_cache: bool,
     model_framework: ModelFrameworkT,
     target_job: List[JobNameT],
+    ignore_job: List[JobNameT],
     model_repository: ModelRepositoryT,
     dry_run: bool,
     epochs: int,
@@ -143,14 +144,13 @@ def main(
     """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
+    jobs = curated_job(jobs, target_job, ignore_job)
 
     for job_name, job in jobs.items():
-        if target_job and job_name not in target_job:
-            continue
         kili_print(f"Detecting errors for job: {job_name}")
         content_input = get_content_input_from_job(job)
-        ml_task: MLTaskT = job.get("mlTask")  # type: ignore
-        tools: List[ToolT] = job.get("tools")
+        ml_task = job.get("mlTask")
+        tools = job.get("tools")
 
         if clear_dataset_cache:
             clear_command_cache(
@@ -223,7 +223,10 @@ def main(
             )
         else:
             not_implemented_job(job_name, ml_task, tools)
-            raise Exception("Not implemented label_error MLtask.")
+            raise Exception(
+                f"Not implemented label_error MLtask : {ml_task} for job {job_name}. Please use"
+                " --target-job XXX"
+            )
 
         if found_errors:
             if not dry_run:
