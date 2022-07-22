@@ -41,20 +41,29 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili):
     found_errors = [asset_error for asset_error in error_recap if asset_error]
     kili_print("Number of wrong labels found: ", len(found_errors))
 
-    asset_ids = error_recap.id_array
-    first = min(100, len(asset_ids))
+    asset_bundle = list(zip(error_recap.id_array, error_recap.errors_by_asset))
+    first = min(100, len(asset_bundle))
     for skip in tqdm(
-        range(0, len(asset_ids), first),
+        range(0, len(asset_bundle), first),
         desc="Updating asset metadata with labeling error flag",
     ):
+        assets = asset_bundle[skip : skip + first]
+        errors_by_asset = [a[1] for a in assets]
+        asset_ids = [a[0] for a in assets]
+
         error_assets = kili.assets(
             asset_id_in=asset_ids[skip : skip + first], fields=["id", "metadata"]
         )
         asset_ids = [asset["id"] for asset in error_assets]
         new_metadatas = [asset["metadata"] for asset in error_assets]
 
-        for meta in new_metadatas:
-            meta["labeling_error"] = True
+        for i, (meta, errors) in enumerate(zip(new_metadatas, errors_by_asset)):
+            if len(errors):
+                meta["labeling_error"] = True
+                # Here we should return the main error
+                meta["error_type"] = errors[0].error_type
+                meta["error_probability"] = errors[0].error_probability
+                new_metadatas[i] = meta
 
         kili.update_properties_in_assets(asset_ids=asset_ids, json_metadatas=new_metadatas)
 
