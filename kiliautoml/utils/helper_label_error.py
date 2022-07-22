@@ -35,13 +35,20 @@ class PositionT(BaseModel):
 class SemanticPositionT(PositionT, BaseModel):
     points: List[NormalizedVertice]
 
+    @validator("points")
+    def number_of_points(cls, points):
+        _ = cls
+        if len(points) < 3:
+            raise ValueError("Semantic annotation should contain at least 3 points.")
+        return points
+
 
 class BBoxPositionT(SemanticPositionT, BaseModel):
     @validator("points")
     def number_of_points(cls, points):
         _ = cls
         if len(points) != 4:
-            raise ValueError("Bbox should contain 4 points.")
+            raise ValueError("Bbox annotation should contain 4 points.")
         return points
 
 
