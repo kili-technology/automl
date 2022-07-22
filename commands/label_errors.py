@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import click
 from kili.client import Kili
@@ -11,7 +11,7 @@ from kiliautoml.models import (
     UltralyticsObjectDetectionModel,
 )
 from kiliautoml.models._base_model import BaseInitArgs
-from kiliautoml.utils.helper_label_error import ErrorRecap
+from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
 from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
@@ -37,7 +37,7 @@ from kiliautoml.utils.type import (
 def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: ProjectIdT):
     kili_print("Updating metadatas for the concerned assets")
 
-    print()
+    print(error_recap)
     found_errors = [asset_error for asset_error in error_recap if asset_error]
     kili_print("Number of wrong labels found: ", len(found_errors))
 
@@ -61,17 +61,28 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: Proje
         metadatas = [asset["metadata"] for asset in error_assets]
 
         for i, (meta, errors) in enumerate(zip(metadatas, errors_by_asset)):
-            if len(errors):
-                meta["labeling_error"] = "True"  # type:ignore
-                # Here we should return the main error
-                meta["error_type"] = str(errors[0].error_type)  # type:ignore
-                meta["error_probability"] = str(errors[0].error_probability)  # type:ignore
-                metadatas[i] = meta
+            update_asset_metadata(
+                meta,  # type: ignore
+                errors,
+            )
+            metadatas[i] = meta
 
         kili.update_properties_in_assets(
             asset_ids=asset_ids,
             json_metadatas=metadatas,  # type:ignore
         )
+
+
+def update_asset_metadata(meta: Dict[str, Any], errors: List[LabelingError]):
+    if len(errors):
+        meta["labeling_error"] = "True"
+        # Here we should return the main error
+        meta["error_type"] = str(errors[0].error_type)
+        meta["error_probability"] = str(errors[0].error_probability)
+    else:
+        meta.pop("labeling_error", None)
+        meta.pop("error_type", None)
+        meta.pop("error_probability", None)
 
 
 @click.command()
