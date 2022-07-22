@@ -13,7 +13,6 @@ from PIL.Image import Image as PILImage
 from tqdm import tqdm
 from transformers import AutoModel, AutoTokenizer  # type: ignore
 
-from kiliautoml.utils.constants import InputTypeT
 from kiliautoml.utils.download_assets import (
     download_project_images,
     download_project_text,
@@ -29,7 +28,7 @@ from kiliautoml.utils.mapper.gudhi_mapper import (
     gudhi_to_KM,
     topic_score,
 )
-from kiliautoml.utils.type import JobT
+from kiliautoml.utils.type import InputTypeT, JobT
 
 
 def embeddings_text(list_text: List[str]):
@@ -205,7 +204,7 @@ class MapperClassification:
 
     def _get_embeddings(self):
         if self.input_type == "IMAGE":
-            pil_images = [image.image for image in self.data]  # type: ignore
+            pil_images = [image.get_image() for image in self.data]  # type: ignore
             return embeddings_images(pil_images)
 
         elif self.input_type == "TEXT":

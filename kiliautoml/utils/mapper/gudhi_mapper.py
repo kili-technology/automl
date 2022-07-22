@@ -791,7 +791,7 @@ def custom_tooltip_picture(
         for ys, im in zip(label, image_list):
             output = io.BytesIO()
             # Data was a flat row of "pixels".
-            img = im.image.resize((64, 64))
+            img = im.get_image().resize((64, 64))
             img.save(output, format="PNG")
             contents = output.getvalue()
             img_encoded = base64.b64encode(contents)

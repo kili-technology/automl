@@ -10,10 +10,22 @@ from tabulate import tabulate
 from commands.common_args import Options, PredictOptions, TrainOptions
 from commands.predict import predict_one_job
 from kiliautoml.models import PyTorchVisionImageClassificationModel
-from kiliautoml.utils.constants import ModelFrameworkT, ModelNameT, ModelRepositoryT
-from kiliautoml.utils.helpers import get_assets, get_label, get_project, kili_print
+from kiliautoml.utils.helpers import (
+    _get_label,
+    get_assets,
+    get_content_input_from_job,
+    get_project,
+    kili_print,
+)
 from kiliautoml.utils.mapper.create import MapperClassification
-from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
+from kiliautoml.utils.type import (
+    AssetStatusT,
+    LabelMergeStrategyT,
+    ModelFrameworkT,
+    ModelNameT,
+    ModelRepositoryT,
+    ProjectIdT,
+)
 
 
 @click.command()
@@ -53,7 +65,7 @@ from kiliautoml.utils.type import AssetStatusT, LabelMergeStrategyT
 def main(
     api_endpoint: str,
     api_key: str,
-    project_id: str,
+    project_id: ProjectIdT,
     clear_dataset_cache: bool,
     target_job: List[str],
     model_framework: ModelFrameworkT,
@@ -68,7 +80,7 @@ def main(
     epochs: int,
     focus_class: Optional[List[str]],
     from_model: Optional[ModelFrameworkT],
-    from_project: Optional[str],
+    from_project: Optional[ProjectIdT],
     graph_name: str,
 ):
     """
@@ -87,7 +99,7 @@ def main(
 
         kili_print(f"Create Mapper for job: {job_name}")
 
-        content_input = job.get("content", {}).get("input")
+        content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")
         tools = job.get("tools")
         if content_input == "radio" and ml_task == "CLASSIFICATION" and input_type == "IMAGE":
@@ -101,13 +113,15 @@ def main(
             labeled_assets = []
             labels = []
             for asset in assets:
-                label = get_label(asset, label_merge_strategy)
+                label = _get_label(asset, job_name, label_merge_strategy)
                 if (label is None) or (job_name not in label["jsonResponse"]):
                     asset_id = asset["id"]
                     warnings.warn(f"${asset_id}: No annotation for job ${job_name}")
                 else:
                     labeled_assets.append(asset)
-                    labels.append(label["jsonResponse"][job_name]["categories"][0]["name"])
+                    labels.append(
+                        asset.get_annotations_classification(job_name)["categories"][0]["name"]
+                    )
 
             if predictions_path is None:
 
@@ -122,7 +136,6 @@ def main(
 
                 training_loss = image_classification_model.train(
                     assets=labeled_assets,
-                    label_merge_strategy=label_merge_strategy,
                     batch_size=batch_size,
                     epochs=epochs,
                     clear_dataset_cache=clear_dataset_cache,
@@ -155,7 +168,7 @@ def main(
                     clear_dataset_cache=clear_dataset_cache,
                 )
 
-                predictions = job_predictions.predictions_probability
+                predictions = job_predictions.predictions_probability  # type: ignore
             else:
                 with open("/content/predictions.csv", "r") as csv:
                     first_line = csv.readline()
