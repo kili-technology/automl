@@ -15,13 +15,16 @@ from kiliautoml.utils.type import (
     CategoryIdT,
     JobNameT,
     JsonResponseBaseT,
+    JsonResponseBboxT,
     JsonResponseNERT,
+    JsonResponseSemanticT,
     JsonResponseT,
     KiliBBoxAnnotation,
     KiliNerAnnotation,
     KiliSemanticAnnotation,
     MLTaskT,
     NormalizedVertice,
+    ToolT,
 )
 
 
@@ -189,13 +192,25 @@ def find_label_errors_for_one_asset(
 
 
 def create_normalized_annotation(
-    json_response: JsonResponseBaseT, ml_task: MLTaskT
+    json_response: JsonResponseBaseT, ml_task: MLTaskT, tool: ToolT
 ) -> List[AnnotationStandardizedT]:
     if ml_task == "NAMED_ENTITIES_RECOGNITION":
         json_response_ner: JsonResponseNERT = json_response  # type:ignore
         return [
             AnnotationStandardizedNERT.from_annotation(kili_ner)
             for kili_ner in json_response_ner["annotations"]
+        ]
+    elif ml_task == "OBJECT_DETECTION" and tool == "rectangle":
+        json_response_bbox: JsonResponseBboxT = json_response  # type:ignore
+        return [
+            AnnotationStandardizedBboxT.from_annotation(kili_bbox)
+            for kili_bbox in json_response_bbox["annotations"]
+        ]
+    elif ml_task == "OBJECT_DETECTION" and tool in ["polygon", "semantic"]:
+        json_response_semantic: JsonResponseSemanticT = json_response  # type:ignore
+        return [
+            AnnotationStandardizedSemanticT.from_annotation(kili_sem)
+            for kili_sem in json_response_semantic["annotations"]
         ]
     else:
         raise NotImplementedError
@@ -213,6 +228,7 @@ def find_all_label_errors(
     external_id_array: List[AssetExternalIdT],
     job_name: JobNameT,
     ml_task: MLTaskT,
+    tool: ToolT,
 ) -> ErrorRecap:
     assert len(assets) == len(json_response_array)
 
@@ -222,8 +238,8 @@ def find_all_label_errors(
 
         json_response_base = asset._get_annotations(job_name)
 
-        predicted_annotations = create_normalized_annotation(json_response[job_name], ml_task)
-        manual_annotations = create_normalized_annotation(json_response_base, ml_task)
+        predicted_annotations = create_normalized_annotation(json_response[job_name], ml_task, tool)
+        manual_annotations = create_normalized_annotation(json_response_base, ml_task, tool)
 
         labeling_errors = find_label_errors_for_one_asset(
             predicted_annotations=AssetStandardizedAnnotationsT(
