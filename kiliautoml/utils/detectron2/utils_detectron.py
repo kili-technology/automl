@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
+from tqdm.autonotebook import tqdm
 from typing_extensions import TypedDict
 
 from kiliautoml.utils.download_assets import download_asset_binary
@@ -100,7 +101,9 @@ def convert_kili_semantic_to_coco(
 
     # Fill labels_json
     annotation_j = -1
-    for asset_i, asset in enumerate(assets):
+    for asset_i, asset in tqdm(
+        enumerate(assets), total=len(assets), desc="Converting to COCO format..."
+    ):
         annotations_ = asset.get_annotations_semantic(job_name)["annotations"]
 
         # Add a new image
@@ -128,6 +131,10 @@ def convert_kili_semantic_to_coco(
                 float(v["y"]) * height for v in boundingPoly[0]["normalizedVertices"]
             ]
             poly_ = [(float(x), float(y)) for x, y in zip(px, py)]
+            if len(poly_) < 3:
+                print("A polygon must contain more than 2 points. Skipping this polygon...")
+                continue
+
             poly = [p for x in poly_ for p in x]
 
             categories = annotation["categories"]
