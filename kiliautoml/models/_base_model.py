@@ -1,9 +1,11 @@
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from typing import List, Optional
 
 from typing_extensions import TypedDict
 
 from kiliautoml.utils.helper_label_error import ErrorRecap
+from kiliautoml.utils.helpers import set_default
+from kiliautoml.utils.path import Path
 from kiliautoml.utils.type import (
     AssetT,
     DictTrainingInfosT,
@@ -21,8 +23,7 @@ from kiliautoml.utils.type import (
 class BaseInitArgs(TypedDict):
     job: JobT
     job_name: JobNameT
-    model_name: ModelNameT
-    model_framework: ModelFrameworkT
+    model_name: Optional[ModelNameT]
     project_id: ProjectIdT
 
 
@@ -35,24 +36,33 @@ class BaseTrainArgs(TypedDict):
     verbose: int
 
 
-class BaseModel(metaclass=ABCMeta):
+class BaseModel:
     ml_task: MLTaskT  # type: ignore
     model_repository: ModelRepositoryT  # type: ignore
+    model_framework: ModelFrameworkT  # type: ignore
+    advised_model_names: List[ModelNameT]  # type: ignore
 
     def __init__(
         self,
         *,
         job: JobT,
         job_name: JobNameT,
-        model_name: ModelNameT,
-        model_framework: ModelFrameworkT,
         project_id: ProjectIdT,
+        model_name: Optional[ModelNameT],
+        advised_model_names: List[ModelNameT],
     ) -> None:
         self.job = job
         self.job_name = job_name
-        self.model_name = model_name
-        self.model_framework: ModelFrameworkT = model_framework
-        self.project_id: ProjectIdT = project_id
+        self.model_name: ModelNameT = model_name or self.advised_model_names[0]
+        self.project_id = project_id
+
+        self.model_repository_dir = Path.model_repository_dir(
+            project_id, job_name, self.model_repository
+        )
+
+        self.model_name = set_default(
+            model_name, advised_model_names[0], "model_name", advised_model_names
+        )
 
     @abstractmethod
     def train(

@@ -22,8 +22,6 @@ from kiliautoml.utils.pytorchvision.image_classification import (
     get_trained_model_image_classif,
     initialize_model_img_class,
     predict_probabilities,
-    set_model_name_image_classification,
-    set_model_repository_image_classification,
 )
 from kiliautoml.utils.type import (
     AssetT,
@@ -31,6 +29,7 @@ from kiliautoml.utils.type import (
     JobPredictions,
     JobT,
     JsonResponseClassification,
+    MLTaskT,
     ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
@@ -39,41 +38,38 @@ from kiliautoml.utils.type import (
 
 
 class PyTorchVisionImageClassificationModel(BaseModel):
+    ml_task: MLTaskT = "CLASSIFICATION"
+    model_repository: ModelRepositoryT = "torchvision"
+    model_framework: ModelFrameworkT = "pytorch"  # rename framework to backend
+    advised_model_names: List[ModelNameT] = ["efficientnet_b0", "resnet50"]
+
     def __init__(
         self,
         *,
-        project_id: ProjectIdT,
-        model_repository: Optional[ModelRepositoryT],
         job: JobT,
         job_name: JobNameT,
-        model_name: ModelNameT,
-        model_framework: ModelFrameworkT,
+        project_id: ProjectIdT,
+        model_name: Optional[ModelNameT],
     ):
-        model_repository = set_model_repository_image_classification(model_repository)
-        model_name = set_model_name_image_classification(model_name)
-        model_repository_dir = Path.model_repository_dir(project_id, job_name, model_repository)
-
-        model_dir = PathPytorchVision.append_model_dir(model_repository_dir)
-        model_path = PathPytorchVision.append_model_path(model_repository_dir, model_name)
-        data_dir = PathPytorchVision.append_data_dir(model_repository_dir)
-
-        # To set to False if the input size varies a lot and you see that the training takes
-        # too much time
-        cudnn.benchmark = True
-
         BaseModel.__init__(
             self,
             job=job,
             job_name=job_name,
             model_name=model_name,
-            model_framework=model_framework,
             project_id=project_id,
+            advised_model_names=self.advised_model_names,
         )
 
-        self.model_dir = model_dir
-        self.model_path = model_path
-        self.data_dir = data_dir
+        # To set to False if the input size varies a lot and you see that the training takes
+        # too much time
+        cudnn.benchmark = True
 
+        model_repository_dir = self.model_repository_dir
+        self.model_dir = PathPytorchVision.append_model_dir(model_repository_dir)
+        self.model_path = PathPytorchVision.append_model_path(model_repository_dir, self.model_name)
+        self.data_dir = PathPytorchVision.append_data_dir(model_repository_dir)
+
+        # TODO: We should add class_names in every __init__
         self.class_name_to_idx = {
             category: i for i, category in enumerate(job["content"]["categories"])
         }

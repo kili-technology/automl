@@ -115,6 +115,7 @@ def main(
         ml_task: MLTaskT = job.get("mlTask")  # type: ignore
         tools: List[ToolT] = job.get("tools")
 
+        # We should delete model_framework
         if clear_dataset_cache:
             clear_command_cache(
                 command="label_errors",
@@ -137,16 +138,13 @@ def main(
         base_init_args: BaseInitArgs = {
             "job": job,
             "job_name": job_name,
-            "model_framework": model_framework,
             "model_name": model_name,
             "project_id": project_id,
         }
 
         if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 
-            image_classification_model = PyTorchVisionImageClassificationModel(
-                model_repository=model_repository, **base_init_args
-            )
+            image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
             found_errors = image_classification_model.find_errors(
                 assets=assets,
                 cv_n_folds=cv_folds,

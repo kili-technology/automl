@@ -71,28 +71,39 @@ def inspect(e):
 
 
 class UltralyticsObjectDetectionModel(BaseModel):
-
     ml_task: MLTaskT = "OBJECT_DETECTION"
     model_repository: ModelRepositoryT = "ultralytics"
+    model_framework: ModelFrameworkT = "pytorch"
+    advised_model_names: List[ModelNameT] = [
+        # https://github.com/facebookresearch/detectron2/tree/main/configs/COCO-InstanceSegmentation
+        "yolov5n",
+        "yolov5s",
+        "yolov5m",
+        "yolov5l",
+        "yolov5x",
+        "yolov5n6",  # n6 : double resolution
+        "yolov5s6",
+        "yolov5m6",
+        "yolov5l6",
+        "yolov5x6",
+    ]
 
     def __init__(
         self,
         *,
-        project_id: ProjectIdT,
         job: JobT,
         job_name: JobNameT,
-        model_name: ModelNameT,
-        model_framework: ModelFrameworkT,
+        model_name: Optional[ModelNameT],
+        project_id: ProjectIdT,
     ):
         BaseModel.__init__(
             self,
             job=job,
             job_name=job_name,
             model_name=model_name,
-            model_framework=model_framework,
             project_id=project_id,
+            advised_model_names=self.advised_model_names,
         )
-        self.project_id = project_id
 
     def train(
         self,
@@ -166,7 +177,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 f"{model_output_path}",
                 "--upload_dataset",  # wandb
                 "--weights",
-                "yolov5n.pt",
+                f"{self.model_name}.pt",
                 "--batch",
                 str(batch_size),
                 *args_from_json,

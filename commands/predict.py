@@ -50,11 +50,11 @@ def predict_one_job(
     job,
     clear_dataset_cache,
 ) -> Optional[JobPredictions]:
+    _ = model_framework, model_repository
     job_predictions = None
     base_init_args: BaseInitArgs = {
         "job": job,
         "job_name": job_name,
-        "model_framework": model_framework,
         "model_name": model_name,
         "project_id": project_id,
     }
@@ -82,7 +82,7 @@ def predict_one_job(
             api_endpoint=api_endpoint,
             job=job,
             job_name=job_name,
-            model_framework=model_framework,
+            model_name=model_name,
         )
         job_predictions = model.predict(
             assets=assets,
@@ -111,9 +111,7 @@ def predict_one_job(
             api_key=api_key,
         )
     elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
-        image_classification_model = PyTorchVisionImageClassificationModel(
-            model_repository=model_repository, **base_init_args
-        )
+        image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
 
         job_predictions = image_classification_model.predict(
             verbose=verbose,

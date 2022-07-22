@@ -48,31 +48,30 @@ setup_logger()
 
 
 class Detectron2SemanticSegmentationModel(BaseModel):  #
-
     ml_task: MLTaskT = "OBJECT_DETECTION"
     model_repository: ModelRepositoryT = "detectron2"
+    model_framework: ModelFrameworkT = "pytorch"
+    advised_model_names: List[ModelNameT] = [
+        "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml",
+        "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml",
+    ]
 
     def __init__(
         self,
         *,
-        project_id: ProjectIdT,
         job: JobT,
         job_name: JobNameT,
-        model_name: ModelNameT,
-        model_framework: ModelFrameworkT,
+        model_name: Optional[ModelNameT],
+        project_id: ProjectIdT,
     ):
-        # TODO - model_name should be shecked by BaseModel
-        if model_name is None:
-            model_name = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"
         BaseModel.__init__(
             self,
             job=job,
             job_name=job_name,
             model_name=model_name,
-            model_framework=model_framework,
             project_id=project_id,
+            advised_model_names=self.advised_model_names,
         )
-        self.project_id = project_id
 
     @staticmethod
     def _convert_coco_to_detectron(img_dir):

@@ -119,7 +119,6 @@ def main(
         base_init_args: BaseInitArgs = {
             "job": job,
             "job_name": job_name,
-            "model_framework": model_framework,
             "model_name": model_name,
             "project_id": project_id,
         }
@@ -168,10 +167,7 @@ def main(
                 additional_train_args_yolo=additional_train_args_yolo,
             )
         elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
-            image_classification_model = PyTorchVisionImageClassificationModel(
-                model_repository=model_repository,  # TODO: delete
-                **base_init_args,
-            )
+            image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
             model_evaluation = image_classification_model.train(**base_train_args, api_key=api_key)
         elif is_contours_detection(input_type, ml_task, content_input, tools):
             image_classification_model = Detectron2SemanticSegmentationModel(**base_init_args)

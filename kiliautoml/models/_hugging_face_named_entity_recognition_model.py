@@ -34,11 +34,11 @@ from kiliautoml.utils.type import (
 
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
-
     ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"
     model_repository: ModelRepositoryT = "huggingface"
-
+    model_framework: ModelFrameworkT = "pytorch"
     advised_model_names: List[ModelNameT] = [
+        "bert-base-cased",
         "bert-base-multilingual-cased",
         "distilbert-base-cased",
     ]
@@ -46,23 +46,21 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     def __init__(
         self,
         *,
-        project_id: ProjectIdT,
-        api_key: str,
-        api_endpoint: str,
         job: JobT,
         job_name: JobNameT,
-        model_name: ModelNameT = "bert-base-multilingual-cased",
-        model_framework: ModelFrameworkT = "pytorch",
+        project_id: ProjectIdT,
+        model_name: Optional[ModelNameT],
+        api_key,
+        api_endpoint,
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
-
         BaseModel.__init__(
             self,
             job=job,
             job_name=job_name,
             model_name=model_name,
-            model_framework=model_framework,
             project_id=project_id,
+            advised_model_names=self.advised_model_names,
         )
 
     def train(
