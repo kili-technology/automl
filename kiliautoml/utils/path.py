@@ -3,10 +3,10 @@ from datetime import datetime
 
 from kiliautoml.utils.type import (
     JobNameT,
+    MLBackendT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
-    TensorBackendT,
 )
 
 AUTOML_CACHE = os.getenv(
@@ -92,12 +92,12 @@ class PathHF:
     @staticmethod
     @makedirs_exist_ok
     def append_model_folder(
-        model_repository_dir: ModelRepositoryDirT, tensor_backend: TensorBackendT
+        model_repository_dir: ModelRepositoryDirT, ml_backend: MLBackendT
     ) -> ModelDirT:
         return os.path.join(
             model_repository_dir,
             "model",
-            tensor_backend,
+            ml_backend,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
 

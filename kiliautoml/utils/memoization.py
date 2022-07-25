@@ -9,9 +9,9 @@ from kiliautoml.utils.path import AUTOML_CACHE, ModelRepositoryDirT, Path, PathH
 from kiliautoml.utils.type import (
     CommandT,
     JobNameT,
+    MLBackendT,
     ModelRepositoryT,
     ProjectIdT,
-    TensorBackendT,
 )
 
 
@@ -47,7 +47,7 @@ def clear_command_cache(
     project_id: ProjectIdT,
     job_name: JobNameT,
     model_repository: Optional[ModelRepositoryT] = None,
-    tensor_backend: Optional[TensorBackendT] = None,
+    ml_backend: Optional[MLBackendT] = None,
 ):
     """If model_repository is None, then it clears for every modelRepository cache."""
     sub_dirs = ["get_asset_memoized"]
@@ -69,10 +69,10 @@ def clear_command_cache(
                 job_name=job_name,
                 model_repository=model_repository,
             )
-            if tensor_backend is None:
+            if ml_backend is None:
                 cache_paths.append(path)
             else:
-                cache_paths.append(PathHF.append_model_folder(path, tensor_backend))
+                cache_paths.append(PathHF.append_model_folder(path, ml_backend))
 
         for cache_path in cache_paths:
             if os.path.exists(cache_path):

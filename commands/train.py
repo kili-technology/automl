@@ -28,10 +28,10 @@ from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
     LabelMergeStrategyT,
+    MLBackendT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
-    TensorBackendT,
     ToolT,
 )
 
@@ -40,7 +40,7 @@ from kiliautoml.utils.type import (
 @Options.project_id
 @Options.api_endpoint
 @Options.api_key
-@Options.tensor_backend
+@Options.ml_backend
 @Options.model_name
 @Options.model_repository
 @Options.target_job
@@ -58,7 +58,7 @@ from kiliautoml.utils.type import (
 def main(
     api_endpoint: str,
     api_key: str,
-    tensor_backend: TensorBackendT,
+    ml_backend: MLBackendT,
     model_name: ModelNameT,
     model_repository: ModelRepositoryT,
     project_id: ProjectIdT,
@@ -109,7 +109,7 @@ def main(
                 command="train",
                 project_id=project_id,
                 job_name=job_name,
-                tensor_backend=tensor_backend,
+                ml_backend=ml_backend,
                 model_repository=model_repository,
             )
         content_input = get_content_input_from_job(job)

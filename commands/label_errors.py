@@ -25,11 +25,11 @@ from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
     LabelMergeStrategyT,
+    MLBackendT,
     MLTaskT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
-    TensorBackendT,
     ToolT,
 )
 
@@ -63,7 +63,7 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili):
 @Options.project_id
 @Options.api_endpoint
 @Options.api_key
-@Options.tensor_backend
+@Options.ml_backend
 @Options.model_name
 @Options.model_repository
 @Options.target_job
@@ -82,7 +82,7 @@ def main(
     api_endpoint: str,
     api_key: str,
     clear_dataset_cache: bool,
-    tensor_backend: TensorBackendT,
+    ml_backend: MLBackendT,
     target_job: List[JobNameT],
     model_repository: ModelRepositoryT,
     dry_run: bool,
@@ -115,13 +115,13 @@ def main(
         ml_task: MLTaskT = job.get("mlTask")  # type: ignore
         tools: List[ToolT] = job.get("tools")
 
-        # We should delete tensor_backend
+        # We should delete ml_backend
         if clear_dataset_cache:
             clear_command_cache(
                 command="label_errors",
                 project_id=project_id,
                 job_name=job_name,
-                tensor_backend=tensor_backend,
+                ml_backend=ml_backend,
                 model_repository=model_repository,
             )
 

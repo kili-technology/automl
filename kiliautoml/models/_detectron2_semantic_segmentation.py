@@ -35,13 +35,13 @@ from kiliautoml.utils.type import (
     JsonResponseSemanticT,
     KiliSemanticAnnotation,
     LabelMergeStrategyT,
+    MLBackendT,
     MLTaskT,
     ModelNameT,
     ModelRepositoryT,
     NormalizedVertice,
     NormalizedVertices,
     ProjectIdT,
-    TensorBackendT,
 )
 
 setup_logger()
@@ -50,7 +50,7 @@ setup_logger()
 class Detectron2SemanticSegmentationModel(BaseModel):  #
     ml_task: MLTaskT = "OBJECT_DETECTION"
     model_repository: ModelRepositoryT = "detectron2"
-    tensor_backend: TensorBackendT = "pytorch"
+    ml_backend: MLBackendT = "pytorch"
     advised_model_names: List[ModelNameT] = [
         "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml",
         "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml",

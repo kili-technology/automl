@@ -24,8 +24,8 @@ from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
     JobPredictions,
+    MLBackendT,
     ProjectIdT,
-    TensorBackendT,
 )
 
 
@@ -44,13 +44,13 @@ def predict_one_job(
     content_input,
     ml_task,
     model_repository,
-    tensor_backend,
+    ml_backend,
     model_name,
     tools,
     job,
     clear_dataset_cache,
 ) -> Optional[JobPredictions]:
-    _ = tensor_backend, model_repository
+    _ = ml_backend, model_repository
     job_predictions = None
     base_init_args: BaseInitArgs = {
         "job": job,
@@ -145,7 +145,7 @@ def predict_one_job(
 @Options.project_id
 @Options.api_endpoint
 @Options.api_key
-@Options.tensor_backend
+@Options.ml_backend
 @Options.model_name
 @Options.model_repository
 @Options.target_job
@@ -165,14 +165,14 @@ def main(
     asset_status_in: List[AssetStatusT],
     target_job: List[JobNameT],
     dry_run: bool,
-    from_model: Optional[TensorBackendT],
+    from_model: Optional[MLBackendT],
     verbose: bool,
     max_assets: Optional[int],
     randomize_assets: bool,
     from_project: Optional[ProjectIdT],
     model_name: Optional[str],
     model_repository: Optional[str],
-    tensor_backend: TensorBackendT,
+    ml_backend: MLBackendT,
     batch_size: int,
     clear_dataset_cache: bool,
 ):
@@ -205,7 +205,7 @@ def main(
             content_input=content_input,
             model_repository=model_repository,
             model_name=model_name,
-            tensor_backend=tensor_backend,
+            ml_backend=ml_backend,
             from_project=from_project,
             ml_task=ml_task,
             tools=tools,
