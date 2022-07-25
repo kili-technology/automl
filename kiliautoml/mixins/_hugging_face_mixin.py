@@ -18,8 +18,8 @@ from kiliautoml.utils.path import PathHF
 from kiliautoml.utils.type import (
     CategoryIdT,
     JobNameT,
+    MLBackendT,
     MLTaskT,
-    ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
@@ -34,10 +34,8 @@ class HuggingFaceMixin(metaclass=ABCMeta):
     model_repository: ModelRepositoryT = "huggingface"
 
     @staticmethod
-    def _get_tokenizer_and_model(
-        model_framework: ModelFrameworkT, model_path: str, ml_task: MLTaskT
-    ):
-        if model_framework == "pytorch":
+    def _get_tokenizer_and_model(ml_backend: MLBackendT, model_path: str, ml_task: MLTaskT):
+        if ml_backend == "pytorch":
             tokenizer = AutoTokenizer.from_pretrained(model_path, from_pt=True)
             if ml_task == "NAMED_ENTITIES_RECOGNITION":
                 model = AutoModelForTokenClassification.from_pretrained(model_path)
@@ -45,7 +43,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
                 model = AutoModelForSequenceClassification.from_pretrained(model_path)
             else:
                 raise ValueError("unknown model task")
-        elif model_framework == "tensorflow":
+        elif ml_backend == "tensorflow":
             tokenizer = AutoTokenizer.from_pretrained(model_path)
             if ml_task == "NAMED_ENTITIES_RECOGNITION":
                 model = TFAutoModelForTokenClassification.from_pretrained(model_path)
@@ -60,15 +58,15 @@ class HuggingFaceMixin(metaclass=ABCMeta):
     def _get_tokenizer_and_model_from_name(
         self,
         model_name: ModelNameT,
-        model_framework: ModelFrameworkT,
+        ml_backend: MLBackendT,
         label_list: List[CategoryIdT],
         ml_task: MLTaskT,
     ):
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         kwargs = {"num_labels": len(label_list), "id2label": dict(list(enumerate(label_list)))}
-        if model_framework == "pytorch":
+        if ml_backend == "pytorch":
             pass
-        elif model_framework == "tensorflow":
+        elif ml_backend == "tensorflow":
             kwargs.update({"from_pt": True})
         else:
             raise NotImplementedError
@@ -111,11 +109,11 @@ class HuggingFaceMixin(metaclass=ABCMeta):
             raise ValueError("Inconsistent model base repository")
 
         if split_path[-2] in ["pytorch", "tensorflow"]:
-            model_framework: ModelFrameworkT = split_path[-2]  # type: ignore
-            kili_print(f"Model framework: {model_framework}")
+            ml_backend: MLBackendT = split_path[-2]  # type: ignore
+            kili_print(f"ml-backend: {ml_backend}")
         else:
-            raise ValueError("Unknown model framework")
-        return model_path_res, cls.model_repository, model_framework
+            raise ValueError("Unknown ml-backend")
+        return model_path_res, cls.model_repository, ml_backend
 
     @staticmethod
     def _get_training_args(

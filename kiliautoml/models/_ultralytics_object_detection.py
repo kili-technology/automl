@@ -36,8 +36,8 @@ from kiliautoml.utils.type import (
     JobT,
     JsonResponseBboxT,
     KiliBBoxAnnotation,
+    MLBackendT,
     MLTaskT,
-    ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
@@ -71,28 +71,38 @@ def inspect(e):
 
 
 class UltralyticsObjectDetectionModel(BaseModel):
-
     ml_task: MLTaskT = "OBJECT_DETECTION"
     model_repository: ModelRepositoryT = "ultralytics"
+    ml_backend: MLBackendT = "pytorch"
+    advised_model_names: List[ModelNameT] = [
+        "yolov5n",
+        "yolov5s",
+        "yolov5m",
+        "yolov5l",
+        "yolov5x",
+        "yolov5n6",  # n6 : double resolution
+        "yolov5s6",
+        "yolov5m6",
+        "yolov5l6",
+        "yolov5x6",
+    ]
 
     def __init__(
         self,
         *,
-        project_id: ProjectIdT,
         job: JobT,
         job_name: JobNameT,
-        model_name: ModelNameT,
-        model_framework: ModelFrameworkT,
+        model_name: Optional[ModelNameT],
+        project_id: ProjectIdT,
     ):
         BaseModel.__init__(
             self,
             job=job,
             job_name=job_name,
             model_name=model_name,
-            model_framework=model_framework,
             project_id=project_id,
+            advised_model_names=self.advised_model_names,
         )
-        self.project_id = project_id
 
     def train(
         self,
@@ -124,9 +134,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             kili_print("Dataset cache for this project is being cleared.")
             shutil.rmtree(data_path)
 
-        model_output_path = self._get_output_path_bbox(
-            title, model_repository_dir, self.model_framework
-        )
+        model_output_path = self._get_output_path_bbox(title, model_repository_dir, self.ml_backend)
         os.makedirs(model_output_path, exist_ok=True)
 
         os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
@@ -166,7 +174,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                 f"{model_output_path}",
                 "--upload_dataset",  # wandb
                 "--weights",
-                "yolov5n.pt",
+                f"{self.model_name}.pt",
                 "--batch",
                 str(batch_size),
                 *args_from_json,
@@ -265,13 +273,13 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
     # TODO: Move to Paths
     @staticmethod
-    def _get_output_path_bbox(title: str, path: str, model_framework: str) -> str:
+    def _get_output_path_bbox(title: str, path: str, ml_backend: str) -> str:
         """Output folder path for the model."""
         # wandb splits the output_path according to "/" and uses the title as name of the project.
         model_output_path = os.path.join(
             path,
             "model",
-            model_framework,
+            ml_backend,
             datetime.now().strftime("%Y-%m-%d_%H:%M:%S"),
             title,  # <-- name of the project in wandb
         )
@@ -296,13 +304,13 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         project_id = from_project if from_project else self.project_id
 
-        model_path, model_framework = self._get_last_model_param(project_id, model_path)
+        model_path, ml_backend = self._get_last_model_param(project_id, model_path)
 
         return self._predict(
             api_key,
             assets,
             project_id,
-            model_framework,
+            ml_backend,
             model_path,
             self.job_name,
             verbose,
@@ -315,7 +323,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         api_key: str,
         assets: List[AssetT],
         project_id: ProjectIdT,
-        model_framework: ModelFrameworkT,
+        ml_backend: MLBackendT,
         model_path: ModelPathT,
         job_name: JobNameT,
         verbose: int,
@@ -326,12 +334,10 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         warnings.warn("This function does not support custom batch_size")
 
-        if model_framework == "pytorch":
+        if ml_backend == "pytorch":
             filename_weights = "best.pt"
         else:
-            raise NotImplementedError(
-                f"Predictions with model framework {model_framework} not implemented"
-            )
+            raise NotImplementedError(f"Predictions with ml-backend {ml_backend} not implemented")
 
         kili_print(f"Loading model {model_path}")
         kili_print(f"for job {job_name}")
@@ -406,7 +412,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         )
         return job_predictions
 
-    def _get_last_model_param(self, project_id, model_path) -> Tuple[ModelPathT, ModelFrameworkT]:
+    def _get_last_model_param(self, project_id, model_path) -> Tuple[ModelPathT, MLBackendT]:
         model_path = get_last_trained_model_path(
             project_id=project_id,
             job_name=self.job_name,
@@ -425,11 +431,11 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
         split_path = os.path.normpath(model_path).split(os.path.sep)  # type: ignore
 
-        model_framework: ModelFrameworkT = split_path[-5]  # type: ignore
-        kili_print(f"Model framework: {model_framework}")
-        if model_framework not in ["pytorch", "tensorflow"]:
-            raise ValueError(f"Unknown model framework: {model_framework}")
-        return model_path, model_framework
+        ml_backend: MLBackendT = split_path[-5]  # type: ignore
+        kili_print(f"ml-backend: {ml_backend}")
+        if ml_backend not in ["pytorch", "tensorflow"]:
+            raise ValueError(f"Unknown ml-backend: {ml_backend}")
+        return model_path, ml_backend
 
     def find_errors(
         self,

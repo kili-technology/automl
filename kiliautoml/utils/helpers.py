@@ -4,7 +4,7 @@ import random
 import warnings
 from datetime import datetime
 from glob import glob
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, TypeVar
 from warnings import warn
 
 import numpy as np
@@ -216,7 +216,10 @@ def kili_print(*args, **kwargs) -> None:
     print(colored("kili:", "yellow", attrs=["bold"]), *args, **kwargs)
 
 
-def set_default(x, x_default, x_name: str, x_range: List):  # type: ignore
+T = TypeVar("T")  # Declare type variable
+
+
+def set_default(x: Optional[T], x_default: T, x_name: str, x_range: List[T]) -> T:
     if x not in x_range:
         kili_print(f"defaulting to {x_name}={x_default}")
         x = x_default

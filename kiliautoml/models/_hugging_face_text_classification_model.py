@@ -22,8 +22,8 @@ from kiliautoml.utils.type import (
     JobPredictions,
     JobT,
     JsonResponseClassification,
+    MLBackendT,
     MLTaskT,
-    ModelFrameworkT,
     ModelMetricT,
     ModelNameT,
     ModelRepositoryT,
@@ -35,7 +35,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     ml_task: MLTaskT = "CLASSIFICATION"
     model_repository: ModelRepositoryT = "huggingface"
-
+    ml_backend: MLBackendT = "pytorch"
     advised_model_names: List[ModelNameT] = [
         "bert-base-multilingual-cased",
         "distilbert-base-cased",
@@ -45,13 +45,12 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     def __init__(
         self,
         *,
-        project_id: ProjectIdT,
-        api_key: str,
-        api_endpoint: str,
-        job_name: JobNameT,
         job: JobT,
-        model_name: ModelNameT = "bert-base-multilingual-cased",
-        model_framework: ModelFrameworkT = "pytorch",
+        job_name: JobNameT,
+        project_id: ProjectIdT,
+        model_name: Optional[ModelNameT],
+        api_key,
+        api_endpoint,
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
         BaseModel.__init__(
@@ -59,8 +58,8 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             job=job,
             job_name=job_name,
             model_name=model_name,
-            model_framework=model_framework,
             project_id=project_id,
+            advised_model_names=self.advised_model_names,
         )
 
     def train(
@@ -108,7 +107,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.model_framework, job_categories, self.ml_task
+            model_name, self.ml_backend, job_categories, self.ml_task
         )
 
         def tokenize_function(examples):
@@ -117,7 +116,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         tokenized_datasets = raw_datasets.map(tokenize_function, batched=True)
         train_dataset = tokenized_datasets["train"]
         eval_dataset = tokenized_datasets["test"]  # type: ignore
-        path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
+        path_model = PathHF.append_model_folder(model_repository_dir, self.ml_backend)
 
         training_arguments = self._get_training_args(
             path_model,
@@ -156,7 +155,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         print("Warning, this model does not support custom batch_size ", batch_size)
         _ = clear_dataset_cache
 
-        model_path_res, _, self.model_framework = self._extract_model_info(
+        model_path_res, _, self.ml_backend = self._extract_model_info(
             self.job_name, self.project_id, model_path, from_project
         )
 
@@ -164,14 +163,14 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         proba_assets = []
 
         tokenizer, model = self._get_tokenizer_and_model(
-            self.model_framework, model_path_res, self.ml_task
+            self.ml_backend, model_path_res, self.ml_task
         )
 
         for asset in assets:
             text = self._get_text_from(asset.content)
 
             predictions_asset = self._compute_asset_classification(
-                self.model_framework, tokenizer, model, text
+                self.ml_backend, tokenizer, model, text
             )
 
             predictions.append({self.job_name: predictions_asset})
@@ -211,12 +210,12 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
     @staticmethod
     def _compute_asset_classification(
-        model_framework, tokenizer, model, asset
+        ml_backend, tokenizer, model, asset
     ) -> JsonResponseClassification:
         # imposed by the model
         asset = asset[: model.config.max_position_embeddings]
 
-        if model_framework == "pytorch":
+        if ml_backend == "pytorch":
             tokens = tokenizer(
                 asset,
                 return_tensors="pt",

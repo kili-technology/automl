@@ -28,7 +28,7 @@ from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
     LabelMergeStrategyT,
-    ModelFrameworkT,
+    MLBackendT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
@@ -40,7 +40,7 @@ from kiliautoml.utils.type import (
 @Options.project_id
 @Options.api_endpoint
 @Options.api_key
-@Options.model_framework
+@Options.ml_backend
 @Options.model_name
 @Options.model_repository
 @Options.target_job
@@ -58,7 +58,7 @@ from kiliautoml.utils.type import (
 def main(
     api_endpoint: str,
     api_key: str,
-    model_framework: ModelFrameworkT,
+    ml_backend: MLBackendT,
     model_name: ModelNameT,
     model_repository: ModelRepositoryT,
     project_id: ProjectIdT,
@@ -109,7 +109,7 @@ def main(
                 command="train",
                 project_id=project_id,
                 job_name=job_name,
-                model_framework=model_framework,
+                ml_backend=ml_backend,
                 model_repository=model_repository,
             )
         content_input = get_content_input_from_job(job)
@@ -119,7 +119,6 @@ def main(
         base_init_args: BaseInitArgs = {
             "job": job,
             "job_name": job_name,
-            "model_framework": model_framework,
             "model_name": model_name,
             "project_id": project_id,
         }
@@ -168,10 +167,7 @@ def main(
                 additional_train_args_yolo=additional_train_args_yolo,
             )
         elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
-            image_classification_model = PyTorchVisionImageClassificationModel(
-                model_repository=model_repository,  # TODO: delete
-                **base_init_args,
-            )
+            image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
             model_evaluation = image_classification_model.train(**base_train_args, api_key=api_key)
         elif is_contours_detection(input_type, ml_task, content_input, tools):
             image_classification_model = Detectron2SemanticSegmentationModel(**base_init_args)

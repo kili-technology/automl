@@ -8,10 +8,10 @@ from torch.utils.data import Dataset
 from torchvision import models, transforms
 
 from kiliautoml.utils.download_assets import DownloadedImage
-from kiliautoml.utils.helpers import kili_print, set_default
+from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
-from kiliautoml.utils.type import CategoryIdT, ModelNameT, ModelRepositoryT
+from kiliautoml.utils.type import CategoryIdT, ModelNameT
 
 data_transforms = {
     "train": transforms.Compose(
@@ -92,29 +92,6 @@ class ClassificationPredictDataset(Dataset):  # type: ignore
         if self.transform:
             image = self.transform(image)
         return image
-
-
-def set_model_name_image_classification(model_name: str) -> ModelNameT:
-    model_name = set_default(
-        model_name,
-        "efficientnet_b0",
-        "model_name",
-        ["efficientnet_b0", "resnet50"],
-    )
-
-    return model_name  # type:ignore
-
-
-def set_model_repository_image_classification(
-    model_repository: Optional[ModelRepositoryT],
-) -> ModelRepositoryT:
-    model_repository = set_default(
-        model_repository,
-        "torchvision",
-        "model_repository",
-        ["torchvision"],
-    )
-    return model_repository  # type: ignore
 
 
 def get_trained_model_image_classif(
