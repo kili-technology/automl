@@ -1,5 +1,5 @@
 # Do not forget to add in setup.py
--r kiliautoml/utils/ultralytics/yolov5/requirements.txt
+# -r kiliautoml/utils/ultralytics/yolov5/requirements.txt
 cleanlab>=2.0.0
 click
 datasets<=2.2
@@ -27,3 +27,8 @@ opencv-python
 git+https://github.com/facebookresearch/detectron2.git
 shapely
 pydantic
+kmapper
+gudhi
+matplotlib
+scikit-image
+networkx

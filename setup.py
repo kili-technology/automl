@@ -48,6 +48,8 @@ setup(
         # Plotting ------------------------------------
         "seaborn>=0.11.0",
         "thop",
+        "gudhi",
+        "kmapper",
     ],
     entry_points={
         "console_scripts": [
