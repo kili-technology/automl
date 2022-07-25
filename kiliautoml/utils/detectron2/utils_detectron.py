@@ -102,7 +102,7 @@ def convert_kili_semantic_to_coco(
     # Fill labels_json
     annotation_j = -1
     for asset_i, asset in tqdm(
-        enumerate(assets), total=len(assets), desc="Converting to COCO format..."
+        enumerate(assets), total=len(assets), desc="Download and convert asset..."
     ):
         annotations_ = asset.get_annotations_semantic(job_name)["annotations"]
 
