@@ -47,7 +47,8 @@ from kiliautoml.utils.type import (
 setup_logger()
 
 
-class Detectron2SemanticSegmentationModel(BaseModel):  #
+class Detectron2SemanticSegmentationModel(BaseModel):
+
     ml_task: MLTaskT = "OBJECT_DETECTION"
     model_repository: ModelRepositoryT = "detectron2"
     ml_backend: MLBackendT = "pytorch"
