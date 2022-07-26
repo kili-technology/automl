@@ -2,7 +2,7 @@
 This files contains types for annotations, but those types should be used only for label error.
 """
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Union
 
 from pydantic import BaseModel, validator
 from shapely.geometry import Point, Polygon
@@ -83,6 +83,15 @@ def iou_polygons(points1: List[NormalizedVertice], points2):
     return iou
 
 
+def get_confidence(
+    annotation: Union[KiliSemanticAnnotation, KiliBBoxAnnotation, KiliNerAnnotation]
+) -> float:
+    if "confidence" in annotation["categories"][0]:
+        return annotation["categories"][0]["confidence"] / 100
+    else:
+        return 1
+
+
 class AnnotationStandardizedSemanticT(AnnotationStandardizedT, BaseModel):
     position: SemanticPositionT
 
@@ -96,7 +105,7 @@ class AnnotationStandardizedSemanticT(AnnotationStandardizedT, BaseModel):
     ) -> "AnnotationStandardizedSemanticT":
         position = SemanticPositionT(points=annotation["boundingPoly"][0]["normalizedVertices"])
         return cls(
-            confidence=annotation["categories"][0]["confidence"] / 100,
+            confidence=get_confidence(annotation),
             category_id=annotation["categories"][0]["name"],
             position=position,
             ml_task="OBJECT_DETECTION",
@@ -113,7 +122,7 @@ class AnnotationStandardizedBboxT(AnnotationStandardizedT, BaseModel):
     def from_annotation(cls, annotation: KiliBBoxAnnotation) -> "AnnotationStandardizedBboxT":
         position = BBoxPositionT(points=annotation["boundingPoly"][0]["normalizedVertices"])
         return cls(
-            confidence=annotation["categories"][0]["confidence"] / 100,
+            confidence=get_confidence(annotation),
             category_id=annotation["categories"][0]["name"],
             position=position,
             ml_task="OBJECT_DETECTION",
@@ -134,7 +143,7 @@ class AnnotationStandardizedNERT(AnnotationStandardizedT, BaseModel):
             endOffset=annotation["endOffset"],
         )
         return cls(
-            confidence=annotation["categories"][0]["confidence"] / 100,
+            confidence=get_confidence(annotation),
             category_id=annotation["categories"][0]["name"],
             position=position,
             ml_task="NAMED_ENTITIES_RECOGNITION",
@@ -144,6 +153,17 @@ class AnnotationStandardizedNERT(AnnotationStandardizedT, BaseModel):
 class AssetStandardizedAnnotationsT(BaseModel):
     annotations: List[AnnotationStandardizedT]
     externalId: str
+
+    def category_count(self):
+        categories_count = {}
+
+        for annotation in self.annotations:
+            categories_count[annotation.category_id] = 0
+
+        for annotation in self.annotations:
+            categories_count[annotation.category_id] += 1
+
+        return categories_count
 
 
 LabelingErrorTypeT = Literal["omission", "hallucination", "misclassification", "imprecise"]
@@ -160,43 +180,69 @@ def find_label_errors_for_one_asset(
 ) -> List[LabelingError]:
     """We compare the prediction of the model and the manual annotations."""
 
-    errors: List[LabelingError] = []
-    for manual_annotation in manual_annotations.annotations:
+    print("\npredicted annotations:", predicted_annotations.category_count())
+    print("manual annotations:", manual_annotations.category_count())
 
-        corresponding_annotation = []
-        for predicted_annotation in predicted_annotations.annotations:
-            iou = manual_annotation.iou(predicted_annotation.position)
-            same_category = manual_annotation.category_id == predicted_annotation.category_id
-            good_iou = iou > 0.9
+    errors: List[LabelingError] = []
+    for manual_ann in manual_annotations.annotations:
+        msg = f"Analysing {manual_ann.category_id}..."
+        corresponding_perfect_annotation = []
+        for predicted_ann in predicted_annotations.annotations:
+            iou = manual_ann.iou(predicted_ann.position)
+            same_category = manual_ann.category_id == predicted_ann.category_id
+            good_iou = iou > 0.8
 
             if good_iou and same_category:
-                corresponding_annotation.append(predicted_annotation)
+                corresponding_perfect_annotation.append(predicted_ann)
+                print(msg, "perfect annotation!")
             elif good_iou and not same_category:
-                print("Probably wrong category")
-                errors.append(LabelingError(error_type="misclassification", error_probability=iou))
+                add_error(msg, errors, manual_ann, predicted_ann, iou, "misclassification")
+            elif iou < 0.1:
+                pass
+                # print("Probably 2 different objects on the Asset.")
+            elif same_category:
+                add_error(msg, errors, manual_ann, predicted_ann, iou, "imprecise")
             else:
-                print(
-                    "position not matching, iou",
-                    iou,
-                    "pred:",
-                    predicted_annotation.category_id,
-                    "man",
-                    manual_annotation.category_id,
-                )
-                errors.append(LabelingError(error_type="imprecise", error_probability=1 - iou))
+                # Bad category bad iou, weird, let's say it's a misclassification
+                add_error(msg, errors, manual_ann, predicted_ann, iou, "misclassification")
 
-        if len(corresponding_annotation) == 0:
+        if len(corresponding_perfect_annotation) == 0:
+            # Hallucination must be very rare. Don't consider it for the moment.
+            print("The model is probably not trained enough")
+        elif len(corresponding_perfect_annotation) > 1:
             print(
-                "Either the model has forgotten something or the labeler has annotated something"
-                " which should not be annotated."
+                "The model has found multiple objects. "
+                "Sometimes this happens because the model is not trained enouth."
             )
-            errors.append(LabelingError(error_type="hallucination", error_probability=0.1))
-        elif len(corresponding_annotation) > 1:
-            print("The model has found multiple objects.")
         else:
-            print("ras")
+            pass
+    print(f"Asset conclusion: We found {len(errors)} errors.")
 
     return errors
+
+
+def add_error(
+    msg,
+    errors: List[LabelingError],
+    manual_ann: AnnotationStandardizedT,
+    predicted_ann: AnnotationStandardizedT,
+    iou: float,
+    error_type: LabelingErrorTypeT,
+):
+    if error_type == "misclassification":
+        err = (
+            f"{error_type}: Annotation {manual_ann.category_id} should be"
+            f" {predicted_ann.category_id}"
+        )
+        error_probability = predicted_ann.confidence
+    elif error_type == "imprecise":
+        err = f"imprecise: Annotation {manual_ann.category_id} is imprecise, iou {iou}"
+        error_probability = predicted_ann.confidence * (1 - iou)  # TODO: better formula
+    else:
+        raise ValueError
+
+    print(msg, err)
+    errors.append(LabelingError(error_type=error_type, error_probability=error_probability))
 
 
 def create_normalized_annotation(
