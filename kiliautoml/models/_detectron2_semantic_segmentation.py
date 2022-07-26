@@ -402,4 +402,5 @@ class Detectron2SemanticSegmentationModel(BaseModel):
             external_id_array=job_predictions.external_id_array,
             job_name=self.job_name,
             ml_task=self.ml_task,
+            tool="semantic",
         )
