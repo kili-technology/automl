@@ -3,7 +3,7 @@ from datetime import datetime
 
 from kiliautoml.utils.type import (
     JobNameT,
-    ModelFrameworkT,
+    MLBackendT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
@@ -92,12 +92,12 @@ class PathHF:
     @staticmethod
     @makedirs_exist_ok
     def append_model_folder(
-        model_repository_dir: ModelRepositoryDirT, model_framework: ModelFrameworkT
+        model_repository_dir: ModelRepositoryDirT, ml_backend: MLBackendT
     ) -> ModelDirT:
         return os.path.join(
             model_repository_dir,
             "model",
-            model_framework,
+            ml_backend,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
 

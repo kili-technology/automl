@@ -25,8 +25,8 @@ from kiliautoml.utils.type import (
     JobPredictions,
     JobT,
     KiliNerAnnotation,
+    MLBackendT,
     MLTaskT,
-    ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
@@ -34,11 +34,11 @@ from kiliautoml.utils.type import (
 
 
 class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
-
     ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"
     model_repository: ModelRepositoryT = "huggingface"
-
+    ml_backend: MLBackendT = "pytorch"
     advised_model_names: List[ModelNameT] = [
+        "bert-base-cased",
         "bert-base-multilingual-cased",
         "distilbert-base-cased",
     ]
@@ -46,23 +46,21 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     def __init__(
         self,
         *,
-        project_id: ProjectIdT,
-        api_key: str,
-        api_endpoint: str,
         job: JobT,
         job_name: JobNameT,
-        model_name: ModelNameT = "bert-base-multilingual-cased",
-        model_framework: ModelFrameworkT = "pytorch",
+        project_id: ProjectIdT,
+        model_name: Optional[ModelNameT],
+        api_key,
+        api_endpoint,
     ) -> None:
         KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
-
         BaseModel.__init__(
             self,
             job=job,
             job_name=job_name,
             model_name=model_name,
-            model_framework=model_framework,
             project_id=project_id,
+            advised_model_names=self.advised_model_names,
         )
 
     def train(
@@ -114,7 +112,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             test_size=0.1
         )
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.model_framework, label_list, self.ml_task
+            model_name, self.ml_backend, label_list, self.ml_task
         )
 
         label_all_tokens = True
@@ -152,7 +150,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
         train_dataset = tokenized_datasets["train"]  # type:  ignore
         eval_dataset = tokenized_datasets["test"]
-        path_model = PathHF.append_model_folder(model_repository_dir, self.model_framework)
+        path_model = PathHF.append_model_folder(model_repository_dir, self.ml_backend)
 
         training_arguments = self._get_training_args(
             path_model,
@@ -208,7 +206,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         _ = clear_dataset_cache
         warnings.warn("Warning, this method does not support custom batch_size")
         _ = batch_size
-        model_path_res, _, self.model_framework = self._extract_model_info(
+        model_path_res, _, self.ml_backend = self._extract_model_info(
             self.job_name,
             self.project_id,
             model_path,
@@ -216,7 +214,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
 
         tokenizer, model = self._get_tokenizer_and_model(
-            self.model_framework, model_path_res, self.ml_task
+            self.ml_backend, model_path_res, self.ml_task
         )
 
         predictions = []
@@ -235,7 +233,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
                 offset += offset_inc
 
                 predictions_sentence, probas = self._compute_sentence_predictions(
-                    self.model_framework, tokenizer, model, sentence, offset
+                    self.ml_backend, tokenizer, model, sentence, offset
                 )
                 probas_asset.append(min(probas))
 
@@ -334,12 +332,12 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
     @classmethod
     def _compute_sentence_predictions(
-        cls, model_framework: ModelFrameworkT, tokenizer, model, sentence: str, offset: int
+        cls, ml_backend: MLBackendT, tokenizer, model, sentence: str, offset: int
     ):
         # imposed by the model
         sequence = sentence[: model.config.max_position_embeddings]
 
-        if model_framework == "pytorch":
+        if ml_backend == "pytorch":
             tokens = tokenizer(
                 sequence,
                 return_tensors="pt",

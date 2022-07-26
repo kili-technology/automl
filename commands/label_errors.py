@@ -25,8 +25,8 @@ from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
     LabelMergeStrategyT,
+    MLBackendT,
     MLTaskT,
-    ModelFrameworkT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
@@ -63,7 +63,7 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili):
 @Options.project_id
 @Options.api_endpoint
 @Options.api_key
-@Options.model_framework
+@Options.ml_backend
 @Options.model_name
 @Options.model_repository
 @Options.target_job
@@ -82,7 +82,7 @@ def main(
     api_endpoint: str,
     api_key: str,
     clear_dataset_cache: bool,
-    model_framework: ModelFrameworkT,
+    ml_backend: MLBackendT,
     target_job: List[JobNameT],
     model_repository: ModelRepositoryT,
     dry_run: bool,
@@ -115,12 +115,13 @@ def main(
         ml_task: MLTaskT = job.get("mlTask")  # type: ignore
         tools: List[ToolT] = job.get("tools")
 
+        # We should delete ml_backend
         if clear_dataset_cache:
             clear_command_cache(
                 command="label_errors",
                 project_id=project_id,
                 job_name=job_name,
-                model_framework=model_framework,
+                ml_backend=ml_backend,
                 model_repository=model_repository,
             )
 
@@ -137,16 +138,13 @@ def main(
         base_init_args: BaseInitArgs = {
             "job": job,
             "job_name": job_name,
-            "model_framework": model_framework,
             "model_name": model_name,
             "project_id": project_id,
         }
 
         if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
 
-            image_classification_model = PyTorchVisionImageClassificationModel(
-                model_repository=model_repository, **base_init_args
-            )
+            image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
             found_errors = image_classification_model.find_errors(
                 assets=assets,
                 cv_n_folds=cv_folds,

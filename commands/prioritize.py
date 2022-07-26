@@ -23,13 +23,7 @@ from kiliautoml.utils.helpers import (
     kili_print,
 )
 from kiliautoml.utils.memoization import clear_command_cache
-from kiliautoml.utils.type import (
-    AssetStatusT,
-    MLTaskT,
-    ModelFrameworkT,
-    ProjectIdT,
-    ToolT,
-)
+from kiliautoml.utils.type import AssetStatusT, MLBackendT, MLTaskT, ProjectIdT, ToolT
 
 # Priorities
 Priorities = List[float]
@@ -315,7 +309,7 @@ def embedding_text(
 @Options.project_id
 @Options.api_endpoint
 @Options.api_key
-@Options.model_framework
+@Options.ml_backend
 @Options.model_name
 @Options.model_repository
 @Options.target_job
@@ -339,13 +333,13 @@ def main(
     diversity_sampling: float,
     uncertainty_sampling: float,
     dry_run: bool,
-    from_model: ModelFrameworkT,
+    from_model: ProjectIdT,
     verbose: bool,
     clear_dataset_cache: bool,
     from_project: Optional[ProjectIdT],
     model_name: Optional[str],
     model_repository: Optional[str],
-    model_framework: str,
+    ml_backend: MLBackendT,
     batch_size: int,
 ):
     """
@@ -402,7 +396,7 @@ def main(
         job=job,
         content_input=content_input,
         model_repository=model_repository,
-        model_framework=model_framework,
+        ml_backend=ml_backend,
         model_name=model_name,
         ml_task=ml_task,
         tools=tools,
