@@ -207,12 +207,7 @@ def find_label_errors_for_one_asset(
         msg = f"Analysing {manual_ann.category_id}..."
         corresponding_perfect_annotation = []
         for pred_i, predicted_ann in enumerate(predicted_annotations.annotations):
-            try:
-                iou = manual_ann.iou(predicted_ann.position)
-            except InvalidAnnotation:
-                # TODO: understand why sometimes bad annotations
-                continue
-
+            iou = manual_ann.iou(predicted_ann.position)
             same_category = manual_ann.category_id == predicted_ann.category_id
             good_iou = iou > 0.8
 
@@ -290,12 +285,14 @@ def create_normalized_annotation(
         return [
             AnnotationStandardizedBboxT.from_annotation(kili_bbox)
             for kili_bbox in json_response_bbox["annotations"]
+            if len(kili_bbox) == 4
         ]
     elif ml_task == "OBJECT_DETECTION" and tool in ["polygon", "semantic"]:
         json_response_semantic: JsonResponseSemanticT = json_response  # type:ignore
         return [
             AnnotationStandardizedSemanticT.from_annotation(kili_sem)
             for kili_sem in json_response_semantic["annotations"]
+            if len(kili_sem) > 2
         ]
     else:
         raise NotImplementedError

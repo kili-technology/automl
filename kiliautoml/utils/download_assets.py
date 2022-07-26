@@ -39,7 +39,7 @@ DELAY = 60 / 250  # 250 calls per minutes
 
 @sleep_and_retry
 @limits(calls=1, period=DELAY)
-def throttled_request(api_key, asset_content, use_header=True, k=0) -> Response:  # type: ignore
+def _throttled_request(api_key, asset_content, use_header=True, k=0) -> Response:  # type: ignore
     if k == 20:
         raise Exception("Too many retries")
     if use_header:
@@ -61,17 +61,37 @@ def throttled_request(api_key, asset_content, use_header=True, k=0) -> Response:
     except AssertionError as e:
         # Sometimes, the header breaks google bucket and just removing the header makes it work.
         _ = e
-        return throttled_request(api_key, asset_content, use_header=not use_header, k=k + 1)
+        return _throttled_request(api_key, asset_content, use_header=not use_header, k=k + 1)
 
 
 @kili_memoizer
+def _throttled_request_memoized(api_key, asset_content, asset_id):
+    _ = asset_id
+    return _throttled_request(api_key, asset_content)
+
+
+def throttled_request(api_key, asset_content):
+    """
+    asset_content contains the id and the token.
+    'https://cloud.kili-technology.com/api/label/v2/files?id=3a5aa0ca-328e-4f0f-bedd-4ffff27f796d&token=890cc70e2'
+
+    But we want to memoize the asset even if the token changes.
+    """
+    if "files?id=" in asset_content and "&token=" in asset_content:
+        asset_id = asset_content.split("?id=")[1].split("&token=")[0]
+        print("_throttled_request_memoized")
+        return _throttled_request_memoized(api_key, asset_content, asset_id)
+    else:
+        print("_throttled_request")
+        return _throttled_request(api_key, asset_content)
+
+
 def download_asset_binary(api_key, asset_content):
     response = throttled_request(api_key, asset_content)
     asset_data = response.content
     return asset_data
 
 
-@kili_memoizer
 def download_asset_unicode(api_key, asset_content):
     response = throttled_request(api_key, asset_content)
     text = response.text
