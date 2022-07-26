@@ -35,11 +35,10 @@ from kiliautoml.utils.type import (
 
 
 def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: ProjectIdT):
-    kili_print("Updating metadatas for the concerned assets")
+    kili_print("\nUpdating metadatas for the concerned assets")
 
-    print(error_recap)
-    found_errors = [asset_error for asset_error in error_recap if asset_error]
-    kili_print("Number of wrong labels found: ", len(found_errors))
+    found_errors = [len(asset_error) for asset_error in error_recap.errors_by_asset]
+    kili_print("Number of wrong labels found: ", sum(found_errors))
 
     asset_bundle = list(zip(error_recap.id_array, error_recap.errors_by_asset))
     first = min(100, len(asset_bundle))
@@ -51,13 +50,16 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: Proje
         errors_by_asset = [a[1] for a in assets]
         asset_ids = [a[0] for a in assets]
 
-        asset_id_chunk = asset_ids[skip : skip + first]
-        error_assets: List[Dict[str, str]] = kili.assets(
-            asset_id_in=asset_id_chunk,  # type:ignore
+        # *_set means shuffled
+        error_assets_set: List[Dict[str, str]] = kili.assets(
+            asset_id_in=asset_ids,  # type:ignore
             fields=["id", "metadata"],
             project_id=project_id,
         )
-        asset_ids = [asset["id"] for asset in error_assets]
+        asset_ids_set = [asset["id"] for asset in error_assets_set]
+
+        # unshuffle
+        error_assets = [error_assets_set[asset_ids_set.index(id)] for id in asset_ids]
         metadatas = [asset["metadata"] for asset in error_assets]
 
         for i, (meta, errors) in enumerate(zip(metadatas, errors_by_asset)):
@@ -68,7 +70,7 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: Proje
             metadatas[i] = meta
 
         kili.update_properties_in_assets(
-            asset_ids=asset_ids,
+            asset_ids=asset_ids,  # type:ignore
             json_metadatas=metadatas,  # type:ignore
         )
 
