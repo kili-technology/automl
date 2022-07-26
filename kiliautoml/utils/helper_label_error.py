@@ -2,7 +2,7 @@
 This files contains types for annotations, but those types should be used only for label error.
 """
 from abc import ABC, abstractmethod
-from typing import Dict, List, Union
+from typing import Dict, List, Type, Union
 
 from pydantic import BaseModel, validator
 from shapely.geometry import Point, Polygon
@@ -15,9 +15,6 @@ from kiliautoml.utils.type import (
     CategoryIdT,
     JobNameT,
     JsonResponseBaseT,
-    JsonResponseBboxT,
-    JsonResponseNERT,
-    JsonResponseSemanticT,
     JsonResponseT,
     KiliBBoxAnnotation,
     KiliNerAnnotation,
@@ -179,6 +176,17 @@ class AssetStandardizedAnnotationsT(BaseModel):
         return categories_count
 
 
+def get_asset_standardized_class(ml_task: MLTaskT, tool: ToolT) -> Type[AnnotationStandardizedT]:
+    if ml_task == "NAMED_ENTITIES_RECOGNITION":
+        return AnnotationStandardizedNERT
+    elif ml_task == "OBJECT_DETECTION" and tool == "rectangle":
+        return AnnotationStandardizedBboxT
+    elif ml_task == "OBJECT_DETECTION" and tool in ["polygon", "semantic"]:
+        return AnnotationStandardizedSemanticT
+    else:
+        raise NotImplementedError
+
+
 LabelingErrorTypeT = Literal["misclassification", "omission", "hallucination", "imprecise", "other"]
 
 
@@ -274,28 +282,14 @@ def add_error(
 def create_normalized_annotation(
     json_response: JsonResponseBaseT, ml_task: MLTaskT, tool: ToolT
 ) -> List[AnnotationStandardizedT]:
-    if ml_task == "NAMED_ENTITIES_RECOGNITION":
-        json_response_ner: JsonResponseNERT = json_response  # type:ignore
-        return [
-            AnnotationStandardizedNERT.from_annotation(kili_ner)
-            for kili_ner in json_response_ner["annotations"]
-        ]
-    elif ml_task == "OBJECT_DETECTION" and tool == "rectangle":
-        json_response_bbox: JsonResponseBboxT = json_response  # type:ignore
-        return [
-            AnnotationStandardizedBboxT.from_annotation(kili_bbox)
-            for kili_bbox in json_response_bbox["annotations"]
-            if len(kili_bbox) == 4
-        ]
-    elif ml_task == "OBJECT_DETECTION" and tool in ["polygon", "semantic"]:
-        json_response_semantic: JsonResponseSemanticT = json_response  # type:ignore
-        return [
-            AnnotationStandardizedSemanticT.from_annotation(kili_sem)
-            for kili_sem in json_response_semantic["annotations"]
-            if len(kili_sem) > 2
-        ]
-    else:
-        raise NotImplementedError
+
+    res = []
+    for annotation in json_response["annotations"]:  # type:ignore
+        try:
+            res.append(get_asset_standardized_class(ml_task, tool).from_annotation(annotation))
+        except ValueError as e:
+            print(e)
+    return res
 
 
 class ErrorRecap(BaseModel):

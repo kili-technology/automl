@@ -40,6 +40,7 @@ DELAY = 60 / 250  # 250 calls per minutes
 @sleep_and_retry
 @limits(calls=1, period=DELAY)
 def _throttled_request(api_key, asset_content, use_header=True, k=0) -> Response:  # type: ignore
+    print("Downloading...")
     if k == 20:
         raise Exception("Too many retries")
     if use_header:
@@ -66,6 +67,7 @@ def _throttled_request(api_key, asset_content, use_header=True, k=0) -> Response
 
 @kili_memoizer
 def _throttled_request_memoized(api_key, asset_content, asset_id):
+    """Even if asset content varies his token, we use the memoized asset"""
     _ = asset_id
     return _throttled_request(api_key, asset_content)
 
