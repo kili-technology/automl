@@ -17,13 +17,21 @@ from commands.common_args import Options, PredictOptions, PrioritizeOptions
 from commands.predict import predict_one_job
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
+    curated_job,
     get_assets,
     get_content_input_from_job,
     get_project,
     kili_print,
 )
 from kiliautoml.utils.memoization import clear_command_cache
-from kiliautoml.utils.type import AssetStatusT, MLBackendT, MLTaskT, ProjectIdT, ToolT
+from kiliautoml.utils.type import (
+    AssetStatusT,
+    JobNameT,
+    MLBackendT,
+    MLTaskT,
+    ProjectIdT,
+    ToolT,
+)
 
 # Priorities
 Priorities = List[float]
@@ -313,6 +321,7 @@ def embedding_text(
 @Options.model_name
 @Options.model_repository
 @Options.target_job
+@Options.ignore_job
 @Options.max_assets
 @Options.clear_dataset_cache
 @Options.randomize_assets
@@ -334,6 +343,8 @@ def main(
     uncertainty_sampling: float,
     dry_run: bool,
     from_model: ProjectIdT,
+    target_job: List[JobNameT],
+    ignore_job: List[JobNameT],
     verbose: bool,
     clear_dataset_cache: bool,
     from_project: Optional[ProjectIdT],
@@ -357,12 +368,11 @@ def main(
 
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
-    kili_print("Input type: ", input_type)
-    kili_print("jobs: ", jobs)
+    jobs = curated_job(jobs, target_job, ignore_job)
 
     jobs_item = list(jobs.items())
     if len(jobs_item) > 1:
-        raise NotImplementedError
+        raise NotImplementedError("Use --target-job to select only one job.")
 
     job_name, job = jobs_item[0]
     content_input = get_content_input_from_job(job)

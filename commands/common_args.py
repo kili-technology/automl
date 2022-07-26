@@ -48,7 +48,18 @@ class Options:
         help=(
             "Add a specific target job on which to train on "
             "(multiple can be passed if --target-job <job_name> is repeated) "
-            "Example: python train.py --target-job BBOX --target-job CLASSIFICATION"
+            "Example: python train.py --target-job JOB1 --target-job JOB2"
+        ),
+    )
+
+    ignore_job = click.option(
+        "--ignore-job",
+        default=None,
+        multiple=True,
+        help=(
+            "Ignore job on which to train on "
+            "(multiple can be passed if --ignore-job <job_name> is repeated) "
+            "Example: python train.py --ignore-job JOB1 --ignore-job JOB2"
         ),
     )
 

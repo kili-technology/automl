@@ -14,6 +14,7 @@ from kiliautoml.models import (
 )
 from kiliautoml.models._base_model import BaseInitArgs, BaseTrainArgs
 from kiliautoml.utils.helpers import (
+    curated_job,
     get_assets,
     get_content_input_from_job,
     get_project,
@@ -44,6 +45,7 @@ from kiliautoml.utils.type import (
 @Options.model_name
 @Options.model_repository
 @Options.target_job
+@Options.ignore_job
 @Options.max_assets
 @Options.randomize_assets
 @Options.clear_dataset_cache
@@ -66,6 +68,7 @@ def main(
     asset_status_in: List[AssetStatusT],
     label_merge_strategy: LabelMergeStrategyT,
     target_job: List[JobNameT],
+    ignore_job: List[JobNameT],
     max_assets: int,
     randomize_assets: bool,
     clear_dataset_cache: bool,
@@ -82,13 +85,11 @@ def main(
     """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
+    jobs = curated_job(jobs, target_job, ignore_job)
 
     model_evaluations = []
 
     for job_name, job in jobs.items():
-
-        if target_job and job_name not in target_job:
-            continue
 
         ml_task = job.get("mlTask")
         assets = get_assets(

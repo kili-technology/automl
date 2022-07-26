@@ -271,9 +271,10 @@ def not_implemented_job(job_name: JobNameT, ml_task: MLTaskT, tools: List[ToolT]
     else:
         kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
         kili_print(
-            "You can use the repeatable flag --target-job "
+            f"You can use --ignore-job {job_name}"
+            "\n(You can also use the repeatable flag --target-job "
             "(for example: --target-job job_name1 --target-job job_name2) "
-            "to select one or multiple jobs."
+            "to select one or multiple jobs.)"
         )
         raise NotImplementedError
 
@@ -319,3 +320,20 @@ def is_contours_detection(input_type, ml_task, content_input, tools):
         and ml_task == "OBJECT_DETECTION"
         and any(tool in tools for tool in ["semantic", "polygon"])
     )
+
+
+def curated_job(jobs: JobsT, target_job: List[JobNameT], ignore_job: List[JobNameT]) -> JobsT:
+    assert set(target_job).isdisjoint(ignore_job), "target_job and ignore_job should be disjoint."
+
+    new_job = {}
+    for job_name, job in jobs.items():
+
+        if target_job and job_name not in target_job:
+            continue
+
+        if ignore_job and job_name in target_job:
+            kili_print(f"Job {job_name} is ignored.")
+
+        new_job[job_name] = job
+
+    return new_job
