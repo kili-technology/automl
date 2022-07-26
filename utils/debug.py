@@ -9,7 +9,7 @@ import main
 
 if __name__ == "__main__":
     # The command you want to debug
-    cmd = "train --project-id XXX"
+    cmd = "label_errors --project-id cl5tqv0xkcv6b0nvr3qng5tqx  --asset-status-in LABELED"
     cmd = cmd.replace("  ", " ")
 
     runner = CliRunner()

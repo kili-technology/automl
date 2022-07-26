@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from pydantic import BaseModel, validator
-from shapely.geometry import Polygon
+from shapely.geometry import Point, Polygon
 from typing_extensions import Literal
 
 from kiliautoml.utils.type import (
@@ -74,9 +74,9 @@ class AnnotationStandardizedT(BaseModel, ABC):
         ...
 
 
-def iou_polygons(points1, points2):
-    polygon1 = Polygon(points1)
-    polygon2 = Polygon(points2)
+def iou_polygons(points1: List[NormalizedVertice], points2):
+    polygon1 = Polygon([Point(p["x"], p["y"]) for p in points1])
+    polygon2 = Polygon([Point(p["x"], p["y"]) for p in points2])
     intersect = polygon1.intersection(polygon2).area
     union = polygon1.union(polygon2).area
     iou = intersect / union
@@ -87,7 +87,8 @@ class AnnotationStandardizedSemanticT(AnnotationStandardizedT, BaseModel):
     position: SemanticPositionT
 
     def iou(self, position: SemanticPositionT):
-        return iou_polygons(self.position.points, position.points)
+        a = self.position.points
+        return iou_polygons(a, position.points)
 
     @classmethod
     def from_annotation(
@@ -95,7 +96,7 @@ class AnnotationStandardizedSemanticT(AnnotationStandardizedT, BaseModel):
     ) -> "AnnotationStandardizedSemanticT":
         position = SemanticPositionT(points=annotation["boundingPoly"][0]["normalizedVertices"])
         return cls(
-            confidence=annotation["categories"][0]["confidence"],
+            confidence=annotation["categories"][0]["confidence"] / 100,
             category_id=annotation["categories"][0]["name"],
             position=position,
             ml_task="OBJECT_DETECTION",
@@ -112,7 +113,7 @@ class AnnotationStandardizedBboxT(AnnotationStandardizedT, BaseModel):
     def from_annotation(cls, annotation: KiliBBoxAnnotation) -> "AnnotationStandardizedBboxT":
         position = BBoxPositionT(points=annotation["boundingPoly"][0]["normalizedVertices"])
         return cls(
-            confidence=annotation["categories"][0]["confidence"],
+            confidence=annotation["categories"][0]["confidence"] / 100,
             category_id=annotation["categories"][0]["name"],
             position=position,
             ml_task="OBJECT_DETECTION",
@@ -133,7 +134,7 @@ class AnnotationStandardizedNERT(AnnotationStandardizedT, BaseModel):
             endOffset=annotation["endOffset"],
         )
         return cls(
-            confidence=annotation["categories"][0]["confidence"],
+            confidence=annotation["categories"][0]["confidence"] / 100,
             category_id=annotation["categories"][0]["name"],
             position=position,
             ml_task="NAMED_ENTITIES_RECOGNITION",
@@ -164,7 +165,7 @@ def find_label_errors_for_one_asset(
 
         corresponding_annotation = []
         for predicted_annotation in predicted_annotations.annotations:
-            iou = manual_annotation.iou(predicted_annotation)
+            iou = manual_annotation.iou(predicted_annotation.position)
             same_category = manual_annotation.category_id == predicted_annotation.category_id
             good_iou = iou > 0.9
 
@@ -174,7 +175,14 @@ def find_label_errors_for_one_asset(
                 print("Probably wrong category")
                 errors.append(LabelingError(error_type="misclassification", error_probability=iou))
             else:
-                print("position not matching")
+                print(
+                    "position not matching, iou",
+                    iou,
+                    "pred:",
+                    predicted_annotation.category_id,
+                    "man",
+                    manual_annotation.category_id,
+                )
                 errors.append(LabelingError(error_type="imprecise", error_probability=1 - iou))
 
         if len(corresponding_annotation) == 0:

@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import click
 from kili.client import Kili
@@ -34,7 +34,7 @@ from kiliautoml.utils.type import (
 )
 
 
-def upload_errors_to_kili(error_recap: ErrorRecap, kili):
+def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: ProjectIdT):
     kili_print("Updating metadatas for the concerned assets")
 
     print()
@@ -51,21 +51,27 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili):
         errors_by_asset = [a[1] for a in assets]
         asset_ids = [a[0] for a in assets]
 
-        error_assets = kili.assets(
-            asset_id_in=asset_ids[skip : skip + first], fields=["id", "metadata"]
+        asset_id_chunk = asset_ids[skip : skip + first]
+        error_assets: List[Dict[str, str]] = kili.assets(
+            asset_id_in=asset_id_chunk,  # type:ignore
+            fields=["id", "metadata"],
+            project_id=project_id,
         )
         asset_ids = [asset["id"] for asset in error_assets]
-        new_metadatas = [asset["metadata"] for asset in error_assets]
+        metadatas = [asset["metadata"] for asset in error_assets]
 
-        for i, (meta, errors) in enumerate(zip(new_metadatas, errors_by_asset)):
+        for i, (meta, errors) in enumerate(zip(metadatas, errors_by_asset)):
             if len(errors):
-                meta["labeling_error"] = True
+                meta["labeling_error"] = "True"  # type:ignore
                 # Here we should return the main error
-                meta["error_type"] = errors[0].error_type
-                meta["error_probability"] = errors[0].error_probability
-                new_metadatas[i] = meta
+                meta["error_type"] = str(errors[0].error_type)  # type:ignore
+                meta["error_probability"] = str(errors[0].error_probability)  # type:ignore
+                metadatas[i] = meta
 
-        kili.update_properties_in_assets(asset_ids=asset_ids, json_metadatas=new_metadatas)
+        kili.update_properties_in_assets(
+            asset_ids=asset_ids,
+            json_metadatas=metadatas,  # type:ignore
+        )
 
 
 @click.command()
@@ -197,4 +203,4 @@ def main(
 
         if found_errors:
             if not dry_run:
-                upload_errors_to_kili(found_errors, kili)
+                upload_errors_to_kili(found_errors, kili, project_id)
