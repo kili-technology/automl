@@ -78,13 +78,22 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: Proje
 def update_asset_metadata(meta: Dict[str, Any], errors: List[LabelingError]):
     if len(errors):
         meta["labeling_error"] = "True"
-        # Here we should return the main error
-        meta["error_type"] = str(errors[0].error_type)
-        meta["error_probability"] = str(errors[0].error_probability)
+
+        # We can only have one error type by asset
+        main_error = max(errors)
+        meta["error_type"] = str(main_error.error_type)
+        meta["error_probability"] = str(main_error.error_probability)
+
+        # Getting the details
+        mapping_error_cat_to_nb = {error.error_type: 0 for error in errors}
+        for error in errors:
+            mapping_error_cat_to_nb[error.error_type] += 1
+        meta["error_asset_detail"] = str(mapping_error_cat_to_nb)
     else:
         meta.pop("labeling_error", None)
         meta.pop("error_type", None)
         meta.pop("error_probability", None)
+        meta.pop("error_asset_detail", None)
 
 
 @click.command()
