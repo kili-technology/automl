@@ -2,7 +2,7 @@
 This files contains types for annotations, but those types should be used only for label error.
 """
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import Dict, List, Union
 
 from pydantic import BaseModel, validator
 from shapely.geometry import Point, Polygon
@@ -184,26 +184,34 @@ def find_label_errors_for_one_asset(
     print("manual annotations:", manual_annotations.category_count())
 
     errors: List[LabelingError] = []
-    for manual_ann in manual_annotations.annotations:
+    prediction_to_manual: Dict[int, List[int]] = {
+        k: [] for k in range(len(predicted_annotations.annotations))
+    }
+    for man_i, manual_ann in enumerate(manual_annotations.annotations):
         msg = f"Analysing {manual_ann.category_id}..."
         corresponding_perfect_annotation = []
-        for predicted_ann in predicted_annotations.annotations:
+        for pred_i, predicted_ann in enumerate(predicted_annotations.annotations):
             iou = manual_ann.iou(predicted_ann.position)
             same_category = manual_ann.category_id == predicted_ann.category_id
             good_iou = iou > 0.8
 
+            only_touching = iou < 0.2
+            if only_touching:
+                # print("Probably 2 different objects on the Asset.")
+                continue
+
+            # The assets overlap significantly
+            prediction_to_manual[pred_i].append(man_i)
             if good_iou and same_category:
                 corresponding_perfect_annotation.append(predicted_ann)
+
                 print(msg, "perfect annotation!")
             elif good_iou and not same_category:
                 add_error(msg, errors, manual_ann, predicted_ann, iou, "misclassification")
-            elif iou < 0.1:
-                pass
-                # print("Probably 2 different objects on the Asset.")
             elif same_category:
                 add_error(msg, errors, manual_ann, predicted_ann, iou, "imprecise")
             else:
-                # Bad category bad iou, weird, let's say it's a misclassification
+                # Bad category and bad iou, weird, let's say it's a misclassification
                 add_error(msg, errors, manual_ann, predicted_ann, iou, "misclassification")
 
         if len(corresponding_perfect_annotation) == 0:
@@ -216,6 +224,14 @@ def find_label_errors_for_one_asset(
             )
         else:
             pass
+
+    # Checking for Omissions
+    for prediction_i, manuals in prediction_to_manual.items():
+        if len(manuals) == 0:
+            ann = predicted_annotations.annotations[prediction_i]
+            print(f"Found Omission: {ann.category_id}.")
+            errors.append(LabelingError(error_type="omission", error_probability=ann.confidence))
+
     print(f"Asset conclusion: We found {len(errors)} errors.")
 
     return errors
