@@ -204,6 +204,13 @@ class LabelErrorOptions:
 
     asset_status_in = asset_status_in(["LABELED", "TO_REVIEW", "REVIEWED"])
 
+    erase_error_metadata = click.option(
+        "--erase-error-metadata",
+        default=None,
+        is_flag=True,
+        help="Erase error annotations.",
+    )
+
 
 class PrioritizeOptions:
 

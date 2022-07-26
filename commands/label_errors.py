@@ -105,6 +105,70 @@ def update_asset_metadata(meta: Dict[str, Any], errors: List[LabelingError]):
     meta["error_asset_detail"] = str(mapping_error_cat_to_nb)
 
 
+def label_error(
+    *,
+    api_key,
+    clear_dataset_cache,
+    epochs,
+    batch_size,
+    verbose,
+    cv_folds,
+    input_type,
+    job_name,
+    content_input,
+    ml_task,
+    tools,
+    assets,
+    base_init_args,
+):
+    if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
+        image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
+        found_errors = image_classification_model.find_errors(
+            assets=assets,
+            cv_n_folds=cv_folds,
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=verbose,
+            api_key=api_key,
+        )
+
+    elif (
+        content_input == "radio"
+        and input_type == "IMAGE"
+        and ml_task == "OBJECT_DETECTION"
+        and "rectangle" in tools
+    ):
+        model = UltralyticsObjectDetectionModel(**base_init_args)
+        found_errors = model.find_errors(
+            cv_n_folds=cv_folds,
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=verbose,
+            api_key=api_key,
+            assets=assets,
+            clear_dataset_cache=clear_dataset_cache,
+        )
+    elif is_contours_detection(input_type, ml_task, content_input, tools):
+        model = Detectron2SemanticSegmentationModel(**base_init_args)
+        found_errors = model.find_errors(
+            cv_n_folds=cv_folds,
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=verbose,
+            api_key=api_key,
+            assets=assets,
+            clear_dataset_cache=clear_dataset_cache,
+        )
+    else:
+        not_implemented_job(job_name, ml_task, tools)
+        raise Exception(
+            f"Not implemented label_error MLtask : {ml_task} for job {job_name}. Please use"
+            " --target-job XXX"
+        )
+
+    return found_errors
+
+
 @click.command()
 @Options.project_id
 @Options.api_endpoint
@@ -124,6 +188,7 @@ def update_asset_metadata(meta: Dict[str, Any], errors: List[LabelingError]):
 @Options.label_merge_strategy
 @LabelErrorOptions.cv_folds
 @LabelErrorOptions.dry_run
+@LabelErrorOptions.erase_error_metadata
 def main(
     project_id: ProjectIdT,
     api_endpoint: str,
@@ -143,6 +208,7 @@ def main(
     model_name: ModelNameT,
     verbose: int,
     cv_folds: int,
+    erase_error_metadata: bool,
 ):
     """
     Detect incorrectly labeled assets in a Kili project.
@@ -189,52 +255,30 @@ def main(
             "project_id": project_id,
         }
 
-        if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
-
-            image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
-            found_errors = image_classification_model.find_errors(
-                assets=assets,
-                cv_n_folds=cv_folds,
-                epochs=epochs,
-                batch_size=batch_size,
-                verbose=verbose,
+        empty_errors_recap = ErrorRecap(
+            external_id_array=[a.externalId for a in assets],
+            id_array=[a.id for a in assets],
+            errors_by_asset=[[] for _ in assets],
+        )
+        found_errors = (
+            label_error(
                 api_key=api_key,
-            )
-
-        elif (
-            content_input == "radio"
-            and input_type == "IMAGE"
-            and ml_task == "OBJECT_DETECTION"
-            and "rectangle" in tools
-        ):
-
-            model = UltralyticsObjectDetectionModel(**base_init_args)
-            found_errors = model.find_errors(
-                cv_n_folds=cv_folds,
-                epochs=epochs,
-                batch_size=batch_size,
-                verbose=verbose,
-                api_key=api_key,
-                assets=assets,
                 clear_dataset_cache=clear_dataset_cache,
-            )
-        elif is_contours_detection(input_type, ml_task, content_input, tools):
-            model = Detectron2SemanticSegmentationModel(**base_init_args)
-            found_errors = model.find_errors(
-                cv_n_folds=cv_folds,
                 epochs=epochs,
                 batch_size=batch_size,
                 verbose=verbose,
-                api_key=api_key,
+                cv_folds=cv_folds,
+                input_type=input_type,
+                job_name=job_name,
+                content_input=content_input,
+                ml_task=ml_task,
+                tools=tools,
                 assets=assets,
-                clear_dataset_cache=clear_dataset_cache,
+                base_init_args=base_init_args,
             )
-        else:
-            not_implemented_job(job_name, ml_task, tools)
-            raise Exception(
-                f"Not implemented label_error MLtask : {ml_task} for job {job_name}. Please use"
-                " --target-job XXX"
-            )
+            if not erase_error_metadata
+            else empty_errors_recap
+        )
 
         if found_errors:
             if not dry_run:
