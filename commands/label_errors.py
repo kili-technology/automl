@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 import click
 from kili.client import Kili
 from tqdm.autonotebook import tqdm
+from typing_extensions import get_args
 
 from commands.common_args import LabelErrorOptions, Options, TrainOptions
 from kiliautoml.models import (
@@ -11,7 +12,11 @@ from kiliautoml.models import (
     UltralyticsObjectDetectionModel,
 )
 from kiliautoml.models._base_model import BaseInitArgs
-from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
+from kiliautoml.utils.helper_label_error import (
+    ErrorRecap,
+    LabelingError,
+    LabelingErrorTypeT,
+)
 from kiliautoml.utils.helpers import (
     curated_job,
     get_assets,
@@ -75,24 +80,29 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: Proje
 
 
 def update_asset_metadata(meta: Dict[str, Any], errors: List[LabelingError]):
-    if len(errors):
-        meta["labeling_error"] = "True"
+    for error_type in get_args(LabelingErrorTypeT):
+        meta.pop(f"has_{error_type}", None)
+    meta.pop("error_labeling", None)
+    meta.pop("error_type", None)
+    meta.pop("error_probability", None)
+    meta.pop("error_asset_detail", None)
 
-        # We can only have one error type by asset
-        main_error = max(errors)
-        meta["error_type"] = str(main_error.error_type)
-        meta["error_probability"] = str(main_error.error_probability)
+    if len(errors) == 0:
+        return
 
-        # Getting the details
-        mapping_error_cat_to_nb = {error.error_type: 0 for error in errors}
-        for error in errors:
-            mapping_error_cat_to_nb[error.error_type] += 1
-        meta["error_asset_detail"] = str(mapping_error_cat_to_nb)
-    else:
-        meta.pop("labeling_error", None)
-        meta.pop("error_type", None)
-        meta.pop("error_probability", None)
-        meta.pop("error_asset_detail", None)
+    meta["error_labeling"] = "True"
+
+    # We can only have one error type by asset
+    main_error = max(errors)
+    meta["error_type"] = str(main_error.error_type)
+    meta["error_probability"] = str(main_error.error_probability)
+
+    # Getting the details
+    mapping_error_cat_to_nb = {error.error_type: 0 for error in errors}
+    for error in errors:
+        mapping_error_cat_to_nb[error.error_type] += 1
+        meta[f"has_{error.error_type}"] = str(True)
+    meta["error_asset_detail"] = str(mapping_error_cat_to_nb)
 
 
 @click.command()
