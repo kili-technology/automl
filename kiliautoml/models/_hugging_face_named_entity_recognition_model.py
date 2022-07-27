@@ -7,6 +7,7 @@ from typing import List, Optional
 import datasets
 import nltk
 import numpy as np
+from kili.client import Kili
 from tqdm.auto import tqdm
 from transformers import DataCollatorForTokenClassification, Trainer
 
@@ -17,6 +18,7 @@ from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
+    AssetsLazyList,
     AssetT,
     CategoriesT,
     CategoryIdT,
@@ -66,7 +68,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     def train(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -196,7 +198,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     def predict(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
@@ -219,7 +221,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
 
         predictions = []
         proba_assets = []
-        for asset in assets:
+        for asset in assets.iter_refreshed_asset(
+            kili=Kili(api_key=self.api_key)
+        ):  # TODO: add api_endpoint
             text = self._get_text_from(asset.content)
 
             offset = 0
@@ -264,7 +268,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         job: JobT,
         job_name: JobNameT,
         path_dataset: str,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         clear_dataset_cache: bool,
     ) -> List[CategoryIdT]:
         if clear_dataset_cache and os.path.exists(path_dataset):
@@ -528,7 +532,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
     def find_errors(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,

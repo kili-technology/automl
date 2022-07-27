@@ -11,7 +11,7 @@ from typing_extensions import Literal
 from kiliautoml.utils.type import (
     AssetExternalIdT,
     AssetIdT,
-    AssetT,
+    AssetsLazyList,
     CategoryIdT,
     JobNameT,
     JsonResponseBaseT,
@@ -208,7 +208,7 @@ class ErrorRecap(BaseModel):
 
 
 def find_all_label_errors(
-    assets: List[AssetT],
+    assets: AssetsLazyList,
     json_response_array: List[JsonResponseT],
     external_id_array: List[AssetExternalIdT],
     job_name: JobNameT,

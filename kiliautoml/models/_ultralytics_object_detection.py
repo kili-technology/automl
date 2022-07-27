@@ -27,7 +27,7 @@ from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetExternalIdT,
-    AssetT,
+    AssetsLazyList,
     BoundingPolyT,
     CategoryIdT,
     CategoryT,
@@ -107,7 +107,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def train(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -292,7 +292,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def predict(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
@@ -321,7 +321,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def _predict(
         self,
         api_key: str,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         project_id: ProjectIdT,
         ml_backend: MLBackendT,
         model_path: ModelPathT,
@@ -440,7 +440,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def find_errors(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,

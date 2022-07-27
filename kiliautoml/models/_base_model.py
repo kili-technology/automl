@@ -7,7 +7,7 @@ from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.helpers import set_default
 from kiliautoml.utils.path import Path
 from kiliautoml.utils.type import (
-    AssetT,
+    AssetsLazyList,
     DictTrainingInfosT,
     JobNameT,
     JobPredictions,
@@ -28,7 +28,7 @@ class BaseInitArgs(TypedDict):
 
 
 class BaseTrainArgs(TypedDict):
-    assets: List[AssetT]
+    assets: AssetsLazyList
     epochs: int
     batch_size: int
     clear_dataset_cache: bool
@@ -68,7 +68,7 @@ class BaseModel:
     def train(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -82,7 +82,7 @@ class BaseModel:
     def predict(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
@@ -95,7 +95,7 @@ class BaseModel:
     def find_errors(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
