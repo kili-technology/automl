@@ -136,11 +136,11 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             eval_dataset=eval_dataset,  # type: ignore
             compute_metrics=self.compute_metrics,  # type: ignore
         )
-        trainer.train()
+        trainer.train()  # type: ignore
         model_evaluation = self.model_evaluation(trainer, job_categories)
 
         kili_print(f"Saving model to {path_model}")
-        trainer.save_model(ensure_dir(path_model))
+        trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
 
     def predict(

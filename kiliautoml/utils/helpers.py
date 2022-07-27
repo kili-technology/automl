@@ -225,9 +225,12 @@ T = TypeVar("T")  # Declare type variable
 
 
 def set_default(x: Optional[T], x_default: T, x_name: str, x_range: List[T]) -> T:
-    if x not in x_range:
+    if x is None:
         kili_print(f"defaulting to {x_name}={x_default}")
-        x = x_default
+        return x_default
+    if x not in x_range:
+        kili_print(f"Warning: {x} is not in {x_range}, defaulting to {x_name}={x_default}")
+        return x_default
     return x
 
 
