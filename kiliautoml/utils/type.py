@@ -164,53 +164,6 @@ class AssetT(BaseModel):
         return job_name in self.labels[0]["jsonResponse"] and self._get_annotations(job_name)
 
 
-class PartialAsset(TypedDict):
-    content: str
-    id: str
-
-
-class AssetsLazyList:
-    """This class enables to iterate on the assets with and without Lazy refreshing.
-
-    Lazy refreshing is used for accessing the asset_content which contains a signed url with
-    expiration date of 5 minutes and
-    """
-
-    def __init__(self, assets: List[AssetT]):
-        self.assets = assets
-        self.counter = -1
-
-    def iter_refreshed_asset(self, kili: Kili) -> Iterable[AssetT]:
-        """Use this iterator if you need to access the assets 'content'"""
-        batch = 20
-        for assets in chunked(self.assets, batch):
-            partial_assets: List[PartialAsset] = kili.assets(  # type:ignore
-                asset_id_in=[asset.id for asset in assets],
-                fields=["content", "id"],
-                as_generator=False,
-            )
-            partial_assets = sorted(partial_assets, key=lambda d: d["id"])
-            assets = sorted(assets, key=lambda d: d.id)
-            for asset, partial_asset in zip(assets, partial_assets):
-                asset.content = partial_asset["content"]
-                yield asset
-
-    def __len__(self):
-        return len(self.assets)
-
-    def __iter__(self):
-        self.counter = -1
-        return self
-
-    def __next__(self):
-        self.counter += 1
-        if self.counter > len(self.assets) - 1:
-            self.counter = 0
-            raise StopIteration
-        else:
-            return self.assets[self.counter]
-
-
 class OntologyCategoryT(TypedDict):
     children: Any
     name: CategoryNameT
@@ -282,3 +235,53 @@ DictTrainingInfosT = Dict[str, Any]
 class ModelMetricT(TypedDict):
     overall: float
     by_category: Optional[List[float]]
+
+
+class PartialAsset(TypedDict):
+    content: str
+    id: str
+
+
+class AssetsLazyList:
+    """This class enables to iterate on the assets with and without Lazy refreshing.
+
+    Lazy refreshing is used for accessing the asset_content which contains a signed url with
+    expiration date of 5 minutes.
+    """
+
+    def __init__(self, assets: List[AssetT]):
+        self.assets = assets
+        self.counter = -1
+
+    def iter_refreshed_asset(self, kili: Kili) -> Iterable[AssetT]:
+        """Use this iterator if you need to access the assets 'content'"""
+        batch = 20
+        for assets in chunked(self.assets, batch):
+            partial_assets: List[PartialAsset] = kili.assets(  # type:ignore
+                asset_id_in=[asset.id for asset in assets],
+                fields=["content", "id"],
+                as_generator=False,
+            )
+            partial_assets = sorted(partial_assets, key=lambda d: d["id"])
+            assets = sorted(assets, key=lambda d: d.id)
+            for asset, partial_asset in zip(assets, partial_assets):
+                asset.content = partial_asset["content"]
+                yield asset
+
+    def __len__(self):
+        return len(self.assets)
+
+    def __iter__(self):
+        self.counter = -1
+        return self
+
+    def __next__(self):
+        self.counter += 1
+        if self.counter > len(self.assets) - 1:
+            self.counter = 0
+            raise StopIteration
+        else:
+            return self.assets[self.counter]
+
+    def __getitem__(self, i):
+        return self.assets.__getitem__(i)
