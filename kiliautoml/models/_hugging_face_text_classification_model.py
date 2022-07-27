@@ -167,7 +167,9 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             self.ml_backend, model_path_res, self.ml_task
         )
 
-        for asset in assets.iter_refreshed_asset(kili=Kili(self.api_key)):  # TODO: Add api_endpoint
+        for asset in assets.iter_refreshed_asset(
+            kili=Kili(self.api_key, api_endpoint="https://cloud.kili-technology.co")
+        ):  # TODO: Add api_endpoint
             text = self._get_text_from(asset.content)
 
             predictions_asset = self._compute_asset_classification(

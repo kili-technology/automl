@@ -103,7 +103,11 @@ def convert_kili_semantic_to_coco(
     # Fill labels_json
     annotation_j = -1
     for asset_i, asset in tqdm(
-        enumerate(assets.iter_refreshed_asset(kili=Kili(api_key=api_key))),
+        enumerate(
+            assets.iter_refreshed_asset(
+                kili=Kili(api_key=api_key, api_endpoint="https://cloud.kili-technology.co")
+            )
+        ),
         total=len(assets),
         desc="Converting to COCO format...",
     ):
