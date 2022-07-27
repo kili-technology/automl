@@ -10,7 +10,7 @@ from cleanlab.filter import find_label_issues
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from tqdm.autonotebook import tqdm
 
-from kiliautoml.models._base_model import BaseModel
+from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
 from kiliautoml.utils.helpers import kili_print
@@ -25,9 +25,7 @@ from kiliautoml.utils.pytorchvision.image_classification import (
 )
 from kiliautoml.utils.type import (
     AssetT,
-    JobNameT,
     JobPredictions,
-    JobT,
     JsonResponseClassification,
     MLBackendT,
     MLTaskT,
@@ -37,7 +35,7 @@ from kiliautoml.utils.type import (
 )
 
 
-class PyTorchVisionImageClassificationModel(BaseModel):
+class PyTorchVisionImageClassificationModel(KiliBaseModel):
     ml_task: MLTaskT = "CLASSIFICATION"
     model_repository: ModelRepositoryT = "torchvision"
     ml_backend: MLBackendT = "pytorch"
@@ -46,19 +44,9 @@ class PyTorchVisionImageClassificationModel(BaseModel):
     def __init__(
         self,
         *,
-        job: JobT,
-        job_name: JobNameT,
-        project_id: ProjectIdT,
-        model_name: Optional[ModelNameT],
-    ):
-        BaseModel.__init__(
-            self,
-            job=job,
-            job_name=job_name,
-            model_name=model_name,
-            project_id=project_id,
-            advised_model_names=self.advised_model_names,
-        )
+        model_init_args: BaseInitArgs,
+    ) -> None:
+        KiliBaseModel.__init__(self, model_init_args)
 
         # To set to False if the input size varies a lot and you see that the training takes
         # too much time
@@ -72,7 +60,8 @@ class PyTorchVisionImageClassificationModel(BaseModel):
         # TODO: The list of classes the model has to deal with should be stored during
         # the initialization of each model, and not just for PyTorchVisionImageClassificationModel
         self.class_name_to_idx = {
-            category: i for i, category in enumerate(job["content"]["categories"])
+            category: i
+            for i, category in enumerate(model_init_args["job"]["content"]["categories"])
         }
         self.class_names = list(self.class_name_to_idx.keys())
 

@@ -141,7 +141,7 @@ class AssetT(BaseModel):
     labels: List[LabelT]
     id: AssetIdT
     externalId: AssetExternalIdT
-    content: Any
+    content: Any  # URL
 
     def _get_annotations(self, job_name: JobNameT) -> JsonResponseBaseT:
         return self.labels[0]["jsonResponse"][job_name]
@@ -173,8 +173,13 @@ class OntologyCategoryT(TypedDict):
 OntologyCategoriesT = Dict[CategoryIdT, OntologyCategoryT]
 
 
+class ContentT(TypedDict):
+    categories: OntologyCategoriesT
+    input: ContentInputT
+
+
 class JobT(TypedDict):
-    content: Dict[Literal["categories"], OntologyCategoriesT]  # Is this general?
+    content: ContentT
     instruction: str
     isChild: bool
     tools: List[ToolT]

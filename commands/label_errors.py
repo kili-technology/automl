@@ -11,7 +11,8 @@ from kiliautoml.models import (
     PyTorchVisionImageClassificationModel,
     UltralyticsObjectDetectionModel,
 )
-from kiliautoml.models._base_model import BaseInitArgs
+from kiliautoml.models._base_model import BaseInitArgs, ModelConditionsRequested
+from kiliautoml.models.kili_auto_model import KiliAutoModel
 from kiliautoml.utils.helper_label_error import (
     ErrorRecap,
     LabelingError,
@@ -253,28 +254,35 @@ def main(
             "job_name": job_name,
             "model_name": model_name,
             "project_id": project_id,
+            "ml_backend": ml_backend,
         }
+
+        condition_requested = ModelConditionsRequested(
+            input_type=input_type,
+            ml_task=ml_task,
+            content_input=content_input,
+            ml_backend=ml_backend,
+            model_name=model_name,
+            model_repository=model_repository,
+            tools=tools,
+        )
 
         empty_errors_recap = ErrorRecap(
             external_id_array=[a.externalId for a in assets],
             id_array=[a.id for a in assets],
             errors_by_asset=[[] for _ in assets],
         )
+        model = KiliAutoModel(
+            base_init_args=base_init_args, condition_requested=condition_requested
+        )
         found_errors = (
-            label_error(
-                api_key=api_key,
-                clear_dataset_cache=clear_dataset_cache,
+            model.find_errors(
+                cv_n_folds=cv_folds,
                 epochs=epochs,
                 batch_size=batch_size,
                 verbose=verbose,
-                cv_folds=cv_folds,
-                input_type=input_type,
-                job_name=job_name,
-                content_input=content_input,
-                ml_task=ml_task,
-                tools=tools,
                 assets=assets,
-                base_init_args=base_init_args,
+                clear_dataset_cache=clear_dataset_cache,
             )
             if not erase_error_metadata
             else empty_errors_recap

@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from kiliautoml.models._base_model import BaseModel
+from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import find_all_label_errors
 from kiliautoml.utils.helpers import (
@@ -33,7 +33,6 @@ from kiliautoml.utils.type import (
     CategoryT,
     JobNameT,
     JobPredictions,
-    JobT,
     JsonResponseBboxT,
     KiliBBoxAnnotation,
     MLBackendT,
@@ -70,7 +69,7 @@ def inspect(e):
             print(v)
 
 
-class UltralyticsObjectDetectionModel(BaseModel):
+class UltralyticsObjectDetectionModel(KiliBaseModel):
     ml_task: MLTaskT = "OBJECT_DETECTION"
     model_repository: ModelRepositoryT = "ultralytics"
     ml_backend: MLBackendT = "pytorch"
@@ -90,19 +89,9 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def __init__(
         self,
         *,
-        job: JobT,
-        job_name: JobNameT,
-        model_name: Optional[ModelNameT],
-        project_id: ProjectIdT,
-    ):
-        BaseModel.__init__(
-            self,
-            job=job,
-            job_name=job_name,
-            model_name=model_name,
-            project_id=project_id,
-            advised_model_names=self.advised_model_names,
-        )
+        model_init_args: BaseInitArgs,
+    ) -> None:
+        KiliBaseModel.__init__(self, model_init_args)
 
     def train(
         self,

@@ -12,55 +12,45 @@ from transformers import Trainer
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
-from kiliautoml.models._base_model import BaseModel
+from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelConditions
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetT,
-    JobNameT,
     JobPredictions,
-    JobT,
     JsonResponseClassification,
-    MLBackendT,
-    MLTaskT,
     ModelMetricT,
     ModelNameT,
-    ModelRepositoryT,
     ProjectIdT,
 )
 
 
-class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
+class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task: MLTaskT = "CLASSIFICATION"
-    model_repository: ModelRepositoryT = "huggingface"
-    ml_backend: MLBackendT = "pytorch"
-    advised_model_names: List[ModelNameT] = [
-        "bert-base-multilingual-cased",
-        "distilbert-base-cased",
-        "distilbert-base-uncased",
-    ]
+    model_conditions = ModelConditions(
+        ml_task="CLASSIFICATION",
+        model_repository="huggingface",
+        possible_ml_backend=["pytorch"],
+        advised_model_names=[
+            "bert-base-multilingual-cased",
+            "distilbert-base-cased",
+            "distilbert-base-uncased",
+        ],
+        input_type="TEXT",
+        content_input="radio",
+        tools=["semantic", "polygon"],
+    )
 
     def __init__(
         self,
         *,
-        job: JobT,
-        job_name: JobNameT,
-        project_id: ProjectIdT,
-        model_name: Optional[ModelNameT],
+        model_init_args: BaseInitArgs,
         api_key,
         api_endpoint,
     ) -> None:
-        KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
-        BaseModel.__init__(
-            self,
-            job=job,
-            job_name=job_name,
-            model_name=model_name,
-            project_id=project_id,
-            advised_model_names=self.advised_model_names,
-        )
+        KiliTextProjectMixin.__init__(self, api_key, api_endpoint)
+        KiliBaseModel.__init__(self, model_init_args)
 
     def train(
         self,
@@ -107,7 +97,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.ml_backend, job_categories, self.ml_task
+            model_name, self.ml_backend, job_categories, self.model_conditions.ml_task
         )
 
         def tokenize_function(examples):
@@ -163,7 +153,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         proba_assets = []
 
         tokenizer, model = self._get_tokenizer_and_model(
-            self.ml_backend, model_path_res, self.ml_task
+            self.ml_backend, model_path_res, self.model_conditions.ml_task
         )
 
         for asset in assets:

@@ -5,22 +5,18 @@ import click
 from kili.client import Kili
 
 from commands.common_args import Options, TrainOptions
-from kiliautoml.models import (
-    Detectron2SemanticSegmentationModel,
-    HuggingFaceNamedEntityRecognitionModel,
-    HuggingFaceTextClassificationModel,
-    PyTorchVisionImageClassificationModel,
-    UltralyticsObjectDetectionModel,
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    BaseTrainArgs,
+    ModelConditionsRequested,
 )
-from kiliautoml.models._base_model import BaseInitArgs, BaseTrainArgs
+from kiliautoml.models.kili_auto_model import KiliAutoModel
 from kiliautoml.utils.helpers import (
     curated_job,
     get_assets,
     get_content_input_from_job,
     get_project,
-    is_contours_detection,
     kili_print,
-    not_implemented_job,
     print_evaluation,
 )
 from kiliautoml.utils.memoization import clear_command_cache
@@ -122,6 +118,7 @@ def main(
             "job_name": job_name,
             "model_name": model_name,
             "project_id": project_id,
+            "ml_backend": ml_backend,
         }
 
         base_train_args = BaseTrainArgs(
@@ -132,55 +129,24 @@ def main(
             disable_wandb=disable_wandb,
             verbose=verbose,
         )
-        if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
-            model = HuggingFaceTextClassificationModel(
-                api_key=api_key,
-                api_endpoint=api_endpoint,
-                **base_init_args,
-            )
-            model_evaluation = model.train(
-                **base_train_args, additional_train_args_hg=additional_train_args_hg
-            )
-        elif (
-            content_input == "radio"
-            and input_type == "TEXT"
-            and ml_task == "NAMED_ENTITIES_RECOGNITION"
-        ):
-            model = HuggingFaceNamedEntityRecognitionModel(
-                api_key=api_key,
-                api_endpoint=api_endpoint,
-                **base_init_args,
-            )
-            model_evaluation = model.train(
-                **base_train_args, additional_train_args_hg=additional_train_args_hg
-            )
-        elif (
-            content_input == "radio"
-            and input_type == "IMAGE"
-            and ml_task == "OBJECT_DETECTION"
-            and "rectangle" in tools
-        ):
-            model = UltralyticsObjectDetectionModel(**base_init_args)
-            model_evaluation = model.train(
-                **base_train_args,
-                title=title,  # TODO: delete
-                api_key=api_key,  # TODO: Moove to initialisation
-                additional_train_args_yolo=additional_train_args_yolo,
-            )
-        elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
-            image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
-            model_evaluation = image_classification_model.train(**base_train_args, api_key=api_key)
-        elif is_contours_detection(input_type, ml_task, content_input, tools):
-            image_classification_model = Detectron2SemanticSegmentationModel(**base_init_args)
-            model_evaluation = image_classification_model.train(
-                **base_train_args,
-                api_key=api_key,
-                label_merge_strategy=label_merge_strategy,  # TODO: delete
-                job=job,
-            )
-
-        else:
-            not_implemented_job(job_name, ml_task, tools)
+        condition_requested = ModelConditionsRequested(
+            input_type=input_type,
+            ml_task=ml_task,
+            content_input=content_input,
+            ml_backend=ml_backend,
+            model_name=model_name,
+            model_repository=model_repository,
+            tools=tools,
+        )
+        model = KiliAutoModel(
+            base_init_args=base_init_args,
+            condition_requested=condition_requested,
+        )
+        model_evaluation = model.train(
+            base_train_args=base_train_args,
+            additional_train_args_hg=additional_train_args_hg,
+            additional_train_args_yolo=additional_train_args_yolo,
+        )
 
         model_evaluations.append((job_name, model_evaluation))
 

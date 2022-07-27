@@ -17,7 +17,7 @@ from detectron2.utils.visualizer import ColorMode, Visualizer
 from PIL import Image
 from tqdm.autonotebook import tqdm
 
-from kiliautoml.models._base_model import BaseModel
+from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelConditions
 from kiliautoml.utils.detectron2.utils_detectron import (
     CocoFormat,
     convert_kili_semantic_to_coco,
@@ -36,10 +36,6 @@ from kiliautoml.utils.type import (
     JsonResponseSemanticT,
     KiliSemanticAnnotation,
     LabelMergeStrategyT,
-    MLBackendT,
-    MLTaskT,
-    ModelNameT,
-    ModelRepositoryT,
     NormalizedVertice,
     NormalizedVertices,
     ProjectIdT,
@@ -48,32 +44,26 @@ from kiliautoml.utils.type import (
 setup_logger()
 
 
-class Detectron2SemanticSegmentationModel(BaseModel):
-
-    ml_task: MLTaskT = "OBJECT_DETECTION"
-    model_repository: ModelRepositoryT = "detectron2"
-    ml_backend: MLBackendT = "pytorch"
-    advised_model_names: List[ModelNameT] = [
-        "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml",
-        "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml",
-    ]
+class Detectron2SemanticSegmentationModel(KiliBaseModel):
+    model_conditions = ModelConditions(
+        ml_task="OBJECT_DETECTION",
+        model_repository="detectron2",
+        possible_ml_backend=["pytorch"],
+        advised_model_names=[
+            "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml",
+            "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml",
+        ],
+        input_type="IMAGE",
+        content_input="radio",
+        tools=["semantic", "polygon"],
+    )
 
     def __init__(
         self,
         *,
-        job: JobT,
-        job_name: JobNameT,
-        model_name: Optional[ModelNameT],
-        project_id: ProjectIdT,
+        base_init_arg: BaseInitArgs,
     ):
-        BaseModel.__init__(
-            self,
-            job=job,
-            job_name=job_name,
-            model_name=model_name,
-            project_id=project_id,
-            advised_model_names=self.advised_model_names,
-        )
+        KiliBaseModel.__init__(self, base_init_arg)
 
     @staticmethod
     def _convert_coco_to_detectron(img_dir):
@@ -137,8 +127,10 @@ class Detectron2SemanticSegmentationModel(BaseModel):
             kili_print("Wandb is not yet available on Detectron2. But tensorboard is available.")
         _ = label_merge_strategy
 
-        model_path_repository_dir = Path.model_repository_dir(
-            self.project_id, self.job_name, self.model_repository
+        model_path_repository_dir = (
+            Path.model_repository_dir(  # TODO: Use instead self.model_repository_dir
+                self.project_id, self.job_name, self.model_conditions.model_repository
+            )
         )
         if clear_dataset_cache:
             shutil.rmtree(model_path_repository_dir, ignore_errors=True)
@@ -255,7 +247,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):
         else:
             project_id = self.project_id
         model_path_repository_dir = Path.model_repository_dir(
-            project_id, self.job_name, self.model_repository
+            project_id, self.job_name, self.model_conditions.model_repository
         )
         if clear_dataset_cache:
             shutil.rmtree(model_path_repository_dir, ignore_errors=True)
@@ -402,6 +394,6 @@ class Detectron2SemanticSegmentationModel(BaseModel):
             json_response_array=job_predictions.json_response_array,
             external_id_array=job_predictions.external_id_array,
             job_name=self.job_name,
-            ml_task=self.ml_task,
+            ml_task=self.model_conditions.ml_task,
             tool="semantic",
         )

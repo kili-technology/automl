@@ -14,7 +14,12 @@ from sklearn.pipeline import Pipeline
 from tqdm.autonotebook import tqdm
 
 from commands.common_args import Options, PredictOptions, PrioritizeOptions
-from commands.predict import predict_one_job
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    BasePredictArgs,
+    ModelConditionsRequested,
+)
+from kiliautoml.models.kili_auto_model import KiliAutoModel
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
     curated_job,
@@ -29,6 +34,8 @@ from kiliautoml.utils.type import (
     JobNameT,
     MLBackendT,
     MLTaskT,
+    ModelNameT,
+    ModelRepositoryT,
     ProjectIdT,
     ToolT,
 )
@@ -342,14 +349,14 @@ def main(
     diversity_sampling: float,
     uncertainty_sampling: float,
     dry_run: bool,
-    from_model: ProjectIdT,
+    from_model: Optional[str],
     target_job: List[JobNameT],
     ignore_job: List[JobNameT],
     verbose: bool,
     clear_dataset_cache: bool,
     from_project: Optional[ProjectIdT],
-    model_name: Optional[str],
-    model_repository: Optional[str],
+    model_name: Optional[ModelNameT],
+    model_repository: Optional[ModelRepositoryT],
     ml_backend: MLBackendT,
     batch_size: int,
 ):
@@ -360,6 +367,7 @@ def main(
     We embedded the assets using a generic model, and then use a strategy that is a mixture of
     diversity sampling, uncertainty sampling, and random sampling to sorts the assets.
     """
+    _ = from_model
     if uncertainty_sampling + diversity_sampling > 1:
         raise ValueError("diversity_sampling + diversity_sampling should be less than 1.")
 
@@ -376,8 +384,8 @@ def main(
 
     job_name, job = jobs_item[0]
     content_input = get_content_input_from_job(job)
-    ml_task: MLTaskT = job.get("mlTask")  # type: ignore
-    tools: ToolT = job.get("tools")  # type: ignore
+    ml_task: MLTaskT = job.get("mlTask")
+    tools: List[ToolT] = job.get("tools")
 
     if clear_dataset_cache:
         clear_command_cache(
@@ -392,27 +400,33 @@ def main(
         randomize=randomize_assets,
     )
 
-    # TODO: useless if uncertainty_sampling == 0
-    job_predictions = predict_one_job(
-        api_key=api_key,
-        api_endpoint=api_endpoint,
-        project_id=project_id,
-        from_model=from_model,
-        verbose=verbose,
-        input_type=input_type,
-        assets=unlabeled_assets,
-        batch_size=batch_size,
-        job_name=job_name,
+    base_init_args = BaseInitArgs(
         job=job,
-        content_input=content_input,
-        model_repository=model_repository,
-        ml_backend=ml_backend,
+        job_name=job_name,
         model_name=model_name,
-        ml_task=ml_task,
-        tools=tools,
+        project_id=project_id,
+        ml_backend=ml_backend,
+    )
+    predict_args = BasePredictArgs(
+        assets=unlabeled_assets,
+        model_path=model_name,
         from_project=from_project,
+        batch_size=batch_size,
+        verbose=verbose,
         clear_dataset_cache=clear_dataset_cache,
     )
+    condition_requested = ModelConditionsRequested(
+        input_type=input_type,
+        ml_task=ml_task,
+        content_input=content_input,
+        ml_backend=ml_backend,
+        model_name=model_name,
+        model_repository=model_repository,
+        tools=tools,
+    )
+
+    model = KiliAutoModel(condition_requested=condition_requested, base_init_args=base_init_args)
+    job_predictions = model.predict(**predict_args)
 
     if input_type == "IMAGE":
         downloaded_images = download_project_images(api_key, unlabeled_assets, output_folder=None)
