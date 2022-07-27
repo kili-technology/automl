@@ -178,7 +178,7 @@ class AssetsLazyList:
 
     def __init__(self, assets: List[AssetT]):
         self.assets = assets
-        self.counter = 0
+        self.counter = -1
 
     def iter_refreshed_asset(self, kili: Kili) -> Iterable[AssetT]:
         """Use this iterator if you need to access the assets 'content'"""
@@ -199,15 +199,15 @@ class AssetsLazyList:
         return len(self.assets)
 
     def __iter__(self):
-        self.counter = 0
+        self.counter = -1
         return self
 
     def __next__(self):
+        self.counter += 1
         if self.counter > len(self.assets) - 1:
             self.counter = 0
             raise StopIteration
         else:
-            self.counter += 1
             return self.assets[self.counter]
 
 
