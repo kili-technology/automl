@@ -113,13 +113,15 @@ def main(
         tools: List[ToolT] = job.get("tools")
         model_evaluation = {}
 
-        base_init_args: BaseInitArgs = {
-            "job": job,
-            "job_name": job_name,
-            "model_name": model_name,
-            "project_id": project_id,
-            "ml_backend": ml_backend,
-        }
+        base_init_args = BaseInitArgs(
+            job=job,
+            job_name=job_name,
+            model_name=model_name,
+            project_id=project_id,
+            ml_backend=ml_backend,
+            api_key=api_key,
+            api_endpoint=api_endpoint,
+        )
 
         base_train_args = BaseTrainArgs(
             assets=assets,

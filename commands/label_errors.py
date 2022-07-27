@@ -249,13 +249,15 @@ def main(
             job_name=job_name,
         )
 
-        base_init_args: BaseInitArgs = {
-            "job": job,
-            "job_name": job_name,
-            "model_name": model_name,
-            "project_id": project_id,
-            "ml_backend": ml_backend,
-        }
+        base_init_args = BaseInitArgs(
+            job=job,
+            job_name=job_name,
+            model_name=model_name,
+            project_id=project_id,
+            ml_backend=ml_backend,
+            api_key=api_key,
+            api_endpoint=api_endpoint,
+        )
 
         condition_requested = ModelConditionsRequested(
             input_type=input_type,

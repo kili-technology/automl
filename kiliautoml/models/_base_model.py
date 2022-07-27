@@ -29,6 +29,8 @@ class BaseInitArgs(TypedDict):
     model_name: Optional[ModelNameT]
     project_id: ProjectIdT
     ml_backend: MLBackendT
+    api_key: str
+    api_endpoint: Optional[str]
 
 
 class BaseTrainArgs(TypedDict):
@@ -128,6 +130,8 @@ class KiliBaseModel:
             "ml_backend",
             self.model_conditions.possible_ml_backend,
         )
+        self.api_key = base_init_args["api_key"]
+        self.api_endpoint = base_init_args["api_endpoint"]
 
     def train(
         self,

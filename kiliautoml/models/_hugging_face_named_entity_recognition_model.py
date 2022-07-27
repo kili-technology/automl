@@ -50,10 +50,8 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         self,
         *,
         model_init_args: BaseInitArgs,
-        api_key,
-        api_endpoint,
     ) -> None:
-        KiliTextProjectMixin.__init__(self, api_key, api_endpoint)
+        KiliTextProjectMixin.__init__(self, model_init_args["api_key"])
         KiliBaseModel.__init__(self, model_init_args)
 
     def train(
@@ -180,10 +178,10 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
             eval_dataset=eval_dataset,  # type: ignore
             compute_metrics=compute_metrics,  # type: ignore
         )
-        trainer.train()
+        trainer.train()  # type: ignore
         model_evaluation = self.evaluation(trainer)
         kili_print(f"Saving model to {path_model}")
-        trainer.save_model(ensure_dir(path_model))
+        trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
 
     def predict(

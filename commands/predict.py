@@ -85,6 +85,8 @@ def main(
             model_name=model_name,
             project_id=project_id,
             ml_backend=ml_backend,
+            api_key=api_key,
+            api_endpoint=api_endpoint,
         )
         predict_args = BasePredictArgs(
             assets=assets,
