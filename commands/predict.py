@@ -42,7 +42,7 @@ from kiliautoml.utils.type import (
 @Options.batch_size
 @Options.verbose
 @PredictOptions.asset_status_in
-@PredictOptions.from_model
+@PredictOptions.model_path
 @PredictOptions.from_project
 @PredictOptions.dry_run
 def main(
@@ -53,7 +53,7 @@ def main(
     target_job: List[JobNameT],
     ignore_job: List[JobNameT],
     dry_run: bool,
-    from_model: Optional[str],
+    model_path: Optional[str],
     verbose: bool,
     max_assets: Optional[int],
     randomize_assets: bool,
@@ -88,7 +88,7 @@ def main(
         )
         predict_args = BasePredictArgs(
             assets=assets,
-            model_path=from_model,
+            model_path=model_path,
             from_project=from_project,
             batch_size=batch_size,
             verbose=verbose,

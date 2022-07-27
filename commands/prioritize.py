@@ -334,7 +334,7 @@ def embedding_text(
 @Options.randomize_assets
 @Options.batch_size
 @Options.verbose
-@PredictOptions.from_model
+@PredictOptions.model_path
 @PredictOptions.from_project
 @PrioritizeOptions.diversity_sampling
 @PrioritizeOptions.uncertainty_sampling
@@ -349,7 +349,7 @@ def main(
     diversity_sampling: float,
     uncertainty_sampling: float,
     dry_run: bool,
-    from_model: Optional[str],
+    model_path: Optional[str],
     target_job: List[JobNameT],
     ignore_job: List[JobNameT],
     verbose: bool,
@@ -367,7 +367,6 @@ def main(
     We embedded the assets using a generic model, and then use a strategy that is a mixture of
     diversity sampling, uncertainty sampling, and random sampling to sorts the assets.
     """
-    _ = from_model
     if uncertainty_sampling + diversity_sampling > 1:
         raise ValueError("diversity_sampling + diversity_sampling should be less than 1.")
 
@@ -409,7 +408,7 @@ def main(
     )
     predict_args = BasePredictArgs(
         assets=unlabeled_assets,
-        model_path=model_name,
+        model_path=model_path,
         from_project=from_project,
         batch_size=batch_size,
         verbose=verbose,
