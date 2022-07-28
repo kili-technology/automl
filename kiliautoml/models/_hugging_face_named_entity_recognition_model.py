@@ -222,7 +222,9 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         predictions = []
         proba_assets = []
         for asset in assets.iter_refreshed_asset(
-            kili=Kili(api_key=self.api_key, api_endpoint="https://cloud.kili-technology.co")
+            kili=Kili(
+                api_key=self.api_key,  # TODO: add endpoint
+            )
         ):  # TODO: add api_endpoint
             text = self._get_text_from(asset.content)
 
