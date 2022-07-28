@@ -39,20 +39,20 @@ from kiliautoml.utils.type import (
 
 
 def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: ProjectIdT):
-    kili_print("\nUpdating metadatas for the concerned assets")
+    kili_print("\nUpdating metadata for the concerned assets")
 
     found_errors = [len(asset_error) for asset_error in error_recap.errors_by_asset]
     kili_print("Number of wrong labels found: ", sum(found_errors))
 
-    asset_bundle = list(zip(error_recap.id_array, error_recap.errors_by_asset))
-    first = min(100, len(asset_bundle))
+    id_errors_tuples = list(zip(error_recap.id_array, error_recap.errors_by_asset))
+    first = min(100, len(id_errors_tuples))
     for skip in tqdm(
-        range(0, len(asset_bundle), first),
+        range(0, len(id_errors_tuples), first),
         desc="Updating asset metadata with labeling error flag",
     ):
-        assets = asset_bundle[skip : skip + first]
-        errors_by_asset = [a[1] for a in assets]
-        asset_ids = [a[0] for a in assets]
+        ids_errors = id_errors_tuples[skip : skip + first]
+        errors_by_asset = [a[1] for a in ids_errors]
+        asset_ids = [a[0] for a in ids_errors]
 
         # *_set means shuffled
         error_assets_set: List[Dict[str, str]] = kili.assets(
@@ -64,18 +64,18 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: Proje
 
         # unshuffle
         error_assets = [error_assets_set[asset_ids_set.index(id)] for id in asset_ids]
-        metadatas = [asset["metadata"] for asset in error_assets]
+        metadata = [asset["metadata"] for asset in error_assets]
 
-        for i, (meta, errors) in enumerate(zip(metadatas, errors_by_asset)):
+        for i, (meta, errors) in enumerate(zip(metadata, errors_by_asset)):
             update_asset_metadata(
                 meta,  # type: ignore
                 errors,
             )
-            metadatas[i] = meta
+            metadata[i] = meta
 
         kili.update_properties_in_assets(
             asset_ids=asset_ids,  # type:ignore
-            json_metadatas=metadatas,  # type:ignore
+            json_metadatas=metadata,  # type:ignore
         )
 
 

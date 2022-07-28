@@ -208,7 +208,7 @@ class LabelErrorOptions:
         "--erase-error-metadata",
         default=None,
         is_flag=True,
-        help="Erase error annotations.",
+        help="Erase annotation errors.",
     )
 
 

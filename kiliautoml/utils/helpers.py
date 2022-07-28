@@ -323,17 +323,22 @@ def is_contours_detection(input_type, ml_task, content_input, tools):
 
 
 def curated_job(jobs: JobsT, target_job: List[JobNameT], ignore_job: List[JobNameT]) -> JobsT:
+    """Remove from the jobs dict the ignored job and keep only the target job"""
     assert set(target_job).isdisjoint(ignore_job), "target_job and ignore_job should be disjoint."
+    assert set(target_job).issubset(jobs.keys()), f"target_job is not a subset of {jobs.keys()}"
+    assert set(ignore_job).issubset(jobs.keys()), f"ignore_job is not a subset of {jobs.keys()}"
+
+    kept_job = list(jobs.keys())
+    if target_job:
+        kept_job = target_job
+    if ignore_job:
+        kept_job = list(set(kept_job) - set(ignore_job))
+
+    assert len(kept_job)
 
     new_job = {}
     for job_name, job in jobs.items():
-
-        if target_job and job_name not in target_job:
-            continue
-
-        if ignore_job and job_name in target_job:
-            kili_print(f"Job {job_name} is ignored.")
-
-        new_job[job_name] = job
+        if job_name in kept_job:
+            new_job[job_name] = job
 
     return new_job

@@ -26,5 +26,3 @@ opencv-python
 git+https://github.com/facebookresearch/detectron2.git
 shapely
 pydantic
-pygit2
-pgzip

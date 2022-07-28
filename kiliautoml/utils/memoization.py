@@ -41,7 +41,7 @@ def kili_memoizer(some_function: TFunc) -> TFunc:
     """We ignore the argument asset_content"""
 
     def wrapper(*args, **kwargs):
-        memory = Memory(AUTOML_CACHE, verbose=1)
+        memory = Memory(AUTOML_CACHE, verbose=0)
         return memory.cache(some_function, ignore=["asset_content"])(*args, **kwargs)
 
     return wrapper
