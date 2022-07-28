@@ -105,7 +105,9 @@ def convert_kili_semantic_to_coco(
     for asset_i, asset in tqdm(
         enumerate(
             assets.iter_refreshed_asset(
-                kili=Kili(api_key=api_key, api_endpoint="https://cloud.kili-technology.co")
+                kili=Kili(
+                    api_key=api_key,
+                )
             )
         ),
         total=len(assets),
