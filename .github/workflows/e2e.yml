@@ -26,4 +26,4 @@ jobs:
       - name: Install pytest
         run: pip install pytest
       - name: Run test suite
-        run: python -m pytest -s tests/e2e -v
+        run: python -m pytest -s tests/e2e -v  --exitfirst
