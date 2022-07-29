@@ -143,12 +143,8 @@ def get_assets(
             status_in=status_in,
         )
 
-    print(assets)
-
     assets = [AssetT.construct(**asset) for asset in assets]
     assets = AssetsLazyList(assets)
-    print("len assets", len(assets))
-
     if status_in is not None:
         only_labeled_status = not any(status in status_in for status in ["TO DO", "ONGOING"])
         if job_name is not None and only_labeled_status:
