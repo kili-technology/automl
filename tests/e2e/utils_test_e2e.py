@@ -108,6 +108,17 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "2",
             "--disable-wandb",
         ]
+    if command == "label_error":
+        args = [
+            command,
+            "--project-id",
+            project_id,
+            "--epochs",
+            "1",
+            "--batch-size",
+            "2",
+            "--disable-wandb",
+        ]
     elif command == "predict":
         args = [
             command,

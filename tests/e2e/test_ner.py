@@ -12,4 +12,4 @@ def test_ner(mocker):
 
     runner = CliRunner()
     one_command(runner, "train", project_id)
-    # one_command(runner, "predict", project_id)
+    one_command(runner, "predict", project_id)
