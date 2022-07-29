@@ -2,6 +2,7 @@ import json
 import os
 import random
 import warnings
+from copy import deepcopy
 from datetime import datetime
 from glob import glob
 from typing import Any, Dict, List, Optional, Tuple
@@ -210,26 +211,32 @@ def get_assets(
 def get_label(asset: AssetT, job_name: str, strategy: LabelMergeStrategyT):
     labels = asset["labels"]
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
+    if strategy == "duplicate":
+        return labels
+    if strategy == "copy":
+        chosen_label = random.choice(labels)
+        return [chosen_label for _ in range(len(labels))]
     if len(labels) > 0:
         key = first_order if strategy == "first" else last_order
-        return min(labels, key=key)
+        return [min(labels, key=key)]
     else:
         warn(f"Asset {asset['id']} does not have any label available")
-        return None
+        return []
 
 
 def filter_labeled_assets(job_name: str, strategy: LabelMergeStrategyT, assets: List[AssetT]):
-    asset_id_to_remove = set()
+    newAssets = []
+    print(f"Merge strategy used: ${strategy}")
     for asset in assets:
-        label = get_label(asset, job_name, strategy)
-        if label is None:
+        label_list = get_label(asset, job_name, strategy)
+        if len(label_list) == 0:
             asset_id = asset["id"]
             warnings.warn(f"${asset_id} removed because no labels where available")
-            asset_id_to_remove.add(asset_id)
         else:
-            asset["labels"] = [label]
-
-    return [asset for asset in assets if asset["id"] not in asset_id_to_remove]
+            for label in label_list:
+                asset["labels"] = [label]
+                newAssets.append(deepcopy(asset))
+    return newAssets
 
 
 def get_project(kili, project_id: str) -> Tuple[InputTypeT, JobsT, str]:

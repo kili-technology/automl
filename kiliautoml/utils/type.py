@@ -5,7 +5,7 @@ from typing_extensions import Literal, TypedDict
 AssetStatusT = Literal["TODO", "ONGOING", "LABELED", "TO_REVIEW", "REVIEWED"]
 LabelTypeT = Literal["PREDICTION", "DEFAULT", "AUTOSAVE", "REVIEW", "INFERENCE"]
 CommandT = Literal["train", "predict", "label_errors", "prioritize"]
-LabelMergeStrategyT = Literal["last", "first"]
+LabelMergeStrategyT = Literal["first", "last", "duplicate", "copy"]
 ContentInputT = Literal["checkbox", "radio"]
 InputTypeT = Literal["IMAGE", "TEXT"]
 ModelFrameworkT = Literal["pytorch", "tensorflow"]

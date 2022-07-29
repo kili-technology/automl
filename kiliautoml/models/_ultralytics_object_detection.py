@@ -126,7 +126,6 @@ class UltralyticsObjectDetectionModel(BaseModel):
             title, model_repository_dir, self.model_framework
         )
         os.makedirs(model_output_path, exist_ok=True)
-
         os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
         self._yaml_preparation(
             data_path=data_path,
