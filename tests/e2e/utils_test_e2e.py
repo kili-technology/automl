@@ -108,7 +108,7 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "2",
             "--disable-wandb",
         ]
-    if command == "label_error":
+    elif command == "label_errors":
         args = [
             command,
             "--project-id",
@@ -117,7 +117,9 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "1",
             "--batch-size",
             "2",
-            "--disable-wandb",
+            "--cv-folds",
+            "2",
+            "--dry-run",
         ]
     elif command == "predict":
         args = [
