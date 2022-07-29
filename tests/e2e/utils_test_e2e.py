@@ -12,7 +12,7 @@ def mocked__get_text_from(asset_url):
     return text_content[asset_url]
 
 
-def mock__get_asset_memoized(path):
+def create_mock__get_asset_memoized(path):
     def mocked__get_asset_memoized(**kwargs) -> List[Any]:
         total = kwargs.get("total", None)
         loaded_assets = json.load(open(path))
@@ -24,7 +24,7 @@ def mock__get_asset_memoized(path):
     return mocked__get_asset_memoized
 
 
-def mock__projects(path):
+def create_mock__projects(path):
     def mocked__projects(*_, project_id, fields):
         _ = project_id, fields
         return json.load(open(path))
@@ -61,32 +61,32 @@ def create_mocked__throttled_request(path_dir):
 def create_mocked_iter_refreshed_asset(path):
     def mocked_iter_refreshed_asset(kili):
         _ = kili
-        assets = mock__get_asset_memoized(path)()
+        assets = create_mock__get_asset_memoized(path)()
         for asset in assets:
             yield AssetT.construct(**asset)
 
     return mocked_iter_refreshed_asset
 
 
+# NOTE instead of using higher oder functions, we could use a class.
 def prepare_mocker(mocker: MockerFixture, MOCK_DIR: str):
+    base_path = f"tests/e2e/fixtures/{MOCK_DIR}"
     mocker.patch("kili.client.Kili.__init__", return_value=None)
     mocker.patch(
         "kiliautoml.utils.type.AssetsLazyList.iter_refreshed_asset",
-        side_effect=create_mocked_iter_refreshed_asset(
-            f"tests/e2e/fixtures/{MOCK_DIR}/assets.json"
-        ),
+        side_effect=create_mocked_iter_refreshed_asset(f"{base_path}/assets.json"),
     )
     mocker.patch(
         "kili.client.Kili.projects",
-        side_effect=mock__projects(f"tests/e2e/fixtures/{MOCK_DIR}/projects.json"),
+        side_effect=create_mock__projects(f"{base_path}/projects.json"),
     )
     mocker.patch(
         "kiliautoml.utils.helpers.get_asset_memoized",
-        side_effect=mock__get_asset_memoized(f"tests/e2e/fixtures/{MOCK_DIR}/assets.json"),
+        side_effect=create_mock__get_asset_memoized(f"{base_path}/assets.json"),
     )
     mocker.patch(
         "kiliautoml.utils.download_assets.throttled_request",
-        side_effect=create_mocked__throttled_request(f"tests/e2e/fixtures/{MOCK_DIR}"),
+        side_effect=create_mocked__throttled_request(f"{base_path}"),
     )
 
 

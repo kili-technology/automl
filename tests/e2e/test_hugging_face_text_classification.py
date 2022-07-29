@@ -2,9 +2,9 @@ from click.testing import CliRunner
 
 import main
 from tests.e2e.utils_test_e2e import (
+    create_mock__get_asset_memoized,
+    create_mock__projects,
     debug_subprocess_pytest,
-    mock__get_asset_memoized,
-    mock__projects,
     mocked__get_text_from,
 )
 
@@ -13,11 +13,11 @@ def test_hugging_face_text_classification(mocker):
     mocker.patch("kili.client.Kili.__init__", return_value=None)
     mocker.patch(
         "kiliautoml.utils.helpers.get_asset_memoized",
-        side_effect=mock__get_asset_memoized("tests/e2e/fixtures/text_assets_fixture.json"),
+        side_effect=create_mock__get_asset_memoized("tests/e2e/fixtures/text_assets_fixture.json"),
     )
     mocker.patch(
         "kili.client.Kili.projects",
-        side_effect=mock__projects("tests/e2e/fixtures/text_project_fixture.json"),
+        side_effect=create_mock__projects("tests/e2e/fixtures/text_project_fixture.json"),
     )
     mocker.patch(
         "kiliautoml.mixins._kili_text_project_mixin.KiliTextProjectMixin._get_text_from",
