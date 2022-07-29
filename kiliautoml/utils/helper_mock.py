@@ -1,10 +1,13 @@
 """To generate new mocked data, just launch kiliautoml like this:
 
 1. USE THIS COMMAND:
-KILI_AUTOML_MOCK=True KILI_AUTOML_MOCK_OUTPUT_DIR=cl0wihlop3rwc0mtj9np28ti2_yolo \
-    kiliautoml train \
-        --clear-dataset-cache --epochs 1 --max-assets 20 \
-        --project-id cl0wihlop3rwc0mtj9np28ti2
+export KILI_AUTOML_MOCK=True  && export PROJECTID=cl1e4umogdgon0ly4737z82lc \
+    && export KILI_AUTOML_MOCK_OUTPUT_DIR=cl1e4umogdgon0ly4737z82lc_ner \
+    && kiliautoml train \
+        --project-id $PROJECTID --clear-dataset-cache --epochs 1 --max-assets 10 \
+    && kiliautoml predict  \
+        --project-id $PROJECTID --clear-dataset-cache  --max-assets 5 \
+    && export KILI_AUTOML_MOCK=False
 
 2. ADAPT THE TEST FILE
 """
@@ -22,13 +25,18 @@ if GENERATE_MOCK:
 
 
 def save_mock_data(id, response, function_name):
-    if "&token=" in id:
-        id = id.split("&token=")[0].split("files?id=")[1]
+    id = strip_token(id)
     dir_path = f"tests/e2e/fixtures/{MOCK_DIR}/{function_name}"
     os.makedirs(dir_path, exist_ok=True)
 
     pickle.dump(response, open(f"{dir_path}/{id}.pkl", "wb"))
     print("Saved ", id)
+
+
+def strip_token(id):
+    if "&token=" in id:
+        id = id.split("&token=")[0].split("files?id=")[1]
+    return id
 
 
 def jsonify_mock_data(res, function_name):

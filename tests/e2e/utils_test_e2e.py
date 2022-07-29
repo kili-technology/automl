@@ -5,6 +5,7 @@ from click.testing import CliRunner, Result
 from pytest_mock import MockerFixture
 
 import main
+from kiliautoml.utils.helper_mock import strip_token
 from kiliautoml.utils.type import AssetT, CommandT
 
 text_content = json.load(open("tests/e2e/fixtures/text_content_fixture.json"))
@@ -37,15 +38,13 @@ def create_mock__projects(path):
 def debug_subprocess_pytest(result: Result):
     import traceback
 
+    print(result.output)
+    print(result)
     if result.exception is not None:
         tb = result.exception.__traceback__
-        print(result.stderr)
         traceback.print_tb(tb)
         raise Exception(result.exception)
     assert result.exit_code == 0
-    print(result.stdout)
-    print(result.output)
-    print(result)
 
 
 def create_mocked__throttled_request(path_dir):
@@ -56,6 +55,8 @@ def create_mocked__throttled_request(path_dir):
         import pickle
 
         id = asset_content.split("/")[-1].split(".")[0]
+
+        id = strip_token(id)
         with open(f"{path}/{id}.pkl", "rb") as f:
             asset_data = pickle.load(f)
         return asset_data
@@ -95,31 +96,31 @@ def prepare_mocker(mocker: MockerFixture, MOCK_DIR: str):
     )
 
 
-def create_arguments_test(command: CommandT, project_id, target_job="JOB_0"):
+def create_arguments_test(command: CommandT, project_id, target_job=""):
     if command == "train":
         args = [
             command,
             "--project-id",
             project_id,
-            "--target-job",
-            target_job,
             "--disable-wandb",
             "--epochs",
             "1",
             "--batch-size",
             "2",
+            "--disable-wandb",
         ]
     else:
         args = [
             command,
             "--project-id",
             project_id,
-            "--target-job",
-            target_job,
             "--batch-size",
             "2",
             "--dry-run",
         ]
+
+    if target_job:
+        args = args + ["--target-job", target_job]
     return args
 
 

@@ -153,6 +153,7 @@ def get_assets(
     if len(assets) == 0:
         kili_print(f"No {status_in} assets found in project {project_id}.")
         raise Exception("There is no asset matching the query.")
+    print(assets)
     return assets
 
 
