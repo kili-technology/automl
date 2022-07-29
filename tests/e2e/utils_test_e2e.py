@@ -108,7 +108,7 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "2",
             "--disable-wandb",
         ]
-    else:
+    elif command == "predict":
         args = [
             command,
             "--project-id",
@@ -116,7 +116,11 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "--batch-size",
             "2",
             "--dry-run",
+            "--asset-status-in",
+            "TODO,ONGOING,LABELED,TO_REVIEW,REVIEWED",
         ]
+    else:
+        raise NotImplementedError
 
     if target_job:
         args = args + ["--target-job", target_job]

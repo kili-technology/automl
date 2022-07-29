@@ -167,8 +167,10 @@ TYPE_ORDER = {
 
 def _get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
     labels = asset.labels
+
+    # Filter the jobname
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
-    labels = [label for label in labels if label["labelType"] in ["DEFAULT", "REVIEW"]]
+    labels = [label for label in labels if label["labelType"] in ["DEFAULT", "REVIEW"]]  # XXX
 
     def last_order(json_response):
         return (

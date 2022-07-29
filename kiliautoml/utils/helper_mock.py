@@ -1,14 +1,11 @@
 """To generate new mocked data, just launch kiliautoml like this:
 
-0. Create a new projet with 15 assets and label 10 of them
+0. Create a new projet with 15 assets and label everyone of them.
 1. USE THIS COMMAND:
-
 export KILI_AUTOML_MOCK=True  && export PROJECTID=cl668phvq00220lyyhpv38myk \
     && export KILI_AUTOML_MOCK_OUTPUT_DIR=cl668phvq00220lyyhpv38myk_ner \
     && kiliautoml train \
         --project-id $PROJECTID --clear-dataset-cache --epochs 1 \
-    && kiliautoml predict  \
-        --project-id $PROJECTID --clear-dataset-cache \
     && export KILI_AUTOML_MOCK=
 
 2. ADAPT THE TEST FILE
