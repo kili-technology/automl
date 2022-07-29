@@ -1,88 +1,16 @@
 from click.testing import CliRunner
 
-import main
-from tests.e2e.utils_test_e2e import (
-    create_mock__get_asset_memoized,
-    create_mock__projects,
-    debug_subprocess_pytest,
-)
+from tests.e2e.utils_test_e2e import one_command, prepare_mocker
+
+MOCK_DIR = "cl656a4xe6ncm0mwwfkas5xj0_image_classification"
+project_id = MOCK_DIR.split("_")[0]
 
 
-def mocked__download_asset_binary(api_key, asset_content):
-    _ = api_key
-    import pickle
+def test(mocker):
 
-    id = asset_content.split("label/v2/files?id=")[-1]
-    with open(f"tests/e2e/fixtures/download_asset_binary/image_classification/{id}.pkl", "rb") as f:
-        asset_data = pickle.load(f)
-    return asset_data
-
-
-def test_image_classification(mocker):
-
-    mocker.patch("kili.client.Kili.__init__", return_value=None)
-    mocker.patch(
-        "kili.client.Kili.projects",
-        side_effect=create_mock__projects("tests/e2e/fixtures/img_class_project_fixture.json"),
-    )
-    mocker.patch(
-        "kiliautoml.utils.download_assets.download_asset_binary",
-        side_effect=mocked__download_asset_binary,
-    )
-    mocker.patch(
-        "kiliautoml.utils.helpers.get_asset_memoized",
-        side_effect=create_mock__get_asset_memoized(
-            "tests/e2e/fixtures/img_class_get_assets_fixture.json"
-        ),
-    )
-    mocker.patch("commands.label_errors.upload_errors_to_kili")
-    mocker.patch("kili.client.Kili.create_predictions")
+    prepare_mocker(mocker, MOCK_DIR)
 
     runner = CliRunner()
-    project_id = "abcdefg"
-    result = runner.invoke(
-        main.kiliautoml,
-        [
-            "train",
-            "--project-id",
-            project_id,
-            "--max-assets",
-            "300",
-            "--disable-wandb",
-            "--epochs",
-            "1",
-            "--batch-size",
-            "2",
-        ],
-    )
-    debug_subprocess_pytest(result)
-
-    result = runner.invoke(
-        main.kiliautoml,
-        [
-            "predict",
-            "--project-id",
-            project_id,
-            "--max-assets",
-            "300",
-            "--batch-size",
-            "2",
-        ],
-    )
-    debug_subprocess_pytest(result)
-
-    result = runner.invoke(
-        main.kiliautoml,
-        [
-            "label_errors",
-            "--project-id",
-            project_id,
-            "--max-assets",
-            "300",
-            "--epochs",
-            "1",
-            "--batch-size",
-            "2",
-        ],
-    )
-    debug_subprocess_pytest(result)
+    one_command(runner, "train", project_id)
+    one_command(runner, "predict", project_id)
+    # one_command(runner, "label_errors", project_id)
