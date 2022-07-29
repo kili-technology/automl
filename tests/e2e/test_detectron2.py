@@ -2,7 +2,7 @@ from click.testing import CliRunner
 
 from tests.e2e.utils_test_e2e import one_command, prepare_mocker
 
-MOCK_DIR = "cl56hzgbp0ix60lst97r56err_segmentation"
+MOCK_DIR = "cl66ckxol06vt0pylc35ofip2_detectron"
 project_id = MOCK_DIR.split("_")[0]
 
 
