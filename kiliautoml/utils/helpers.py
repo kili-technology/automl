@@ -152,7 +152,6 @@ def get_assets(
     if len(assets) == 0:
         kili_print(f"No {status_in} assets found in project {project_id}.")
         raise Exception("There is no asset matching the query.")
-    print(assets)
     return assets
 
 
@@ -166,7 +165,9 @@ def _get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT)
 
     # Filter the jobname
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
-    labels = [label for label in labels if label["labelType"] in ["DEFAULT", "REVIEW"]]  # XXX
+
+    # XXX: we should probably delete this line
+    labels = [label for label in labels if label["labelType"] in ["DEFAULT", "REVIEW"]]
 
     def last_order(json_response):
         return (

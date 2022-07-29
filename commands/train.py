@@ -133,8 +133,6 @@ def main(
             disable_wandb=disable_wandb,
             verbose=verbose,
         )
-        print("ZZZ")
-        print(content_input, input_type, ml_task)
         if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
             model = HuggingFaceTextClassificationModel(
                 api_key=api_key,
