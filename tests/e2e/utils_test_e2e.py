@@ -102,7 +102,6 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             command,
             "--project-id",
             project_id,
-            "--disable-wandb",
             "--epochs",
             "1",
             "--batch-size",
