@@ -1,8 +1,10 @@
 import json
 from typing import Any, List
 
+from click.testing import CliRunner, Result
 from pytest_mock import MockerFixture
 
+import main
 from kiliautoml.utils.type import AssetT, CommandT
 
 text_content = json.load(open("tests/e2e/fixtures/text_content_fixture.json"))
@@ -32,15 +34,18 @@ def create_mock__projects(path):
     return mocked__projects
 
 
-def debug_subprocess_pytest(result):
+def debug_subprocess_pytest(result: Result):
     import traceback
 
-    print(result.output)
     if result.exception is not None:
         tb = result.exception.__traceback__
+        print(result.stderr)
         traceback.print_tb(tb)
         raise Exception(result.exception)
     assert result.exit_code == 0
+    print(result.stdout)
+    print(result.output)
+    print(result)
 
 
 def create_mocked__throttled_request(path_dir):
@@ -116,3 +121,9 @@ def create_arguments_test(command: CommandT, project_id, target_job="JOB_0"):
             "--dry-run",
         ]
     return args
+
+
+def one_command(runner: CliRunner, command: CommandT, project_id):
+    result = runner.invoke(main.kiliautoml, create_arguments_test(command, project_id), color=True)
+
+    debug_subprocess_pytest(result)
