@@ -117,9 +117,7 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "2",
             "--dry-run",
             "--asset-status-in",
-            "TODO,ONGOING,LABELED,TO_REVIEW,REVIEWED",
-            "--max-assets",
-            "1",
+            "LABELED,TO_REVIEW,REVIEWED",  # we generate the mocks with train command
         ]
     else:
         raise NotImplementedError
