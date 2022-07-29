@@ -114,7 +114,7 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "--project-id",
             project_id,
             "--epochs",
-            "1",
+            "2",
             "--batch-size",
             "2",
             "--cv-folds",
