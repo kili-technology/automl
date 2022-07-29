@@ -1,4 +1,5 @@
 import json
+from typing import Any, List
 
 text_content = json.load(open("tests/e2e/fixtures/text_content_fixture.json"))
 
@@ -8,7 +9,7 @@ def mocked__get_text_from(asset_url):
 
 
 def mock__get_asset_memoized(path):
-    def mocked__get_asset_memoized(**kwargs):
+    def mocked__get_asset_memoized(**kwargs) -> List[Any]:
         total = kwargs.get("total", None)
         loaded_assets = json.load(open(path))
         if total is not None:

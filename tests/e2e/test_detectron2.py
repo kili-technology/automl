@@ -1,6 +1,7 @@
 from click.testing import CliRunner
 
 import main
+from kiliautoml.utils.type import AssetT
 from tests.e2e.utils_test_e2e import (
     debug_subprocess_pytest,
     mock__get_asset_memoized,
@@ -22,9 +23,20 @@ def mocked__throttled_request(api_key, asset_content):
     return asset_data
 
 
+def mocked_iter_refreshed_asset(kili):
+    _ = kili
+    assets = mock__get_asset_memoized(f"tests/e2e/fixtures/{MOCK_DIR}/assets.json")()
+    for asset in assets:
+        yield AssetT.construct(**asset)
+
+
 def test_detectron2_image_segmentation(mocker):
 
     mocker.patch("kili.client.Kili.__init__", return_value=None)
+    mocker.patch(
+        "kiliautoml.utils.type.AssetsLazyList.iter_refreshed_asset",
+        side_effect=mocked_iter_refreshed_asset,
+    )
     mocker.patch(
         "kili.client.Kili.projects",
         side_effect=mock__projects(f"tests/e2e/fixtures/{MOCK_DIR}/projects.json"),
