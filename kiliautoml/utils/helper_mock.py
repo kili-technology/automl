@@ -1,10 +1,10 @@
 """To generate new mocked data, just launch kiliautoml like this:
 
 1. USE THIS COMMAND:
-KILI_AUTOML_MOCK=True KILI_AUTOML_MOCK_OUTPUT_DIR=cl1e4umogdgon0ly4737z82lc_ner \
+KILI_AUTOML_MOCK=True KILI_AUTOML_MOCK_OUTPUT_DIR=cl0wihlop3rwc0mtj9np28ti2_yolo \
     kiliautoml train \
         --clear-dataset-cache --epochs 1 --max-assets 20 \
-        --project-id cl1e4umogdgon0ly4737z82lc
+        --project-id cl0wihlop3rwc0mtj9np28ti2
 
 2. ADAPT THE TEST FILE
 """
