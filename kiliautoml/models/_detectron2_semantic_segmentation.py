@@ -27,7 +27,7 @@ from kiliautoml.utils.helper_label_error import find_all_label_errors
 from kiliautoml.utils.helpers import categories_from_job, kili_print
 from kiliautoml.utils.path import ModelDirT, Path, PathDetectron2
 from kiliautoml.utils.type import (
-    AssetT,
+    AssetsLazyList,
     CategoryIdT,
     CategoryT,
     JobNameT,
@@ -121,7 +121,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):
     def train(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         label_merge_strategy: LabelMergeStrategyT,
         epochs: int,
         batch_size: int,
@@ -204,7 +204,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):
 
     def _get_cfg_kili(
         self,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         epochs: Optional[int],
         batch_size: int,
         model_dir: ModelDirT,
@@ -240,7 +240,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):
     def predict(  # type: ignore
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
@@ -375,7 +375,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):
     def find_errors(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,

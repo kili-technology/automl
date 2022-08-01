@@ -9,6 +9,7 @@ from warnings import warn
 
 import numpy as np
 import torch
+from kili.client import Kili
 from tabulate import tabulate
 from termcolor import colored
 from typing_extensions import get_args
@@ -17,6 +18,7 @@ from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.path import AUTOML_CACHE
 from kiliautoml.utils.type import (
+    AssetsLazyList,
     AssetStatusT,
     AssetT,
     CategoryIdT,
@@ -68,7 +70,7 @@ def ensure_dir(file_path: str):
 @kili_project_memoizer(sub_dir="get_asset_memoized")
 def get_asset_memoized(
     *,
-    kili,
+    kili: Kili,
     project_id: ProjectIdT,
     total: Optional[int],
     skip: int,
@@ -93,18 +95,18 @@ def get_asset_memoized(
     if GENERATE_MOCK:
         jsonify_mock_data(assets, function_name="assets")
 
-    return assets
+    return assets  # type:ignore
 
 
 def get_assets(
-    kili,
+    kili: Kili,
     project_id: ProjectIdT,
     status_in: Optional[List[AssetStatusT]] = None,
     max_assets: Optional[int] = None,
     randomize: bool = False,
     strategy: LabelMergeStrategyT = "last",
     job_name: Optional[JobNameT] = None,
-) -> List[AssetT]:
+) -> AssetsLazyList:
     """
     job_name is used if status_in does not have only unlabeled statuses
     """
@@ -142,7 +144,7 @@ def get_assets(
         )
 
     assets = [AssetT.construct(**asset) for asset in assets]
-
+    assets = AssetsLazyList(assets)
     if status_in is not None:
         only_labeled_status = not any(status in status_in for status in ["TO DO", "ONGOING"])
         if job_name is not None and only_labeled_status:
@@ -160,7 +162,11 @@ TYPE_ORDER = {
 
 def _get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
     labels = asset.labels
+
+    # Filter the jobname
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
+
+    # XXX: we should probably delete this line
     labels = [label for label in labels if label["labelType"] in ["DEFAULT", "REVIEW"]]
 
     def last_order(json_response):
@@ -184,7 +190,9 @@ def _get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT)
         return None
 
 
-def filter_labeled_assets(job_name: JobNameT, strategy: LabelMergeStrategyT, assets: List[AssetT]):
+def filter_labeled_assets(
+    job_name: JobNameT, strategy: LabelMergeStrategyT, assets: AssetsLazyList
+):
     asset_id_to_remove = set()
     for asset in assets:
         label = _get_label(asset, job_name, strategy)
@@ -195,7 +203,7 @@ def filter_labeled_assets(job_name: JobNameT, strategy: LabelMergeStrategyT, ass
         else:
             asset.labels = [label]
 
-    return [asset for asset in assets if asset.id not in asset_id_to_remove]
+    return AssetsLazyList([asset for asset in assets if asset.id not in asset_id_to_remove])
 
 
 def get_project(kili, project_id: ProjectIdT) -> Tuple[InputTypeT, JobsT, str]:
@@ -220,9 +228,12 @@ T = TypeVar("T")  # Declare type variable
 
 
 def set_default(x: Optional[T], x_default: T, x_name: str, x_range: List[T]) -> T:
-    if x not in x_range:
+    if x is None:
         kili_print(f"defaulting to {x_name}={x_default}")
-        x = x_default
+        return x_default
+    if x not in x_range:
+        kili_print(f"Warning: {x} is not in {x_range}, defaulting to {x_name}={x_default}")
+        return x_default
     return x
 
 

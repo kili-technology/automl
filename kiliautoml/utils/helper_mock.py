@@ -1,10 +1,12 @@
 """To generate new mocked data, just launch kiliautoml like this:
 
+0. Create a new projet with 15 assets and label everyone of them.
 1. USE THIS COMMAND:
-KILI_AUTOML_MOCK=True KILI_AUTOML_MOCK_OUTPUT_DIR=cl56hzgbp0ix60lst97r56err_segmentation \
-    kiliautoml train \
-        --clear-dataset-cache --epochs 1 \
-        --project-id cl56hzgbp0ix60lst97r56err
+export KILI_AUTOML_MOCK=True  && export PROJECTID=cl656a4xe6ncm0mwwfkas5xj0 \
+    && export KILI_AUTOML_MOCK_OUTPUT_DIR=cl656a4xe6ncm0mwwfkas5xj0_image_classification \
+    && kiliautoml train \
+        --project-id $PROJECTID --clear-dataset-cache --epochs 1 \
+    && export KILI_AUTOML_MOCK=
 
 2. ADAPT THE TEST FILE
 """
@@ -22,11 +24,18 @@ if GENERATE_MOCK:
 
 
 def save_mock_data(id, response, function_name):
+    id = strip_token(id)
     dir_path = f"tests/e2e/fixtures/{MOCK_DIR}/{function_name}"
     os.makedirs(dir_path, exist_ok=True)
 
     pickle.dump(response, open(f"{dir_path}/{id}.pkl", "wb"))
     print("Saved ", id)
+
+
+def strip_token(id):
+    if "&token=" in id:
+        id = id.split("&token=")[0].split("files?id=")[1]
+    return id
 
 
 def jsonify_mock_data(res, function_name):

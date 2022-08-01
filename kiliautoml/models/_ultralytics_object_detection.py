@@ -27,6 +27,7 @@ from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetExternalIdT,
+    AssetsLazyList,
     AssetT,
     BoundingPolyT,
     CategoryIdT,
@@ -107,7 +108,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def train(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -233,7 +234,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
         data_path: str,
         class_names: List[CategoryIdT],
         kili_api_key: str,
-        assets,
+        assets: AssetsLazyList,
     ):
 
         kili_print("Downloading datasets from Kili")
@@ -243,7 +244,10 @@ class UltralyticsObjectDetectionModel(BaseModel):
             raise ValueError("'path' field in config must contain '/kili/'")
 
         n_train_assets = math.floor(len(assets) * train_val_proportions[0])
-        assets_splits = {"train": assets[:n_train_assets], "val": assets[n_train_assets:]}
+        assets_splits: Dict[str, List[AssetT]] = {  # type:ignore
+            "train": assets[:n_train_assets],
+            "val": assets[n_train_assets:],
+        }
         assert len(assets_splits["val"]) > 1, (
             "Validation set must contain at least 2 assets. max_asset should be > 9. There are"
             f" only {len(assets)} assets"
@@ -256,7 +260,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
 
             download_project_images(
                 api_key=kili_api_key,
-                assets=assets_split,
+                assets=AssetsLazyList(assets_split),
                 output_folder=path_split,
             )
 
@@ -292,7 +296,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def predict(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
@@ -321,7 +325,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def _predict(
         self,
         api_key: str,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         project_id: ProjectIdT,
         ml_backend: MLBackendT,
         model_path: ModelPathT,
@@ -440,7 +444,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
     def find_errors(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,

@@ -7,6 +7,7 @@ import datasets
 import evaluate  # type: ignore
 import nltk
 import numpy as np
+from kili.client import Kili
 from tqdm.autonotebook import tqdm
 from transformers import Trainer
 
@@ -17,7 +18,7 @@ from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
-    AssetT,
+    AssetsLazyList,
     JobNameT,
     JobPredictions,
     JobT,
@@ -65,7 +66,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     def train(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool = False,
@@ -135,17 +136,17 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             eval_dataset=eval_dataset,  # type: ignore
             compute_metrics=self.compute_metrics,  # type: ignore
         )
-        trainer.train()
+        trainer.train()  # type: ignore
         model_evaluation = self.model_evaluation(trainer, job_categories)
 
         kili_print(f"Saving model to {path_model}")
-        trainer.save_model(ensure_dir(path_model))
+        trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
 
     def predict(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
@@ -166,7 +167,11 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             self.ml_backend, model_path_res, self.ml_task
         )
 
-        for asset in assets:
+        for asset in assets.iter_refreshed_asset(
+            kili=Kili(
+                self.api_key,
+            )
+        ):  # TODO: Add api_endpoint
             text = self._get_text_from(asset.content)
 
             predictions_asset = self._compute_asset_classification(
@@ -192,7 +197,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
 
         return job_predictions
 
-    def _write_dataset(self, assets: List[AssetT], job_name, path_dataset, job_categories):
+    def _write_dataset(self, assets: AssetsLazyList, job_name, path_dataset, job_categories):
         with open(ensure_dir(path_dataset), "w") as handler:
             for asset in tqdm(assets, desc="Downloading content"):
                 label_category = asset.get_annotations_classification(job_name)["categories"][0][
@@ -318,7 +323,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
     def find_errors(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,

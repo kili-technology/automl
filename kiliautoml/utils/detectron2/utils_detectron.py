@@ -7,12 +7,13 @@ from typing import Dict, List, Tuple
 
 import cv2
 import numpy as np
+from kili.client import Kili
 from tqdm.autonotebook import tqdm
 from typing_extensions import TypedDict
 
 from kiliautoml.utils.download_assets import download_asset_binary
 from kiliautoml.utils.helpers import get_mapping_category_name_cat_kili_id, kili_print
-from kiliautoml.utils.type import AssetT, CategoryIdT, JobNameT, JobT
+from kiliautoml.utils.type import AssetsLazyList, CategoryIdT, JobNameT, JobT
 
 # ## DETECTRON FORMAT
 
@@ -51,7 +52,7 @@ class CocoFormat(TypedDict):
 
 
 def convert_kili_semantic_to_coco(
-    job_name: JobNameT, assets: List[AssetT], output_dir, api_key: str, job: JobT
+    job_name: JobNameT, assets: AssetsLazyList, output_dir, api_key: str, job: JobT
 ) -> Tuple[CocoFormat, List[str]]:
     """
     creates the following structure on the disk:
@@ -102,7 +103,15 @@ def convert_kili_semantic_to_coco(
     # Fill labels_json
     annotation_j = -1
     for asset_i, asset in tqdm(
-        enumerate(assets), total=len(assets), desc="Download and convert asset..."
+        enumerate(
+            assets.iter_refreshed_asset(
+                kili=Kili(
+                    api_key=api_key,
+                )
+            )
+        ),
+        total=len(assets),
+        desc="Converting to COCO format...",
     ):
         annotations_ = asset.get_annotations_semantic(job_name)["annotations"]
 
