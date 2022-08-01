@@ -10,7 +10,7 @@ setup(
         "datasets<=2.2",
         "evaluate",
         "seqeval",
-        "kili",
+        "kili==2.114",
         "jinja2",
         "nltk>=3.3",
         "numpy",
