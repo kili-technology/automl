@@ -39,25 +39,13 @@ DELAY = 60 / 250  # 250 calls per minutes
 
 @sleep_and_retry
 @limits(calls=1, period=DELAY)
-def _throttled_request(
-    api_key,
-    asset_content,
-    use_header=False,  # XXX: I do not understand why this is the prefered mode
-    k=0,
-) -> Response:  # type: ignore
+def _throttled_request(api_key, asset_content, use_header=True, k=0, error=None) -> Response:
     if k == 20:
-        raise Exception("Too many retries")
-    if use_header:
-        response = requests.get(
-            asset_content,
-            headers={
-                "Authorization": f"X-API-Key: {api_key}",
-            },
-        )
-    else:
-        response = requests.get(asset_content)
+        raise Exception("Too many retries", error)
+    header = {"Authorization": f"X-API-Key: {api_key}"} if use_header else None
+    response = requests.get(asset_content, headers=header)
     try:
-        assert response.status_code == 200
+        assert response.status_code == 200, f"response.status_code: {response.status_code}"
 
         if GENERATE_MOCK:
             id = asset_content.split("/")[-1].split(".")[0]
@@ -65,8 +53,14 @@ def _throttled_request(
         return response
     except AssertionError as e:
         # Sometimes, the header breaks google bucket and just removing the header makes it work.
-        _ = e
-        return _throttled_request(api_key, asset_content, use_header=not use_header, k=k + 1)
+        print(e, response, response.status_code, asset_content)
+        return _throttled_request(
+            api_key,
+            asset_content,
+            use_header=not use_header,
+            k=k + 1,
+            error=[e, response, response.status_code],
+        )
 
 
 @kili_memoizer
