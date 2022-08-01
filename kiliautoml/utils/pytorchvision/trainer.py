@@ -45,7 +45,7 @@ def train_model_pytorch(
     best_val_metrics = {}
     best_val_metrics["loss"] = ModelMetricT(overall=float("inf"), by_category=None)
     epoch_train_evaluation = {}
-    corresponding_train_metrics = {}
+    train_metrics = {}
     for _ in trange(epochs, desc="Training - Epoch"):
         if verbose >= 2:
             print("-" * 10)
@@ -78,7 +78,10 @@ def train_model_pytorch(
             if phase == "train":
                 scheduler.step()
                 epoch_train_evaluation = evaluate(
-                    running_loss, np.concatenate(ys_pred), np.concatenate(ys_true)
+                    running_loss,
+                    np.concatenate(ys_pred),
+                    np.concatenate(ys_true),
+                    labels=class_names,
                 )
                 epoch_train_loss = epoch_train_evaluation["loss"]["overall"]
                 epoch_train_acc = epoch_train_evaluation["acc"]["overall"]
@@ -86,7 +89,10 @@ def train_model_pytorch(
                     print(f"{phase} Loss: {epoch_train_loss:.4f} Acc: {epoch_train_acc:.4f}")
             if phase == "val":
                 epoch_val_evaluation = evaluate(
-                    running_loss, np.concatenate(ys_pred), np.concatenate(ys_true)
+                    running_loss,
+                    np.concatenate(ys_pred),
+                    np.concatenate(ys_true),
+                    labels=class_names,  # Here, if the max of y_true is not the number of class...
                 )
                 epoch_val_loss = epoch_val_evaluation["loss"]["overall"]
                 epoch_val_acc = epoch_val_evaluation["acc"]["overall"]
@@ -95,7 +101,7 @@ def train_model_pytorch(
                 # deep copy the model
                 if epoch_val_loss < best_val_metrics["loss"]["overall"]:
                     best_val_metrics = epoch_val_evaluation
-                    corresponding_train_metrics = epoch_train_evaluation
+                    train_metrics = epoch_train_evaluation
                     best_model_wts = copy.deepcopy(model.state_dict())
         if verbose >= 2:
             print()
@@ -105,65 +111,48 @@ def train_model_pytorch(
         print(f"Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s")
         best_val_loss = best_val_metrics["loss"]["overall"]
         best_val_acc = best_val_metrics["acc"]["overall"]
-        corresponding_train_loss = corresponding_train_metrics["loss"]["overall"]
-        corresponding_train_acc = corresponding_train_metrics["acc"]["overall"]
+        train_loss = train_metrics["loss"]["overall"]
+        corresponding_train_acc = train_metrics["acc"]["overall"]
         print(f"Best val Loss: {best_val_loss:4f}, Best val Acc: {best_val_acc:4f}")
         print(
-            f"Corresponding train Loss: {corresponding_train_loss:4f},"
-            f"Best val Acc: {corresponding_train_acc:4f}"
+            f"Corresponding train Loss: {train_loss:4f},Best val Acc: {corresponding_train_acc:4f}"
         )
 
     # load best model weights
     model.load_state_dict(best_model_wts)
-    model_evaluation: Dict[str, Any] = {}
+    model_eval: Dict[str, Any] = {}
 
     for i, label in enumerate(class_names):
-        model_evaluation["train_" + label] = {}
-        model_evaluation["val_" + label] = {}
-        model_evaluation["train_" + label]["precision"] = corresponding_train_metrics["precision"][
-            "by_category"
-        ][i]
-        model_evaluation["train_" + label]["recall"] = corresponding_train_metrics["recall"][
-            "by_category"
-        ][i]
-        model_evaluation["train_" + label]["f1"] = corresponding_train_metrics["f1"]["by_category"][
-            i
-        ]
-        model_evaluation["val_" + label]["precision"] = best_val_metrics["precision"][
-            "by_category"
-        ][  # type:ignore
-            i
-        ]
-        model_evaluation["val_" + label]["recall"] = best_val_metrics["recall"][
-            "by_category"
-        ][  # type:ignore
-            i
-        ]
-        model_evaluation["val_" + label]["f1"] = best_val_metrics["f1"][
-            "by_category"
-        ][  # type:ignore
-            i
-        ]
+        model_eval["train_" + label] = {}
+        model_eval["val_" + label] = {}
+        model_eval["train_" + label]["precision"] = train_metrics["precision"]["by_category"][i]
+        model_eval["train_" + label]["recall"] = train_metrics["recall"]["by_category"][i]
+        model_eval["train_" + label]["f1"] = train_metrics["f1"]["by_category"][i]
+        model_eval["val_" + label]["precision"] = best_val_metrics["precision"]["by_category"][i]
+        model_eval["val_" + label]["recall"] = best_val_metrics["recall"]["by_category"][i]
+        model_eval["val_" + label]["f1"] = best_val_metrics["f1"]["by_category"][i]
 
-    model_evaluation["train__overall"] = {
-        "loss": corresponding_train_metrics["loss"]["overall"],
-        "accuracy": corresponding_train_metrics["acc"]["overall"],
-        "precision": corresponding_train_metrics["precision"]["overall"],
-        "recall": corresponding_train_metrics["recall"]["overall"],
-        "f1": corresponding_train_metrics["f1"]["overall"],
+    model_eval["train__overall"] = {
+        "loss": train_metrics["loss"]["overall"],
+        "accuracy": train_metrics["acc"]["overall"],
+        "precision": train_metrics["precision"]["overall"],
+        "recall": train_metrics["recall"]["overall"],
+        "f1": train_metrics["f1"]["overall"],
     }
 
-    model_evaluation["val__overall"] = {
+    model_eval["val__overall"] = {
         "loss": best_val_metrics["loss"]["overall"],
         "accuracy": best_val_metrics["acc"]["overall"],  # type:ignore
         "precision": best_val_metrics["precision"]["overall"],  # type:ignore
         "recall": best_val_metrics["recall"]["overall"],  # type:ignore
         "f1": best_val_metrics["f1"]["overall"],  # type:ignore
     }
-    return model, {key: value for key, value in sorted(model_evaluation.items())}
+    return model, {key: value for key, value in sorted(model_eval.items())}
 
 
-def evaluate(running_loss, y_pred, y_true):
+def evaluate(running_loss, y_pred, y_true, labels):
+    msg = "One class missing. This is probably due to a too small validation set."
+    assert len(labels) == len(np.unique(y_true)), msg
     evaluation = {}
     evaluation["loss"] = ModelMetricT(overall=running_loss / len(y_true), by_category=None)
     evaluation["acc"] = ModelMetricT(

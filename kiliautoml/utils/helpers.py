@@ -145,7 +145,6 @@ def get_assets(
 
     assets = [AssetT.construct(**asset) for asset in assets]
     assets = AssetsLazyList(assets)
-
     if status_in is not None:
         only_labeled_status = not any(status in status_in for status in ["TO DO", "ONGOING"])
         if job_name is not None and only_labeled_status:
@@ -163,7 +162,11 @@ TYPE_ORDER = {
 
 def _get_label(asset: AssetT, job_name: JobNameT, strategy: LabelMergeStrategyT):
     labels = asset.labels
+
+    # Filter the jobname
     labels = [label for label in labels if job_name in label["jsonResponse"].keys()]
+
+    # XXX: we should probably delete this line
     labels = [label for label in labels if label["labelType"] in ["DEFAULT", "REVIEW"]]
 
     def last_order(json_response):

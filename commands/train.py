@@ -91,6 +91,8 @@ def main(
 
         if target_job and job_name not in target_job:
             continue
+        if "MARKER" in job_name:
+            continue
 
         ml_task = job.get("mlTask")
         assets = get_assets(

@@ -186,6 +186,8 @@ def main(
     for job_name, job in jobs.items():
         if target_job and job_name not in target_job:
             continue
+        if "MARKER" in job_name:
+            continue
         kili_print(f"Predicting annotations for job: {job_name}")
         content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")

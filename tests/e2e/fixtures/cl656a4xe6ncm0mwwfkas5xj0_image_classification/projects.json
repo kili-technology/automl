@@ -1,0 +1,1 @@
+[{"inputType": "IMAGE", "jsonInterface": {"jobs": {"JOB_0": {"content": {"categories": {"OBJECT_A": {"children": [], "name": "Object A"}, "OBJECT_B": {"children": [], "name": "Object B"}}, "input": "radio"}, "instruction": "Categories", "isChild": false, "mlTask": "CLASSIFICATION", "models": {}, "isVisible": true, "required": 1}}}, "title": "automl-imageclassification"}]
