@@ -13,3 +13,4 @@ def test(mocker):
     runner = CliRunner()
     one_command(runner, "train", project_id)
     one_command(runner, "predict", project_id)
+    one_command(runner, "label_errors", project_id)
