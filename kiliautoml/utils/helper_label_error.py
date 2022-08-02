@@ -5,13 +5,14 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Type, Union
 
 from pydantic import BaseModel, validator
+from shapely.errors import TopologicalError
 from shapely.geometry import Point, Polygon
 from typing_extensions import Literal
 
 from kiliautoml.utils.type import (
     AssetExternalIdT,
     AssetIdT,
-    AssetT,
+    AssetsLazyList,
     CategoryIdT,
     JobNameT,
     JsonResponseBaseT,
@@ -33,8 +34,17 @@ class SemanticPositionT(PositionT, BaseModel):
     points: List[NormalizedVertice]
 
     @validator("points")
-    def number_of_points(cls, points):
+    def number_of_points(cls, points: List[NormalizedVertice]):
         _ = cls
+
+        print("Before", len(points))
+        points = [
+            NormalizedVertice(x=round(point["x"], 4), y=round(point["y"], 4)) for point in points
+        ]
+        # Delete duplicates
+        points = [dict(t) for t in {tuple(d.items()) for d in points}]  # type:ignore
+        print("After", len(points))
+
         if len(points) < 3:
             raise ValueError("Semantic annotation should contain at least 3 points.")
         return points
@@ -81,9 +91,13 @@ class AnnotationStandardizedT(BaseModel, ABC):
 def iou_polygons(points1: List[NormalizedVertice], points2):
     polygon1 = Polygon([Point(p["x"], p["y"]) for p in points1])
     polygon2 = Polygon([Point(p["x"], p["y"]) for p in points2])
-    intersect = polygon1.intersection(polygon2).area
-    union = polygon1.union(polygon2).area
-    iou = intersect / union
+    try:
+        intersect = polygon1.intersection(polygon2).area
+        union = polygon1.union(polygon2).area
+        iou = intersect / union
+    except TopologicalError:
+        print("The model is probably not trained enough")
+        iou = 0
     return iou
 
 
@@ -299,7 +313,7 @@ class ErrorRecap(BaseModel):
 
 
 def find_all_label_errors(
-    assets: List[AssetT],
+    assets: AssetsLazyList,
     json_response_array: List[JsonResponseT],
     external_id_array: List[AssetExternalIdT],
     job_name: JobNameT,

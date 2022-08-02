@@ -16,7 +16,7 @@ from kiliautoml.models._base_model import (
 from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
-    AssetT,
+    AssetsLazyList,
     DictTrainingInfosT,
     JobPredictions,
     ProjectIdT,
@@ -62,7 +62,7 @@ class KiliAutoModel:
     def predict(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
@@ -81,7 +81,7 @@ class KiliAutoModel:
     def find_errors(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,

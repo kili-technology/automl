@@ -14,7 +14,7 @@ from tqdm.autonotebook import tqdm
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, save_mock_data
 from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.memoization import kili_memoizer
-from kiliautoml.utils.type import AssetExternalIdT, AssetIdT, AssetT
+from kiliautoml.utils.type import AssetExternalIdT, AssetIdT, AssetsLazyList, AssetT
 
 
 @dataclass
@@ -39,21 +39,13 @@ DELAY = 60 / 250  # 250 calls per minutes
 
 @sleep_and_retry
 @limits(calls=1, period=DELAY)
-def _throttled_request(api_key, asset_content, use_header=True, k=0) -> Response:  # type: ignore
-    print("Downloading...")
+def _throttled_request(api_key, asset_content, use_header=True, k=0, error=None) -> Response:
     if k == 20:
-        raise Exception("Too many retries")
-    if use_header:
-        response = requests.get(
-            asset_content,
-            headers={
-                "Authorization": f"X-API-Key: {api_key}",
-            },
-        )
-    else:
-        response = requests.get(asset_content)
+        raise Exception("Too many retries", error)
+    header = {"Authorization": f"X-API-Key: {api_key}"} if use_header else None
+    response = requests.get(asset_content, headers=header)
     try:
-        assert response.status_code == 200
+        assert response.status_code == 200, f"response.status_code: {response.status_code}"
 
         if GENERATE_MOCK:
             id = asset_content.split("/")[-1].split(".")[0]
@@ -61,11 +53,17 @@ def _throttled_request(api_key, asset_content, use_header=True, k=0) -> Response
         return response
     except AssertionError as e:
         # Sometimes, the header breaks google bucket and just removing the header makes it work.
-        _ = e
-        return _throttled_request(api_key, asset_content, use_header=not use_header, k=k + 1)
+        print(e, response, response.status_code, asset_content)
+        return _throttled_request(
+            api_key,
+            asset_content,
+            use_header=not use_header,
+            k=k + 1,
+            error=[e, response, response.status_code],
+        )
 
 
-@kili_memoizer
+@kili_memoizer  # We memorize each argument but asset_content wich contains (asset_id + token)
 def _throttled_request_memoized(api_key, asset_content, asset_id):
     """Even if asset content varies his token, we use the memoized asset"""
     _ = asset_id
@@ -120,7 +118,7 @@ def download_image_retry(api_key, asset: AssetT, n_try: int):
 
 def download_project_images(
     api_key: str,
-    assets: List[AssetT],
+    assets: AssetsLazyList,
     output_folder: Optional[str] = None,
 ) -> List[DownloadedImage]:
     kili_print("Downloading images to folder {}".format(output_folder))
@@ -147,7 +145,7 @@ def download_project_images(
 
 def download_project_text(
     api_key: str,
-    assets: List[AssetT],
+    assets: AssetsLazyList,
 ) -> List[DownloadedText]:
     kili_print("Downloading project text...")
     downloaded_text = []

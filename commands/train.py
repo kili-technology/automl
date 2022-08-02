@@ -1,5 +1,4 @@
-import os
-from typing import List
+from typing import List, Optional, cast
 
 import click
 from kili.client import Kili
@@ -31,6 +30,9 @@ from kiliautoml.utils.type import (
     ProjectIdT,
     ToolT,
 )
+
+import wandb  # isort:skip
+from wandb.sdk.wandb_run import Run  # isort:skip
 
 
 @click.command()
@@ -86,6 +88,7 @@ def main(
     model_evaluations = []
 
     for job_name, job in jobs.items():
+        kili_print(f"Training on job: {job_name}")
 
         ml_task = job.get("mlTask")
         assets = get_assets(
@@ -98,8 +101,9 @@ def main(
             job_name=job_name,
         )
 
-        kili_print(f"Training on job: {job_name}")
-        os.environ["WANDB_PROJECT"] = title + "_" + job_name
+        wandb_run: Optional[Run] = None
+        if not disable_wandb:
+            wandb_run = cast(Run, wandb.init(project=title + "_" + job_name, reinit=True))
 
         if clear_dataset_cache:
             clear_command_cache(
@@ -150,6 +154,8 @@ def main(
             additional_train_args_yolo=additional_train_args_yolo,
         )
 
+        if wandb_run is not None:
+            wandb_run.finish()
         model_evaluations.append((job_name, model_evaluation))
 
     kili_print()

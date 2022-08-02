@@ -10,7 +10,7 @@ setup(
         "datasets<=2.2",
         "evaluate",
         "seqeval",
-        "kili",
+        "kili==2.114",
         "jinja2",
         "nltk>=3.3",
         "numpy",
@@ -30,8 +30,7 @@ setup(
         "detectron2 @ git+https://github.com/facebookresearch/detectron2.git",
         "shapely",
         "pydantic",
-        "pygit2",
-        "pgzip",
+        "pytest-mock",
         # ################################ yolo
         "matplotlib>=3.2.2",
         "numpy>=1.18.5",

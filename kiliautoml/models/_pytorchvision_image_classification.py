@@ -24,7 +24,7 @@ from kiliautoml.utils.pytorchvision.image_classification import (
     predict_probabilities,
 )
 from kiliautoml.utils.type import (
-    AssetT,
+    AssetsLazyList,
     JobPredictions,
     JsonResponseClassification,
     MLBackendT,
@@ -68,7 +68,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
     def train(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
@@ -126,7 +126,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
     def predict(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
@@ -195,7 +195,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
     def find_errors(
         self,
         *,
-        assets: List[AssetT],
+        assets: AssetsLazyList,
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
