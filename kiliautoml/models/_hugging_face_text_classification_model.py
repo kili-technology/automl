@@ -46,10 +46,10 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
     def __init__(
         self,
         *,
-        model_init_args: BaseInitArgs,
+        base_init_args: BaseInitArgs,
     ) -> None:
-        KiliTextProjectMixin.__init__(self, model_init_args["api_key"])
-        KiliBaseModel.__init__(self, model_init_args)
+        KiliTextProjectMixin.__init__(self, base_init_args["api_key"])
+        KiliBaseModel.__init__(self, base_init_args)
 
     def train(
         self,

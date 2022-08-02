@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import torch
@@ -10,7 +10,7 @@ from cleanlab.filter import find_label_issues
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from tqdm.autonotebook import tqdm
 
-from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel
+from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelConditions
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
 from kiliautoml.utils.helpers import kili_print
@@ -27,26 +27,31 @@ from kiliautoml.utils.type import (
     AssetsLazyList,
     JobPredictions,
     JsonResponseClassification,
-    MLBackendT,
-    MLTaskT,
     ModelNameT,
-    ModelRepositoryT,
     ProjectIdT,
 )
 
 
 class PyTorchVisionImageClassificationModel(KiliBaseModel):
-    ml_task: MLTaskT = "CLASSIFICATION"
-    model_repository: ModelRepositoryT = "torchvision"
-    ml_backend: MLBackendT = "pytorch"
-    advised_model_names: List[ModelNameT] = ["efficientnet_b0", "resnet50"]
+    model_conditions = ModelConditions(
+        ml_task="CLASSIFICATION",
+        model_repository="torchvision",
+        possible_ml_backend=["pytorch"],
+        advised_model_names=[
+            "efficientnet_b0",
+            "resnet50",
+        ],
+        input_type="IMAGE",
+        content_input="radio",
+        tools=None,
+    )
 
     def __init__(
         self,
         *,
-        model_init_args: BaseInitArgs,
+        base_init_args: BaseInitArgs,
     ) -> None:
-        KiliBaseModel.__init__(self, model_init_args)
+        KiliBaseModel.__init__(self, base_init_args)
 
         # To set to False if the input size varies a lot and you see that the training takes
         # too much time
@@ -60,8 +65,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         # TODO: The list of classes the model has to deal with should be stored during
         # the initialization of each model, and not just for PyTorchVisionImageClassificationModel
         self.class_name_to_idx = {
-            category: i
-            for i, category in enumerate(model_init_args["job"]["content"]["categories"])
+            category: i for i, category in enumerate(base_init_args["job"]["content"]["categories"])
         }
         self.class_names = list(self.class_name_to_idx.keys())
 
@@ -181,7 +185,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
             model_path_set = model_path
         elif from_project is not None:
             model_path_repository_dir = Path.model_repository_dir(
-                from_project, self.job_name, self.model_repository
+                from_project, self.job_name, self.model_conditions.model_repository
             )
 
             model_path_from_project = PathPytorchVision.append_model_path(

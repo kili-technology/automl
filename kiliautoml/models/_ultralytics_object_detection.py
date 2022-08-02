@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel
+from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelConditions
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import find_all_label_errors
 from kiliautoml.utils.helpers import (
@@ -37,9 +37,6 @@ from kiliautoml.utils.type import (
     JsonResponseBboxT,
     KiliBBoxAnnotation,
     MLBackendT,
-    MLTaskT,
-    ModelNameT,
-    ModelRepositoryT,
     ProjectIdT,
 )
 
@@ -71,28 +68,34 @@ def inspect(e):
 
 
 class UltralyticsObjectDetectionModel(KiliBaseModel):
-    ml_task: MLTaskT = "OBJECT_DETECTION"
-    model_repository: ModelRepositoryT = "ultralytics"
-    ml_backend: MLBackendT = "pytorch"
-    advised_model_names: List[ModelNameT] = [
-        "yolov5n",
-        "yolov5s",
-        "yolov5m",
-        "yolov5l",
-        "yolov5x",
-        "yolov5n6",  # n6 : double resolution
-        "yolov5s6",
-        "yolov5m6",
-        "yolov5l6",
-        "yolov5x6",
-    ]
+
+    model_conditions = ModelConditions(
+        ml_task="OBJECT_DETECTION",
+        model_repository="ultralytics",
+        possible_ml_backend=["pytorch"],
+        advised_model_names=[
+            "yolov5n",
+            "yolov5s",
+            "yolov5m",
+            "yolov5l",
+            "yolov5x",
+            "yolov5n6",  # n6 : double resolution
+            "yolov5s6",
+            "yolov5m6",
+            "yolov5l6",
+            "yolov5x6",
+        ],
+        input_type="IMAGE",
+        content_input="radio",
+        tools=["rectangle"],
+    )
 
     def __init__(
         self,
         *,
-        model_init_args: BaseInitArgs,
+        base_init_args: BaseInitArgs,
     ) -> None:
-        KiliBaseModel.__init__(self, model_init_args)
+        KiliBaseModel.__init__(self, base_init_args)
 
     def train(
         self,
@@ -110,7 +113,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         _ = verbose
 
         model_repository_dir = Path.model_repository_dir(
-            self.project_id, self.job_name, self.model_repository
+            self.project_id, self.job_name, self.model_conditions.model_repository
         )
 
         yolov5_path = os.path.join(os.getcwd(), PathUltralytics.YOLOV5_REL_PATH)
@@ -458,7 +461,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
             json_response_array=job_predictions.json_response_array,
             external_id_array=job_predictions.external_id_array,
             job_name=self.job_name,
-            ml_task=self.ml_task,
+            ml_task=self.model_conditions.ml_task,
             tool="rectangle",
         )
 

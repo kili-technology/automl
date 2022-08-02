@@ -33,6 +33,8 @@ def get_appropriate_model(condition_requested: ModelConditionsRequested) -> Type
         UltralyticsObjectDetectionModel,
     ]
     for model in models:
+        if model == PyTorchVisionImageClassificationModel:
+            print(condition_requested)
         if model.model_conditions.is_compatible(condition_requested):
             return model
     raise NotImplementedError
@@ -44,7 +46,7 @@ class KiliAutoModel:
     ) -> None:
 
         Model = get_appropriate_model(condition_requested)
-        self.model = Model(base_init_args)
+        self.model = Model(base_init_args=base_init_args)
 
     def train(
         self,
