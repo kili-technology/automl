@@ -63,7 +63,7 @@ def _throttled_request(api_key, asset_content, use_header=True, k=0, error=None)
         )
 
 
-@kili_memoizer
+@kili_memoizer  # We memorize each argument but asset_content wich contains (asset_id + token)
 def _throttled_request_memoized(api_key, asset_content, asset_id):
     """Even if asset content varies his token, we use the memoized asset"""
     _ = asset_id
