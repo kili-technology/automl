@@ -1,6 +1,6 @@
 import os
 import shutil
-from typing import List, Optional
+from typing import Any, Callable, List, Optional
 
 from joblib import Memory
 from typing_extensions import get_args
@@ -34,10 +34,15 @@ def kili_project_memoizer(
     return decorator
 
 
-def kili_memoizer(some_function):
+TFunc = Callable[..., Any]
+
+
+def kili_memoizer(some_function: TFunc) -> TFunc:
+    """We ignore the argument asset_content"""
+
     def wrapper(*args, **kwargs):
         memory = Memory(AUTOML_CACHE, verbose=0)
-        return memory.cache(some_function)(*args, **kwargs)
+        return memory.cache(some_function, ignore=["asset_content"])(*args, **kwargs)
 
     return wrapper
 

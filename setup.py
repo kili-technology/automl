@@ -17,7 +17,6 @@ setup(
         "requests",
         "scikit-learn",
         "tabulate",
-        "tensorflow",
         "termcolor",
         "tqdm",
         "transformers",

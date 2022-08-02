@@ -1,8 +1,9 @@
-from typing import List
+from typing import Any, Dict, List
 
 import click
 from kili.client import Kili
 from tqdm.autonotebook import tqdm
+from typing_extensions import get_args
 
 from commands.common_args import LabelErrorOptions, Options, TrainOptions
 from kiliautoml.models import (
@@ -11,8 +12,13 @@ from kiliautoml.models import (
     UltralyticsObjectDetectionModel,
 )
 from kiliautoml.models._base_model import BaseInitArgs
-from kiliautoml.utils.helper_label_error import ErrorRecap
+from kiliautoml.utils.helper_label_error import (
+    ErrorRecap,
+    LabelingError,
+    LabelingErrorTypeT,
+)
 from kiliautoml.utils.helpers import (
+    curated_job,
     get_assets,
     get_content_input_from_job,
     get_project,
@@ -26,37 +32,141 @@ from kiliautoml.utils.type import (
     JobNameT,
     LabelMergeStrategyT,
     MLBackendT,
-    MLTaskT,
     ModelNameT,
     ModelRepositoryT,
     ProjectIdT,
-    ToolT,
 )
 
 
-def upload_errors_to_kili(error_recap: ErrorRecap, kili):
-    kili_print("Updating metadatas for the concerned assets")
+def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: ProjectIdT):
+    kili_print("\nUpdating metadata for the concerned assets")
 
-    print()
-    found_errors = [asset_error for asset_error in error_recap if asset_error]
-    kili_print("Number of wrong labels found: ", len(found_errors))
+    found_errors = [len(asset_error) for asset_error in error_recap.errors_by_asset]
+    kili_print("Number of wrong labels found: ", sum(found_errors))
 
-    asset_ids = error_recap.id_array
-    first = min(100, len(asset_ids))
+    id_errors_tuples = list(zip(error_recap.id_array, error_recap.errors_by_asset))
+    first = min(100, len(id_errors_tuples))
     for skip in tqdm(
-        range(0, len(asset_ids), first),
+        range(0, len(id_errors_tuples), first),
         desc="Updating asset metadata with labeling error flag",
     ):
-        error_assets = kili.assets(
-            asset_id_in=asset_ids[skip : skip + first], fields=["id", "metadata"]
+        ids_errors = id_errors_tuples[skip : skip + first]
+        errors_by_asset = [a[1] for a in ids_errors]
+        asset_ids = [a[0] for a in ids_errors]
+
+        # *_set means shuffled
+        error_assets_set: List[Dict[str, str]] = kili.assets(
+            asset_id_in=asset_ids,  # type:ignore
+            fields=["id", "metadata"],
+            project_id=project_id,
         )
-        asset_ids = [asset["id"] for asset in error_assets]
-        new_metadatas = [asset["metadata"] for asset in error_assets]
+        asset_ids_set = [asset["id"] for asset in error_assets_set]
 
-        for meta in new_metadatas:
-            meta["labeling_error"] = True
+        # unshuffle
+        error_assets = [error_assets_set[asset_ids_set.index(id)] for id in asset_ids]
+        metadata = [asset["metadata"] for asset in error_assets]
 
-        kili.update_properties_in_assets(asset_ids=asset_ids, json_metadatas=new_metadatas)
+        for i, (meta, errors) in enumerate(zip(metadata, errors_by_asset)):
+            update_asset_metadata(
+                meta,  # type: ignore
+                errors,
+            )
+            metadata[i] = meta
+
+        kili.update_properties_in_assets(
+            asset_ids=asset_ids,  # type:ignore
+            json_metadatas=metadata,  # type:ignore
+        )
+
+
+def update_asset_metadata(meta: Dict[str, Any], errors: List[LabelingError]):
+    for error_type in get_args(LabelingErrorTypeT):
+        meta.pop(f"has_{error_type}", None)
+    meta.pop("error_labeling", None)
+    meta.pop("error_type", None)
+    meta.pop("error_probability", None)
+    meta.pop("error_asset_detail", None)
+
+    if len(errors) == 0:
+        return
+
+    meta["error_labeling"] = "True"
+
+    # We can only have one error type by asset
+    main_error = max(errors)
+    meta["error_type"] = str(main_error.error_type)
+    meta["error_probability"] = str(main_error.error_probability)
+
+    # Getting the details
+    mapping_error_cat_to_nb = {error.error_type: 0 for error in errors}
+    for error in errors:
+        mapping_error_cat_to_nb[error.error_type] += 1
+        meta[f"has_{error.error_type}"] = str(True)
+    meta["error_asset_detail"] = str(mapping_error_cat_to_nb)
+
+
+def label_error(
+    *,
+    api_key,
+    clear_dataset_cache,
+    epochs,
+    batch_size,
+    verbose,
+    cv_folds,
+    input_type,
+    job_name,
+    content_input,
+    ml_task,
+    tools,
+    assets,
+    base_init_args,
+):
+    if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
+        image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
+        found_errors = image_classification_model.find_errors(
+            assets=assets,
+            cv_n_folds=cv_folds,
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=verbose,
+            api_key=api_key,
+        )
+
+    elif (
+        content_input == "radio"
+        and input_type == "IMAGE"
+        and ml_task == "OBJECT_DETECTION"
+        and "rectangle" in tools
+    ):
+        model = UltralyticsObjectDetectionModel(**base_init_args)
+        found_errors = model.find_errors(
+            cv_n_folds=cv_folds,
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=verbose,
+            api_key=api_key,
+            assets=assets,
+            clear_dataset_cache=clear_dataset_cache,
+        )
+    elif is_contours_detection(input_type, ml_task, content_input, tools):
+        model = Detectron2SemanticSegmentationModel(**base_init_args)
+        found_errors = model.find_errors(
+            cv_n_folds=cv_folds,
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=verbose,
+            api_key=api_key,
+            assets=assets,
+            clear_dataset_cache=clear_dataset_cache,
+        )
+    else:
+        not_implemented_job(job_name, ml_task, tools)
+        raise Exception(
+            f"Not implemented label_error MLtask : {ml_task} for job {job_name}. Please use"
+            " --target-job XXX"
+        )
+
+    return found_errors
 
 
 @click.command()
@@ -67,6 +177,7 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili):
 @Options.model_name
 @Options.model_repository
 @Options.target_job
+@Options.ignore_job
 @Options.max_assets
 @Options.clear_dataset_cache
 @Options.randomize_assets
@@ -77,6 +188,7 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili):
 @Options.label_merge_strategy
 @LabelErrorOptions.cv_folds
 @LabelErrorOptions.dry_run
+@LabelErrorOptions.erase_error_metadata
 def main(
     project_id: ProjectIdT,
     api_endpoint: str,
@@ -84,6 +196,7 @@ def main(
     clear_dataset_cache: bool,
     ml_backend: MLBackendT,
     target_job: List[JobNameT],
+    ignore_job: List[JobNameT],
     model_repository: ModelRepositoryT,
     dry_run: bool,
     epochs: int,
@@ -95,6 +208,7 @@ def main(
     model_name: ModelNameT,
     verbose: int,
     cv_folds: int,
+    erase_error_metadata: bool,
 ):
     """
     Detect incorrectly labeled assets in a Kili project.
@@ -106,16 +220,13 @@ def main(
     """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
+    jobs = curated_job(jobs, target_job, ignore_job)
 
     for job_name, job in jobs.items():
-        if target_job and job_name not in target_job:
-            continue
-        if "MARKER" in job_name:
-            continue
         kili_print(f"Detecting errors for job: {job_name}")
         content_input = get_content_input_from_job(job)
-        ml_task: MLTaskT = job.get("mlTask")  # type: ignore
-        tools: List[ToolT] = job.get("tools")
+        ml_task = job.get("mlTask")
+        tools = job.get("tools")
 
         # We should delete ml_backend
         if clear_dataset_cache:
@@ -144,50 +255,31 @@ def main(
             "project_id": project_id,
         }
 
-        if content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
-
-            image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
-            found_errors = image_classification_model.find_errors(
-                assets=assets,
-                cv_n_folds=cv_folds,
-                epochs=epochs,
-                batch_size=batch_size,
-                verbose=verbose,
+        empty_errors_recap = ErrorRecap(
+            external_id_array=[a.externalId for a in assets],
+            id_array=[a.id for a in assets],
+            errors_by_asset=[[] for _ in assets],
+        )
+        found_errors = (
+            label_error(
                 api_key=api_key,
-            )
-
-        elif (
-            content_input == "radio"
-            and input_type == "IMAGE"
-            and ml_task == "OBJECT_DETECTION"
-            and "rectangle" in tools
-        ):
-
-            model = UltralyticsObjectDetectionModel(**base_init_args)
-            found_errors = model.find_errors(
-                cv_n_folds=cv_folds,
-                epochs=epochs,
-                batch_size=batch_size,
-                verbose=verbose,
-                api_key=api_key,
-                assets=assets,
                 clear_dataset_cache=clear_dataset_cache,
-            )
-        elif is_contours_detection(input_type, ml_task, content_input, tools):
-            model = Detectron2SemanticSegmentationModel(**base_init_args)
-            found_errors = model.find_errors(
-                cv_n_folds=cv_folds,
                 epochs=epochs,
                 batch_size=batch_size,
                 verbose=verbose,
-                api_key=api_key,
+                cv_folds=cv_folds,
+                input_type=input_type,
+                job_name=job_name,
+                content_input=content_input,
+                ml_task=ml_task,
+                tools=tools,
                 assets=assets,
-                clear_dataset_cache=clear_dataset_cache,
+                base_init_args=base_init_args,
             )
-        else:
-            not_implemented_job(job_name, ml_task, tools)
-            raise Exception("Not implemented label_error MLtask.")
+            if not erase_error_metadata
+            else empty_errors_recap
+        )
 
         if found_errors:
             if not dry_run:
-                upload_errors_to_kili(found_errors, kili)
+                upload_errors_to_kili(found_errors, kili, project_id)

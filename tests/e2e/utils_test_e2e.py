@@ -120,6 +120,8 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "--cv-folds",
             "2",
             "--dry-run",
+            "--max-assets",
+            "2",
         ]
     elif command == "predict":
         args = [

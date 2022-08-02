@@ -179,7 +179,7 @@ class JobT(TypedDict):
     content: Dict[Literal["categories"], OntologyCategoriesT]  # Is this general?
     instruction: str
     isChild: bool
-    tools: Any  # example: ["semantic"],
+    tools: List[ToolT]
     mlTask: MLTaskT
     models: Any  # example: {"interactive-segmentation": {"job": "SEMANTIC_JOB_MARKER"}},
     isVisible: bool

@@ -12,7 +12,6 @@ scikit-learn
 evaluate
 seqeval
 tabulate
-tensorflow
 termcolor
 tqdm
 transformers

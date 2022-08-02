@@ -282,9 +282,10 @@ def not_implemented_job(job_name: JobNameT, ml_task: MLTaskT, tools: List[ToolT]
     else:
         kili_print(f"MLTask {ml_task} for job {job_name} is not yet supported")
         kili_print(
-            "You can use the repeatable flag --target-job "
+            f"You can use --ignore-job {job_name}"
+            "\n(You can also use the repeatable flag --target-job "
             "(for example: --target-job job_name1 --target-job job_name2) "
-            "to select one or multiple jobs."
+            "to select one or multiple jobs.)"
         )
         raise NotImplementedError
 
@@ -330,3 +331,28 @@ def is_contours_detection(input_type, ml_task, content_input, tools):
         and ml_task == "OBJECT_DETECTION"
         and any(tool in tools for tool in ["semantic", "polygon"])
     )
+
+
+def curated_job(jobs: JobsT, target_job: List[JobNameT], ignore_job: List[JobNameT]) -> JobsT:
+    """Remove from the jobs dict the ignored job and keep only the target job"""
+    assert set(target_job).isdisjoint(ignore_job), "target_job and ignore_job should be disjoint."
+    assert set(target_job).issubset(jobs.keys()), f"target_job is not a subset of {jobs.keys()}"
+    assert set(ignore_job).issubset(jobs.keys()), f"ignore_job is not a subset of {jobs.keys()}"
+
+    marker_jobs = [job_name for job_name in jobs.keys() if "_MARKER" in job_name]
+    ignore_job = list(set(list(ignore_job) + marker_jobs))
+
+    kept_job = list(jobs.keys())
+    if target_job:
+        kept_job = target_job
+    if ignore_job:
+        kept_job = list(set(kept_job) - set(ignore_job))
+
+    assert len(kept_job)
+
+    new_job = {}
+    for job_name, job in jobs.items():
+        if job_name in kept_job:
+            new_job[job_name] = job
+
+    return new_job

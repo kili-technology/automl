@@ -13,6 +13,7 @@ from kiliautoml.models import (
 )
 from kiliautoml.models._base_model import BaseInitArgs
 from kiliautoml.utils.helpers import (
+    curated_job,
     get_assets,
     get_content_input_from_job,
     get_project,
@@ -149,6 +150,7 @@ def predict_one_job(
 @Options.model_name
 @Options.model_repository
 @Options.target_job
+@Options.ignore_job
 @Options.randomize_assets
 @Options.max_assets
 @Options.clear_dataset_cache
@@ -164,6 +166,7 @@ def main(
     api_key: str,
     asset_status_in: List[AssetStatusT],
     target_job: List[JobNameT],
+    ignore_job: List[JobNameT],
     dry_run: bool,
     from_model: Optional[MLBackendT],
     verbose: bool,
@@ -179,15 +182,13 @@ def main(
     """Compute predictions and upload them to Kili."""
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
+    jobs = curated_job(jobs, target_job, ignore_job)
+
     assets = get_assets(
         kili, project_id, asset_status_in, max_assets=max_assets, randomize=randomize_assets
     )
 
     for job_name, job in jobs.items():
-        if target_job and job_name not in target_job:
-            continue
-        if "MARKER" in job_name:
-            continue
         kili_print(f"Predicting annotations for job: {job_name}")
         content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")

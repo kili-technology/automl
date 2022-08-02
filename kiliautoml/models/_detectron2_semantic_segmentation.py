@@ -15,6 +15,7 @@ from detectron2.structures import BoxMode
 from detectron2.utils.logger import setup_logger
 from detectron2.utils.visualizer import ColorMode, Visualizer
 from PIL import Image
+from tqdm.autonotebook import tqdm
 
 from kiliautoml.models._base_model import BaseModel
 from kiliautoml.utils.detectron2.utils_detectron import (
@@ -47,7 +48,8 @@ from kiliautoml.utils.type import (
 setup_logger()
 
 
-class Detectron2SemanticSegmentationModel(BaseModel):  #
+class Detectron2SemanticSegmentationModel(BaseModel):
+
     ml_task: MLTaskT = "OBJECT_DETECTION"
     model_repository: ModelRepositoryT = "detectron2"
     ml_backend: MLBackendT = "pytorch"
@@ -287,7 +289,7 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
         # 3. Predict
         id_json_list: List[Tuple[str, Dict[JobNameT, JsonResponseSemanticT]]] = []  # type: ignore
 
-        for image in downloaded_images:
+        for image in tqdm(downloaded_images, desc="Predicting"):
             im = cv2.imread(image.filepath)
             outputs = predictor(im)
 
@@ -401,4 +403,5 @@ class Detectron2SemanticSegmentationModel(BaseModel):  #
             external_id_array=job_predictions.external_id_array,
             job_name=self.job_name,
             ml_task=self.ml_task,
+            tool="semantic",
         )
