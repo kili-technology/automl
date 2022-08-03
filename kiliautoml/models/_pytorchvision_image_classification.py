@@ -10,7 +10,12 @@ from cleanlab.filter import find_label_issues
 from sklearn.model_selection import StratifiedKFold, train_test_split
 from tqdm.autonotebook import tqdm
 
-from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelConditions
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    KiliBaseModel,
+    ModalTrainArgs,
+    ModelConditions,
+)
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
 from kiliautoml.utils.helpers import kili_print
@@ -79,8 +84,9 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         disable_wandb: bool,
         verbose: int = 1,
         api_key: str = "",
+        modal_train_args: ModalTrainArgs,
     ):
-        _ = clear_dataset_cache
+        _ = clear_dataset_cache, modal_train_args
 
         if disable_wandb is False:
             warnings.warn("Wandb is not supported for this model.")

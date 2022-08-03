@@ -15,7 +15,12 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelConditions
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    KiliBaseModel,
+    ModalTrainArgs,
+    ModelConditions,
+)
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import find_all_label_errors
 from kiliautoml.utils.helpers import (
@@ -25,7 +30,6 @@ from kiliautoml.utils.helpers import (
 )
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import (
-    AdditionalTrainingArgsT,
     AssetExternalIdT,
     AssetsLazyList,
     AssetT,
@@ -106,9 +110,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         clear_dataset_cache: bool,
         disable_wandb: bool,
         verbose: int,
-        title: str,
-        api_key: str,
-        additional_train_args_yolo: AdditionalTrainingArgsT,
+        modal_train_args: ModalTrainArgs,
     ):
         _ = verbose
 
@@ -127,14 +129,16 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
             kili_print("Dataset cache for this project is being cleared.")
             shutil.rmtree(data_path)
 
-        model_output_path = self._get_output_path_bbox(title, model_repository_dir, self.ml_backend)
+        model_output_path = self._get_output_path_bbox(
+            self.title, model_repository_dir, self.ml_backend
+        )
         os.makedirs(model_output_path, exist_ok=True)
 
         os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
         self._yaml_preparation(
             data_path=data_path,
             class_names=class_names,
-            kili_api_key=api_key,
+            kili_api_key=self.api_key,
             assets=assets,
         )
 
@@ -146,7 +150,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
                     number_classes=len(class_names),
                 )
             )
-
+        additional_train_args_yolo = modal_train_args["additional_train_args_yolo"]
         if not additional_train_args_yolo:
             additional_train_args_yolo = {}
         additional_train_args_yolo["epochs"] = epochs

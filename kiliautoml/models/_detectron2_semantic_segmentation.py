@@ -17,7 +17,12 @@ from detectron2.utils.visualizer import ColorMode, Visualizer
 from PIL import Image
 from tqdm.autonotebook import tqdm
 
-from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelConditions
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    KiliBaseModel,
+    ModalTrainArgs,
+    ModelConditions,
+)
 from kiliautoml.utils.detectron2.utils_detectron import (
     CocoFormat,
     convert_kili_semantic_to_coco,
@@ -32,10 +37,8 @@ from kiliautoml.utils.type import (
     CategoryT,
     JobNameT,
     JobPredictions,
-    JobT,
     JsonResponseSemanticT,
     KiliSemanticAnnotation,
-    LabelMergeStrategyT,
     NormalizedVertice,
     NormalizedVertices,
     ProjectIdT,
@@ -61,9 +64,9 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
     def __init__(
         self,
         *,
-        base_init_arg: BaseInitArgs,
+        base_init_args: BaseInitArgs,
     ):
-        KiliBaseModel.__init__(self, base_init_arg)
+        KiliBaseModel.__init__(self, base_init_args)
 
     @staticmethod
     def _convert_coco_to_detectron(img_dir):
@@ -112,20 +115,17 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         self,
         *,
         assets: AssetsLazyList,
-        label_merge_strategy: LabelMergeStrategyT,
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
         verbose: int,
-        api_key: str,
-        job: JobT,
+        modal_train_args: ModalTrainArgs,
     ):
         """Download Kili assets, convert to coco format, then to detectron2 format, train model."""
-        _ = verbose
+        _ = verbose, modal_train_args
         if not disable_wandb:
             kili_print("Wandb is not yet available on Detectron2. But tensorboard is available.")
-        _ = label_merge_strategy
 
         model_path_repository_dir = (
             Path.model_repository_dir(  # TODO: Use instead self.model_repository_dir
@@ -139,12 +139,12 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         eval_dir = PathDetectron2.append_output_evaluation(model_path_repository_dir)
 
         # 1. Convert to COCO format
-        full_classes = categories_from_job(job=job)
+        full_classes = categories_from_job(job=self.job)
         _, _classes = convert_kili_semantic_to_coco(
             job_name=self.job_name,
             assets=assets,
             output_dir=data_dir,
-            api_key=api_key,
+            api_key=self.api_key,
             job=self.job,
         )
 
@@ -229,7 +229,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         kili_print("The model and the logs will be be saved in ", cfg.OUTPUT_DIR)
         return cfg
 
-    def predict(  # type: ignore
+    def predict(
         self,
         *,
         assets: AssetsLazyList,
@@ -238,8 +238,6 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         batch_size: int,
         verbose: int,
         clear_dataset_cache: bool,
-        api_key: str = "",
-        job: JobT,
     ):
         _ = verbose
         if from_project:
@@ -256,10 +254,10 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         visualization_dir = PathDetectron2.append_output_visualization(model_path_repository_dir)
 
         downloaded_images = download_project_images(
-            api_key=api_key, assets=assets, output_folder=data_dir
+            api_key=self.api_key, assets=assets, output_folder=data_dir
         )
 
-        full_classes = categories_from_job(job=job)
+        full_classes = categories_from_job(job=self.job)
         assert len(set(full_classes)) == len(full_classes)
 
         cfg = self._get_cfg_kili(
@@ -373,7 +371,6 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         batch_size: int,
         verbose: int = 0,
         clear_dataset_cache: bool = False,
-        api_key: str = "",
     ):
         _ = cv_n_folds
         _ = epochs
@@ -385,8 +382,6 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             batch_size=batch_size,
             verbose=verbose,
             clear_dataset_cache=clear_dataset_cache,
-            api_key=api_key,
-            job=self.job,  # TODO: self here is not clean
         )
 
         return find_all_label_errors(

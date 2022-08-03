@@ -156,7 +156,6 @@ def label_error(
             epochs=epochs,
             batch_size=batch_size,
             verbose=verbose,
-            api_key=api_key,
             assets=assets,
             clear_dataset_cache=clear_dataset_cache,
         )
@@ -220,7 +219,7 @@ def main(
     easily filter them later in the app.
     """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
-    input_type, jobs, _ = get_project(kili, project_id)
+    input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
 
     for job_name, job in jobs.items():
@@ -257,6 +256,7 @@ def main(
             ml_backend=ml_backend,
             api_key=api_key,
             api_endpoint=api_endpoint,
+            title=title,
         )
 
         condition_requested = ModelConditionsRequested(

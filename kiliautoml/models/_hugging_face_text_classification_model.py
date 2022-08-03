@@ -13,11 +13,15 @@ from transformers import Trainer
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
-from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelConditions
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    KiliBaseModel,
+    ModalTrainArgs,
+    ModelConditions,
+)
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
-    AdditionalTrainingArgsT,
     AssetsLazyList,
     JobPredictions,
     JsonResponseClassification,
@@ -40,7 +44,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         ],
         input_type="TEXT",
         content_input="radio",
-        tools=["semantic", "polygon"],
+        tools=["rectangle"],  # ? Wtf
     )
 
     def __init__(
@@ -60,7 +64,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
         verbose: int,
-        additional_train_args_hg: AdditionalTrainingArgsT,
+        modal_train_args: ModalTrainArgs,
     ):
         _ = verbose
 
@@ -113,7 +117,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
             disable_wandb=disable_wandb,
             epochs=epochs,
             batch_size=batch_size,
-            additional_train_args_hg=additional_train_args_hg,
+            additional_train_args_hg=modal_train_args["additional_train_args_hg"],
         )
 
         trainer = Trainer(

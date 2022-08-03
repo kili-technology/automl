@@ -11,11 +11,11 @@ from kiliautoml.models._base_model import (
     BaseInitArgs,
     BaseTrainArgs,
     KiliBaseModel,
+    ModalTrainArgs,
     ModelConditionsRequested,
 )
 from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.type import (
-    AdditionalTrainingArgsT,
     AssetsLazyList,
     DictTrainingInfosT,
     JobPredictions,
@@ -52,14 +52,9 @@ class KiliAutoModel:
         self,
         *,
         base_train_args: BaseTrainArgs,
-        additional_train_args_yolo: AdditionalTrainingArgsT,
-        additional_train_args_hg: AdditionalTrainingArgsT,
+        modal_train_args: ModalTrainArgs,
     ) -> DictTrainingInfosT:
-        return self.model.train(
-            **base_train_args,
-            additional_train_args_yolo=additional_train_args_yolo,
-            additional_train_args_hg=additional_train_args_hg,
-        )
+        return self.model.train(**base_train_args, modal_train_args=modal_train_args)
 
     def predict(
         self,

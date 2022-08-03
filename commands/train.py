@@ -7,6 +7,7 @@ from commands.common_args import Options, TrainOptions
 from kiliautoml.models._base_model import (
     BaseInitArgs,
     BaseTrainArgs,
+    ModalTrainArgs,
     ModelConditionsRequested,
 )
 from kiliautoml.models.kili_auto_model import KiliAutoModel
@@ -125,6 +126,7 @@ def main(
             ml_backend=ml_backend,
             api_key=api_key,
             api_endpoint=api_endpoint,
+            title=title,
         )
 
         base_train_args = BaseTrainArgs(
@@ -134,6 +136,11 @@ def main(
             clear_dataset_cache=clear_dataset_cache,
             disable_wandb=disable_wandb,
             verbose=verbose,
+        )
+
+        modal_train_args = ModalTrainArgs(
+            additional_train_args_yolo=additional_train_args_yolo,
+            additional_train_args_hg=additional_train_args_hg,
         )
         condition_requested = ModelConditionsRequested(
             input_type=input_type,
@@ -149,9 +156,7 @@ def main(
             condition_requested=condition_requested,
         )
         model_evaluation = model.train(
-            base_train_args=base_train_args,
-            additional_train_args_hg=additional_train_args_hg,
-            additional_train_args_yolo=additional_train_args_yolo,
+            base_train_args=base_train_args, modal_train_args=modal_train_args
         )
 
         if wandb_run is not None:

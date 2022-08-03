@@ -7,6 +7,7 @@ from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.helpers import set_default
 from kiliautoml.utils.path import Path
 from kiliautoml.utils.type import (
+    AdditionalTrainingArgsT,
     AssetsLazyList,
     ContentInputT,
     DictTrainingInfosT,
@@ -24,6 +25,8 @@ from kiliautoml.utils.type import (
 
 
 class BaseInitArgs(TypedDict):
+    """Common to all modalities"""
+
     job: JobT
     job_name: JobNameT
     model_name: Optional[ModelNameT]
@@ -31,9 +34,12 @@ class BaseInitArgs(TypedDict):
     ml_backend: MLBackendT
     api_key: str
     api_endpoint: Optional[str]
+    title: str
 
 
 class BaseTrainArgs(TypedDict):
+    """Common to all modalities"""
+
     assets: AssetsLazyList
     epochs: int
     batch_size: int
@@ -42,7 +48,16 @@ class BaseTrainArgs(TypedDict):
     verbose: int
 
 
+class ModalTrainArgs(TypedDict):
+    """Used only for some modalities"""
+
+    additional_train_args_hg: AdditionalTrainingArgsT
+    additional_train_args_yolo: AdditionalTrainingArgsT
+
+
 class BasePredictArgs(TypedDict):
+    """Common to all modalities"""
+
     assets: AssetsLazyList
     model_path: Optional[str]
     from_project: Optional[ProjectIdT]
@@ -88,7 +103,9 @@ class ModelConditions:
             and self.ml_task == cdt_requested.ml_task
             and self.content_input == cdt_requested.content_input
         )
-        tools_ok = self.tools is None or cdt_requested.tools == self.tools
+        tools_ok = self.tools is None or set(cdt_requested.tools).issubset(set(self.tools))
+        print(cdt_requested)
+        print(self)
         if strict_conditions and tools_ok:
             # We then check the loose conditions
             self._check_compatible(cdt_requested.ml_backend, self.possible_ml_backend, "ml_backend")
@@ -132,6 +149,7 @@ class KiliBaseModel:
         )
         self.api_key = base_init_args["api_key"]
         self.api_endpoint = base_init_args["api_endpoint"]
+        self.title = base_init_args["title"]
 
     def train(
         self,
@@ -142,7 +160,7 @@ class KiliBaseModel:
         clear_dataset_cache: bool,
         disable_wandb: bool,
         verbose: int,
-        **kwargs,
+        modal_train_args: ModalTrainArgs,
     ) -> DictTrainingInfosT:
         ...
 

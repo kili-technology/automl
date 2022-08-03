@@ -13,7 +13,12 @@ from transformers import DataCollatorForTokenClassification, Trainer
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
-from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelConditions
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    KiliBaseModel,
+    ModalTrainArgs,
+    ModelConditions,
+)
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
@@ -66,6 +71,7 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         disable_wandb: bool,
         verbose: int,
         additional_train_args_hg: AdditionalTrainingArgsT = {},
+        modal_train_args: ModalTrainArgs,
     ):
         """
         Sources:
@@ -73,7 +79,7 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
         - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
         """
-        _ = verbose
+        _ = verbose, modal_train_args
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(

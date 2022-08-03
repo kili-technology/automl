@@ -170,7 +170,7 @@ class PredictOptions:
         help="Runs the predictions but do not save them into the Kili project",
     )
     model_path = click.option(
-        "--from-model",
+        "--model-path",
         default=None,
         help="Runs the predictions using a specified model path",
     )

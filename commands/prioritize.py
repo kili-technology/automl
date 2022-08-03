@@ -374,7 +374,7 @@ def main(
         raise ValueError("max_assets should be greater than 10")
 
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
-    input_type, jobs, _ = get_project(kili, project_id)
+    input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
 
     jobs_item = list(jobs.items())
@@ -407,6 +407,7 @@ def main(
         ml_backend=ml_backend,
         api_key=api_key,
         api_endpoint=api_endpoint,
+        title=title,
     )
     predict_args = BasePredictArgs(
         assets=unlabeled_assets,
