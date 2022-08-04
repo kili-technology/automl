@@ -23,6 +23,7 @@ from kiliautoml.utils.type import (
     MLBackendT,
     ModelNameT,
     ModelRepositoryT,
+    ParityFilterT,
     ProjectIdT,
 )
 
@@ -40,6 +41,7 @@ from kiliautoml.utils.type import (
 @Options.max_assets
 @Options.clear_dataset_cache
 @Options.batch_size
+@Options.parity_filter
 @Options.verbose
 @PredictOptions.asset_status_in
 @PredictOptions.model_path
@@ -58,6 +60,7 @@ def main(
     max_assets: Optional[int],
     randomize_assets: bool,
     from_project: Optional[ProjectIdT],
+    parity_filter: ParityFilterT,
     model_name: Optional[ModelNameT],
     model_repository: Optional[ModelRepositoryT],
     ml_backend: MLBackendT,
@@ -70,7 +73,12 @@ def main(
     jobs = curated_job(jobs, target_job, ignore_job)
 
     assets = get_assets(
-        kili, project_id, asset_status_in, max_assets=max_assets, randomize=randomize_assets
+        kili,
+        project_id,
+        asset_status_in,
+        max_assets=max_assets,
+        randomize=randomize_assets,
+        parity_filter=parity_filter,
     )
 
     for job_name, job in jobs.items():

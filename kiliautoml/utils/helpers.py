@@ -30,6 +30,7 @@ from kiliautoml.utils.type import (
     JobT,
     LabelMergeStrategyT,
     MLTaskT,
+    ParityFilterT,
     ProjectIdT,
     ToolT,
 )
@@ -106,6 +107,7 @@ def get_assets(
     randomize: bool = False,
     strategy: LabelMergeStrategyT = "last",
     job_name: Optional[JobNameT] = None,
+    parity_filter: ParityFilterT = "none",
 ) -> AssetsLazyList:
     """
     job_name is used if status_in does not have only unlabeled statuses
@@ -149,10 +151,24 @@ def get_assets(
         only_labeled_status = not any(status in status_in for status in ["TO DO", "ONGOING"])
         if job_name is not None and only_labeled_status:
             assets = filter_labeled_assets(job_name, strategy, assets)
+
+    assets = filter_parity(parity_filter, assets)
+
     if len(assets) == 0:
         kili_print(f"No {status_in} assets found in project {project_id}.")
         raise Exception("There is no asset matching the query.")
     return assets
+
+
+def filter_parity(parity_filter: ParityFilterT, assets: AssetsLazyList):
+    parity = [0, 1]
+    if parity_filter == "keep-even":
+        parity = [0]
+    if parity_filter == "keep-even":
+        parity = [1]
+    assets_ = [a for a in assets if hash(a.externalId) % 2 in parity]
+
+    return AssetsLazyList(assets_)
 
 
 TYPE_ORDER = {

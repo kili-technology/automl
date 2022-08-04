@@ -28,6 +28,7 @@ from kiliautoml.utils.type import (
     MLBackendT,
     ModelNameT,
     ModelRepositoryT,
+    ParityFilterT,
     ProjectIdT,
     ToolT,
 )
@@ -51,6 +52,7 @@ from wandb.sdk.wandb_run import Run  # isort:skip
 @Options.batch_size
 @Options.verbose
 @Options.label_merge_strategy
+@Options.parity_filter
 @TrainOptions.asset_status_in
 @TrainOptions.epochs
 @TrainOptions.disable_wandb
@@ -74,6 +76,7 @@ def main(
     disable_wandb: bool,
     verbose: int,
     batch_size: int,
+    parity_filter: ParityFilterT,
     additional_train_args_hg: AdditionalTrainingArgsT,
     additional_train_args_yolo: AdditionalTrainingArgsT,
 ):
@@ -100,6 +103,7 @@ def main(
             randomize=randomize_assets,
             strategy=label_merge_strategy,
             job_name=job_name,
+            parity_filter=parity_filter,
         )
 
         wandb_run: Optional[Run] = None
