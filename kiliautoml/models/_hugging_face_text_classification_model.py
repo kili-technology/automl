@@ -44,7 +44,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         ],
         input_type="TEXT",
         content_input="radio",
-        tools=["rectangle"],  # ? Wtf
+        tools=None,
     )
 
     def __init__(
