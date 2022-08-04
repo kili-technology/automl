@@ -103,7 +103,11 @@ class ModelConditions:
             and self.ml_task == cdt_requested.ml_task
             and self.content_input == cdt_requested.content_input
         )
-        tools_ok = self.tools is None or set(cdt_requested.tools).issubset(set(self.tools))
+        tools_ok = (
+            self.tools is None
+            or cdt_requested.tools is None
+            or set(cdt_requested.tools).issubset(set(self.tools))
+        )
         print(cdt_requested)
         print(self)
         if strict_conditions and tools_ok:
