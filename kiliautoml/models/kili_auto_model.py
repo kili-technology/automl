@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import List, Type
 
 from kiliautoml.models import (
     Detectron2SemanticSegmentationModel,
@@ -9,18 +9,15 @@ from kiliautoml.models import (
 )
 from kiliautoml.models._base_model import (
     BaseInitArgs,
+    BaseLabelErrorsArgs,
+    BasePredictArgs,
     BaseTrainArgs,
     KiliBaseModel,
     ModalTrainArgs,
     ModelConditionsRequested,
 )
 from kiliautoml.utils.helper_label_error import ErrorRecap
-from kiliautoml.utils.type import (
-    AssetsLazyList,
-    DictTrainingInfosT,
-    JobPredictions,
-    ProjectIdT,
-)
+from kiliautoml.utils.type import DictTrainingInfosT, JobPredictions
 
 
 def get_appropriate_model(condition_requested: ModelConditionsRequested) -> Type[KiliBaseModel]:
@@ -33,8 +30,6 @@ def get_appropriate_model(condition_requested: ModelConditionsRequested) -> Type
         UltralyticsObjectDetectionModel,
     ]
     for model in models:
-        if model == PyTorchVisionImageClassificationModel:
-            print(condition_requested)
         if model.model_conditions.is_compatible(condition_requested):
             return model
     raise NotImplementedError
@@ -56,40 +51,8 @@ class KiliAutoModel:
     ) -> DictTrainingInfosT:
         return self.model.train(**base_train_args, modal_train_args=modal_train_args)
 
-    def predict(
-        self,
-        *,
-        assets: AssetsLazyList,
-        model_path: Optional[str],
-        from_project: Optional[ProjectIdT],
-        batch_size: int,
-        verbose: int,
-        clear_dataset_cache: bool,
-    ) -> JobPredictions:
-        return self.model.predict(
-            assets=assets,
-            model_path=model_path,
-            batch_size=batch_size,
-            clear_dataset_cache=clear_dataset_cache,
-            verbose=verbose,
-            from_project=from_project,
-        )
+    def predict(self, *, base_predict_args: BasePredictArgs) -> JobPredictions:
+        return self.model.predict(**base_predict_args)
 
-    def find_errors(
-        self,
-        *,
-        assets: AssetsLazyList,
-        cv_n_folds: int,
-        epochs: int,
-        batch_size: int,
-        verbose: int,
-        clear_dataset_cache: bool,
-    ) -> ErrorRecap:
-        return self.model.find_errors(
-            assets=assets,
-            cv_n_folds=cv_n_folds,
-            epochs=epochs,
-            batch_size=batch_size,
-            verbose=verbose,
-            clear_dataset_cache=clear_dataset_cache,
-        )
+    def find_errors(self, *, base_label_errors_args: BaseLabelErrorsArgs) -> ErrorRecap:
+        return self.model.find_errors(**base_label_errors_args)

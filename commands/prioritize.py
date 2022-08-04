@@ -428,7 +428,7 @@ def main(
     )
 
     model = KiliAutoModel(condition_requested=condition_requested, base_init_args=base_init_args)
-    job_predictions = model.predict(**predict_args)
+    job_predictions = model.predict(base_predict_args=predict_args)
 
     if input_type == "IMAGE":
         downloaded_images = download_project_images(api_key, unlabeled_assets, output_folder=None)

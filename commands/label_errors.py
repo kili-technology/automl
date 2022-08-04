@@ -11,7 +11,11 @@ from kiliautoml.models import (
     PyTorchVisionImageClassificationModel,
     UltralyticsObjectDetectionModel,
 )
-from kiliautoml.models._base_model import BaseInitArgs, ModelConditionsRequested
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    BaseLabelErrorsArgs,
+    ModelConditionsRequested,
+)
 from kiliautoml.models.kili_auto_model import KiliAutoModel
 from kiliautoml.utils.helper_label_error import (
     ErrorRecap,
@@ -65,18 +69,18 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: Proje
 
         # unshuffle
         error_assets = [error_assets_set[asset_ids_set.index(id)] for id in asset_ids]
-        metadatas = [asset["metadata"] for asset in error_assets]
+        metadata = [asset["metadata"] for asset in error_assets]
 
-        for i, (meta, errors) in enumerate(zip(metadatas, errors_by_asset)):
+        for i, (meta, errors) in enumerate(zip(metadata, errors_by_asset)):
             update_asset_metadata(
                 meta,  # type: ignore
                 errors,
             )
-            metadatas[i] = meta
+            metadata[i] = meta
 
         kili.update_properties_in_assets(
             asset_ids=asset_ids,  # type:ignore
-            json_metadatas=metadatas,  # type:ignore
+            json_metadata=metadata,  # type:ignore
         )
 
 
@@ -269,6 +273,15 @@ def main(
             tools=tools,
         )
 
+        base_label_errors_args = BaseLabelErrorsArgs(
+            cv_n_folds=cv_folds,
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=verbose,
+            assets=assets,
+            clear_dataset_cache=clear_dataset_cache,
+        )
+
         empty_errors_recap = ErrorRecap(
             external_id_array=[a.externalId for a in assets],
             id_array=[a.id for a in assets],
@@ -278,14 +291,7 @@ def main(
             base_init_args=base_init_args, condition_requested=condition_requested
         )
         found_errors = (
-            model.find_errors(
-                cv_n_folds=cv_folds,
-                epochs=epochs,
-                batch_size=batch_size,
-                verbose=verbose,
-                assets=assets,
-                clear_dataset_cache=clear_dataset_cache,
-            )
+            model.find_errors(base_label_errors_args=base_label_errors_args)
             if not erase_error_metadata
             else empty_errors_recap
         )

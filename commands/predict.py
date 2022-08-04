@@ -109,7 +109,7 @@ def main(
         model = KiliAutoModel(
             condition_requested=condition_requested, base_init_args=base_init_args
         )
-        job_predictions = model.predict(**predict_args)
+        job_predictions = model.predict(base_predict_args=predict_args)
 
         if not dry_run and job_predictions and job_predictions.external_id_array:
             kili.create_predictions(

@@ -66,6 +66,17 @@ class BasePredictArgs(TypedDict):
     clear_dataset_cache: bool
 
 
+class BaseLabelErrorsArgs(TypedDict):
+    """Common to all modalities"""
+
+    assets: AssetsLazyList
+    cv_n_folds: int
+    epochs: int
+    batch_size: int
+    verbose: int
+    clear_dataset_cache: bool
+
+
 T = TypeVar("T")  # Declare type variable
 
 
@@ -108,8 +119,6 @@ class ModelConditions:
             or cdt_requested.tools is None
             or set(cdt_requested.tools).issubset(set(self.tools))
         )
-        print(cdt_requested)
-        print(self)
         if strict_conditions and tools_ok:
             # We then check the loose conditions
             self._check_compatible(cdt_requested.ml_backend, self.possible_ml_backend, "ml_backend")
