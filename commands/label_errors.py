@@ -39,6 +39,7 @@ from kiliautoml.utils.type import (
     MLBackendT,
     ModelNameT,
     ModelRepositoryT,
+    ParityFilterT,
     ProjectIdT,
 )
 
@@ -187,9 +188,10 @@ def label_error(
 @Options.randomize_assets
 @Options.batch_size
 @Options.verbose
+@Options.parity_filter
+@Options.label_merge_strategy
 @TrainOptions.epochs
 @LabelErrorOptions.asset_status_in
-@Options.label_merge_strategy
 @LabelErrorOptions.cv_folds
 @LabelErrorOptions.dry_run
 @LabelErrorOptions.erase_error_metadata
@@ -210,6 +212,7 @@ def main(
     randomize_assets: bool,
     batch_size: int,
     model_name: ModelNameT,
+    parity_filter: ParityFilterT,
     verbose: int,
     cv_folds: int,
     erase_error_metadata: bool,
@@ -250,6 +253,7 @@ def main(
             randomize=randomize_assets,
             strategy=label_merge_strategy,
             job_name=job_name,
+            parity_filter=parity_filter,
         )
 
         base_init_args = BaseInitArgs(

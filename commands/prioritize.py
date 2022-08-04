@@ -36,6 +36,7 @@ from kiliautoml.utils.type import (
     MLTaskT,
     ModelNameT,
     ModelRepositoryT,
+    ParityFilterT,
     ProjectIdT,
     ToolT,
 )
@@ -334,6 +335,7 @@ def embedding_text(
 @Options.randomize_assets
 @Options.batch_size
 @Options.verbose
+@Options.parity_filter
 @PredictOptions.model_path
 @PredictOptions.from_project
 @PrioritizeOptions.diversity_sampling
@@ -357,6 +359,7 @@ def main(
     from_project: Optional[ProjectIdT],
     model_name: Optional[ModelNameT],
     model_repository: Optional[ModelRepositoryT],
+    parity_filter: ParityFilterT,
     ml_backend: MLBackendT,
     batch_size: int,
 ):
@@ -397,6 +400,7 @@ def main(
         status_in=asset_status_in,
         max_assets=max_assets,
         randomize=randomize_assets,
+        parity_filter=parity_filter,
     )
 
     base_init_args = BaseInitArgs(

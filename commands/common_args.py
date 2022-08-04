@@ -5,7 +5,7 @@ from typing import List
 import click
 from typing_extensions import get_args
 
-from kiliautoml.utils.type import AssetStatusT, MLBackendT, ModelNameT
+from kiliautoml.utils.type import AssetStatusT, MLBackendT, ModelNameT, ParityFilterT
 
 
 class Options:
@@ -100,6 +100,17 @@ class Options:
             "for one asset. AutoML always select the best type of label ('Review' then "
             "'Default'). When there are several labels for the highest priority label type, "
             "the user can specify if the last label is taken or the first one"
+        ),
+    )
+
+    parity_filter = click.option(
+        "--parity-filter",
+        type=click.Choice(get_args(ParityFilterT)),
+        default="none",
+        help=(
+            "Experimental feature. "
+            "This can be used to train on even hash assets names, and test on uneven ones. "
+            "This can be usefull if you want to do some tests on a project entirely labelled."
         ),
     )
 
