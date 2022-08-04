@@ -175,8 +175,13 @@ class OntologyCategoryT(TypedDict):
 OntologyCategoriesT = Dict[CategoryIdT, OntologyCategoryT]
 
 
+class ContentT(TypedDict):
+    categories: OntologyCategoriesT
+    input: ContentInputT
+
+
 class JobT(TypedDict):
-    content: Dict[Literal["categories"], OntologyCategoriesT]  # Is this general?
+    content: ContentT
     instruction: str
     isChild: bool
     tools: List[ToolT]

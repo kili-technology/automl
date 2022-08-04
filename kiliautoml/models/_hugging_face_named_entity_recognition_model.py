@@ -13,7 +13,12 @@ from transformers import DataCollatorForTokenClassification, Trainer
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
-from kiliautoml.models._base_model import BaseModel
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    KiliBaseModel,
+    ModalTrainArgs,
+    ModelConditions,
+)
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
@@ -28,42 +33,33 @@ from kiliautoml.utils.type import (
     JobT,
     KiliNerAnnotation,
     MLBackendT,
-    MLTaskT,
     ModelNameT,
-    ModelRepositoryT,
     ProjectIdT,
 )
 
 
-class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
-    ml_task: MLTaskT = "NAMED_ENTITIES_RECOGNITION"
-    model_repository: ModelRepositoryT = "huggingface"
-    ml_backend: MLBackendT = "pytorch"
-    advised_model_names: List[ModelNameT] = [
-        "bert-base-cased",
-        "bert-base-multilingual-cased",
-        "distilbert-base-cased",
-    ]
+class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, KiliTextProjectMixin):
+    model_conditions = ModelConditions(
+        ml_task="NAMED_ENTITIES_RECOGNITION",
+        model_repository="huggingface",
+        possible_ml_backend=["pytorch", "tensorflow"],
+        advised_model_names=[
+            "bert-base-cased",
+            "bert-base-multilingual-cased",
+            "distilbert-base-cased",
+        ],
+        input_type="TEXT",
+        content_input="radio",
+        tools=None,
+    )
 
     def __init__(
         self,
         *,
-        job: JobT,
-        job_name: JobNameT,
-        project_id: ProjectIdT,
-        model_name: Optional[ModelNameT],
-        api_key,
-        api_endpoint,
+        base_init_args: BaseInitArgs,
     ) -> None:
-        KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
-        BaseModel.__init__(
-            self,
-            job=job,
-            job_name=job_name,
-            model_name=model_name,
-            project_id=project_id,
-            advised_model_names=self.advised_model_names,
-        )
+        KiliTextProjectMixin.__init__(self, base_init_args["api_key"])
+        KiliBaseModel.__init__(self, base_init_args)
 
     def train(
         self,
@@ -75,6 +71,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         disable_wandb: bool,
         verbose: int,
         additional_train_args_hg: AdditionalTrainingArgsT = {},
+        modal_train_args: ModalTrainArgs,
     ):
         """
         Sources:
@@ -82,7 +79,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
         - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
         """
-        _ = verbose
+        _ = verbose, modal_train_args
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(
@@ -114,7 +111,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
             test_size=0.1
         )
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.ml_backend, label_list, self.ml_task
+            model_name, self.ml_backend, label_list, self.model_conditions.ml_task
         )
 
         label_all_tokens = True
@@ -216,7 +213,7 @@ class HuggingFaceNamedEntityRecognitionModel(BaseModel, HuggingFaceMixin, KiliTe
         )
 
         tokenizer, model = self._get_tokenizer_and_model(
-            self.ml_backend, model_path_res, self.ml_task
+            self.ml_backend, model_path_res, self.model_conditions.ml_task
         )
 
         predictions = []

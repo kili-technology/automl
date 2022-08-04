@@ -11,7 +11,12 @@ from kiliautoml.models import (
     PyTorchVisionImageClassificationModel,
     UltralyticsObjectDetectionModel,
 )
-from kiliautoml.models._base_model import BaseInitArgs
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    BaseLabelErrorsArgs,
+    ModelConditionsRequested,
+)
+from kiliautoml.models.kili_auto_model import KiliAutoModel
 from kiliautoml.utils.helper_label_error import (
     ErrorRecap,
     LabelingError,
@@ -75,7 +80,7 @@ def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: Proje
 
         kili.update_properties_in_assets(
             asset_ids=asset_ids,  # type:ignore
-            json_metadatas=metadata,  # type:ignore
+            json_metadata=metadata,  # type:ignore
         )
 
 
@@ -155,7 +160,6 @@ def label_error(
             epochs=epochs,
             batch_size=batch_size,
             verbose=verbose,
-            api_key=api_key,
             assets=assets,
             clear_dataset_cache=clear_dataset_cache,
         )
@@ -219,7 +223,7 @@ def main(
     easily filter them later in the app.
     """
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
-    input_type, jobs, _ = get_project(kili, project_id)
+    input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
 
     for job_name, job in jobs.items():
@@ -248,34 +252,46 @@ def main(
             job_name=job_name,
         )
 
-        base_init_args: BaseInitArgs = {
-            "job": job,
-            "job_name": job_name,
-            "model_name": model_name,
-            "project_id": project_id,
-        }
+        base_init_args = BaseInitArgs(
+            job=job,
+            job_name=job_name,
+            model_name=model_name,
+            project_id=project_id,
+            ml_backend=ml_backend,
+            api_key=api_key,
+            api_endpoint=api_endpoint,
+            title=title,
+        )
+
+        condition_requested = ModelConditionsRequested(
+            input_type=input_type,
+            ml_task=ml_task,
+            content_input=content_input,
+            ml_backend=ml_backend,
+            model_name=model_name,
+            model_repository=model_repository,
+            tools=tools,
+        )
+
+        base_label_errors_args = BaseLabelErrorsArgs(
+            cv_n_folds=cv_folds,
+            epochs=epochs,
+            batch_size=batch_size,
+            verbose=verbose,
+            assets=assets,
+            clear_dataset_cache=clear_dataset_cache,
+        )
 
         empty_errors_recap = ErrorRecap(
             external_id_array=[a.externalId for a in assets],
             id_array=[a.id for a in assets],
             errors_by_asset=[[] for _ in assets],
         )
+        model = KiliAutoModel(
+            base_init_args=base_init_args, condition_requested=condition_requested
+        )
         found_errors = (
-            label_error(
-                api_key=api_key,
-                clear_dataset_cache=clear_dataset_cache,
-                epochs=epochs,
-                batch_size=batch_size,
-                verbose=verbose,
-                cv_folds=cv_folds,
-                input_type=input_type,
-                job_name=job_name,
-                content_input=content_input,
-                ml_task=ml_task,
-                tools=tools,
-                assets=assets,
-                base_init_args=base_init_args,
-            )
+            model.find_errors(base_label_errors_args=base_label_errors_args)
             if not erase_error_metadata
             else empty_errors_recap
         )

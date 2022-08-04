@@ -4,142 +4,27 @@ import click
 from kili.client import Kili
 
 from commands.common_args import Options, PredictOptions
-from kiliautoml.models import (
-    Detectron2SemanticSegmentationModel,
-    HuggingFaceNamedEntityRecognitionModel,
-    HuggingFaceTextClassificationModel,
-    PyTorchVisionImageClassificationModel,
-    UltralyticsObjectDetectionModel,
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    BasePredictArgs,
+    ModelConditionsRequested,
 )
-from kiliautoml.models._base_model import BaseInitArgs
+from kiliautoml.models.kili_auto_model import KiliAutoModel
 from kiliautoml.utils.helpers import (
     curated_job,
     get_assets,
     get_content_input_from_job,
     get_project,
-    is_contours_detection,
     kili_print,
-    not_implemented_job,
 )
 from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
-    JobPredictions,
     MLBackendT,
+    ModelNameT,
+    ModelRepositoryT,
     ProjectIdT,
 )
-
-
-def predict_one_job(
-    *,
-    api_key,
-    api_endpoint,
-    project_id,
-    from_model,
-    from_project: Optional[ProjectIdT],
-    verbose,
-    input_type,
-    assets,
-    job_name,
-    batch_size,
-    content_input,
-    ml_task,
-    model_repository,
-    ml_backend,
-    model_name,
-    tools,
-    job,
-    clear_dataset_cache,
-) -> Optional[JobPredictions]:
-    _ = ml_backend, model_repository
-    job_predictions = None
-    base_init_args: BaseInitArgs = {
-        "job": job,
-        "job_name": job_name,
-        "model_name": model_name,
-        "project_id": project_id,
-    }
-    if content_input == "radio" and input_type == "TEXT" and ml_task == "CLASSIFICATION":
-        model = HuggingFaceTextClassificationModel(
-            api_endpoint=api_endpoint, api_key=api_key, **base_init_args
-        )
-        job_predictions = model.predict(
-            assets=assets,
-            model_path=from_model,
-            batch_size=batch_size,
-            verbose=verbose,
-            from_project=from_project,
-            clear_dataset_cache=clear_dataset_cache,
-        )
-
-    elif (
-        content_input == "radio"
-        and input_type == "TEXT"
-        and ml_task == "NAMED_ENTITIES_RECOGNITION"
-    ):
-        model = HuggingFaceNamedEntityRecognitionModel(
-            project_id=project_id,
-            api_key=api_key,
-            api_endpoint=api_endpoint,
-            job=job,
-            job_name=job_name,
-            model_name=model_name,
-        )
-        job_predictions = model.predict(
-            assets=assets,
-            model_path=from_model,
-            batch_size=batch_size,
-            verbose=verbose,
-            from_project=from_project,
-            clear_dataset_cache=clear_dataset_cache,
-        )
-
-    elif (
-        content_input == "radio"
-        and input_type == "IMAGE"
-        and ml_task == "OBJECT_DETECTION"
-        and "rectangle" in tools
-    ):
-        image_classification_model = UltralyticsObjectDetectionModel(**base_init_args)
-
-        job_predictions = image_classification_model.predict(
-            verbose=verbose,
-            assets=assets,
-            model_path=from_model,
-            from_project=from_project,
-            batch_size=batch_size,
-            clear_dataset_cache=clear_dataset_cache,
-            api_key=api_key,
-        )
-    elif content_input == "radio" and input_type == "IMAGE" and ml_task == "CLASSIFICATION":
-        image_classification_model = PyTorchVisionImageClassificationModel(**base_init_args)
-
-        job_predictions = image_classification_model.predict(
-            verbose=verbose,
-            assets=assets,
-            model_path=from_model,
-            from_project=from_project,
-            batch_size=batch_size,
-            clear_dataset_cache=clear_dataset_cache,
-            api_key=api_key,
-        )
-    elif is_contours_detection(input_type, ml_task, content_input, tools):
-        image_classification_model = Detectron2SemanticSegmentationModel(**base_init_args)
-
-        job_predictions = image_classification_model.predict(
-            assets=assets,
-            model_path=from_model,
-            from_project=from_project,
-            batch_size=batch_size,
-            clear_dataset_cache=clear_dataset_cache,
-            api_key=api_key,
-            verbose=verbose,
-            job=job,
-        )
-
-    else:
-        not_implemented_job(job_name, ml_task, tools)
-    return job_predictions
 
 
 @click.command()
@@ -157,7 +42,7 @@ def predict_one_job(
 @Options.batch_size
 @Options.verbose
 @PredictOptions.asset_status_in
-@PredictOptions.from_model
+@PredictOptions.model_path
 @PredictOptions.from_project
 @PredictOptions.dry_run
 def main(
@@ -168,20 +53,20 @@ def main(
     target_job: List[JobNameT],
     ignore_job: List[JobNameT],
     dry_run: bool,
-    from_model: Optional[MLBackendT],
+    model_path: Optional[str],
     verbose: bool,
     max_assets: Optional[int],
     randomize_assets: bool,
     from_project: Optional[ProjectIdT],
-    model_name: Optional[str],
-    model_repository: Optional[str],
+    model_name: Optional[ModelNameT],
+    model_repository: Optional[ModelRepositoryT],
     ml_backend: MLBackendT,
     batch_size: int,
     clear_dataset_cache: bool,
 ):
     """Compute predictions and upload them to Kili."""
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
-    input_type, jobs, _ = get_project(kili, project_id)
+    input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
 
     assets = get_assets(
@@ -194,26 +79,37 @@ def main(
         ml_task = job.get("mlTask")
         tools = job.get("tools")
 
-        job_predictions = predict_one_job(
+        base_init_args = BaseInitArgs(
+            job=job,
+            job_name=job_name,
+            model_name=model_name,
+            project_id=project_id,
+            ml_backend=ml_backend,
             api_key=api_key,
             api_endpoint=api_endpoint,
-            project_id=project_id,
-            from_model=from_model,
-            verbose=verbose,
-            job=job,
-            input_type=input_type,
+            title=title,
+        )
+        predict_args = BasePredictArgs(
             assets=assets,
-            batch_size=batch_size,
-            job_name=job_name,
-            content_input=content_input,
-            model_repository=model_repository,
-            model_name=model_name,
-            ml_backend=ml_backend,
+            model_path=model_path,
             from_project=from_project,
-            ml_task=ml_task,
-            tools=tools,
+            batch_size=batch_size,
+            verbose=verbose,
             clear_dataset_cache=clear_dataset_cache,
         )
+        condition_requested = ModelConditionsRequested(
+            input_type=input_type,
+            ml_task=ml_task,
+            content_input=content_input,
+            ml_backend=ml_backend,
+            model_name=model_name,
+            model_repository=model_repository,
+            tools=tools,
+        )
+        model = KiliAutoModel(
+            condition_requested=condition_requested, base_init_args=base_init_args
+        )
+        job_predictions = model.predict(base_predict_args=predict_args)
 
         if not dry_run and job_predictions and job_predictions.external_id_array:
             kili.create_predictions(

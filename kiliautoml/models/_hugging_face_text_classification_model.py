@@ -1,7 +1,7 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import datasets
 import evaluate  # type: ignore
@@ -13,55 +13,47 @@ from transformers import Trainer
 
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
-from kiliautoml.models._base_model import BaseModel
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    KiliBaseModel,
+    ModalTrainArgs,
+    ModelConditions,
+)
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
-    AdditionalTrainingArgsT,
     AssetsLazyList,
-    JobNameT,
     JobPredictions,
-    JobT,
     JsonResponseClassification,
-    MLBackendT,
-    MLTaskT,
     ModelMetricT,
     ModelNameT,
-    ModelRepositoryT,
     ProjectIdT,
 )
 
 
-class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextProjectMixin):
+class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    ml_task: MLTaskT = "CLASSIFICATION"
-    model_repository: ModelRepositoryT = "huggingface"
-    ml_backend: MLBackendT = "pytorch"
-    advised_model_names: List[ModelNameT] = [
-        "bert-base-multilingual-cased",
-        "distilbert-base-cased",
-        "distilbert-base-uncased",
-    ]
+    model_conditions = ModelConditions(
+        ml_task="CLASSIFICATION",
+        model_repository="huggingface",
+        possible_ml_backend=["pytorch"],
+        advised_model_names=[
+            "bert-base-multilingual-cased",
+            "distilbert-base-cased",
+            "distilbert-base-uncased",
+        ],
+        input_type="TEXT",
+        content_input="radio",
+        tools=None,
+    )
 
     def __init__(
         self,
         *,
-        job: JobT,
-        job_name: JobNameT,
-        project_id: ProjectIdT,
-        model_name: Optional[ModelNameT],
-        api_key,
-        api_endpoint,
+        base_init_args: BaseInitArgs,
     ) -> None:
-        KiliTextProjectMixin.__init__(self, project_id, api_key, api_endpoint)
-        BaseModel.__init__(
-            self,
-            job=job,
-            job_name=job_name,
-            model_name=model_name,
-            project_id=project_id,
-            advised_model_names=self.advised_model_names,
-        )
+        KiliTextProjectMixin.__init__(self, base_init_args["api_key"])
+        KiliBaseModel.__init__(self, base_init_args)
 
     def train(
         self,
@@ -72,7 +64,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
         verbose: int,
-        additional_train_args_hg: AdditionalTrainingArgsT,
+        modal_train_args: ModalTrainArgs,
     ):
         _ = verbose
 
@@ -108,7 +100,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         )
 
         tokenizer, model = self._get_tokenizer_and_model_from_name(
-            model_name, self.ml_backend, job_categories, self.ml_task
+            model_name, self.ml_backend, job_categories, self.model_conditions.ml_task
         )
 
         def tokenize_function(examples):
@@ -125,7 +117,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
             disable_wandb=disable_wandb,
             epochs=epochs,
             batch_size=batch_size,
-            additional_train_args_hg=additional_train_args_hg,
+            additional_train_args_hg=modal_train_args["additional_train_args_hg"],
         )
 
         trainer = Trainer(
@@ -164,7 +156,7 @@ class HuggingFaceTextClassificationModel(BaseModel, HuggingFaceMixin, KiliTextPr
         proba_assets = []
 
         tokenizer, model = self._get_tokenizer_and_model(
-            self.ml_backend, model_path_res, self.ml_task
+            self.ml_backend, model_path_res, self.model_conditions.ml_task
         )
 
         for asset in assets.iter_refreshed_asset(

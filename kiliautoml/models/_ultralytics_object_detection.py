@@ -15,7 +15,12 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from kiliautoml.models._base_model import BaseModel
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    KiliBaseModel,
+    ModalTrainArgs,
+    ModelConditions,
+)
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import find_all_label_errors
 from kiliautoml.utils.helpers import (
@@ -25,7 +30,6 @@ from kiliautoml.utils.helpers import (
 )
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import (
-    AdditionalTrainingArgsT,
     AssetExternalIdT,
     AssetsLazyList,
     AssetT,
@@ -34,13 +38,9 @@ from kiliautoml.utils.type import (
     CategoryT,
     JobNameT,
     JobPredictions,
-    JobT,
     JsonResponseBboxT,
     KiliBBoxAnnotation,
     MLBackendT,
-    MLTaskT,
-    ModelNameT,
-    ModelRepositoryT,
     ProjectIdT,
 )
 
@@ -71,39 +71,35 @@ def inspect(e):
             print(v)
 
 
-class UltralyticsObjectDetectionModel(BaseModel):
-    ml_task: MLTaskT = "OBJECT_DETECTION"
-    model_repository: ModelRepositoryT = "ultralytics"
-    ml_backend: MLBackendT = "pytorch"
-    advised_model_names: List[ModelNameT] = [
-        "yolov5n",
-        "yolov5s",
-        "yolov5m",
-        "yolov5l",
-        "yolov5x",
-        "yolov5n6",  # n6 : double resolution
-        "yolov5s6",
-        "yolov5m6",
-        "yolov5l6",
-        "yolov5x6",
-    ]
+class UltralyticsObjectDetectionModel(KiliBaseModel):
+
+    model_conditions = ModelConditions(
+        ml_task="OBJECT_DETECTION",
+        model_repository="ultralytics",
+        possible_ml_backend=["pytorch"],
+        advised_model_names=[
+            "yolov5n",
+            "yolov5s",
+            "yolov5m",
+            "yolov5l",
+            "yolov5x",
+            "yolov5n6",  # n6 : double resolution
+            "yolov5s6",
+            "yolov5m6",
+            "yolov5l6",
+            "yolov5x6",
+        ],
+        input_type="IMAGE",
+        content_input="radio",
+        tools=["rectangle"],
+    )
 
     def __init__(
         self,
         *,
-        job: JobT,
-        job_name: JobNameT,
-        model_name: Optional[ModelNameT],
-        project_id: ProjectIdT,
-    ):
-        BaseModel.__init__(
-            self,
-            job=job,
-            job_name=job_name,
-            model_name=model_name,
-            project_id=project_id,
-            advised_model_names=self.advised_model_names,
-        )
+        base_init_args: BaseInitArgs,
+    ) -> None:
+        KiliBaseModel.__init__(self, base_init_args)
 
     def train(
         self,
@@ -114,14 +110,12 @@ class UltralyticsObjectDetectionModel(BaseModel):
         clear_dataset_cache: bool,
         disable_wandb: bool,
         verbose: int,
-        title: str,
-        api_key: str,
-        additional_train_args_yolo: AdditionalTrainingArgsT,
+        modal_train_args: ModalTrainArgs,
     ):
         _ = verbose
 
         model_repository_dir = Path.model_repository_dir(
-            self.project_id, self.job_name, self.model_repository
+            self.project_id, self.job_name, self.model_conditions.model_repository
         )
 
         yolov5_path = os.path.join(os.getcwd(), PathUltralytics.YOLOV5_REL_PATH)
@@ -135,14 +129,16 @@ class UltralyticsObjectDetectionModel(BaseModel):
             kili_print("Dataset cache for this project is being cleared.")
             shutil.rmtree(data_path)
 
-        model_output_path = self._get_output_path_bbox(title, model_repository_dir, self.ml_backend)
+        model_output_path = self._get_output_path_bbox(
+            self.title, model_repository_dir, self.ml_backend
+        )
         os.makedirs(model_output_path, exist_ok=True)
 
         os.makedirs(os.path.dirname(config_data_path), exist_ok=True)
         self._yaml_preparation(
             data_path=data_path,
             class_names=class_names,
-            kili_api_key=api_key,
+            kili_api_key=self.api_key,
             assets=assets,
         )
 
@@ -154,7 +150,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
                     number_classes=len(class_names),
                 )
             )
-
+        additional_train_args_yolo = modal_train_args["additional_train_args_yolo"]
         if not additional_train_args_yolo:
             additional_train_args_yolo = {}
         additional_train_args_yolo["epochs"] = epochs
@@ -469,7 +465,7 @@ class UltralyticsObjectDetectionModel(BaseModel):
             json_response_array=job_predictions.json_response_array,
             external_id_array=job_predictions.external_id_array,
             job_name=self.job_name,
-            ml_task=self.ml_task,
+            ml_task=self.model_conditions.ml_task,
             tool="rectangle",
         )
 

@@ -57,7 +57,7 @@ def categories_from_job(job: JobT) -> List[CategoryIdT]:
 
 
 def get_content_input_from_job(job: JobT):
-    return job.get("content", {}).get("input")  # type:ignore
+    return job["content"].get("input")
 
 
 def ensure_dir(file_path: str):
