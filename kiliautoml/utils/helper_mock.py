@@ -2,8 +2,8 @@
 
 0. Create a new projet with 15 assets and label everyone of them.
 1. USE THIS COMMAND:
-export KILI_AUTOML_MOCK=True  && export PROJECTID=cl66ckxol06vt0pylc35ofip2 \
-    && export KILI_AUTOML_MOCK_OUTPUT_DIR=cl66ckxol06vt0pylc35ofip2_detectron \
+export KILI_AUTOML_MOCK=True  && export PROJECTID=cl66c5zr97wdw0mww1oz88etx \
+    && export KILI_AUTOML_MOCK_OUTPUT_DIR=cl66c5zr97wdw0mww1oz88etx_yolo \
     && kiliautoml train \
         --project-id $PROJECTID --clear-dataset-cache --epochs 1 \
     && export KILI_AUTOML_MOCK=
