@@ -170,10 +170,12 @@ class PathDetectron2:
 
     @staticmethod
     @makedirs_exist_ok
+    @ensure_dir_empty
     def append_output_evaluation(model_repository_dir: ModelRepositoryDirT):
         return os.path.join(model_repository_dir, "evaluation")
 
     @staticmethod
     @makedirs_exist_ok
+    @ensure_dir_empty
     def append_output_visualization(model_repository_dir: ModelRepositoryDirT):
         return os.path.join(model_repository_dir, "prediction_visualization")
