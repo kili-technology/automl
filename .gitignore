@@ -10,3 +10,4 @@ wandb/**
 kiliautoml.egg-info/**
 
 notebooks/.ipynb_checkpoints
+notebooks/.env
