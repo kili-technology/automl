@@ -26,8 +26,8 @@ def kili_project_memoizer(
             if not project_id:
                 raise ValueError("project_id not specified in a keyword argument")
             cache_path = Path.cache_memoization_dir(project_id, sub_dir)
-            memory = Memory(cache_path, verbose=0)
-            return memory.cache(some_function)(*args, **kwargs)
+            memory = Memory(cache_path, verbose=1)
+            return memory.cache(some_function, ignore=["kili"])(*args, **kwargs)
 
         return wrapper
 
