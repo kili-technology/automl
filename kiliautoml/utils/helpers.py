@@ -134,6 +134,7 @@ def get_assets(
             status_in=status_in,
         )
         random.shuffle(assets)
+        assets = assets[::-1]
         assets = assets[:max_assets]
 
     else:
