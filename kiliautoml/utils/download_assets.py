@@ -79,10 +79,12 @@ def throttled_request(api_key, asset_content):
     """
     if "files?id=" in asset_content and "&token=" in asset_content:
         asset_id = asset_content.split("?id=")[1].split("&token=")[0]
-        print("_throttled_request_memoized")
+        return _throttled_request_memoized(api_key, asset_content, asset_id)
+    elif "?AWSAccessKeyId" in asset_content:
+        asset_id = asset_content.split("?AWSAccessKeyId")[0]
         return _throttled_request_memoized(api_key, asset_content, asset_id)
     else:
-        print("_throttled_request")
+        print("Downloading public asset")  # No security token
         return _throttled_request(api_key, asset_content)
 
 
