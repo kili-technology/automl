@@ -321,7 +321,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         list_x_y = list_x_y.reshape(-1, 2)
 
         def purge(x_y):
-            # Hypothesis: equidistant points (wrong in the eneral case but ok for predictions)
+            # Hypothesis: equidistant points (wrong in the general case but ok for predictions)
             x_y_mean = (x_y[:-2] + x_y[2:]) / 2
             x_y_center = x_y[1:-1]
 
