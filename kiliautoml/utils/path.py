@@ -1,5 +1,8 @@
 import os
+import shutil
 from datetime import datetime
+from functools import wraps
+from typing import Any, Callable
 
 from kiliautoml.utils.type import (
     JobNameT,
@@ -14,10 +17,26 @@ AUTOML_CACHE = os.getenv(
 )
 
 
-def makedirs_exist_ok(path_building_function):
+TFunc = Callable[..., Any]
+
+
+def makedirs_exist_ok(function: TFunc) -> TFunc:
+    @wraps(function)
     def wrapper(*args, **kwargs):
-        res = path_building_function(*args, **kwargs)
+        res = function(*args, **kwargs)
         os.makedirs(res, exist_ok=True)
+        return res
+
+    return wrapper
+
+
+def ensure_dir_empty(function: TFunc) -> TFunc:
+    """Needs to be used before makedirs_exist_ok"""
+
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        res = function(*args, **kwargs)
+        shutil.rmtree(res)
         return res
 
     return wrapper
@@ -145,6 +164,7 @@ class PathDetectron2:
 
     @staticmethod
     @makedirs_exist_ok
+    @ensure_dir_empty
     def append_data_dir(model_repository_dir: ModelRepositoryDirT):
         return os.path.join(model_repository_dir, "data")
 
