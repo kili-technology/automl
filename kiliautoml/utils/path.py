@@ -30,13 +30,12 @@ def makedirs_exist_ok(function: TFunc) -> TFunc:
     return wrapper
 
 
-def ensure_dir_empty(function: TFunc) -> TFunc:
-    """Needs to be used before makedirs_exist_ok"""
-
+def reset_dir(function: TFunc) -> TFunc:
     @wraps(function)
     def wrapper(*args, **kwargs):
         res = function(*args, **kwargs)
         shutil.rmtree(res)
+        os.makedirs(res, exist_ok=True)
         return res
 
     return wrapper
@@ -154,6 +153,9 @@ class PathPytorchVision:
         return os.path.join(model_dir, "training_args")
 
 
+# TODO: Use @reset_dir forthe other classes, not just PathDetectron2
+
+
 class PathDetectron2:
     @staticmethod
     @makedirs_exist_ok
@@ -163,19 +165,16 @@ class PathDetectron2:
         return os.path.join(model_repository_dir, "pytorch", "model")
 
     @staticmethod
-    @makedirs_exist_ok
-    @ensure_dir_empty
+    @reset_dir
     def append_data_dir(model_repository_dir: ModelRepositoryDirT):
         return os.path.join(model_repository_dir, "data")
 
     @staticmethod
-    @makedirs_exist_ok
-    @ensure_dir_empty
+    @reset_dir
     def append_output_evaluation(model_repository_dir: ModelRepositoryDirT):
         return os.path.join(model_repository_dir, "evaluation")
 
     @staticmethod
-    @makedirs_exist_ok
-    @ensure_dir_empty
+    @reset_dir
     def append_output_visualization(model_repository_dir: ModelRepositoryDirT):
         return os.path.join(model_repository_dir, "prediction_visualization")

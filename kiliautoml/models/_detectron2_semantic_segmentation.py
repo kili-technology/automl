@@ -325,8 +325,8 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             x_y_mean = (x_y[:-2] + x_y[2:]) / 2
             x_y_center = x_y[1:-1]
 
-            # If the difference is more than a pixel, keep the intermediate point
-            keep_points = np.sum(np.abs(x_y_mean - x_y_center), axis=1) > 1
+            # If the difference is more than two pixel, keep the intermediate point
+            keep_points = np.sum(np.abs(x_y_mean - x_y_center), axis=1) > 2
 
             # We do not want to delete more than half the points in a row
             keep_points[::2] = True
@@ -335,7 +335,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             return x_y[mask]
 
         for _ in range(10):
-            print("Simplifying annotations: ", len(list_x_y))
+            print("Simplifying annotations. Reducing the nb of edges: ", len(list_x_y))
             list_x_y = purge(list_x_y)
         return list_x_y
 
