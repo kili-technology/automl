@@ -38,7 +38,7 @@ DELAY = 60 / 250  # 250 calls per minutes
 
 
 @sleep_and_retry
-@limits(calls=1, period=DELAY)
+@limits(calls=1, period=DELAY)  # type:ignore
 def _throttled_request(api_key, asset_content, use_header=True, k=0, error=None) -> Response:
     if k == 20:
         raise Exception("Too many retries", error)
