@@ -318,7 +318,26 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         im = np.array(im, dtype=np.uint8)
         idx = cv2.findContours(im, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         list_x_y = idx[0][0]
-        return list_x_y.reshape(-1, 2)
+        list_x_y = list_x_y.reshape(-1, 2)
+
+        def purge(x_y):
+            # Hypothese que les points sont equidistants
+            x_y_mean = (x_y[:-2] + x_y[2:]) / 2
+            x_y_center = x_y[1:-1]
+
+            # If the difference is more than a pixel, keep the intermediate point
+            keep_points = np.sum(np.abs(x_y_mean - x_y_center), axis=1) > 1
+
+            # We do not want to delete more than half the points in a row
+            keep_points[::2] = True
+            mask = np.array([True] * len(x_y))
+            mask[1:-1] = keep_points
+            return x_y[mask]
+
+        for _ in range(10):
+            print("Simplifying annotations: ", len(list_x_y))
+            list_x_y = purge(list_x_y)
+        return list_x_y
 
     def get_annotations_from_instances(self, instances, class_names: List[CategoryIdT]):
         """instances contains multiples bbox and object corresponding to one image"""
@@ -331,6 +350,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             classe = classes[class_i]
             categories = [CategoryT(name=class_names[classe], confidence=int(score * 100))]
             list_x_y = self.get_contours_instance(instances, class_i)
+
             boundingPoly = [
                 NormalizedVertices(
                     normalizedVertices=[
