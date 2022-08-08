@@ -27,3 +27,4 @@ git+https://github.com/facebookresearch/detectron2.git
 shapely
 pydantic
 pytest-mock
+backoff

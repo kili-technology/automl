@@ -7,9 +7,12 @@ from glob import glob
 from typing import Any, Dict, List, Optional, Tuple, TypeVar
 from warnings import warn
 
+import backoff
 import numpy as np
 import torch
+from graphql import GraphQLError
 from kili.client import Kili
+from ratelimit import limits
 from tabulate import tabulate
 from termcolor import colored
 from typing_extensions import get_args
@@ -69,6 +72,8 @@ def ensure_dir(file_path: str):
 
 
 @kili_project_memoizer(sub_dir="get_asset_memoized")
+@backoff.on_exception(backoff.expo, exception=GraphQLError, max_tries=3)
+@limits(calls=10, period=1)  # 10 calls per minute
 def get_asset_memoized(
     *,
     kili: Kili,

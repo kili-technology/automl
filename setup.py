@@ -31,6 +31,7 @@ setup(
         "shapely",
         "pydantic",
         "pytest-mock",
+        "backoff",
         # ################################ yolo
         "matplotlib>=3.2.2",
         "numpy>=1.18.5",

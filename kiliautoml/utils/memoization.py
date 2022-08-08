@@ -1,5 +1,6 @@
 import os
 import shutil
+from functools import wraps
 from typing import Any, Callable, List, Optional
 
 from joblib import Memory
@@ -23,6 +24,7 @@ def kili_project_memoizer(
     """Decorator factory for memoizing a function that takes a project_id as input."""
 
     def decorator(some_function: TFunc) -> TFunc:
+        @wraps(some_function)
         def wrapper(*args, **kwargs):
             project_id = kwargs.get("project_id")
             if not project_id:
@@ -40,6 +42,7 @@ def kili_project_memoizer(
 def kili_memoizer(some_function: TFunc) -> TFunc:
     """We ignore the argument asset_content"""
 
+    @wraps(some_function)
     def wrapper(*args, **kwargs):
         memory = Memory(AUTOML_CACHE, verbose=0)
         return memory.cache(some_function, ignore=["asset_content"])(*args, **kwargs)
