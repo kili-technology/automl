@@ -23,7 +23,7 @@ setup(
         "img2vec-pytorch==1.0.1",
         "more-itertools",
         "typing_extensions",
-        "wandb==0.12.10",
+        "wandb",
         "ipython",
         "ratelimit",
         "opencv-python",
