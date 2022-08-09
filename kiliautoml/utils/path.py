@@ -34,7 +34,7 @@ def reset_dir(function: TFunc) -> TFunc:
     @wraps(function)
     def wrapper(*args, **kwargs):
         res = function(*args, **kwargs)
-        shutil.rmtree(res)
+        shutil.rmtree(res, ignore_errors=True)
         os.makedirs(res, exist_ok=True)
         return res
 
