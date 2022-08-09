@@ -37,13 +37,11 @@ class SemanticPositionT(PositionT, BaseModel):
     def number_of_points(cls, points: List[NormalizedVertice]):
         _ = cls
 
-        print("Before", len(points))
         points = [
             NormalizedVertice(x=round(point["x"], 4), y=round(point["y"], 4)) for point in points
         ]
         # Delete duplicates
         points = [dict(t) for t in {tuple(d.items()) for d in points}]  # type:ignore
-        print("After", len(points))
 
         if len(points) < 3:
             raise ValueError("Semantic annotation should contain at least 3 points.")

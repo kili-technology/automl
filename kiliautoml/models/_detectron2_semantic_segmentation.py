@@ -347,7 +347,9 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             norm = np.linalg.norm(projection_vector, axis=1)
 
             diameter = np.max(x_y[:, 0]) - np.min(x_y[:, 0]) + np.max(x_y[:, 1]) - np.min(x_y[:, 1])
-            keep_points = norm > diameter / 10
+            keep_points = (
+                norm > diameter / 10
+            )  # the more the value, the more granular the prediction
             print(norm.mean())
 
             # We do not want to delete more than half the points in a row
