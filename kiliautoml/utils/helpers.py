@@ -4,7 +4,7 @@ import random
 import warnings
 from datetime import datetime
 from glob import glob
-from typing import Any, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, List, Optional, Set, Tuple, TypeVar
 from warnings import warn
 
 import backoff
@@ -242,6 +242,23 @@ def get_project(kili, project_id: ProjectIdT) -> Tuple[InputTypeT, JobsT, str]:
 
 def kili_print(*args, **kwargs) -> None:
     print(colored("kili:", "yellow", attrs=["bold"]), *args, **kwargs)
+
+
+class OneTimePrinter:
+    messages_already_printed: Set[str] = set()
+
+    def __call__(self, *args, **kwargs) -> None:
+        """If the first armument in the print is a deja-vu string, do not print"""
+
+        if args and isinstance(args[0], str):
+            if args[0] not in self.messages_already_printed:
+                self.messages_already_printed.add(args[0])
+                kili_print(*args, **kwargs)
+            else:
+                # Already printed
+                pass
+        else:
+            kili_print(*args, **kwargs)
 
 
 T = TypeVar("T")  # Declare type variable

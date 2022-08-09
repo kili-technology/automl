@@ -394,8 +394,8 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         # TODO: move this check in the prioritizer
         if len(id_json_list) < len(downloaded_images):
             kili_print(
-                "WARNING: Not enouth predictions. Missing prediction for"
-                f" {len(downloaded_images) - len(id_json_list)} assets."
+                "WARNING: Not enouth predictions. You should probably train longer the Model."
+                f"Missing prediction for {len(downloaded_images) - len(id_json_list)} assets."
             )
             if prioritization:
                 raise Exception(
