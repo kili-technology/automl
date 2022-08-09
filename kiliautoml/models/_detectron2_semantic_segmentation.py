@@ -321,12 +321,29 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         list_x_y = list_x_y.reshape(-1, 2)
 
         def purge(x_y):
-            # Hypothesis: equidistant points (wrong in the general case but ok for predictions)
-            x_y_mean = (x_y[:-2] + x_y[2:]) / 2
-            x_y_center = x_y[1:-1]
+            """On projete le point intermediaire"""
+            x_y_matrix = np.zeros((3, len(x_y) - 2, 2))
+            x_y_matrix[0] = x_y[0:-2]  # point 0
+            x_y_matrix[1] = x_y[1:-1]  # point 1
+            x_y_matrix[2] = x_y[2:]  # point 2
 
-            # If the difference is more than two pixel, keep the intermediate point
-            keep_points = np.sum(np.abs(x_y_mean - x_y_center), axis=1) > 2
+            vectors_1 = x_y_matrix[1] - x_y_matrix[0]
+            vectors_2 = x_y_matrix[2] - x_y_matrix[0]
+
+            inner = np.einsum("ai,ai->a", vectors_1, vectors_2)
+
+            L2_v1 = np.linalg.norm(vectors_1, axis=1)
+            L2_v2 = np.linalg.norm(vectors_2, axis=1)
+            cos = inner / (L2_v1 * L2_v2)
+
+            projected_vectors = vectors_2 * np.stack([cos, cos], axis=1)
+
+            projected_point = x_y_matrix[1] + projected_vectors
+
+            projection_vector = projected_point - x_y_matrix[1]
+
+            # If the difference is more than a pixel, keep the intermediate point
+            keep_points = np.linalg.norm(projection_vector, axis=1) > 1
 
             # We do not want to delete more than half the points in a row
             keep_points[::2] = True
