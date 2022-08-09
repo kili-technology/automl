@@ -376,3 +376,16 @@ def curated_job(jobs: JobsT, target_job: List[JobNameT], ignore_job: List[JobNam
             new_job[job_name] = job
 
     return new_job
+
+
+def dry_run_security(dry_run):
+    if dry_run is True:
+        return dry_run
+    print("Are you sure You want to send the predictions to Kili? Y/N")
+    validation = input()
+    if validation in ["N", "n", "No", "NO", "no"]:
+        dry_run = True
+        kili_print("OK, We won't send the predictions to Kili!")
+    else:
+        kili_print("OK, We will send the predictions to Kili!")
+    return dry_run

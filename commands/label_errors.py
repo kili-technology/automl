@@ -24,6 +24,7 @@ from kiliautoml.utils.helper_label_error import (
 )
 from kiliautoml.utils.helpers import (
     curated_job,
+    dry_run_security,
     get_assets,
     get_content_input_from_job,
     get_project,
@@ -225,6 +226,7 @@ def main(
     stored in a file, but also a metadata (labeling_error: true) is uploaded to Kili to
     easily filter them later in the app.
     """
+    dry_run = dry_run_security(dry_run)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)

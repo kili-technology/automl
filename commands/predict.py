@@ -12,6 +12,7 @@ from kiliautoml.models._base_model import (
 from kiliautoml.models.kili_auto_model import KiliAutoModel
 from kiliautoml.utils.helpers import (
     curated_job,
+    dry_run_security,
     get_assets,
     get_content_input_from_job,
     get_project,
@@ -68,6 +69,8 @@ def main(
     clear_dataset_cache: bool,
 ):
     """Compute predictions and upload them to Kili."""
+
+    dry_run = dry_run_security(dry_run)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
