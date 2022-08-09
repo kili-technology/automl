@@ -248,7 +248,7 @@ class OneTimePrinter:
     messages_already_printed: Set[str] = set()
 
     def __call__(self, *args, **kwargs) -> None:
-        """If the first armument in the print is a deja-vu string, do not print"""
+        """If the first argument in the print is a deja-vu string, do not print"""
 
         if args and isinstance(args[0], str):
             if args[0] not in self.messages_already_printed:
