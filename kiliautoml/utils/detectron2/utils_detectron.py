@@ -111,7 +111,7 @@ def convert_kili_semantic_to_coco(
             )
         ),
         total=len(assets),
-        desc="Converting to COCO format...",
+        desc="Convert to COCO format",
     ):
         annotations_ = asset.get_annotations_semantic(job_name)["annotations"]
 
