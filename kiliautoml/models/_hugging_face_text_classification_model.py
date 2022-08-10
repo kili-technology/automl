@@ -30,6 +30,7 @@ from kiliautoml.utils.type import (
     ModelMetricT,
     ModelNameT,
     ProjectIdT,
+    VerboseLevelT,
 )
 
 
@@ -65,7 +66,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         batch_size: int,
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
-        verbose: int,
+        verbose: VerboseLevelT,
         modal_train_args: ModalTrainArgs,
     ):
         _ = verbose
@@ -143,7 +144,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: int,
+        verbose: VerboseLevelT,
         clear_dataset_cache: bool,
     ) -> JobPredictions:
         if batch_size != DEFAULT_BATCH_SIZE:
@@ -320,7 +321,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: int = 0,
+        verbose: VerboseLevelT,
         clear_dataset_cache: bool = False,
     ):
         raise NotImplementedError("This model does not support find_errors yet")

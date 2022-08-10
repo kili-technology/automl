@@ -23,7 +23,7 @@ def train_model_pytorch(
     model: nn.Module,
     dataloaders,
     epochs,
-    verbose=0,
+    verbose,
     class_names,
 ) -> Tuple[nn.Module, Dict[str, Any]]:
     """

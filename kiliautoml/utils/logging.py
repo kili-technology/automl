@@ -2,9 +2,8 @@ import logging
 from typing import Any, Dict, Set
 
 from termcolor import colored
-from typing_extensions import Literal
 
-VerboseLevelT = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+from kiliautoml.utils.type import VerboseLevelT
 
 
 def set_kili_logging(verbose: VerboseLevelT):
@@ -15,7 +14,7 @@ def set_kili_logging(verbose: VerboseLevelT):
         "ERROR": logging.ERROR,
         "CRITICAL": logging.CRITICAL,
     }
-    logging.basicConfig(filename="automl.log", level=map_level[verbose])
+    logging.basicConfig(level=map_level[verbose])
 
 
 def kili_print(*args, **kwargs) -> None:

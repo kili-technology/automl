@@ -40,6 +40,7 @@ from kiliautoml.utils.type import (
     ParityFilterT,
     ProjectIdT,
     ToolT,
+    VerboseLevelT,
 )
 
 # Priorities
@@ -355,7 +356,7 @@ def main(
     model_path: Optional[str],
     target_job: List[JobNameT],
     ignore_job: List[JobNameT],
-    verbose: bool,
+    verbose: VerboseLevelT,
     clear_dataset_cache: bool,
     from_project: Optional[ProjectIdT],
     model_name: Optional[ModelNameT],

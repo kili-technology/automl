@@ -32,6 +32,7 @@ from kiliautoml.utils.type import (
     ParityFilterT,
     ProjectIdT,
     ToolT,
+    VerboseLevelT,
 )
 
 import wandb  # isort:skip
@@ -75,7 +76,7 @@ def main(
     randomize_assets: bool,
     clear_dataset_cache: bool,
     disable_wandb: bool,
-    verbose: int,
+    verbose: VerboseLevelT,
     batch_size: int,
     parity_filter: ParityFilterT,
     additional_train_args_hg: AdditionalTrainingArgsT,

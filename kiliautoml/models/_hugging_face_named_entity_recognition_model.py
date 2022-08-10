@@ -36,6 +36,7 @@ from kiliautoml.utils.type import (
     MLBackendT,
     ModelNameT,
     ProjectIdT,
+    VerboseLevelT,
 )
 
 
@@ -70,7 +71,7 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: int,
+        verbose: VerboseLevelT,
         additional_train_args_hg: AdditionalTrainingArgsT = {},
         modal_train_args: ModalTrainArgs,
     ):
@@ -200,7 +201,7 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: int,
+        verbose: VerboseLevelT,
         clear_dataset_cache: bool,
     ) -> JobPredictions:
         _ = clear_dataset_cache, verbose
@@ -535,7 +536,7 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: int = 0,
+        verbose: VerboseLevelT,
         clear_dataset_cache: bool = False,
     ):
         raise NotImplementedError("This model does not support find_errors yet")

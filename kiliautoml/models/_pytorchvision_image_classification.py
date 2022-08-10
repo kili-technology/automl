@@ -34,6 +34,7 @@ from kiliautoml.utils.type import (
     JsonResponseClassification,
     ModelNameT,
     ProjectIdT,
+    VerboseLevelT,
 )
 
 
@@ -82,7 +83,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: int = 1,
+        verbose: VerboseLevelT,
         api_key: str = "",
         modal_train_args: ModalTrainArgs,
     ):
@@ -140,7 +141,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: int,
+        verbose: VerboseLevelT,
         clear_dataset_cache: bool,
         api_key: str = "",
     ):
@@ -209,7 +210,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: int = 0,
+        verbose: VerboseLevelT,
         clear_dataset_cache: bool = False,
         api_key: str = "",
     ):
@@ -247,12 +248,11 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
                 [images[i] for i in cv_holdout_idx],
                 data_transforms["val"],
             )
-            if verbose >= 1:
-                logging.info(f"\nCV Fold: {cv_fold+1}/{cv_n_folds}")
-                logging.info(f"Train size: {len(image_datasets['train'])}")
-                logging.info(f"Validation size: {len(image_datasets['val'])}")
-                logging.info(f"Holdout size: {len(holdout_dataset)}")
-                print()
+            logging.debug(f"\nCV Fold: {cv_fold+1}/{cv_n_folds}")
+            logging.debug(f"Train size: {len(image_datasets['train'])}")
+            logging.debug(f"Validation size: {len(image_datasets['val'])}")
+            logging.debug(f"Holdout size: {len(holdout_dataset)}")
+            print()
 
             model_name: ModelNameT = self.model_name  # type: ignore
 

@@ -39,6 +39,7 @@ from kiliautoml.utils.type import (
     KiliBBoxAnnotation,
     MLBackendT,
     ProjectIdT,
+    VerboseLevelT,
 )
 
 env = Environment(
@@ -106,7 +107,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: int,
+        verbose: VerboseLevelT,
         modal_train_args: ModalTrainArgs,
     ):
         _ = verbose
@@ -293,7 +294,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: int,
+        verbose: VerboseLevelT,
         clear_dataset_cache: bool,
         api_key: str = "",
     ):
@@ -323,11 +324,11 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         ml_backend: MLBackendT,
         model_path: ModelPathT,
         job_name: JobNameT,
-        verbose: int,
+        verbose: VerboseLevelT,
         batch_size: int,
         prioritization: bool,
     ) -> JobPredictions:
-        _ = batch_size
+        _ = batch_size, verbose
 
         warnings.warn("This function does not support custom batch_size")
 
@@ -379,8 +380,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
                     inference_files_by_id[image.id], kili_data_dict["names"]
                 )
                 proba_list.append(min(probabilities))
-                if verbose >= 1:
-                    logging.info(f"Asset {image.externalId}: {kili_predictions}")
+                logging.debug(f"Asset {image.externalId}: {kili_predictions}")
                 id_json_list.append(
                     (
                         image.externalId,
@@ -441,7 +441,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: int = 0,
+        verbose: VerboseLevelT,
         clear_dataset_cache: bool = False,
         api_key: str = "",
     ) -> Any:

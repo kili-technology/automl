@@ -11,7 +11,7 @@ from torchvision import models, transforms
 from kiliautoml.utils.download_assets import DownloadedImage
 from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
-from kiliautoml.utils.type import CategoryIdT, ModelNameT
+from kiliautoml.utils.type import CategoryIdT, ModelNameT, VerboseLevelT
 
 data_transforms = {
     "train": transforms.Compose(
@@ -99,7 +99,7 @@ def get_trained_model_image_classif(
     epochs: int,
     model_name: ModelNameT,
     batch_size: int,
-    verbose: int,
+    verbose: VerboseLevelT,
     category_ids: List[CategoryIdT],
     image_datasets: dict,  # type: ignore
     save_model_path: Optional[ModelPathT] = None,
@@ -145,12 +145,13 @@ def initialize_model_img_class(model_name: ModelNameT, class_names):
 def predict_probabilities(
     loader: torch_Data.DataLoader,  # type: ignore
     model,
-    verbose=0,
+    verbose: VerboseLevelT,
 ) -> List[float]:
     """
     Method to compute the probabilities for all classes for the assets in the holdout set
     """
     # Switch to evaluate mode.
+    _ = verbose
     model.eval()
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -165,8 +166,7 @@ def predict_probabilities(
 
             # compute output
             outputs.append(model(input))
-        if verbose >= 2:
-            print()
+        logging.debug("")
 
     # Prepare outputs as a single matrix
     probs = list(

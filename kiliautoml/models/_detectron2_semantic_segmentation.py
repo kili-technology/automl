@@ -45,6 +45,7 @@ from kiliautoml.utils.type import (
     NormalizedVertice,
     NormalizedVertices,
     ProjectIdT,
+    VerboseLevelT,
 )
 
 setup_logger()
@@ -126,7 +127,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: int,
+        verbose: VerboseLevelT,
         modal_train_args: ModalTrainArgs,
     ):
         """Download Kili assets, convert to coco format, then to detectron2 format, train model."""
@@ -245,7 +246,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: int,
+        verbose: VerboseLevelT,
         clear_dataset_cache: bool,
     ):
         _ = verbose
@@ -420,7 +421,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: int = 0,
+        verbose: VerboseLevelT,
         clear_dataset_cache: bool = False,
     ):
         _ = cv_n_folds

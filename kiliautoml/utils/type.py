@@ -45,6 +45,7 @@ JobNameT = NewType("JobNameT", str)
 ProjectIdT = NewType("ProjectIdT", str)
 AssetExternalIdT = NewType("AssetExternalIdT", str)
 AssetIdT = NewType("AssetIdT", str)
+VerboseLevelT = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 
 class CategoryT(TypedDict):

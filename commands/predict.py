@@ -27,6 +27,7 @@ from kiliautoml.utils.type import (
     ModelRepositoryT,
     ParityFilterT,
     ProjectIdT,
+    VerboseLevelT,
 )
 
 
@@ -58,7 +59,7 @@ def main(
     ignore_job: List[JobNameT],
     dry_run: bool,
     model_path: Optional[str],
-    verbose: bool,
+    verbose: VerboseLevelT,
     max_assets: Optional[int],
     randomize_assets: bool,
     from_project: Optional[ProjectIdT],

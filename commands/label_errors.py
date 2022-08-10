@@ -43,6 +43,7 @@ from kiliautoml.utils.type import (
     ModelRepositoryT,
     ParityFilterT,
     ProjectIdT,
+    VerboseLevelT,
 )
 
 
@@ -215,7 +216,7 @@ def main(
     batch_size: int,
     model_name: ModelNameT,
     parity_filter: ParityFilterT,
-    verbose: int,
+    verbose: VerboseLevelT,
     cv_folds: int,
     erase_error_metadata: bool,
 ):
