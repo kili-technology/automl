@@ -8,6 +8,8 @@ from typing_extensions import get_args
 from kiliautoml.utils.logging import VerboseLevelT
 from kiliautoml.utils.type import AssetStatusT, MLBackendT, ModelNameT, ParityFilterT
 
+DEFAULT_BATCH_SIZE = 8
+
 
 class Options:
 
@@ -80,7 +82,7 @@ class Options:
 
     batch_size = click.option(
         "--batch-size",
-        default=8,
+        default=DEFAULT_BATCH_SIZE,
         type=int,
     )
 

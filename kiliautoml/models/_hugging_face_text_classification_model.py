@@ -12,6 +12,7 @@ from kili.client import Kili
 from tqdm.autonotebook import tqdm
 from transformers import Trainer
 
+from commands.common_args import DEFAULT_BATCH_SIZE
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import (
@@ -145,8 +146,9 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         verbose: int,
         clear_dataset_cache: bool,
     ) -> JobPredictions:
-        print("Warning, this model does not support custom batch_size ", batch_size)
-        _ = clear_dataset_cache
+        if batch_size != DEFAULT_BATCH_SIZE:
+            logging.warning("Warning, this model does not support custom batch_size ", batch_size)
+        _ = clear_dataset_cache, verbose
 
         model_path_res, _, self.ml_backend = self._extract_model_info(
             self.job_name, self.project_id, model_path, from_project
@@ -173,10 +175,9 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
             predictions.append({self.job_name: predictions_asset})
             proba_assets.append(predictions_asset["categories"][0]["confidence"])
 
-            if verbose:
-                print("----------")
-                print(text)
-                print(predictions_asset)
+            logging.debug("----------")
+            logging.debug(text)
+            logging.debug(predictions_asset)
 
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
