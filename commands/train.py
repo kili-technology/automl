@@ -32,6 +32,7 @@ from kiliautoml.utils.type import (
     ProjectIdT,
     ToolT,
 )
+from kiliautoml.utils.ultralytics.yolov5.utils.general import set_logging
 
 import wandb  # isort:skip
 from wandb.sdk.wandb_run import Run  # isort:skip
@@ -85,6 +86,7 @@ def main(
 
     If there are multiple jobs in your projects, a model will be trained on each job.
     """
+    set_logging(verbose)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)

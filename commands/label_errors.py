@@ -43,6 +43,7 @@ from kiliautoml.utils.type import (
     ParityFilterT,
     ProjectIdT,
 )
+from kiliautoml.utils.ultralytics.yolov5.utils.general import set_logging
 
 
 def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: ProjectIdT):
@@ -226,6 +227,7 @@ def main(
     stored in a file, but also a metadata (labeling_error: true) is uploaded to Kili to
     easily filter them later in the app.
     """
+    set_logging(verbose)
     dry_run = dry_run_security(dry_run)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
