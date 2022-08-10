@@ -28,6 +28,7 @@ from kiliautoml.utils.helpers import (
     get_content_input_from_job,
     get_project,
 )
+from kiliautoml.utils.logging import set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AssetStatusT,
@@ -40,7 +41,6 @@ from kiliautoml.utils.type import (
     ProjectIdT,
     ToolT,
 )
-from kiliautoml.utils.ultralytics.yolov5.utils.general import set_logging
 
 # Priorities
 Priorities = List[float]
@@ -371,7 +371,7 @@ def main(
     We embedded the assets using a generic model, and then use a strategy that is a mixture of
     diversity sampling, uncertainty sampling, and random sampling to sorts the assets.
     """
-    set_logging(verbose)
+    set_kili_logging(verbose)
     if uncertainty_sampling + diversity_sampling > 1:
         raise ValueError("diversity_sampling + diversity_sampling should be less than 1.")
 

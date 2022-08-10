@@ -7,7 +7,7 @@ from typing_extensions import Literal
 VerboseLevelT = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 
-def set_logging(verbose: VerboseLevelT):
+def set_kili_logging(verbose: VerboseLevelT):
     map_level: Dict[VerboseLevelT, Any] = {
         "DEBUG": logging.DEBUG,
         "INFO": logging.INFO,

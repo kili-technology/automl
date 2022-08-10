@@ -32,6 +32,7 @@ from kiliautoml.utils.helpers import (
     is_contours_detection,
     not_implemented_job,
 )
+from kiliautoml.utils.logging import set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AssetStatusT,
@@ -43,7 +44,6 @@ from kiliautoml.utils.type import (
     ParityFilterT,
     ProjectIdT,
 )
-from kiliautoml.utils.ultralytics.yolov5.utils.general import set_logging
 
 
 def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: ProjectIdT):
@@ -227,7 +227,7 @@ def main(
     stored in a file, but also a metadata (labeling_error: true) is uploaded to Kili to
     easily filter them later in the app.
     """
-    set_logging(verbose)
+    set_kili_logging(verbose)
     dry_run = dry_run_security(dry_run)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)

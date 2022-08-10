@@ -18,6 +18,7 @@ from kiliautoml.utils.helpers import (
     get_content_input_from_job,
     get_project,
 )
+from kiliautoml.utils.logging import set_kili_logging
 from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
@@ -27,7 +28,6 @@ from kiliautoml.utils.type import (
     ParityFilterT,
     ProjectIdT,
 )
-from kiliautoml.utils.ultralytics.yolov5.utils.general import set_logging
 
 
 @click.command()
@@ -70,7 +70,7 @@ def main(
     clear_dataset_cache: bool,
 ):
     """Compute predictions and upload them to Kili."""
-    set_logging(verbose)
+    set_kili_logging(verbose)
     dry_run = dry_run_security(dry_run)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
