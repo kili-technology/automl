@@ -350,7 +350,6 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             keep_points = (
                 norm > diameter / 10
             )  # the more the value, the more granular the prediction
-            print(norm.mean())
 
             # We do not want to delete more than half the points in a row
             keep_points[::2] = True
