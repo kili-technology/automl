@@ -1,5 +1,8 @@
 import os
+import shutil
 from datetime import datetime
+from functools import wraps
+from typing import Any, Callable
 
 from kiliautoml.utils.type import (
     JobNameT,
@@ -14,9 +17,24 @@ AUTOML_CACHE = os.getenv(
 )
 
 
-def makedirs_exist_ok(path_building_function):
+TFunc = Callable[..., Any]
+
+
+def makedirs_exist_ok(function: TFunc) -> TFunc:
+    @wraps(function)
     def wrapper(*args, **kwargs):
-        res = path_building_function(*args, **kwargs)
+        res = function(*args, **kwargs)
+        os.makedirs(res, exist_ok=True)
+        return res
+
+    return wrapper
+
+
+def reset_dir(function: TFunc) -> TFunc:
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        res = function(*args, **kwargs)
+        shutil.rmtree(res, ignore_errors=True)
         os.makedirs(res, exist_ok=True)
         return res
 
@@ -135,6 +153,9 @@ class PathPytorchVision:
         return os.path.join(model_dir, "training_args")
 
 
+# TODO: Use @reset_dir forthe other classes, not just PathDetectron2
+
+
 class PathDetectron2:
     @staticmethod
     @makedirs_exist_ok
@@ -144,16 +165,16 @@ class PathDetectron2:
         return os.path.join(model_repository_dir, "pytorch", "model")
 
     @staticmethod
-    @makedirs_exist_ok
+    @reset_dir
     def append_data_dir(model_repository_dir: ModelRepositoryDirT):
         return os.path.join(model_repository_dir, "data")
 
     @staticmethod
-    @makedirs_exist_ok
+    @reset_dir
     def append_output_evaluation(model_repository_dir: ModelRepositoryDirT):
         return os.path.join(model_repository_dir, "evaluation")
 
     @staticmethod
-    @makedirs_exist_ok
+    @reset_dir
     def append_output_visualization(model_repository_dir: ModelRepositoryDirT):
         return os.path.join(model_repository_dir, "prediction_visualization")

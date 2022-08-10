@@ -1,5 +1,6 @@
 import os
 import shutil
+from functools import wraps
 from typing import Any, Callable, List, Optional
 
 from joblib import Memory
@@ -14,32 +15,34 @@ from kiliautoml.utils.type import (
     ProjectIdT,
 )
 
+TFunc = Callable[..., Any]
+
 
 def kili_project_memoizer(
     sub_dir: str,
 ):
     """Decorator factory for memoizing a function that takes a project_id as input."""
 
-    def decorator(some_function):
+    def decorator(some_function: TFunc) -> TFunc:
+        @wraps(some_function)
         def wrapper(*args, **kwargs):
             project_id = kwargs.get("project_id")
             if not project_id:
                 raise ValueError("project_id not specified in a keyword argument")
             cache_path = Path.cache_memoization_dir(project_id, sub_dir)
-            memory = Memory(cache_path, verbose=0)
-            return memory.cache(some_function)(*args, **kwargs)
+            print("cache_path", cache_path)
+            memory = Memory(cache_path, verbose=1)
+            return memory.cache(some_function, ignore=["kili"])(*args, **kwargs)
 
         return wrapper
 
     return decorator
 
 
-TFunc = Callable[..., Any]
-
-
 def kili_memoizer(some_function: TFunc) -> TFunc:
     """We ignore the argument asset_content"""
 
+    @wraps(some_function)
     def wrapper(*args, **kwargs):
         memory = Memory(AUTOML_CACHE, verbose=0)
         return memory.cache(some_function, ignore=["asset_content"])(*args, **kwargs)

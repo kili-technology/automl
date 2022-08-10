@@ -15,7 +15,9 @@ from detectron2.structures import BoxMode
 from detectron2.utils.logger import setup_logger
 from detectron2.utils.visualizer import ColorMode, Visualizer
 from PIL import Image
+from sklearn.model_selection import train_test_split
 from tqdm.autonotebook import tqdm
+from typing_extensions import Literal
 
 from kiliautoml.models._base_model import (
     BaseInitArgs,
@@ -69,7 +71,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         KiliBaseModel.__init__(self, base_init_args)
 
     @staticmethod
-    def _convert_coco_to_detectron(img_dir):
+    def _convert_coco_to_detectron(img_dir, mode: Literal["train", "test"]):
         """Convert COCO format to Detectron2 format."""
         json_file = os.path.join(img_dir, "labels.json")
         with open(json_file) as f:
@@ -77,7 +79,11 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
 
         dataset_dicts = []
 
-        for image in imgs_anns["images"]:
+        images_train, images_test = train_test_split(
+            imgs_anns["images"], random_state=42, shuffle=False
+        )
+        list_images = images_train if mode == "train" else images_test
+        for image in list_images:
             record = {}
 
             height, width = image["height"], image["width"]
@@ -161,7 +167,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         for d in ["train", "val"]:
             # TODO: separate train and test
             DatasetCatalog.register(
-                "dataset_" + d, lambda d=d: self._convert_coco_to_detectron(data_dir)
+                "dataset_" + d, lambda d=d: self._convert_coco_to_detectron(data_dir, mode=d)
             )
             MetadataCatalog.get("dataset_" + d).set(thing_classes=full_classes)
 
@@ -312,7 +318,48 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         im = np.array(im, dtype=np.uint8)
         idx = cv2.findContours(im, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         list_x_y = idx[0][0]
-        return list_x_y.reshape(-1, 2)
+        list_x_y = list_x_y.reshape(-1, 2)
+
+        def purge(x_y):
+            """We project point 1 to the [point 1 - point 2] axis"""
+            # x_y = np.roll(x_y, 1, axis=0)
+            x_y_matrix = np.zeros((3, len(x_y) - 2, 2))
+            x_y_matrix[0] = x_y[0:-2]  # point 0
+            x_y_matrix[1] = x_y[1:-1]  # point 1
+            x_y_matrix[2] = x_y[2:]  # point 2
+
+            vectors_1 = x_y_matrix[1] - x_y_matrix[0]
+            vectors_2 = x_y_matrix[2] - x_y_matrix[0]
+
+            inner = np.einsum("ai,ai->a", vectors_1, vectors_2)
+
+            L2_v1 = np.linalg.norm(vectors_1, axis=1)
+            L2_v2 = np.linalg.norm(vectors_2, axis=1)
+            cos = inner / (L2_v1 * L2_v2)
+
+            new_vectors_1 = vectors_2 * np.stack([cos, cos], axis=1)
+
+            new_point_1 = x_y_matrix[0] + new_vectors_1
+
+            projection_vector = new_point_1 - x_y_matrix[1]
+
+            # If the difference is more than a pixel, keep the intermediate point
+            norm = np.linalg.norm(projection_vector, axis=1)
+
+            diameter = np.max(x_y[:, 0]) - np.min(x_y[:, 0]) + np.max(x_y[:, 1]) - np.min(x_y[:, 1])
+            keep_points = (
+                norm > diameter / 10
+            )  # the more the value, the more granular the prediction
+
+            # We do not want to delete more than half the points in a row
+            keep_points[::2] = True
+            mask = np.array([True] * len(x_y))
+            mask[1:-1] = keep_points
+            return x_y[mask]
+
+        for _ in range(10):
+            list_x_y = purge(list_x_y)
+        return list_x_y
 
     def get_annotations_from_instances(self, instances, class_names: List[CategoryIdT]):
         """instances contains multiples bbox and object corresponding to one image"""
@@ -325,6 +372,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             classe = classes[class_i]
             categories = [CategoryT(name=class_names[classe], confidence=int(score * 100))]
             list_x_y = self.get_contours_instance(instances, class_i)
+
             boundingPoly = [
                 NormalizedVertices(
                     normalizedVertices=[

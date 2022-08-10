@@ -102,7 +102,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
 
         splits = {}
         splits["train"], splits["val"] = train_test_split(
-            range(len(labels)), test_size=0.2, random_state=42
+            range(len(labels)), test_size=0.3, random_state=42
         )
         label_train = [labels[i] for i in splits["train"]]
         label_val = [labels[i] for i in splits["val"]]

@@ -4,11 +4,13 @@ import random
 import warnings
 from datetime import datetime
 from glob import glob
-from typing import Any, Dict, List, Optional, Tuple, TypeVar
+from typing import Any, Dict, List, Optional, Set, Tuple, TypeVar
 from warnings import warn
 
+import backoff
 import numpy as np
 import torch
+from graphql import GraphQLError
 from kili.client import Kili
 from tabulate import tabulate
 from termcolor import colored
@@ -69,6 +71,7 @@ def ensure_dir(file_path: str):
 
 
 @kili_project_memoizer(sub_dir="get_asset_memoized")
+@backoff.on_exception(backoff.expo, exception=GraphQLError, max_tries=3)
 def get_asset_memoized(
     *,
     kili: Kili,
@@ -134,6 +137,7 @@ def get_assets(
             status_in=status_in,
         )
         random.shuffle(assets)
+        assets = assets[::-1]
         assets = assets[:max_assets]
 
     else:
@@ -238,6 +242,23 @@ def get_project(kili, project_id: ProjectIdT) -> Tuple[InputTypeT, JobsT, str]:
 
 def kili_print(*args, **kwargs) -> None:
     print(colored("kili:", "yellow", attrs=["bold"]), *args, **kwargs)
+
+
+class OneTimePrinter:
+    messages_already_printed: Set[str] = set()
+
+    def __call__(self, *args, **kwargs) -> None:
+        """If the first argument in the print is a deja-vu string, do not print"""
+
+        if args and isinstance(args[0], str):
+            if args[0] not in self.messages_already_printed:
+                self.messages_already_printed.add(args[0])
+                kili_print(*args, **kwargs)
+            else:
+                # Already printed
+                pass
+        else:
+            kili_print(*args, **kwargs)
 
 
 T = TypeVar("T")  # Declare type variable
@@ -372,3 +393,16 @@ def curated_job(jobs: JobsT, target_job: List[JobNameT], ignore_job: List[JobNam
             new_job[job_name] = job
 
     return new_job
+
+
+def dry_run_security(dry_run):
+    if dry_run is True:
+        return dry_run
+    print("Are you sure You want to send the predictions to Kili? Y/N")
+    validation = input()
+    if validation in ["N", "n", "No", "NO", "no"]:
+        dry_run = True
+        kili_print("OK, We won't send the predictions to Kili!")
+    else:
+        kili_print("OK, We will send the predictions to Kili!")
+    return dry_run
