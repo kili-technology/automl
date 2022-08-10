@@ -10,7 +10,7 @@ from shapely.errors import TopologicalError
 from shapely.geometry import Point, Polygon
 from typing_extensions import Literal
 
-from kiliautoml.utils.helpers import OneTimePrinter
+from kiliautoml.utils.logging import OneTimePrinter
 from kiliautoml.utils.type import (
     AssetExternalIdT,
     AssetIdT,

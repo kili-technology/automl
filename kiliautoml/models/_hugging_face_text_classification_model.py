@@ -1,5 +1,6 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
+import logging
 import os
 from typing import Any, Dict, Optional
 
@@ -19,7 +20,7 @@ from kiliautoml.models._base_model import (
     ModalTrainArgs,
     ModelConditions,
 )
-from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
+from kiliautoml.utils.helpers import categories_from_job, ensure_dir
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AssetsLazyList,
@@ -76,9 +77,8 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
 
         model_name: ModelNameT = self.model_name  # type: ignore
 
-        kili_print(self.job_name)
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
-        kili_print(f"Downloading data to {path_dataset}")
+        logging.info(f"Downloading data to {path_dataset}")
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
         job_categories = categories_from_job(self.job)
@@ -131,7 +131,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         trainer.train()  # type: ignore
         model_evaluation = self.model_evaluation(trainer, job_categories)
 
-        kili_print(f"Saving model to {path_model}")
+        logging.info(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
 

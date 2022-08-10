@@ -11,7 +11,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 from torch.optim import lr_scheduler
 from tqdm.autonotebook import trange
 
-from kiliautoml.utils.helpers import kili_print
+from kiliautoml.utils.logging import kili_print
 from kiliautoml.utils.type import ModelMetricT
 
 # Necessary on mac for train and predict.

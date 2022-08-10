@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 import click
@@ -26,7 +27,6 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
-    kili_print,
 )
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
@@ -270,7 +270,7 @@ class Prioritizer:
         assert 0 <= uncertainty_sampling + diversity_sampling <= 1
 
         random_sampling = 1 - diversity_sampling - uncertainty_sampling
-        kili_print(
+        logging.info(
             f"Sampling Mix of {diversity_sampling*100}% of  Diversity Sampling "
             f"and {uncertainty_sampling*100}% of Uncertainty Sampling "
             f"and {random_sampling*100}% of Random Sampling."
@@ -438,14 +438,14 @@ def main(
         downloaded_images = download_project_images(api_key, unlabeled_assets, output_folder=None)
         pil_images = [image.get_image() for image in downloaded_images]
         embeddings = embeddings_images(pil_images)
-        kili_print("Embeddings successfully computed with shape ", embeddings.shape)
+        logging.debug("Embeddings successfully computed with shape ", embeddings.shape)
     else:
         raise NotImplementedError
 
     if not job_predictions:
         return
     predictions_probability = job_predictions.predictions_probability
-    kili_print("Predictions probability shape: ", predictions_probability)
+    logging.debug("Predictions probability shape: ", predictions_probability)
     asset_ids = [asset.id for asset in unlabeled_assets]
     prioritizer = Prioritizer(embeddings, predictions_probability=predictions_probability)
     priorities = prioritizer.get_priorities(

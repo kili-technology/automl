@@ -1,3 +1,4 @@
+import logging
 import os
 import warnings
 from typing import Optional
@@ -18,7 +19,6 @@ from kiliautoml.models._base_model import (
 )
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
-from kiliautoml.utils.helpers import kili_print
 from kiliautoml.utils.path import Path, PathPytorchVision
 from kiliautoml.utils.pytorchvision.image_classification import (
     ClassificationPredictDataset,
@@ -248,10 +248,10 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
                 data_transforms["val"],
             )
             if verbose >= 1:
-                kili_print(f"\nCV Fold: {cv_fold+1}/{cv_n_folds}")
-                kili_print(f"Train size: {len(image_datasets['train'])}")
-                kili_print(f"Validation size: {len(image_datasets['val'])}")
-                kili_print(f"Holdout size: {len(holdout_dataset)}")
+                logging.info(f"\nCV Fold: {cv_fold+1}/{cv_n_folds}")
+                logging.info(f"Train size: {len(image_datasets['train'])}")
+                logging.info(f"Validation size: {len(image_datasets['val'])}")
+                logging.info(f"Holdout size: {len(holdout_dataset)}")
                 print()
 
             model_name: ModelNameT = self.model_name  # type: ignore

@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List
 
 import click
@@ -29,7 +30,6 @@ from kiliautoml.utils.helpers import (
     get_content_input_from_job,
     get_project,
     is_contours_detection,
-    kili_print,
     not_implemented_job,
 )
 from kiliautoml.utils.memoization import clear_command_cache
@@ -46,10 +46,10 @@ from kiliautoml.utils.type import (
 
 
 def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: ProjectIdT):
-    kili_print("\nUpdating metadata for the concerned assets")
+    logging.info("\nUpdating metadata for the concerned assets")
 
     found_errors = [len(asset_error) for asset_error in error_recap.errors_by_asset]
-    kili_print("Number of wrong labels found: ", sum(found_errors))
+    logging.info("Number of wrong labels found: ", sum(found_errors))
 
     id_errors_tuples = list(zip(error_recap.id_array, error_recap.errors_by_asset))
     first = min(100, len(id_errors_tuples))
@@ -232,7 +232,7 @@ def main(
     jobs = curated_job(jobs, target_job, ignore_job)
 
     for job_name, job in jobs.items():
-        kili_print(f"Detecting errors for job: {job_name}")
+        logging.info(f"Detecting errors for job: {job_name}")
         content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")
         tools = job.get("tools")

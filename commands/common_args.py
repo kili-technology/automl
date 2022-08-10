@@ -5,6 +5,7 @@ from typing import List
 import click
 from typing_extensions import get_args
 
+from kiliautoml.utils.logging import VerboseLevelT
 from kiliautoml.utils.type import AssetStatusT, MLBackendT, ModelNameT, ParityFilterT
 
 
@@ -83,7 +84,12 @@ class Options:
         type=int,
     )
 
-    verbose = click.option("--verbose", default=0, type=int, help="Verbose level")
+    verbose = click.option(
+        "--verbose",
+        default="INFO",
+        type=click.Choice(get_args(VerboseLevelT)),
+        help="Verbose level",
+    )
 
     randomize_assets = click.option(
         "--randomize-assets",

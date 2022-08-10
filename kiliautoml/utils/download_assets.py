@@ -12,7 +12,7 @@ from requests import Response
 from tqdm.autonotebook import tqdm
 
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, save_mock_data
-from kiliautoml.utils.helpers import OneTimePrinter, kili_print
+from kiliautoml.utils.logging import OneTimePrinter, kili_print
 from kiliautoml.utils.memoization import kili_memoizer
 from kiliautoml.utils.type import AssetExternalIdT, AssetIdT, AssetsLazyList, AssetT
 

@@ -1,5 +1,6 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import csv
+import logging
 import math
 import os
 import re
@@ -23,11 +24,7 @@ from kiliautoml.models._base_model import (
 )
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import find_all_label_errors
-from kiliautoml.utils.helpers import (
-    categories_from_job,
-    get_last_trained_model_path,
-    kili_print,
-)
+from kiliautoml.utils.helpers import categories_from_job, get_last_trained_model_path
 from kiliautoml.utils.path import ModelPathT, Path, PathUltralytics
 from kiliautoml.utils.type import (
     AssetExternalIdT,
@@ -62,13 +59,13 @@ def get_id_from_path(path_yolov5_inference: str) -> str:
 
 
 def inspect(e):
-    kili_print("Error while executing YoloV5:")
+    logging.error("Error while executing YoloV5:")
     for k, v in e.__dict__.items():
-        kili_print(k)
+        logging.error(k)
         if isinstance(v, bytes):
-            print(v.decode("utf-8"))
+            logging.error(v.decode("utf-8"))
         else:
-            print(v)
+            logging.error(v)
 
 
 class UltralyticsObjectDetectionModel(KiliBaseModel):
@@ -126,7 +123,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         config_data_path = os.path.join(yolov5_path, "data", "kili.yaml")
 
         if clear_dataset_cache and os.path.exists(data_path) and os.path.isdir(data_path):
-            kili_print("Dataset cache for this project is being cleared.")
+            logging.info("Dataset cache for this project is being cleared.")
             shutil.rmtree(data_path)
 
         model_output_path = self._get_output_path_bbox(
@@ -157,7 +154,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         args_from_json = reduce(
             lambda x, y: x + y, ([f"--{k}", f"{v}"] for k, v in additional_train_args_yolo.items())
         )
-        kili_print("Starting Ultralytics' YoloV5 ...")
+        logging.info("Starting Ultralytics' YoloV5 ...")
         try:
             yolo_env = os.environ.copy()
             if disable_wandb:
@@ -176,7 +173,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
                 str(batch_size),
                 *args_from_json,
             ]
-            kili_print("Executing Yolo with command line:", " ".join(args))
+            logging.info("Executing Yolo with command line:", " ".join(args))
 
             with open("/tmp/test.log", "wb") as f:
                 process = subprocess.Popen(
@@ -189,7 +186,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
                 for line in iter(process.stdout.readline, b""):  # type:ignore
                     sys.stdout.write(line.decode(sys.stdout.encoding))
 
-                kili_print("process return code:", process.returncode)
+                logging.info("process return code:", process.returncode)
                 output, error = process.communicate()
                 if process.returncode != 0:
                     print(output)
@@ -233,7 +230,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         assets: AssetsLazyList,
     ):
 
-        kili_print("Downloading datasets from Kili")
+        logging.info("Downloading datasets from Kili")
         train_val_proportions = [0.8, 0.2]
         path = data_path
         if "/kili/" not in path:
@@ -286,7 +283,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         illegal_caracters = [",", "#", "?", "%", ":"]
         for char in illegal_caracters:
             model_output_path = model_output_path.replace(char, "_")
-        kili_print("output_path of the model:", model_output_path)
+        logging.info("output_path of the model:", model_output_path)
         return model_output_path
 
     def predict(
@@ -339,8 +336,8 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         else:
             raise NotImplementedError(f"Predictions with ml-backend {ml_backend} not implemented")
 
-        kili_print(f"Loading model {model_path}")
-        kili_print(f"for job {job_name}")
+        logging.info(f"Loading model {model_path}")
+        logging.info(f"for job {job_name}")
         with open(os.path.join(model_path, "..", "..", "kili.yaml")) as f:
             kili_data_dict = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -357,7 +354,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         # default  --conf-thres=0.25, --iou-thres=0.45
         prioritizer_args = " --conf-thres=0.01  --iou-thres=0.45 " if prioritization else ""
 
-        kili_print("Starting Ultralytics' YoloV5 inference...")
+        logging.info("Starting Ultralytics' YoloV5 inference...")
         cmd = (
             "python detect.py "
             + f'--weights "{model_weights}" '
@@ -372,7 +369,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         inference_files = glob(os.path.join(inference_path, "exp", "labels", "*.txt"))
         inference_files_by_id = {get_id_from_path(pf): pf for pf in inference_files}
 
-        kili_print("Converting Ultralytics' YoloV5 inference to Kili JSON format...")
+        logging.info("Converting Ultralytics' YoloV5 inference to Kili JSON format...")
         id_json_list: List[Tuple[AssetExternalIdT, Dict[JobNameT, JsonResponseBboxT]]] = []
 
         proba_list: List[float] = []
@@ -383,7 +380,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
                 )
                 proba_list.append(min(probabilities))
                 if verbose >= 1:
-                    kili_print(f"Asset {image.externalId}: {kili_predictions}")
+                    logging.info(f"Asset {image.externalId}: {kili_predictions}")
                 id_json_list.append(
                     (
                         image.externalId,
@@ -393,7 +390,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
 
         # TODO: move this check in the prioritizer
         if len(id_json_list) < len(downloaded_images):
-            kili_print(
+            logging.warning(
                 "WARNING: Not enouth predictions. You should probably train longer the Model."
                 f"Missing prediction for {len(downloaded_images) - len(id_json_list)} assets."
             )
@@ -432,7 +429,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         split_path = os.path.normpath(model_path).split(os.path.sep)  # type: ignore
 
         ml_backend: MLBackendT = split_path[-5]  # type: ignore
-        kili_print(f"ml-backend: {ml_backend}")
+        logging.info(f"ml-backend: {ml_backend}")
         if ml_backend not in ["pytorch", "tensorflow"]:
             raise ValueError(f"Unknown ml-backend: {ml_backend}")
         return model_path, ml_backend
@@ -450,7 +447,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
     ) -> Any:
         assert cv_n_folds == 1
         _ = epochs
-        kili_print("epochs is not used in label_error")
+        logging.info("epochs is not used in label_error of object detection tasks.")
         job_predictions = self.predict(
             assets=assets,
             model_path=None,

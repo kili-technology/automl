@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 import click
@@ -16,7 +17,6 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
-    kili_print,
 )
 from kiliautoml.utils.type import (
     AssetStatusT,
@@ -27,6 +27,7 @@ from kiliautoml.utils.type import (
     ParityFilterT,
     ProjectIdT,
 )
+from kiliautoml.utils.ultralytics.yolov5.utils.general import set_logging
 
 
 @click.command()
@@ -69,7 +70,7 @@ def main(
     clear_dataset_cache: bool,
 ):
     """Compute predictions and upload them to Kili."""
-
+    set_logging(verbose)
     dry_run = dry_run_security(dry_run)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
@@ -85,7 +86,7 @@ def main(
     )
 
     for job_name, job in jobs.items():
-        kili_print(f"Predicting annotations for job: {job_name}")
+        logging.info(f"Predicting annotations for job: {job_name}")
         content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")
         tools = job.get("tools")
@@ -129,10 +130,10 @@ def main(
                 json_response_array=job_predictions.json_response_array,
                 model_name_array=job_predictions.model_name_array,
             )
-            kili_print(
+            logging.info(
                 "Predictions sent to kili, you can open the following url to check them out!"
             )
             status_filter = "%2C".join(asset_status_in)
-            kili_print(
+            logging.info(
                 f"{api_endpoint[:-21]}/label/projects/{project_id}/explore?statusIn={status_filter}"
             )
