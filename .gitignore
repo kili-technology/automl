@@ -9,3 +9,4 @@ wandb/**
 .mypy_cache/**
 kiliautoml.egg-info/**
 git_add.sh
+automl.log
