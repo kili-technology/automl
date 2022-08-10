@@ -2,6 +2,7 @@
 This files contains types for annotations, but those types should be used only for label error.
 """
 from abc import ABC, abstractmethod
+from collections import Counter
 from typing import Dict, List, Type, Union
 
 from pydantic import BaseModel, validator
@@ -9,6 +10,7 @@ from shapely.errors import TopologicalError
 from shapely.geometry import Point, Polygon
 from typing_extensions import Literal
 
+from kiliautoml.utils.helpers import OneTimePrinter
 from kiliautoml.utils.type import (
     AssetExternalIdT,
     AssetIdT,
@@ -86,6 +88,10 @@ class AnnotationStandardizedT(BaseModel, ABC):
         ...
 
 
+# TODO: Create a real logging class
+one_time_printer = OneTimePrinter()
+
+
 def iou_polygons(points1: List[NormalizedVertice], points2):
     polygon1 = Polygon([Point(p["x"], p["y"]) for p in points1])
     polygon2 = Polygon([Point(p["x"], p["y"]) for p in points2])
@@ -94,7 +100,7 @@ def iou_polygons(points1: List[NormalizedVertice], points2):
         union = polygon1.union(polygon2).area
         iou = intersect / union
     except TopologicalError:
-        print("The model is probably not trained enough")
+        one_time_printer("TopologicalError: The model is probably not trained enough")
         iou = 0
     return iou
 
@@ -256,11 +262,13 @@ def find_label_errors_for_one_asset(
             )
 
     # Checking for Omissions
+    ommissions = []
     for prediction_i, manuals in prediction_to_manual.items():
         if len(manuals) == 0:
             ann = predicted_annotations.annotations[prediction_i]
-            print(f"Found omission: {ann.category_id}.")
+            ommissions.append(ann.category_id)
             errors.append(LabelingError(error_type="omission", error_probability=ann.confidence))
+    print(f"Found omission: {Counter(ommissions)}.")
 
     print(f"Asset conclusion: We found {len(errors)} errors.")
 
