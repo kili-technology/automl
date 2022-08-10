@@ -359,7 +359,6 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             return x_y[mask]
 
         for _ in range(10):
-            print("Simplifying annotations. Reducing the nb of edges: ", len(list_x_y))
             list_x_y = purge(list_x_y)
         return list_x_y
 
