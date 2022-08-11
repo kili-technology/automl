@@ -23,13 +23,11 @@ def train_model_pytorch(
     model: nn.Module,
     dataloaders,
     epochs,
-    verbose,
     class_names,
 ) -> Tuple[nn.Module, Dict[str, Any]]:
     """
     Method that trains the given model and return the best one found in the given epochs
     """
-    _ = verbose
     since = time.time()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

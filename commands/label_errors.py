@@ -119,7 +119,6 @@ def label_error(
     clear_dataset_cache,
     epochs,
     batch_size,
-    verbose,
     cv_folds,
     input_type,
     job_name,
@@ -136,7 +135,6 @@ def label_error(
             cv_n_folds=cv_folds,
             epochs=epochs,
             batch_size=batch_size,
-            verbose=verbose,
             api_key=api_key,
         )
 
@@ -151,7 +149,6 @@ def label_error(
             cv_n_folds=cv_folds,
             epochs=epochs,
             batch_size=batch_size,
-            verbose=verbose,
             api_key=api_key,
             assets=assets,
             clear_dataset_cache=clear_dataset_cache,
@@ -162,7 +159,6 @@ def label_error(
             cv_n_folds=cv_folds,
             epochs=epochs,
             batch_size=batch_size,
-            verbose=verbose,
             assets=assets,
             clear_dataset_cache=clear_dataset_cache,
         )
@@ -285,7 +281,6 @@ def main(
             cv_n_folds=cv_folds,
             epochs=epochs,
             batch_size=batch_size,
-            verbose=verbose,
             assets=assets,
             clear_dataset_cache=clear_dataset_cache,
         )

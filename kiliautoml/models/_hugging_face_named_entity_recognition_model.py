@@ -36,7 +36,6 @@ from kiliautoml.utils.type import (
     MLBackendT,
     ModelNameT,
     ProjectIdT,
-    VerboseLevelT,
 )
 
 
@@ -71,7 +70,6 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: VerboseLevelT,
         additional_train_args_hg: AdditionalTrainingArgsT = {},
         modal_train_args: ModalTrainArgs,
     ):
@@ -81,7 +79,7 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
         - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
         """
-        _ = verbose, modal_train_args
+        _ = modal_train_args
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(
@@ -201,10 +199,9 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: VerboseLevelT,
         clear_dataset_cache: bool,
     ) -> JobPredictions:
-        _ = clear_dataset_cache, verbose
+        _ = clear_dataset_cache
         warnings.warn("Warning, this method does not support custom batch_size")
         _ = batch_size
         model_path_res, _, self.ml_backend = self._extract_model_info(
@@ -536,7 +533,6 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: VerboseLevelT,
         clear_dataset_cache: bool = False,
     ):
         raise NotImplementedError("This model does not support find_errors yet")

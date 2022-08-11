@@ -45,7 +45,6 @@ from kiliautoml.utils.type import (
     NormalizedVertice,
     NormalizedVertices,
     ProjectIdT,
-    VerboseLevelT,
 )
 
 setup_logger()
@@ -127,11 +126,10 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: VerboseLevelT,
         modal_train_args: ModalTrainArgs,
     ):
         """Download Kili assets, convert to coco format, then to detectron2 format, train model."""
-        _ = verbose, modal_train_args
+        _ = modal_train_args
         if not disable_wandb:
             logger.warning(
                 "Wandb is not yet available on Detectron2. But tensorboard is available."
@@ -246,10 +244,8 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: VerboseLevelT,
         clear_dataset_cache: bool,
     ):
-        _ = verbose
         if from_project:
             project_id = from_project
         else:
@@ -421,7 +417,6 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: VerboseLevelT,
         clear_dataset_cache: bool = False,
     ):
         _ = cv_n_folds
@@ -432,7 +427,6 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             model_path=None,
             from_project=None,
             batch_size=batch_size,
-            verbose=verbose,
             clear_dataset_cache=clear_dataset_cache,
         )
 

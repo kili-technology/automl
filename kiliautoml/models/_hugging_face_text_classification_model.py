@@ -30,7 +30,6 @@ from kiliautoml.utils.type import (
     ModelMetricT,
     ModelNameT,
     ProjectIdT,
-    VerboseLevelT,
 )
 
 
@@ -66,11 +65,8 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         batch_size: int,
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
-        verbose: VerboseLevelT,
         modal_train_args: ModalTrainArgs,
     ):
-        _ = verbose
-
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(
@@ -144,12 +140,11 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: VerboseLevelT,
         clear_dataset_cache: bool,
     ) -> JobPredictions:
         if batch_size != DEFAULT_BATCH_SIZE:
             logger.warning("This model does not support custom batch_size ", batch_size)
-        _ = clear_dataset_cache, verbose
+        _ = clear_dataset_cache
 
         model_path_res, _, self.ml_backend = self._extract_model_info(
             self.job_name, self.project_id, model_path, from_project
@@ -321,7 +316,6 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: VerboseLevelT,
         clear_dataset_cache: bool = False,
     ):
         raise NotImplementedError("This model does not support find_errors yet")

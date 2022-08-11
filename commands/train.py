@@ -141,7 +141,6 @@ def main(
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
             disable_wandb=disable_wandb,
-            verbose=verbose,
         )
 
         modal_train_args = ModalTrainArgs(

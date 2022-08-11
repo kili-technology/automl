@@ -420,7 +420,6 @@ def main(
         model_path=model_path,
         from_project=from_project,
         batch_size=batch_size,
-        verbose=verbose,
         clear_dataset_cache=clear_dataset_cache,
     )
     condition_requested = ModelConditionsRequested(

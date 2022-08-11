@@ -39,7 +39,6 @@ from kiliautoml.utils.type import (
     KiliBBoxAnnotation,
     MLBackendT,
     ProjectIdT,
-    VerboseLevelT,
 )
 
 env = Environment(
@@ -107,11 +106,8 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: VerboseLevelT,
         modal_train_args: ModalTrainArgs,
     ):
-        _ = verbose
-
         model_repository_dir = Path.model_repository_dir(
             self.project_id, self.job_name, self.model_conditions.model_repository
         )
@@ -294,7 +290,6 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: VerboseLevelT,
         clear_dataset_cache: bool,
         api_key: str = "",
     ):
@@ -311,7 +306,6 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
             ml_backend,
             model_path,
             self.job_name,
-            verbose,
             batch_size,
             prioritization=False,
         )
@@ -324,11 +318,10 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         ml_backend: MLBackendT,
         model_path: ModelPathT,
         job_name: JobNameT,
-        verbose: VerboseLevelT,
         batch_size: int,
         prioritization: bool,
     ) -> JobPredictions:
-        _ = batch_size, verbose
+        _ = batch_size
 
         warnings.warn("This function does not support custom batch_size")
 
@@ -441,7 +434,6 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: VerboseLevelT,
         clear_dataset_cache: bool = False,
         api_key: str = "",
     ) -> Any:
@@ -453,7 +445,6 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
             model_path=None,
             from_project=None,
             batch_size=batch_size,
-            verbose=verbose,
             clear_dataset_cache=clear_dataset_cache,
             api_key=api_key,
         )

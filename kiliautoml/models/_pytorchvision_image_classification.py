@@ -34,7 +34,6 @@ from kiliautoml.utils.type import (
     JsonResponseClassification,
     ModelNameT,
     ProjectIdT,
-    VerboseLevelT,
 )
 
 
@@ -83,7 +82,6 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: VerboseLevelT,
         api_key: str = "",
         modal_train_args: ModalTrainArgs,
     ):
@@ -127,7 +125,6 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
             epochs=epochs,
             model_name=self.model_name,  # type: ignore
             batch_size=batch_size,
-            verbose=verbose,
             category_ids=self.class_names,
             image_datasets=image_datasets,
             save_model_path=self.model_path,
@@ -141,7 +138,6 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: VerboseLevelT,
         clear_dataset_cache: bool,
         api_key: str = "",
     ):
@@ -162,7 +158,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
 
         model.load_state_dict(torch.load(model_path))
         loader = torch_Data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
-        prob_arrays = predict_probabilities(loader, model, verbose=verbose)
+        prob_arrays = predict_probabilities(loader, model)
 
         job_predictions = JobPredictions(
             job_name=self.job_name,
@@ -210,7 +206,6 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: VerboseLevelT,
         clear_dataset_cache: bool = False,
         api_key: str = "",
     ):
@@ -258,7 +253,6 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
             model, _ = get_trained_model_image_classif(
                 model_name=model_name,
                 batch_size=batch_size,
-                verbose=verbose,
                 category_ids=self.class_names,
                 epochs=epochs,
                 image_datasets=image_datasets,
@@ -272,7 +266,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
                 pin_memory=True,
             )
 
-            probs = predict_probabilities(holdout_loader, model, verbose=verbose)
+            probs = predict_probabilities(holdout_loader, model)
             probability_matrix[cv_holdout_idx] = probs
 
         destination = os.path.join(self.model_dir, "train_model_intel_probability_matrix.npy")
