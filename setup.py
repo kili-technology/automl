@@ -32,7 +32,6 @@ setup(
         "pydantic",
         "pytest-mock",
         "backoff",
-        "graphql-core==2.0",
         "loguru",
         # ################################ yolo
         "matplotlib>=3.2.2",
