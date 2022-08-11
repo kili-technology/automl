@@ -297,10 +297,10 @@ def not_implemented_job(job_name: JobNameT, ml_task: MLTaskT, tools: List[ToolT]
     else:
         logger.error(f"MLTask {ml_task} for job {job_name} is not yet supported")
         logger.error(
-            f"You can use --ignore-job {job_name}"
-            "\n(You can also use the repeatable flag --target-job "
-            "(for example: --target-job job_name1 --target-job job_name2) "
-            "to select one or multiple jobs.)"
+            f"""You can use --ignore-job {job_name}
+            \n(You can also use the repeatable flag --target-job
+            (for example: --target-job job_name1 --target-job job_name2)
+            to select one or multiple jobs.)"""
         )
         raise NotImplementedError
 
