@@ -2,7 +2,11 @@
 This files contains types for annotations, but those types should be used only for label error.
 """
 from abc import ABC, abstractmethod
-from collections import Counter
+
+try:
+    from collections.abc import Counter  # type:ignore
+except ImportError:
+    from collections import Counter  # type:ignore
 from typing import Dict, List, Type, Union
 
 from loguru import logger
