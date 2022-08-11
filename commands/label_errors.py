@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict, List
 
 import click
@@ -32,7 +31,7 @@ from kiliautoml.utils.helpers import (
     is_contours_detection,
     not_implemented_job,
 )
-from kiliautoml.utils.logging import set_kili_logging
+from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AssetStatusT,
@@ -48,10 +47,10 @@ from kiliautoml.utils.type import (
 
 
 def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: ProjectIdT):
-    logging.info("\nUpdating metadata for the concerned assets")
+    logger.info("\nUpdating metadata for the concerned assets")
 
     found_errors = [len(asset_error) for asset_error in error_recap.errors_by_asset]
-    logging.info("Number of wrong labels found: ", sum(found_errors))
+    logger.info("Number of wrong labels found: ", sum(found_errors))
 
     id_errors_tuples = list(zip(error_recap.id_array, error_recap.errors_by_asset))
     first = min(100, len(id_errors_tuples))
@@ -235,7 +234,7 @@ def main(
     jobs = curated_job(jobs, target_job, ignore_job)
 
     for job_name, job in jobs.items():
-        logging.info(f"Detecting errors for job: {job_name}")
+        logger.info(f"Detecting errors for job: {job_name}")
         content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")
         tools = job.get("tools")
@@ -308,3 +307,5 @@ def main(
         if found_errors:
             if not dry_run:
                 upload_errors_to_kili(found_errors, kili, project_id)
+
+    logger.success("label_errors command finished successfully!")

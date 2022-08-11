@@ -7,11 +7,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from loguru import logger
 from sklearn.metrics import f1_score, precision_score, recall_score
 from torch.optim import lr_scheduler
 from tqdm.autonotebook import trange
 
-from kiliautoml.utils.logging import kili_print
 from kiliautoml.utils.type import ModelMetricT
 
 # Necessary on mac for train and predict.
@@ -29,11 +29,11 @@ def train_model_pytorch(
     """
     Method that trains the given model and return the best one found in the given epochs
     """
+    _ = verbose
     since = time.time()
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    if verbose >= 2:
-        kili_print("Start model training on device: {}".format(device))
+    logger.info("Start model training on device: {}".format(device))
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
@@ -47,8 +47,7 @@ def train_model_pytorch(
     epoch_train_evaluation = {}
     train_metrics = {}
     for _ in trange(epochs, desc="Training - Epoch"):
-        if verbose >= 2:
-            print("-" * 10)
+        logger.info("-" * 10)
 
         # Each epoch has a training and validation phase
         for phase in ["train", "val"]:
@@ -85,8 +84,7 @@ def train_model_pytorch(
                 )
                 epoch_train_loss = epoch_train_evaluation["loss"]["overall"]
                 epoch_train_acc = epoch_train_evaluation["acc"]["overall"]
-                if verbose >= 2:
-                    print(f"{phase} Loss: {epoch_train_loss:.4f} Acc: {epoch_train_acc:.4f}")
+                logger.debug(f"{phase} Loss: {epoch_train_loss:.4f} Acc: {epoch_train_acc:.4f}")
             if phase == "val":
                 epoch_val_evaluation = evaluate(
                     running_loss,
@@ -96,27 +94,24 @@ def train_model_pytorch(
                 )
                 epoch_val_loss = epoch_val_evaluation["loss"]["overall"]
                 epoch_val_acc = epoch_val_evaluation["acc"]["overall"]
-                if verbose >= 2:
-                    print(f"{phase} Loss: {epoch_val_loss:.4f} Acc: {epoch_val_acc:.4f}")
+                logger.debug(f"{phase} Loss: {epoch_val_loss:.4f} Acc: {epoch_val_acc:.4f}")
                 # deep copy the model
                 if epoch_val_loss < best_val_metrics["loss"]["overall"]:
                     best_val_metrics = epoch_val_evaluation
                     train_metrics = epoch_train_evaluation
                     best_model_wts = copy.deepcopy(model.state_dict())
-        if verbose >= 2:
-            print()
+        logger.debug("")
 
-    if verbose >= 2:
-        time_elapsed = time.time() - since
-        print(f"Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s")
-        best_val_loss = best_val_metrics["loss"]["overall"]
-        best_val_acc = best_val_metrics["acc"]["overall"]
-        train_loss = train_metrics["loss"]["overall"]
-        corresponding_train_acc = train_metrics["acc"]["overall"]
-        print(f"Best val Loss: {best_val_loss:4f}, Best val Acc: {best_val_acc:4f}")
-        print(
-            f"Corresponding train Loss: {train_loss:4f},Best val Acc: {corresponding_train_acc:4f}"
-        )
+    time_elapsed = time.time() - since
+    logger.success(f"Training complete in {time_elapsed // 60:.0f}m {time_elapsed % 60:.0f}s")
+    best_val_loss = best_val_metrics["loss"]["overall"]
+    best_val_acc = best_val_metrics["acc"]["overall"]
+    train_loss = train_metrics["loss"]["overall"]
+    corresponding_train_acc = train_metrics["acc"]["overall"]
+    logger.debug(f"Best val Loss: {best_val_loss:4f}, Best val Acc: {best_val_acc:4f}")
+    logger.debug(
+        f"Corresponding train Loss: {train_loss:4f},Best val Acc: {corresponding_train_acc:4f}"
+    )
 
     # load best model weights
     model.load_state_dict(best_model_wts)

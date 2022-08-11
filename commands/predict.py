@@ -1,4 +1,3 @@
-import logging
 from typing import List, Optional
 
 import click
@@ -18,7 +17,7 @@ from kiliautoml.utils.helpers import (
     get_content_input_from_job,
     get_project,
 )
-from kiliautoml.utils.logging import set_kili_logging
+from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
@@ -87,7 +86,7 @@ def main(
     )
 
     for job_name, job in jobs.items():
-        logging.info(f"Predicting annotations for job: {job_name}")
+        logger.info(f"Predicting annotations for job: {job_name}")
         content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")
         tools = job.get("tools")
@@ -131,10 +130,12 @@ def main(
                 json_response_array=job_predictions.json_response_array,
                 model_name_array=job_predictions.model_name_array,
             )
-            logging.info(
+            logger.success(
                 "Predictions sent to kili, you can open the following url to check them out!"
             )
             status_filter = "%2C".join(asset_status_in)
-            logging.info(
+            logger.success(
                 f"{api_endpoint[:-21]}/label/projects/{project_id}/explore?statusIn={status_filter}"
             )
+
+    logger.success("Predict command finished successfully!")

@@ -1,5 +1,4 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
-import logging
 import os
 from abc import ABCMeta
 from datetime import datetime
@@ -15,6 +14,7 @@ from transformers import (
 )
 
 from kiliautoml.utils.helpers import get_last_trained_model_path
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import PathHF
 from kiliautoml.utils.type import (
     CategoryIdT,
@@ -93,7 +93,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
             if model_path is None:
                 project_id = from_project
             else:
-                logging.warning(
+                logger.warning(
                     "You have specified both a model path and a project id. "
                     "The model path will be used."
                 )
@@ -111,7 +111,7 @@ class HuggingFaceMixin(metaclass=ABCMeta):
 
         if split_path[-2] in ["pytorch", "tensorflow"]:
             ml_backend: MLBackendT = split_path[-2]  # type: ignore
-            logging.info(f"ml-backend: {ml_backend}")
+            logger.info(f"ml-backend: {ml_backend}")
         else:
             raise ValueError("Unknown ml-backend")
         return model_path_res, cls.model_repository, ml_backend

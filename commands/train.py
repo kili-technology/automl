@@ -1,4 +1,3 @@
-import logging
 from typing import List, Optional, cast
 
 import click
@@ -19,7 +18,7 @@ from kiliautoml.utils.helpers import (
     get_project,
     print_evaluation,
 )
-from kiliautoml.utils.logging import set_kili_logging
+from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -95,7 +94,7 @@ def main(
     model_evaluations = []
 
     for job_name, job in jobs.items():
-        logging.info(f"Training on job: {job_name}")
+        logger.info(f"Training on job: {job_name}")
 
         ml_task = job.get("mlTask")
         assets = get_assets(
@@ -170,6 +169,8 @@ def main(
             wandb_run.finish()
         model_evaluations.append((job_name, model_evaluation))
 
-    logging.info("Summary of training:")
+    logger.info("Summary of training:")
     for job_name, evaluation in model_evaluations:
         print_evaluation(job_name, evaluation)
+
+    logger.success("train command finished successfully!")

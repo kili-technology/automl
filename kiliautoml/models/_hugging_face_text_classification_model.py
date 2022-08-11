@@ -1,6 +1,5 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
-import logging
 import os
 from typing import Any, Dict, Optional
 
@@ -22,6 +21,7 @@ from kiliautoml.models._base_model import (
     ModelConditions,
 )
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AssetsLazyList,
@@ -80,7 +80,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         model_name: ModelNameT = self.model_name  # type: ignore
 
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
-        logging.info(f"Downloading data to {path_dataset}")
+        logger.info(f"Downloading data to {path_dataset}")
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
         job_categories = categories_from_job(self.job)
@@ -133,7 +133,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         trainer.train()  # type: ignore
         model_evaluation = self.model_evaluation(trainer, job_categories)
 
-        logging.info(f"Saving model to {path_model}")
+        logger.info(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
 
@@ -148,7 +148,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         clear_dataset_cache: bool,
     ) -> JobPredictions:
         if batch_size != DEFAULT_BATCH_SIZE:
-            logging.warning("Warning, this model does not support custom batch_size ", batch_size)
+            logger.warning("This model does not support custom batch_size ", batch_size)
         _ = clear_dataset_cache, verbose
 
         model_path_res, _, self.ml_backend = self._extract_model_info(
@@ -176,9 +176,9 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
             predictions.append({self.job_name: predictions_asset})
             proba_assets.append(predictions_asset["categories"][0]["confidence"])
 
-            logging.debug("----------")
-            logging.debug(text)
-            logging.debug(predictions_asset)
+            logger.debug("----------")
+            logger.debug(text)
+            logger.debug(predictions_asset)
 
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(

@@ -1,6 +1,5 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
-import logging
 import os
 import warnings
 from typing import List, Optional
@@ -21,6 +20,7 @@ from kiliautoml.models._base_model import (
     ModelConditions,
 )
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -88,8 +88,8 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
             self.project_id, self.job_name, self.model_repository
         )
         model_name: ModelNameT = self.model_name  # type: ignore
-        logging.info(f"JobT Name: {self.job_name}")
-        logging.info(f"Base model: {model_name}")
+        logger.info(f"JobT Name: {self.job_name}")
+        logger.info(f"Base model: {model_name}")
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
 
         label_list = self._kili_assets_to_hf_ner_dataset(
@@ -190,7 +190,7 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         )
         trainer.train()  # type: ignore
         model_evaluation = self.evaluation(trainer)
-        logging.info(f"Saving model to {path_model}")
+        logger.info(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
 
@@ -248,9 +248,9 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
 
             if len(predictions_asset):
                 for p in predictions_asset:
-                    logging.debug(p)
+                    logger.debug(p)
             else:
-                logging.debug("No prediction")
+                logger.debug("No prediction")
 
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
@@ -272,7 +272,7 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         clear_dataset_cache: bool,
     ) -> List[CategoryIdT]:
         if clear_dataset_cache and os.path.exists(path_dataset):
-            logging.info("Dataset cache for this project is being cleared.")
+            logger.info("Dataset cache for this project is being cleared.")
             os.remove(path_dataset)
 
         job_categories = categories_from_job(job=job)

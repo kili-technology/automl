@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 import random
 import warnings
@@ -17,6 +16,7 @@ from tabulate import tabulate
 from typing_extensions import get_args
 
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.path import AUTOML_CACHE
 from kiliautoml.utils.type import (
@@ -124,9 +124,9 @@ def get_assets(
                     f" {get_args(AssetStatusT)}"
                 )
     if status_in is not None:
-        logging.info(f"Downloading assets with status in {status_in} from Kili project")
+        logger.info(f"Downloading assets with status in {status_in} from Kili project")
     else:
-        logging.info("Downloading assets from Kili project")
+        logger.info("Downloading assets from Kili project")
 
     if randomize:
         assets = get_asset_memoized(
@@ -159,7 +159,7 @@ def get_assets(
     assets = filter_parity(parity_filter, assets)
 
     if len(assets) == 0:
-        logging.error(f"No {status_in} assets found in project {project_id}.")
+        logger.error(f"No {status_in} assets found in project {project_id}.")
         raise Exception("There is no asset matching the query.")
     return assets
 
@@ -245,10 +245,10 @@ T = TypeVar("T")  # Declare type variable
 
 def set_default(x: Optional[T], x_default: T, x_name: str, x_range: List[T]) -> T:
     if x is None:
-        logging.info(f"defaulting to {x_name}={x_default}")
+        logger.info(f"defaulting to {x_name}={x_default}")
         return x_default
     if x not in x_range:
-        logging.warning(f"Warning: {x} is not in {x_range}, defaulting to {x_name}={x_default}")
+        logger.warning(f"{x} is not in {x_range}, defaulting to {x_name}={x_default}")
         return x_default
     return x
 
@@ -265,7 +265,7 @@ def get_last_trained_model_path(
         path_project_models = os.path.join(
             AUTOML_CACHE, project_id, job_name, *project_path_wildcard
         )
-        logging.info("Searching models in folder:", path_project_models)
+        logger.info("Searching models in folder:", path_project_models)
         paths_project_sorted = sorted(glob(path_project_models), reverse=True)
         model_path = None
         while len(paths_project_sorted):
@@ -274,7 +274,7 @@ def get_last_trained_model_path(
                 os.path.join(path_model_candidate, weights_filename)
             ):
                 model_path = path_model_candidate
-                logging.info(f"Trained model found in path: {model_path}")
+                logger.info(f"Trained model found in path: {model_path}")
                 break
         if model_path is None:
             raise Exception(f"No trained model found for job {job_name}. Exiting ...")
@@ -288,7 +288,7 @@ def save_errors(found_errors, job_path: str):
         json_path = os.path.join(job_path, "error_labels.json")
         with open(json_path, "wb") as output_file:
             output_file.write(found_errors_json.encode("utf-8"))
-            logging.info("Asset IDs of wrong labels written to: ", json_path)
+            logger.info("Asset IDs of wrong labels written to: ", json_path)
 
 
 def not_implemented_job(job_name: JobNameT, ml_task: MLTaskT, tools: List[ToolT]):
@@ -296,8 +296,8 @@ def not_implemented_job(job_name: JobNameT, ml_task: MLTaskT, tools: List[ToolT]
     if "_MARKER" in job_name:
         return
     else:
-        logging.error(f"MLTask {ml_task} for job {job_name} is not yet supported")
-        logging.error(
+        logger.error(f"MLTask {ml_task} for job {job_name} is not yet supported")
+        logger.error(
             f"You can use --ignore-job {job_name}"
             "\n(You can also use the repeatable flag --target-job "
             "(for example: --target-job job_name1 --target-job job_name2) "
@@ -377,11 +377,11 @@ def curated_job(jobs: JobsT, target_job: List[JobNameT], ignore_job: List[JobNam
 def dry_run_security(dry_run):
     if dry_run is True:
         return dry_run
-    logging.info("Are you sure You want to send the predictions to Kili? Y/N")
+    logger.info("Are you sure You want to send the predictions to Kili? Y/N")
     validation = input()
     if validation in ["N", "n", "No", "NO", "no"]:
         dry_run = True
-        logging.info("OK, We won't send the predictions to Kili!")
+        logger.info("OK, We won't send the predictions to Kili!")
     else:
-        logging.info("OK, We will send the predictions to Kili!")
+        logger.info("OK, We will send the predictions to Kili!")
     return dry_run

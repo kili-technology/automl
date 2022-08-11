@@ -1,4 +1,3 @@
-import logging
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -9,6 +8,7 @@ from torch.utils.data import Dataset
 from torchvision import models, transforms
 
 from kiliautoml.utils.download_assets import DownloadedImage
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
 from kiliautoml.utils.type import CategoryIdT, ModelNameT, VerboseLevelT
@@ -128,7 +128,7 @@ def get_trained_model_image_classif(
 
 
 def initialize_model_img_class(model_name: ModelNameT, class_names):
-    logging.info("Initialization of the model with N={} classes".format(len(class_names)))
+    logger.info("Initialization of the model with N={} classes".format(len(class_names)))
     if model_name == "efficientnet_b0":
         model = models.efficientnet_b0(pretrained=True)
         num_ftrs = model.classifier[1].in_features
@@ -157,7 +157,7 @@ def predict_probabilities(
     model.to(device)
     n_total = len(loader.dataset) / float(loader.batch_size)  # type:ignore
     outputs = []
-    logging.debug("Computing probabilities for this fold with device: {}".format(device))
+    logger.debug("Computing probabilities for this fold with device: {}".format(device))
     with torch.no_grad():
         for i, input in enumerate(loader):
             print("\rComplete: {:.1%}".format(i / n_total), end="")
@@ -166,7 +166,7 @@ def predict_probabilities(
 
             # compute output
             outputs.append(model(input))
-        logging.debug("")
+        logger.debug("")
 
     # Prepare outputs as a single matrix
     probs = list(

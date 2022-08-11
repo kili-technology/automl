@@ -5,6 +5,7 @@ from io import BytesIO
 from typing import List, Optional
 
 import requests
+from loguru import logger
 from PIL import Image
 from PIL.Image import Image as PILImage
 from ratelimit import limits, sleep_and_retry
@@ -12,7 +13,7 @@ from requests import Response
 from tqdm.autonotebook import tqdm
 
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, save_mock_data
-from kiliautoml.utils.logging import OneTimePrinter, kili_print
+from kiliautoml.utils.logging import one_time_logger
 from kiliautoml.utils.memoization import kili_memoizer
 from kiliautoml.utils.type import AssetExternalIdT, AssetIdT, AssetsLazyList, AssetT
 
@@ -88,9 +89,6 @@ def _throttled_request_memoized(api_key, asset_content, asset_id):
     return asset_downloader.throttled_request(api_key, asset_content)
 
 
-one_time_printer = OneTimePrinter()
-
-
 def throttled_request(api_key, asset_content):
     """
     asset_content contains the id and the token.
@@ -105,7 +103,7 @@ def throttled_request(api_key, asset_content):
         asset_id = asset_content.split("?AWSAccessKeyId")[0]
         return _throttled_request_memoized(api_key, asset_content, asset_id)
     else:
-        one_time_printer("Downloading public asset")  # No security token
+        one_time_logger("Downloading public asset")  # No security token
         return asset_downloader.throttled_request(api_key, asset_content)
 
 
@@ -144,7 +142,7 @@ def download_project_images(
     assets: AssetsLazyList,
     output_folder: Optional[str] = None,
 ) -> List[DownloadedImage]:
-    kili_print("Downloading images to folder {}".format(output_folder))
+    logger.info("Downloading images to folder {}".format(output_folder))
     downloaded_images = []
 
     for asset in tqdm(assets, desc="Downloading images"):
@@ -170,7 +168,7 @@ def download_project_text(
     api_key: str,
     assets: AssetsLazyList,
 ) -> List[DownloadedText]:
-    kili_print("Downloading project text...")
+    logger.info("Downloading project text...")
     downloaded_text = []
     for asset in tqdm(assets, desc="Downloading text content"):
         content = download_asset_unicode(api_key, asset.content)
