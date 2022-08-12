@@ -16,8 +16,8 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
-    kili_print,
 )
+from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
@@ -26,6 +26,7 @@ from kiliautoml.utils.type import (
     ModelRepositoryT,
     ParityFilterT,
     ProjectIdT,
+    VerboseLevelT,
 )
 
 
@@ -57,7 +58,7 @@ def main(
     ignore_job: List[JobNameT],
     dry_run: bool,
     model_path: Optional[str],
-    verbose: bool,
+    verbose: VerboseLevelT,
     max_assets: Optional[int],
     randomize_assets: bool,
     from_project: Optional[ProjectIdT],
@@ -69,7 +70,7 @@ def main(
     clear_dataset_cache: bool,
 ):
     """Compute predictions and upload them to Kili."""
-
+    set_kili_logging(verbose)
     dry_run = dry_run_security(dry_run)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
@@ -85,7 +86,7 @@ def main(
     )
 
     for job_name, job in jobs.items():
-        kili_print(f"Predicting annotations for job: {job_name}")
+        logger.info(f"Predicting annotations for job: {job_name}")
         content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")
         tools = job.get("tools")
@@ -105,7 +106,6 @@ def main(
             model_path=model_path,
             from_project=from_project,
             batch_size=batch_size,
-            verbose=verbose,
             clear_dataset_cache=clear_dataset_cache,
         )
         condition_requested = ModelConditionsRequested(
@@ -129,10 +129,12 @@ def main(
                 json_response_array=job_predictions.json_response_array,
                 model_name_array=job_predictions.model_name_array,
             )
-            kili_print(
+            logger.success(
                 "Predictions sent to kili, you can open the following url to check them out!"
             )
             status_filter = "%2C".join(asset_status_in)
-            kili_print(
+            logger.success(
                 f"{api_endpoint[:-21]}/label/projects/{project_id}/explore?statusIn={status_filter}"
             )
+
+    logger.success("Predict command finished successfully!")

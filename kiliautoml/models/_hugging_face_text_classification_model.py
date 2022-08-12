@@ -11,6 +11,7 @@ from kili.client import Kili
 from tqdm.autonotebook import tqdm
 from transformers import Trainer
 
+from commands.common_args import DEFAULT_BATCH_SIZE
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import (
@@ -19,7 +20,8 @@ from kiliautoml.models._base_model import (
     ModalTrainArgs,
     ModelConditions,
 )
-from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
+from kiliautoml.utils.helpers import categories_from_job, ensure_dir
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AssetsLazyList,
@@ -63,11 +65,8 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         batch_size: int,
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
-        verbose: int,
         modal_train_args: ModalTrainArgs,
     ):
-        _ = verbose
-
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(
@@ -76,9 +75,8 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
 
         model_name: ModelNameT = self.model_name  # type: ignore
 
-        kili_print(self.job_name)
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
-        kili_print(f"Downloading data to {path_dataset}")
+        logger.info(f"Downloading data to {path_dataset}")
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
         job_categories = categories_from_job(self.job)
@@ -131,7 +129,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         trainer.train()  # type: ignore
         model_evaluation = self.model_evaluation(trainer, job_categories)
 
-        kili_print(f"Saving model to {path_model}")
+        logger.info(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
 
@@ -142,10 +140,10 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: int,
         clear_dataset_cache: bool,
     ) -> JobPredictions:
-        print("Warning, this model does not support custom batch_size ", batch_size)
+        if batch_size != DEFAULT_BATCH_SIZE:
+            logger.warning("This model does not support custom batch_size ", batch_size)
         _ = clear_dataset_cache
 
         model_path_res, _, self.ml_backend = self._extract_model_info(
@@ -173,10 +171,9 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
             predictions.append({self.job_name: predictions_asset})
             proba_assets.append(predictions_asset["categories"][0]["confidence"])
 
-            if verbose:
-                print("----------")
-                print(text)
-                print(predictions_asset)
+            logger.debug("----------")
+            logger.debug(text)
+            logger.debug(predictions_asset)
 
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
@@ -319,7 +316,6 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: int = 0,
         clear_dataset_cache: bool = False,
     ):
         raise NotImplementedError("This model does not support find_errors yet")

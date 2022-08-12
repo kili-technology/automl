@@ -5,7 +5,15 @@ from typing import List
 import click
 from typing_extensions import get_args
 
-from kiliautoml.utils.type import AssetStatusT, MLBackendT, ModelNameT, ParityFilterT
+from kiliautoml.utils.type import (
+    AssetStatusT,
+    MLBackendT,
+    ModelNameT,
+    ParityFilterT,
+    VerboseLevelT,
+)
+
+DEFAULT_BATCH_SIZE = 8
 
 
 class Options:
@@ -79,11 +87,16 @@ class Options:
 
     batch_size = click.option(
         "--batch-size",
-        default=8,
+        default=DEFAULT_BATCH_SIZE,
         type=int,
     )
 
-    verbose = click.option("--verbose", default=0, type=int, help="Verbose level")
+    verbose = click.option(
+        "--verbose",
+        default="INFO",
+        type=click.Choice(get_args(VerboseLevelT)),
+        help="Verbose level",
+    )
 
     randomize_assets = click.option(
         "--randomize-assets",

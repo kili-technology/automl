@@ -2,15 +2,20 @@
 This files contains types for annotations, but those types should be used only for label error.
 """
 from abc import ABC, abstractmethod
-from collections import Counter
+
+try:
+    from collections.abc import Counter  # type:ignore
+except ImportError:
+    from collections import Counter  # type:ignore
 from typing import Dict, List, Type, Union
 
+from loguru import logger
 from pydantic import BaseModel, validator
 from shapely.errors import TopologicalError
 from shapely.geometry import Point, Polygon
 from typing_extensions import Literal
 
-from kiliautoml.utils.helpers import OneTimePrinter
+from kiliautoml.utils.logging import one_time_logger
 from kiliautoml.utils.type import (
     AssetExternalIdT,
     AssetIdT,
@@ -88,10 +93,6 @@ class AnnotationStandardizedT(BaseModel, ABC):
         ...
 
 
-# TODO: Create a real logging class
-one_time_printer = OneTimePrinter()
-
-
 def iou_polygons(points1: List[NormalizedVertice], points2):
     polygon1 = Polygon([Point(p["x"], p["y"]) for p in points1])
     polygon2 = Polygon([Point(p["x"], p["y"]) for p in points2])
@@ -100,7 +101,7 @@ def iou_polygons(points1: List[NormalizedVertice], points2):
         union = polygon1.union(polygon2).area
         iou = intersect / union
     except TopologicalError:
-        one_time_printer("TopologicalError: The model is probably not trained enough")
+        one_time_logger("TopologicalError: The model is probably not trained enough")
         iou = 0
     return iou
 
@@ -337,7 +338,7 @@ def find_all_label_errors(
         predicted_annotations = create_normalized_annotation(json_response[job_name], ml_task, tool)
         manual_annotations = create_normalized_annotation(json_response_base, ml_task, tool)
 
-        print("\nAsset externalId", asset.externalId)
+        logger.info("\nAsset externalId", asset.externalId)
         labeling_errors = find_label_errors_for_one_asset(
             predicted_annotations=AssetStandardizedAnnotationsT(
                 annotations=predicted_annotations,

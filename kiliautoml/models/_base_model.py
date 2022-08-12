@@ -45,7 +45,6 @@ class BaseTrainArgs(TypedDict):
     batch_size: int
     clear_dataset_cache: bool
     disable_wandb: bool
-    verbose: int
 
 
 class ModalTrainArgs(TypedDict):
@@ -62,7 +61,6 @@ class BasePredictArgs(TypedDict):
     model_path: Optional[str]
     from_project: Optional[ProjectIdT]
     batch_size: int
-    verbose: int
     clear_dataset_cache: bool
 
 
@@ -73,7 +71,6 @@ class BaseLabelErrorsArgs(TypedDict):
     cv_n_folds: int
     epochs: int
     batch_size: int
-    verbose: int
     clear_dataset_cache: bool
 
 
@@ -172,7 +169,6 @@ class KiliBaseModel:
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: int,
         modal_train_args: ModalTrainArgs,
     ) -> DictTrainingInfosT:
         ...
@@ -184,7 +180,6 @@ class KiliBaseModel:
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: int,
         clear_dataset_cache: bool,
     ) -> JobPredictions:
         ...
@@ -196,7 +191,6 @@ class KiliBaseModel:
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: int,
         clear_dataset_cache: bool,
     ) -> ErrorRecap:
         ...

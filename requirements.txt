@@ -28,4 +28,4 @@ shapely
 pydantic
 pytest-mock
 backoff
-graphql-core
+loguru

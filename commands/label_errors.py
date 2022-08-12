@@ -29,9 +29,9 @@ from kiliautoml.utils.helpers import (
     get_content_input_from_job,
     get_project,
     is_contours_detection,
-    kili_print,
     not_implemented_job,
 )
+from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AssetStatusT,
@@ -42,14 +42,15 @@ from kiliautoml.utils.type import (
     ModelRepositoryT,
     ParityFilterT,
     ProjectIdT,
+    VerboseLevelT,
 )
 
 
 def upload_errors_to_kili(error_recap: ErrorRecap, kili: Kili, project_id: ProjectIdT):
-    kili_print("\nUpdating metadata for the concerned assets")
+    logger.info("\nUpdating metadata for the concerned assets")
 
     found_errors = [len(asset_error) for asset_error in error_recap.errors_by_asset]
-    kili_print("Number of wrong labels found: ", sum(found_errors))
+    logger.info("Number of wrong labels found: ", sum(found_errors))
 
     id_errors_tuples = list(zip(error_recap.id_array, error_recap.errors_by_asset))
     first = min(100, len(id_errors_tuples))
@@ -118,7 +119,6 @@ def label_error(
     clear_dataset_cache,
     epochs,
     batch_size,
-    verbose,
     cv_folds,
     input_type,
     job_name,
@@ -135,7 +135,6 @@ def label_error(
             cv_n_folds=cv_folds,
             epochs=epochs,
             batch_size=batch_size,
-            verbose=verbose,
             api_key=api_key,
         )
 
@@ -150,7 +149,6 @@ def label_error(
             cv_n_folds=cv_folds,
             epochs=epochs,
             batch_size=batch_size,
-            verbose=verbose,
             api_key=api_key,
             assets=assets,
             clear_dataset_cache=clear_dataset_cache,
@@ -161,7 +159,6 @@ def label_error(
             cv_n_folds=cv_folds,
             epochs=epochs,
             batch_size=batch_size,
-            verbose=verbose,
             assets=assets,
             clear_dataset_cache=clear_dataset_cache,
         )
@@ -214,7 +211,7 @@ def main(
     batch_size: int,
     model_name: ModelNameT,
     parity_filter: ParityFilterT,
-    verbose: int,
+    verbose: VerboseLevelT,
     cv_folds: int,
     erase_error_metadata: bool,
 ):
@@ -226,13 +223,14 @@ def main(
     stored in a file, but also a metadata (labeling_error: true) is uploaded to Kili to
     easily filter them later in the app.
     """
+    set_kili_logging(verbose)
     dry_run = dry_run_security(dry_run)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
 
     for job_name, job in jobs.items():
-        kili_print(f"Detecting errors for job: {job_name}")
+        logger.info(f"Detecting errors for job: {job_name}")
         content_input = get_content_input_from_job(job)
         ml_task = job.get("mlTask")
         tools = job.get("tools")
@@ -283,7 +281,6 @@ def main(
             cv_n_folds=cv_folds,
             epochs=epochs,
             batch_size=batch_size,
-            verbose=verbose,
             assets=assets,
             clear_dataset_cache=clear_dataset_cache,
         )
@@ -305,3 +302,5 @@ def main(
         if found_errors:
             if not dry_run:
                 upload_errors_to_kili(found_errors, kili, project_id)
+
+    logger.success("label_errors command finished successfully!")

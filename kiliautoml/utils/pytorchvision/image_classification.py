@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 from torchvision import models, transforms
 
 from kiliautoml.utils.download_assets import DownloadedImage
-from kiliautoml.utils.helpers import kili_print
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import ModelPathT
 from kiliautoml.utils.pytorchvision.trainer import train_model_pytorch
 from kiliautoml.utils.type import CategoryIdT, ModelNameT
@@ -99,7 +99,6 @@ def get_trained_model_image_classif(
     epochs: int,
     model_name: ModelNameT,
     batch_size: int,
-    verbose: int,
     category_ids: List[CategoryIdT],
     image_datasets: dict,  # type: ignore
     save_model_path: Optional[ModelPathT] = None,
@@ -116,7 +115,6 @@ def get_trained_model_image_classif(
     model, model_evaluation = train_model_pytorch(
         model=model,
         dataloaders=dataloaders,
-        verbose=verbose,
         epochs=epochs,
         class_names=category_ids,
     )
@@ -128,7 +126,7 @@ def get_trained_model_image_classif(
 
 
 def initialize_model_img_class(model_name: ModelNameT, class_names):
-    kili_print("Initialization of the model with N={} classes".format(len(class_names)))
+    logger.info("Initialization of the model with N={} classes".format(len(class_names)))
     if model_name == "efficientnet_b0":
         model = models.efficientnet_b0(pretrained=True)
         num_ftrs = model.classifier[1].in_features
@@ -145,7 +143,6 @@ def initialize_model_img_class(model_name: ModelNameT, class_names):
 def predict_probabilities(
     loader: torch_Data.DataLoader,  # type: ignore
     model,
-    verbose=0,
 ) -> List[float]:
     """
     Method to compute the probabilities for all classes for the assets in the holdout set
@@ -156,19 +153,16 @@ def predict_probabilities(
     model.to(device)
     n_total = len(loader.dataset) / float(loader.batch_size)  # type:ignore
     outputs = []
-    if verbose >= 2:
-        kili_print("Computing probabilities for this fold with device: {}".format(device))
+    logger.debug("Computing probabilities for this fold with device: {}".format(device))
     with torch.no_grad():
         for i, input in enumerate(loader):
-            if verbose >= 2:
-                kili_print("\rComplete: {:.1%}".format(i / n_total), end="")
+            print("\rComplete: {:.1%}".format(i / n_total), end="")
             if torch.cuda.is_available():
                 input = input.cuda(non_blocking=True)
 
             # compute output
             outputs.append(model(input))
-        if verbose >= 2:
-            print()
+        logger.debug("")
 
     # Prepare outputs as a single matrix
     probs = list(

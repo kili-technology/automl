@@ -19,7 +19,8 @@ from kiliautoml.models._base_model import (
     ModalTrainArgs,
     ModelConditions,
 )
-from kiliautoml.utils.helpers import categories_from_job, ensure_dir, kili_print
+from kiliautoml.utils.helpers import categories_from_job, ensure_dir
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -69,7 +70,6 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: int,
         additional_train_args_hg: AdditionalTrainingArgsT = {},
         modal_train_args: ModalTrainArgs,
     ):
@@ -79,15 +79,15 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
         - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
         """
-        _ = verbose, modal_train_args
+        _ = modal_train_args
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(
             self.project_id, self.job_name, self.model_repository
         )
         model_name: ModelNameT = self.model_name  # type: ignore
-        kili_print(f"JobT Name: {self.job_name}")
-        kili_print(f"Base model: {model_name}")
+        logger.info(f"JobT Name: {self.job_name}")
+        logger.info(f"Base model: {model_name}")
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
 
         label_list = self._kili_assets_to_hf_ner_dataset(
@@ -188,7 +188,7 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         )
         trainer.train()  # type: ignore
         model_evaluation = self.evaluation(trainer)
-        kili_print(f"Saving model to {path_model}")
+        logger.info(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
 
@@ -199,7 +199,6 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: int,
         clear_dataset_cache: bool,
     ) -> JobPredictions:
         _ = clear_dataset_cache
@@ -244,12 +243,11 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
             predictions.append({self.job_name: {"annotations": predictions_asset}})
             proba_assets.append(min(probas_asset))
 
-            if verbose:
-                if len(predictions_asset):
-                    for p in predictions_asset:
-                        kili_print(p)
-                else:
-                    kili_print("No prediction")
+            if len(predictions_asset):
+                for p in predictions_asset:
+                    logger.debug(p)
+            else:
+                logger.debug("No prediction")
 
         # Warning: the granularity of proba_assets is the whole document
         job_predictions = JobPredictions(
@@ -271,7 +269,7 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         clear_dataset_cache: bool,
     ) -> List[CategoryIdT]:
         if clear_dataset_cache and os.path.exists(path_dataset):
-            kili_print("Dataset cache for this project is being cleared.")
+            logger.info("Dataset cache for this project is being cleared.")
             os.remove(path_dataset)
 
         job_categories = categories_from_job(job=job)
@@ -535,7 +533,6 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: int = 0,
         clear_dataset_cache: bool = False,
     ):
         raise NotImplementedError("This model does not support find_errors yet")

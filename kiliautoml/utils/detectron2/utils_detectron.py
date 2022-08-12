@@ -12,7 +12,8 @@ from tqdm.autonotebook import tqdm
 from typing_extensions import TypedDict
 
 from kiliautoml.utils.download_assets import download_asset_binary
-from kiliautoml.utils.helpers import get_mapping_category_name_cat_kili_id, kili_print
+from kiliautoml.utils.helpers import get_mapping_category_name_cat_kili_id
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.type import AssetsLazyList, CategoryIdT, JobNameT, JobT
 
 # ## DETECTRON FORMAT
@@ -165,7 +166,7 @@ def convert_kili_semantic_to_coco(
     with open(join(output_dir, "labels.json"), "w") as outfile:
         json.dump(labels_json, outfile)
 
-    kili_print(f"Kili format has been converted to Coco format. Saved in {output_dir}")
+    logger.success(f"Kili format has been converted to Coco format. Saved in {output_dir}")
     classes: List[str] = list(cat_kili_id_to_coco_id.keys())
-    kili_print("List of classes:", classes)
+    logger.debug("List of classes:", classes)
     return labels_json, classes

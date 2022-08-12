@@ -18,7 +18,7 @@ from kiliautoml.models._base_model import (
 )
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
-from kiliautoml.utils.helpers import kili_print
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathPytorchVision
 from kiliautoml.utils.pytorchvision.image_classification import (
     ClassificationPredictDataset,
@@ -82,7 +82,6 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: int = 1,
         api_key: str = "",
         modal_train_args: ModalTrainArgs,
     ):
@@ -126,7 +125,6 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
             epochs=epochs,
             model_name=self.model_name,  # type: ignore
             batch_size=batch_size,
-            verbose=verbose,
             category_ids=self.class_names,
             image_datasets=image_datasets,
             save_model_path=self.model_path,
@@ -140,7 +138,6 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: int,
         clear_dataset_cache: bool,
         api_key: str = "",
     ):
@@ -161,7 +158,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
 
         model.load_state_dict(torch.load(model_path))
         loader = torch_Data.DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=1)
-        prob_arrays = predict_probabilities(loader, model, verbose=verbose)
+        prob_arrays = predict_probabilities(loader, model)
 
         job_predictions = JobPredictions(
             job_name=self.job_name,
@@ -209,7 +206,6 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: int = 0,
         clear_dataset_cache: bool = False,
         api_key: str = "",
     ):
@@ -247,19 +243,16 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
                 [images[i] for i in cv_holdout_idx],
                 data_transforms["val"],
             )
-            if verbose >= 1:
-                kili_print(f"\nCV Fold: {cv_fold+1}/{cv_n_folds}")
-                kili_print(f"Train size: {len(image_datasets['train'])}")
-                kili_print(f"Validation size: {len(image_datasets['val'])}")
-                kili_print(f"Holdout size: {len(holdout_dataset)}")
-                print()
+            logger.debug(f"\nCV Fold: {cv_fold+1}/{cv_n_folds}")
+            logger.debug(f"Train size: {len(image_datasets['train'])}")
+            logger.debug(f"Validation size: {len(image_datasets['val'])}")
+            logger.debug(f"Holdout size: {len(holdout_dataset)}")
 
             model_name: ModelNameT = self.model_name  # type: ignore
 
             model, _ = get_trained_model_image_classif(
                 model_name=model_name,
                 batch_size=batch_size,
-                verbose=verbose,
                 category_ids=self.class_names,
                 epochs=epochs,
                 image_datasets=image_datasets,
@@ -273,7 +266,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
                 pin_memory=True,
             )
 
-            probs = predict_probabilities(holdout_loader, model, verbose=verbose)
+            probs = predict_probabilities(holdout_loader, model)
             probability_matrix[cv_holdout_idx] = probs
 
         destination = os.path.join(self.model_dir, "train_model_intel_probability_matrix.npy")

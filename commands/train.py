@@ -16,9 +16,9 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
-    kili_print,
     print_evaluation,
 )
+from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -31,6 +31,7 @@ from kiliautoml.utils.type import (
     ParityFilterT,
     ProjectIdT,
     ToolT,
+    VerboseLevelT,
 )
 
 import wandb  # isort:skip
@@ -74,7 +75,7 @@ def main(
     randomize_assets: bool,
     clear_dataset_cache: bool,
     disable_wandb: bool,
-    verbose: int,
+    verbose: VerboseLevelT,
     batch_size: int,
     parity_filter: ParityFilterT,
     additional_train_args_hg: AdditionalTrainingArgsT,
@@ -85,6 +86,7 @@ def main(
 
     If there are multiple jobs in your projects, a model will be trained on each job.
     """
+    set_kili_logging(verbose)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
@@ -92,7 +94,7 @@ def main(
     model_evaluations = []
 
     for job_name, job in jobs.items():
-        kili_print(f"Training on job: {job_name}")
+        logger.info(f"Training on job: {job_name}")
 
         ml_task = job.get("mlTask")
         assets = get_assets(
@@ -139,7 +141,6 @@ def main(
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
             disable_wandb=disable_wandb,
-            verbose=verbose,
         )
 
         modal_train_args = ModalTrainArgs(
@@ -167,6 +168,8 @@ def main(
             wandb_run.finish()
         model_evaluations.append((job_name, model_evaluation))
 
-    kili_print()
+    logger.info("Summary of training:")
     for job_name, evaluation in model_evaluations:
         print_evaluation(job_name, evaluation)
+
+    logger.success("train command finished successfully!")

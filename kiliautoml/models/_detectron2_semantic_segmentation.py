@@ -31,7 +31,8 @@ from kiliautoml.utils.detectron2.utils_detectron import (
 )
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import find_all_label_errors
-from kiliautoml.utils.helpers import categories_from_job, kili_print
+from kiliautoml.utils.helpers import categories_from_job
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import ModelDirT, Path, PathDetectron2
 from kiliautoml.utils.type import (
     AssetsLazyList,
@@ -125,13 +126,14 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        verbose: int,
         modal_train_args: ModalTrainArgs,
     ):
         """Download Kili assets, convert to coco format, then to detectron2 format, train model."""
-        _ = verbose, modal_train_args
+        _ = modal_train_args
         if not disable_wandb:
-            kili_print("Wandb is not yet available on Detectron2. But tensorboard is available.")
+            logger.warning(
+                "Wandb is not yet available on Detectron2. But tensorboard is available."
+            )
 
         model_path_repository_dir = (
             Path.model_repository_dir(  # TODO: Use instead self.model_repository_dir
@@ -156,8 +158,8 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
 
         assert len(set(full_classes)) == len(full_classes)
         if len(_classes) < len(full_classes):
-            kili_print(
-                f"Warning: Your training set contains only {len(_classes)} classes whereas the"
+            logger.warning(
+                f"Your training set contains only {len(_classes)} classes whereas the"
                 f" ontology contains {len(full_classes)} classes."
             )
 
@@ -176,7 +178,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         trainer = DefaultTrainer(cfg)
         trainer.resume_or_load(resume=True)
         train_res = trainer.train()
-        kili_print("Training metrics", train_res)
+        logger.info("Training metrics", train_res)
 
         # 4. Inference
         # Inference should use the config with parameters that are used in training
@@ -190,12 +192,12 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         evaluator = COCOEvaluator("dataset_val", output_dir=eval_dir)
         val_loader = build_detection_test_loader(cfg, "dataset_val")  # type:ignore
         eval_res = inference_on_dataset(predictor.model, val_loader, evaluator)
-        kili_print(eval_res)
-        kili_print(f"Evaluations results are available in {eval_dir}")
-        kili_print("The logs and model are saved in ", cfg.OUTPUT_DIR)
+        logger.info(eval_res)
+        logger.info(f"Evaluations results are available in {eval_dir}")
+        logger.info("The logs and model are saved in ", cfg.OUTPUT_DIR)
 
         if "segm" not in eval_res:
-            kili_print(
+            logger.warning(
                 "No prediction in the training evaluation: your Epoch number may be too low."
             )
         return eval_res
@@ -212,7 +214,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         device = "cuda" if torch.cuda.is_available() else "cpu"
         cfg.MODEL.DEVICE = device
         if device == "cpu":
-            kili_print("Running on CPU, this will be extremely slow.")
+            logger.warning("Running on CPU, this will be extremely slow.")
         cfg.merge_from_file(model_zoo.get_config_file(self.model_name))
         cfg.DATASETS.TRAIN = ("dataset_train",)
         cfg.DATASETS.TEST = ("dataset_val",)
@@ -223,7 +225,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         cfg.TEST.EVAL_PERIOD = 100
         if epochs:
             n_iter = int(epochs * len(assets) / batch_size) + 1
-            kili_print("n_iter:", n_iter, "(Recommended min: 500)")
+            logger.info("n_iter:", n_iter, "(Recommended min: 500)")
             cfg.SOLVER.MAX_ITER = n_iter
         cfg.SOLVER.STEPS = []  # do not decay learning rate
         cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128
@@ -232,7 +234,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         )  # (see https://detectron2.readthedocs.io/tutorials/datasets.html#update-the-config-for-new-datasets) # noqa: E501
 
         cfg.OUTPUT_DIR = model_dir
-        kili_print("The model and the logs will be be saved in ", cfg.OUTPUT_DIR)
+        logger.info("The model and the logs will be be saved in ", cfg.OUTPUT_DIR)
         return cfg
 
     def predict(
@@ -242,10 +244,8 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,
-        verbose: int,
         clear_dataset_cache: bool,
     ):
-        _ = verbose
         if from_project:
             project_id = from_project
         else:
@@ -408,7 +408,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         im = Image.fromarray(image_with_predictions)
         path = os.path.join(visualization_dir, file_name)
         im.save(path)
-        kili_print("predictions image have been saved in", path)
+        logger.info("predictions image have been saved in", path)
 
     def find_errors(
         self,
@@ -417,7 +417,6 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         cv_n_folds: int,
         epochs: int,
         batch_size: int,
-        verbose: int = 0,
         clear_dataset_cache: bool = False,
     ):
         _ = cv_n_folds
@@ -428,7 +427,6 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             model_path=None,
             from_project=None,
             batch_size=batch_size,
-            verbose=verbose,
             clear_dataset_cache=clear_dataset_cache,
         )
 

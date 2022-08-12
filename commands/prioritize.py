@@ -26,8 +26,8 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
-    kili_print,
 )
+from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AssetStatusT,
@@ -39,6 +39,7 @@ from kiliautoml.utils.type import (
     ParityFilterT,
     ProjectIdT,
     ToolT,
+    VerboseLevelT,
 )
 
 # Priorities
@@ -270,7 +271,7 @@ class Prioritizer:
         assert 0 <= uncertainty_sampling + diversity_sampling <= 1
 
         random_sampling = 1 - diversity_sampling - uncertainty_sampling
-        kili_print(
+        logger.info(
             f"Sampling Mix of {diversity_sampling*100}% of  Diversity Sampling "
             f"and {uncertainty_sampling*100}% of Uncertainty Sampling "
             f"and {random_sampling*100}% of Random Sampling."
@@ -354,7 +355,7 @@ def main(
     model_path: Optional[str],
     target_job: List[JobNameT],
     ignore_job: List[JobNameT],
-    verbose: bool,
+    verbose: VerboseLevelT,
     clear_dataset_cache: bool,
     from_project: Optional[ProjectIdT],
     model_name: Optional[ModelNameT],
@@ -370,6 +371,7 @@ def main(
     We embedded the assets using a generic model, and then use a strategy that is a mixture of
     diversity sampling, uncertainty sampling, and random sampling to sorts the assets.
     """
+    set_kili_logging(verbose)
     if uncertainty_sampling + diversity_sampling > 1:
         raise ValueError("diversity_sampling + diversity_sampling should be less than 1.")
 
@@ -418,7 +420,6 @@ def main(
         model_path=model_path,
         from_project=from_project,
         batch_size=batch_size,
-        verbose=verbose,
         clear_dataset_cache=clear_dataset_cache,
     )
     condition_requested = ModelConditionsRequested(
@@ -438,14 +439,14 @@ def main(
         downloaded_images = download_project_images(api_key, unlabeled_assets, output_folder=None)
         pil_images = [image.get_image() for image in downloaded_images]
         embeddings = embeddings_images(pil_images)
-        kili_print("Embeddings successfully computed with shape ", embeddings.shape)
+        logger.debug("Embeddings successfully computed with shape ", embeddings.shape)
     else:
         raise NotImplementedError
 
     if not job_predictions:
         return
     predictions_probability = job_predictions.predictions_probability
-    kili_print("Predictions probability shape: ", predictions_probability)
+    logger.debug("Predictions probability shape: ", predictions_probability)
     asset_ids = [asset.id for asset in unlabeled_assets]
     prioritizer = Prioritizer(embeddings, predictions_probability=predictions_probability)
     priorities = prioritizer.get_priorities(
@@ -456,6 +457,8 @@ def main(
             asset_ids=asset_ids,  # type:ignore
             priorities=priorities,
         )
+
+    logger.success("prioritize command finished successfully!")
 
 
 if __name__ == "__main__":
