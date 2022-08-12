@@ -8,5 +8,6 @@ kiliautoml/utils/ultralytics/yolov5/artifacts
 wandb/**
 .mypy_cache/**
 kiliautoml.egg-info/**
-git_add.sh
 automl.log
+notebooks/.ipynb_checkpoints
+notebooks/.env
