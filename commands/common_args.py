@@ -252,3 +252,10 @@ class PrioritizeOptions:
     )
 
     asset_status_in = asset_status_in(["TODO", "ONGOING"])
+
+    dry_run = click.option(
+        "--dry-run",
+        default=False,
+        is_flag=True,
+        help="Runs the prioritization but do not rerank the assets in the Kili project",
+    )

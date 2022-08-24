@@ -342,6 +342,7 @@ def embedding_text(
 @PrioritizeOptions.diversity_sampling
 @PrioritizeOptions.uncertainty_sampling
 @PrioritizeOptions.asset_status_in
+@PrioritizeOptions.dry_run
 def main(
     api_endpoint: str,
     api_key: str,
