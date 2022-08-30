@@ -70,7 +70,6 @@ def ensure_dir(file_path: str):
 
 
 @kili_project_memoizer(sub_dir="get_asset_memoized")
-@backoff.on_exception(backoff.expo, exception=Exception, max_tries=3)
 def get_asset_memoized(
     *,
     kili: Kili,
@@ -79,6 +78,7 @@ def get_asset_memoized(
     skip: int,
     status_in: Optional[List[AssetStatusT]] = None,
 ) -> List[Any]:
+    kili.assets = backoff.on_exception(backoff.expo, exception=Exception, max_tries=3)(kili.assets)
     assets = kili.assets(
         project_id=project_id,
         first=total,
@@ -114,7 +114,6 @@ def get_assets(
     """
     job_name is used if status_in does not have only unlabeled statuses
     """
-
     if status_in is not None:
         for status in status_in:
             if status not in get_args(AssetStatusT):
@@ -136,7 +135,6 @@ def get_assets(
             status_in=status_in,
         )
         random.shuffle(assets)
-        assets = assets[::-1]
         assets = assets[:max_assets]
 
     else:

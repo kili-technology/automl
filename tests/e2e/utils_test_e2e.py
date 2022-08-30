@@ -108,6 +108,15 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "2",
             "--disable-wandb",
         ]
+    elif command == "prioritize":
+        args = [
+            command,
+            "--project-id",
+            project_id,
+            "--batch-size",
+            "2",
+            "--dry-run",
+        ]
     elif command == "label_errors":
         args = [
             command,

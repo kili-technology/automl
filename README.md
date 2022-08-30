@@ -43,7 +43,9 @@ git submodule update --init
 then install the requirements:
 
 ```bash
+export SETUPTOOLS_ENABLE_FEATURES="legacy-editable"
 pip install torch && pip install -e .
+export PYTHONPATH=$PYTHONPATH:$(pwd)
 ```
 
 ## Usage
