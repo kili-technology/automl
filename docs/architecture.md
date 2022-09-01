@@ -38,3 +38,17 @@ But we use a relatively complicated type of system:
 
 
 The types are then distributed to all other files in the application.
+
+
+## Particularities of each modality
+
+- Image classification: This is the only modality that benefits from the prioritization module. It uses plain pytorchvision in backend.
+- Text classification: It uses hugggingface in backend.
+- Image segmentation and polygon: Image segmentation and bbox are two different things in the Kili interface but share exactly the same code in AutoML. The difference between the two is not a qualitative difference but simply a quantitative one : image segmentation = polygon with many sides, polygon = polygon with relatively few sides. It uses Detectron in backend.
+
+
+## System used in the LabelError command
+
+- Image classification: Image classification uses cleanlab in the backend to detect annotation errors. The paradigm used by cleanlab consists in training several models on different parts of the data, then comparing the predictions of each model.
+- Object Detection: Polygon, Bbox, Image Segmentation: These three modalities use the same error detection system which is hand coded. Once a model has been trained, we compare the model predictions with the manual annotations.
+- Ner could benefit from the same system as the object detection modalities, but is not yet implemented. However, it would be relatively easy to implement in a few extra lines of code. It is enough to code the IUO metric for Ner from the position of the characters in the sentence.
