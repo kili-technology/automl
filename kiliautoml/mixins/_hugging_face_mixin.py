@@ -1,6 +1,5 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import os
-from abc import ABCMeta
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -27,7 +26,7 @@ from kiliautoml.utils.type import (
 )
 
 
-class HuggingFaceMixin(metaclass=ABCMeta):
+class HuggingFaceMixin:
     """
     Methods common to HuggingFace jobs
     """
