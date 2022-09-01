@@ -189,10 +189,10 @@ class Prioritizer:
         predictions_probability = self.predictions_probability
         if not predictions_probability:
             ValueError("No predictions_probability available.")
-        prio = list(-np.array(predictions_probability))
+        prio = -np.array(predictions_probability)
 
         # We normalize the priorites to be between 0 and len(list)
-        queue = PriorityQueue(prio)
+        queue = PriorityQueue(prio.tolist())
         return queue.to_prioritized_list()
 
     def _get_random_sampling_priorities(self) -> PrioritiesNormalized:
