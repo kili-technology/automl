@@ -381,13 +381,13 @@ def main(
     We embedded the assets using a generic model, and then use a strategy that is a mixture of
     diversity sampling, uncertainty sampling, and random sampling to sorts the assets.
 
-    diversity_sampling=1
-    This command is useful in the case where many images are very similar.
+    `diversity_sampling=1`
+    This command is useful when many images are very similar.
     This command will cluster the similar images and will first choose a representative of
     each cluster.
 
-    uncertainty_sampling=1
-    This command is useful in case we want to privilege the labelling of images that are classified
+    `uncertainty_sampling=1`
+    This command is useful when we want to prioritize the labeling of images that are classified
     with a high uncertainty rate.
 
     In practice we recommend the default strategy.
