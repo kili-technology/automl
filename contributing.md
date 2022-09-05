@@ -45,5 +45,4 @@ To run one end-to-end test:
 python -m pytest -s -v tests/e2e/test_from_project.py
 ```
 
-
-To regenerate the mock data, follow the instructions in kiliautoml/utils/helper_mock.py
+To regenerate the mock data, follow the instructions in (`kiliautoml/utils/helper_mock.py`)[kiliautoml/utils/helper_mock.py]
