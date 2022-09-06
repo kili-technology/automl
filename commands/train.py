@@ -85,6 +85,10 @@ def main(
 
 
     If there are multiple jobs in your projects, a model will be trained on each job.
+    KiliAutoML will automatically select the model types that match your Kili project's
+    labeling tasks (image classification, text classification, image segmentation).
+    Once the model is trained, the model is stored in the cache.
+    The model is then available for use by other commands such as `predict` and `label_errors`.
     """
     set_kili_logging(verbose)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)

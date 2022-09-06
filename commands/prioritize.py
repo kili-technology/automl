@@ -29,6 +29,7 @@ from kiliautoml.utils.helpers import (
 )
 from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
+from kiliautoml.utils.path import Path
 from kiliautoml.utils.type import (
     AssetStatusT,
     JobNameT,
@@ -72,6 +73,7 @@ class PriorityQueue:
 
     def append(self, asset_index: int):
         """Append asset_index after the queue."""
+        assert isinstance(asset_index, int)
         self.queue.append(asset_index)
         self.check_queue_validity()
 
@@ -86,11 +88,11 @@ class PriorityQueue:
         return priority
 
     def check_queue_validity(self):
-        # no duplicates
-        assert len(self.queue) == len(set(self.queue))
-
         # only integer values
         assert all([isinstance(asset_index, int) for asset_index in self.queue])
+
+        # no duplicates
+        assert len(self.queue) == len(set(self.queue))
 
     def __repr__(self):
         return f"Queue({self.queue}) (first element is most prioritized)"
@@ -128,7 +130,9 @@ class Prioritizer:
         Raises:
         ConnectionError: If no available port is found.
         """
-        assert len(embeddings) > 0 and len(embeddings[0]) > 0
+        assert (
+            len(embeddings) > 1 and len(embeddings[0]) > 0
+        ), "Not enough images remaining to be prioritized"
         self.embeddings = embeddings
         self.predictions_probability = predictions_probability
 
@@ -146,7 +150,12 @@ class Prioritizer:
         """
         embeddings = self.embeddings
 
-        pipe = Pipeline([("pca", PCA(n_components=10)), ("kmeans", KMeans(n_clusters=5))])
+        n_components = min(len(embeddings), 10)
+        n_clusters = 5
+        assert n_clusters < n_components
+        pipe = Pipeline(
+            [("pca", PCA(n_components=n_components)), ("kmeans", KMeans(n_clusters=n_clusters))]
+        )
 
         X_clusters = pipe.fit_transform(embeddings)[:, 0]  # type:ignore
 
@@ -180,10 +189,10 @@ class Prioritizer:
         predictions_probability = self.predictions_probability
         if not predictions_probability:
             ValueError("No predictions_probability available.")
-        prio = list(-np.array(predictions_probability))
+        prio = -np.array(predictions_probability)
 
         # We normalize the priorites to be between 0 and len(list)
-        queue = PriorityQueue(prio)
+        queue = PriorityQueue(prio.tolist())
         return queue.to_prioritized_list()
 
     def _get_random_sampling_priorities(self) -> PrioritiesNormalized:
@@ -339,6 +348,7 @@ def embedding_text(
 @Options.parity_filter
 @PredictOptions.model_path
 @PredictOptions.from_project
+@PredictOptions.dry_run
 @PrioritizeOptions.diversity_sampling
 @PrioritizeOptions.uncertainty_sampling
 @PrioritizeOptions.asset_status_in
@@ -370,6 +380,17 @@ def main(
     The goal is to find a collection of assets that are most relevant to prioritize.
     We embedded the assets using a generic model, and then use a strategy that is a mixture of
     diversity sampling, uncertainty sampling, and random sampling to sorts the assets.
+
+    `diversity_sampling=1`
+    This command is useful when many images are very similar.
+    This command will cluster the similar images and will first choose a representative of
+    each cluster.
+
+    `uncertainty_sampling=1`
+    This command is useful when we want to prioritize the labeling of images that are classified
+    with a high uncertainty rate.
+
+    In practice we recommend the default strategy.
     """
     set_kili_logging(verbose)
     if uncertainty_sampling + diversity_sampling > 1:
@@ -404,6 +425,7 @@ def main(
         randomize=randomize_assets,
         parity_filter=parity_filter,
     )
+    assert len(unlabeled_assets) > 1, "There is not enough assets. No need to prioritize."
 
     base_init_args = BaseInitArgs(
         job=job,
@@ -436,7 +458,11 @@ def main(
     job_predictions = model.predict(base_predict_args=predict_args)
 
     if input_type == "IMAGE":
-        downloaded_images = download_project_images(api_key, unlabeled_assets, output_folder=None)
+        downloaded_images = download_project_images(
+            api_key,
+            unlabeled_assets,
+            output_folder=Path.cache_memoization_dir(project_id, "project_images"),
+        )
         pil_images = [image.get_image() for image in downloaded_images]
         embeddings = embeddings_images(pil_images)
         logger.debug("Embeddings successfully computed with shape ", embeddings.shape)

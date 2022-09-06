@@ -69,7 +69,14 @@ def main(
     batch_size: int,
     clear_dataset_cache: bool,
 ):
-    """Compute predictions and upload them to Kili."""
+    """Compute predictions and upload them to Kili.
+
+    In order to use this command, you must first use the `train` command.
+    This command reuses the model that is stored at the end of the training.
+    We advise you to use this command once in `--dry-run` mode to preview the predictions.
+    Then, once you have validated the quality of the predictions, you can use this command without
+    the `--dry-run` mode, which will directly upload the predictions to the online kili project.
+    """
     set_kili_logging(verbose)
     dry_run = dry_run_security(dry_run)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)

@@ -2,7 +2,7 @@ import os
 import time
 from dataclasses import dataclass
 from io import BytesIO
-from typing import List, Optional
+from typing import List
 
 import requests
 from loguru import logger
@@ -140,7 +140,7 @@ def download_image_retry(api_key, asset: AssetT, n_try: int):
 def download_project_images(
     api_key: str,
     assets: AssetsLazyList,
-    output_folder: Optional[str] = None,
+    output_folder: str,
 ) -> List[DownloadedImage]:
     logger.info("Downloading images to folder {}".format(output_folder))
     downloaded_images = []

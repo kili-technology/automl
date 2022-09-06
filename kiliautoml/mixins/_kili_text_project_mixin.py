@@ -1,10 +1,8 @@
-from abc import ABCMeta
-
 from kiliautoml.utils.download_assets import download_asset_unicode
 
 
 # TODO: Delete this file
-class KiliTextProjectMixin(metaclass=ABCMeta):
+class KiliTextProjectMixin:
     def __init__(self, api_key) -> None:
         self.api_key = api_key
 

@@ -408,7 +408,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         im = Image.fromarray(image_with_predictions)
         path = os.path.join(visualization_dir, file_name)
         im.save(path)
-        logger.info("predictions image have been saved in", path)
+        logger.info(f"predictions image have been saved in {path}")
 
     def find_errors(
         self,

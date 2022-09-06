@@ -1,7 +1,7 @@
 """It's not possible to use the python debugger with the command kiliautoml.
 
 This file enables to use the the debugger as follows:
-python$
+python -m pdb utils/debug.py
 """
 from click.testing import CliRunner
 

@@ -167,7 +167,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
             json_response_array=[
                 {self.job_name: self.create_categories(prob_array)} for prob_array in prob_arrays
             ],
-            predictions_probability=prob_arrays,
+            predictions_probability=np.max(np.array(prob_arrays), axis=1).tolist(),
         )
         return job_predictions
 

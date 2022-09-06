@@ -70,7 +70,6 @@ def ensure_dir(file_path: str):
 
 
 @kili_project_memoizer(sub_dir="get_asset_memoized")
-@backoff.on_exception(backoff.expo, exception=Exception, max_tries=3)
 def get_asset_memoized(
     *,
     kili: Kili,
@@ -79,6 +78,7 @@ def get_asset_memoized(
     skip: int,
     status_in: Optional[List[AssetStatusT]] = None,
 ) -> List[Any]:
+    kili.assets = backoff.on_exception(backoff.expo, exception=Exception, max_tries=3)(kili.assets)
     assets = kili.assets(
         project_id=project_id,
         first=total,
@@ -114,7 +114,6 @@ def get_assets(
     """
     job_name is used if status_in does not have only unlabeled statuses
     """
-
     if status_in is not None:
         for status in status_in:
             if status not in get_args(AssetStatusT):
@@ -136,7 +135,6 @@ def get_assets(
             status_in=status_in,
         )
         random.shuffle(assets)
-        assets = assets[::-1]
         assets = assets[:max_assets]
 
     else:
@@ -167,7 +165,7 @@ def filter_parity(parity_filter: ParityFilterT, assets: AssetsLazyList):
     parity = [0, 1]
     if parity_filter == "keep-even":
         parity = [0]
-    if parity_filter == "keep-even":
+    if parity_filter == "keep-uneven":
         parity = [1]
     assets_ = [a for a in assets if hash(a.externalId) % 2 in parity]
 
@@ -349,7 +347,7 @@ def is_contours_detection(input_type, ml_task, content_input, tools):
 
 
 def curated_job(jobs: JobsT, target_job: List[JobNameT], ignore_job: List[JobNameT]) -> JobsT:
-    """Remove from the jobs dict the ignored job and keep only the target job"""
+    """Remove from the jobs dict the ignored jobs and keep only the target jobs"""
     assert set(target_job).isdisjoint(ignore_job), "target_job and ignore_job should be disjoint."
     assert set(target_job).issubset(jobs.keys()), f"target_job is not a subset of {jobs.keys()}"
     assert set(ignore_job).issubset(jobs.keys()), f"ignore_job is not a subset of {jobs.keys()}"
