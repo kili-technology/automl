@@ -321,8 +321,10 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         list_x_y = list_x_y.reshape(-1, 2)
 
         def purge(x_y):
-            """We project point 1 to the [point 1 - point 2] axis"""
-            # x_y = np.roll(x_y, 1, axis=0)
+            """We project point 1 to the [point 0 - point 2] axis.
+
+            We delete the point 1 if the difference is less than one pixel.
+            """
             x_y_matrix = np.zeros((3, len(x_y) - 2, 2))
             x_y_matrix[0] = x_y[0:-2]  # point 0
             x_y_matrix[1] = x_y[1:-1]  # point 1
@@ -357,7 +359,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             mask[1:-1] = keep_points
             return x_y[mask]
 
-        for _ in range(10):
+        for _ in range(0):
             list_x_y = purge(list_x_y)
         return list_x_y
 

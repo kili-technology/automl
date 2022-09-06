@@ -338,7 +338,7 @@ def find_all_label_errors(
         predicted_annotations = create_normalized_annotation(json_response[job_name], ml_task, tool)
         manual_annotations = create_normalized_annotation(json_response_base, ml_task, tool)
 
-        logger.info("\nAsset externalId", asset.externalId)
+        logger.info(f"\nAsset externalId: {asset.externalId}")
         labeling_errors = find_label_errors_for_one_asset(
             predicted_annotations=AssetStandardizedAnnotationsT(
                 annotations=predicted_annotations,
