@@ -101,6 +101,7 @@ def iou_polygons(points1: List[NormalizedVertice], points2):
         union = polygon1.union(polygon2).area
         iou = intersect / union
     except TopologicalError:
+        raise TopologicalError
         one_time_logger("TopologicalError: The model is probably not trained enough")
         iou = 0
     return iou
