@@ -117,7 +117,7 @@ This command will change the priority queue of the assets to be labeled.
 To do this, AutoML uses a mix between diversity sampling and uncertainty sampling.
 
 ### Label errors on Kili
-Note: for image classification projects only.
+Note: for image classification, object detection and image segmentation projects only.
 
 The error is human, fortunately there are methods to detect potential annotation problems. `label_errors.py` allows to identify potential problems and create a 'potential_label_error' filter on the project's asset exploration view:
 
