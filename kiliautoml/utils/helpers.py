@@ -382,3 +382,16 @@ def dry_run_security(dry_run):
     else:
         logger.info("OK, We will send the predictions to Kili!")
     return dry_run
+
+
+def get_wandb_job_name(project_name: str, job_name: str):
+    return (
+        project_name.replace("/", "")
+        .replace("\\", "")
+        .replace("#", "")
+        .replace("?", "")
+        .replace("%", "")
+        .replace(":", "")
+        + "_"
+        + job_name
+    )

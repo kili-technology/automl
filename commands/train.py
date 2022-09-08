@@ -16,6 +16,7 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
+    get_wandb_job_name,
     print_evaluation,
 )
 from kiliautoml.utils.logging import logger, set_kili_logging
@@ -114,7 +115,9 @@ def main(
 
         wandb_run: Optional[Run] = None
         if not disable_wandb:
-            wandb_run = cast(Run, wandb.init(project=title + "_" + job_name, reinit=True))
+            wandb_run = cast(
+                Run, wandb.init(project=get_wandb_job_name(title, job_name), reinit=True)
+            )
 
         if clear_dataset_cache:
             clear_command_cache(
