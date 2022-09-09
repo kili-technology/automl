@@ -180,6 +180,23 @@ class TrainOptions:
     )
 
 
+class EvaluateOptions:
+
+    asset_status_in = asset_status_in(["LABELED", "TO_REVIEW", "REVIEWED"])
+
+    json_string_hg = '{"logging_strategy": "epoch"}'
+    additionalTrainArgsHuggingFace = click.option(
+        "--additional-train-args-hg",
+        default=json_string_hg,
+        callback=lambda _, __, x: json.loads(x),
+        help=(
+            "args passed to huggingface TrainingArguments constructor. "
+            "See https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments"  # noqa
+            "Ex:  --additional-train-args-hg " + json_string_hg
+        ),
+    )
+
+
 class PredictOptions:
 
     dry_run = click.option(

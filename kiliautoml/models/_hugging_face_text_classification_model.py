@@ -14,10 +14,14 @@ from transformers import Trainer
 from commands.common_args import DEFAULT_BATCH_SIZE
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
-from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelTrainArgs
 from kiliautoml.models._hugging_face_model import (
     HuggingFaceModel,
     HuggingFaceModelConditions,
+)
+from kiliautoml.models._base_model import (
+    BaseInitArgs,
+    KiliBaseModel,
+    ModelTrainArgs,
 )
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir
 from kiliautoml.utils.logging import logger

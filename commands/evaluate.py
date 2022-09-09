@@ -1,16 +1,15 @@
-from typing import List, Optional, cast
+from typing import List
 
 import click
 from kili.client import Kili
 
-from commands.common_args import Options, TrainOptions
+from commands.common_args import Options, EvaluateOptions
 from kiliautoml.models._base_model import (
     BaseInitArgs,
-    BaseTrainArgs,
+    BaseEvaluateArgs,
+    ModelEvaluateArgs,
     ModelConditionsRequested,
-    ModelTrainArgs,
 )
-from kiliautoml.models.auto_get_model import auto_get_instantiated_model
 from kiliautoml.utils.helpers import (
     curated_job,
     get_assets,
@@ -34,9 +33,6 @@ from kiliautoml.utils.type import (
     VerboseLevelT,
 )
 
-import wandb  # isort:skip
-from wandb.sdk.wandb_run import Run  # isort:skip
-
 
 @click.command()
 @Options.project_id
@@ -48,17 +44,13 @@ from wandb.sdk.wandb_run import Run  # isort:skip
 @Options.target_job
 @Options.ignore_job
 @Options.max_assets
-@Options.randomize_assets
 @Options.clear_dataset_cache
 @Options.batch_size
 @Options.verbose
 @Options.label_merge_strategy
 @Options.parity_filter
-@TrainOptions.asset_status_in
-@TrainOptions.epochs
-@TrainOptions.disable_wandb
-@TrainOptions.additionalTrainArgsHuggingFace
-@TrainOptions.additionalTrainArgsYolo
+@EvaluateOptions.asset_status_in
+@EvaluateOptions.additionalTrainArgsHuggingFace
 def main(
     api_endpoint: str,
     api_key: str,
@@ -66,28 +58,20 @@ def main(
     model_name: ModelNameT,
     model_repository: ModelRepositoryT,
     project_id: ProjectIdT,
-    epochs: int,
     asset_status_in: List[AssetStatusT],
     label_merge_strategy: LabelMergeStrategyT,
     target_job: List[JobNameT],
     ignore_job: List[JobNameT],
     max_assets: int,
-    randomize_assets: bool,
     clear_dataset_cache: bool,
-    disable_wandb: bool,
     verbose: VerboseLevelT,
     batch_size: int,
     parity_filter: ParityFilterT,
     additional_train_args_hg: AdditionalTrainingArgsT,
-    additional_train_args_yolo: AdditionalTrainingArgsT,
 ):
-    """Train a model and then save the model in the cache.
+    """Evaluate trained model.
 
-
-    If there are multiple jobs in your projects, a model will be trained on each job.
-    KiliAutoML will automatically select the model types that match your Kili project's
-    labeling tasks (image classification, text classification, image segmentation).
-    Once the model is trained, the model is stored in the cache.
+    If there are multiple jobs in your projects, it will evaluate each job independently.
     The model is then available for use by other commands such as `predict` and `label_errors`.
     """
     set_kili_logging(verbose)
@@ -98,29 +82,14 @@ def main(
     model_evaluations = []
 
     for job_name, job in jobs.items():
+        logger.info(f"Training on job: {job_name}")
 
         ml_task = job.get("mlTask")
-        content_input = get_content_input_from_job(job)
-        tools: List[ToolT] = job.get("tools")
-        model_evaluation = {}
-
-        condition_requested = ModelConditionsRequested(
-            input_type=input_type,
-            ml_task=ml_task,
-            content_input=content_input,
-            ml_backend=ml_backend,
-            model_name=model_name,
-            model_repository=model_repository,
-            tools=tools,
-        )
-
-        logger.info(f"Training on job: {job_name}")
         assets = get_assets(
             kili,
             project_id=project_id,
             status_in=asset_status_in,
             max_assets=max_assets,
-            randomize=randomize_assets,
             strategy=label_merge_strategy,
             job_name=job_name,
             parity_filter=parity_filter,
@@ -128,16 +97,16 @@ def main(
 
         if clear_dataset_cache:
             clear_command_cache(
-                command="train",
+                command="evaluate",
                 project_id=project_id,
                 job_name=job_name,
                 ml_backend=ml_backend,
                 model_repository=model_repository,
             )
+        content_input = get_content_input_from_job(job)
+        tools: List[ToolT] = job.get("tools")
+        model_evaluation = {}
 
-        wandb_run: Optional[Run] = None
-        if not disable_wandb:
-            wandb_run = cast(Run, wandb.init(project=title + "_" + job_name, reinit=True))
         base_init_args = BaseInitArgs(
             job=job,
             job_name=job_name,
@@ -149,32 +118,37 @@ def main(
             title=title,
         )
 
-        base_train_args = BaseTrainArgs(
+        base_train_args = BaseEvaluateArgs(
             assets=assets,
-            epochs=epochs,
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
-            disable_wandb=disable_wandb,
         )
 
-        model_train_args = ModelTrainArgs(
-            additional_train_args_yolo=additional_train_args_yolo,
+        model_train_args = ModelEvaluateArgs(
             additional_train_args_hg=additional_train_args_hg,
+        )
+        condition_requested = ModelConditionsRequested(
+            input_type=input_type,
+            ml_task=ml_task,
+            content_input=content_input,
+            ml_backend=ml_backend,
+            model_name=model_name,
+            model_repository=model_repository,
+            tools=tools,
         )
         model = auto_get_instantiated_model(
             condition_requested=condition_requested,
             base_init_args=base_init_args,
         )
-        model_evaluation = model.train(
+        model_evaluation = model.evaluate(
             base_train_args=base_train_args, model_train_args=model_train_args
         )
 
-        if wandb_run is not None:
-            wandb_run.finish()
         model_evaluations.append((job_name, model_evaluation))
 
     logger.info("Summary of training:")
     for job_name, evaluation in model_evaluations:
-        print_evaluation(job_name, evaluation)
+        if evaluation is not None:
+            print_evaluation(job_name, evaluation)
 
     logger.success("train command finished successfully!")

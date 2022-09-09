@@ -7,7 +7,7 @@ from typing_extensions import Literal, TypedDict
 
 AssetStatusT = Literal["TODO", "ONGOING", "LABELED", "TO_REVIEW", "REVIEWED"]
 LabelTypeT = Literal["AUTOSAVE", "DEFAULT", "PREDICTION", "INFERENCE", "REVIEW"]
-CommandT = Literal["advise", "train", "predict", "label_errors", "prioritize"]
+CommandT = Literal["advise", "evaluate", "train", "predict", "label_errors", "prioritize"]
 LabelMergeStrategyT = Literal["last", "first"]
 ContentInputT = Literal["checkbox", "radio"]
 InputTypeT = Literal["IMAGE", "TEXT"]
@@ -216,7 +216,7 @@ class JobPredictions:
 
 
 AdditionalTrainingArgsT = Dict[str, Any]
-DictTrainingInfosT = Dict[str, Any]
+DictInfosT = Dict[str, Any]
 
 
 class ModelMetricT(TypedDict):

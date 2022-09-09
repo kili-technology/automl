@@ -10,7 +10,7 @@ from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetsLazyList,
     ContentInputT,
-    DictTrainingInfosT,
+    DictInfosT,
     InputTypeT,
     JobNameT,
     JobPredictions,
@@ -52,6 +52,20 @@ class ModelTrainArgs(TypedDict):
 
     additional_train_args_hg: AdditionalTrainingArgsT
     additional_train_args_yolo: AdditionalTrainingArgsT
+
+
+class BaseEvaluateArgs(TypedDict):
+    """Common to all modalities"""
+
+    assets: AssetsLazyList
+    batch_size: int
+    clear_dataset_cache: bool
+
+
+class ModelEvaluateArgs(TypedDict):
+    """Used only for some modalities"""
+
+    additional_train_args_hg: AdditionalTrainingArgsT
 
 
 class BasePredictArgs(TypedDict):
@@ -177,7 +191,17 @@ class KiliBaseModel:
         clear_dataset_cache: bool,
         disable_wandb: bool,
         model_train_args: ModelTrainArgs,
-    ) -> DictTrainingInfosT:
+    ) -> DictInfosT:
+        ...
+
+    def evaluate(
+        self,
+        *,
+        assets: AssetsLazyList,
+        batch_size: int,
+        clear_dataset_cache: bool,
+        model_train_args: ModelEvaluateArgs,
+    ) -> DictInfosT:
         ...
 
     def predict(
