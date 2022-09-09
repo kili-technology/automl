@@ -154,6 +154,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             output_dir=data_dir,
             api_key=self.api_key,
             job=self.job,
+            project_id=self.project_id,
         )
 
         assert len(set(full_classes)) == len(full_classes)

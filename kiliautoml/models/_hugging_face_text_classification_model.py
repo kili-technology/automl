@@ -158,9 +158,10 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         )
 
         for asset in assets.iter_refreshed_asset(
+            project_id=self.project_id,
             kili=Kili(
                 self.api_key,
-            )
+            ),
         ):  # TODO: Add api_endpoint
             text = self._get_text_from(asset.content)
 

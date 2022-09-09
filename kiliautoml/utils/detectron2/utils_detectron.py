@@ -14,7 +14,13 @@ from typing_extensions import TypedDict
 from kiliautoml.utils.download_assets import download_asset_binary
 from kiliautoml.utils.helpers import get_mapping_category_name_cat_kili_id
 from kiliautoml.utils.logging import logger
-from kiliautoml.utils.type import AssetsLazyList, CategoryIdT, JobNameT, JobT
+from kiliautoml.utils.type import (
+    AssetsLazyList,
+    CategoryIdT,
+    JobNameT,
+    JobT,
+    ProjectIdT,
+)
 
 # ## DETECTRON FORMAT
 
@@ -53,7 +59,12 @@ class CocoFormat(TypedDict):
 
 
 def convert_kili_semantic_to_coco(
-    job_name: JobNameT, assets: AssetsLazyList, output_dir, api_key: str, job: JobT
+    job_name: JobNameT,
+    assets: AssetsLazyList,
+    output_dir,
+    api_key: str,
+    job: JobT,
+    project_id: ProjectIdT,
 ) -> Tuple[CocoFormat, List[str]]:
     """
     creates the following structure on the disk:
@@ -106,9 +117,10 @@ def convert_kili_semantic_to_coco(
     for asset_i, asset in tqdm(
         enumerate(
             assets.iter_refreshed_asset(
+                project_id=project_id,
                 kili=Kili(
                     api_key=api_key,
-                )
+                ),
             )
         ),
         total=len(assets),
