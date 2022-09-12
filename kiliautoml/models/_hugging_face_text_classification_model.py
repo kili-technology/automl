@@ -135,6 +135,49 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         logger.info(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
+    
+    def evaluate(
+        self,
+        *,
+        assets: AssetsLazyList,
+        batch_size: int,
+        clear_dataset_cache: bool = False,
+        disable_wandb: bool = False,
+        model_train_args: ModelTrainArgs,
+    ) -> JobPredictions:
+        if batch_size != DEFAULT_BATCH_SIZE:
+            logger.warning("This model does not support custom batch_size ", batch_size)
+        _ = clear_dataset_cache
+
+        model_path_res, _, self.ml_backend = self._extract_model_info(
+            self.job_name, self.project_id, model_path, from_project
+        )
+
+        predictions = []
+        proba_assets = []
+
+        tokenizer, model = self._get_tokenizer_and_model(
+            self.ml_backend, model_path_res, self.model_conditions.ml_task
+        ))
+
+        training_arguments = self._get_training_args(
+            path_model,
+            model_name,
+            disable_wandb=disable_wandb,
+            epochs=epochs,
+            batch_size=batch_size,
+            additional_train_args_hg=model_train_args["additional_train_args_hg"],
+        )
+
+        trainer = Trainer(
+            model=model,
+            args=training_arguments,
+            tokenizer=tokenizer,
+            train_dataset=train_dataset,  # type: ignore
+            eval_dataset=eval_dataset,  # type: ignore
+            compute_metrics=self.compute_metrics,  # type: ignore
+        )
+        model_evaluation = self.model_evaluation(trainer, job_categories)
 
     def predict(
         self,
