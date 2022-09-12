@@ -8,7 +8,6 @@ from typing_extensions import get_args
 from kiliautoml.utils.type import (
     AssetStatusT,
     MLBackendT,
-    ModelNameT,
     ParityFilterT,
     VerboseLevelT,
 )
@@ -42,7 +41,7 @@ class Options:
         "--model-name",
         default=None,
         help="Model name (eg. bert-base-cased)",
-        type=click.Choice(get_args(ModelNameT)),
+        type=str,
     )
 
     model_repository = click.option(
