@@ -1,12 +1,13 @@
 from dataclasses import dataclass
-import requests
 from typing import List, Optional, TypeVar
 
+import requests
 from bs4 import BeautifulSoup
 from typing_extensions import TypedDict
 
 from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.helpers import set_default
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -117,6 +118,10 @@ class ModelConditions:
                     raise ValueError(
                         f"Wrong model requested {model_name}. Try one of these models: \n "
                         f"{str(self.advised_model_names)} or any HuggingFace Fill-Mask model."
+                    )
+                else:
+                    logger.warning(
+                        f"{model_name} is not one of the advised models {self.advised_model_names}"
                     )
         else:
             self._check_compatible(model_name, self.advised_model_names, "model_name")

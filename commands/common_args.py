@@ -5,12 +5,7 @@ from typing import List
 import click
 from typing_extensions import get_args
 
-from kiliautoml.utils.type import (
-    AssetStatusT,
-    MLBackendT,
-    ParityFilterT,
-    VerboseLevelT,
-)
+from kiliautoml.utils.type import AssetStatusT, MLBackendT, ParityFilterT, VerboseLevelT
 
 DEFAULT_BATCH_SIZE = 8
 
