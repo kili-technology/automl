@@ -218,9 +218,10 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         predictions = []
         proba_assets = []
         for asset in assets.iter_refreshed_asset(
+            project_id=self.project_id,
             kili=Kili(
                 api_key=self.api_key,  # TODO: add endpoint
-            )
+            ),
         ):  # TODO: add api_endpoint
             text = self._get_text_from(asset.content)
 

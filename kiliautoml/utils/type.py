@@ -260,15 +260,17 @@ class AssetsLazyList:
         self.assets = assets
         self.counter = -1
 
-    def iter_refreshed_asset(self, kili: Kili) -> Iterable[AssetT]:
+    def iter_refreshed_asset(self, kili: Kili, project_id: ProjectIdT) -> Iterable[AssetT]:
         """Use this iterator if you need to access the assets 'content'"""
         batch = 20
         for assets in chunked(self.assets, batch):
-            partial_assets: List[PartialAsset] = kili.assets(  # type:ignore
+            _ = kili.assets(
+                project_id=project_id,
                 asset_id_in=[asset.id for asset in assets],
                 fields=["content", "id"],
                 as_generator=False,
             )
+            partial_assets: List[PartialAsset] = _  # type: ignore
             partial_assets = sorted(partial_assets, key=lambda d: d["id"])
             assets = sorted(assets, key=lambda d: d.id)
             for asset, partial_asset in zip(assets, partial_assets):
