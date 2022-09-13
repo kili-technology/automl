@@ -40,9 +40,9 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         model_repository="huggingface",
         possible_ml_backend=["pytorch"],
         advised_model_names=[
-            "bert-base-multilingual-cased",
-            "distilbert-base-cased",
-            "distilbert-base-uncased",
+            ModelNameT("bert-base-multilingual-cased"),
+            ModelNameT("distilbert-base-cased"),
+            ModelNameT("distilbert-base-uncased"),
         ],
         input_type="TEXT",
         content_input="radio",

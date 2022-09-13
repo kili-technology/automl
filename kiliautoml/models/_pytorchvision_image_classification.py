@@ -43,8 +43,8 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         model_repository="torchvision",
         possible_ml_backend=["pytorch"],
         advised_model_names=[
-            "efficientnet_b0",
-            "resnet50",
+            ModelNameT("efficientnet_b0"),
+            ModelNameT("resnet50"),
         ],
         input_type="IMAGE",
         content_input="radio",

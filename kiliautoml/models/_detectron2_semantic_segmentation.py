@@ -42,6 +42,7 @@ from kiliautoml.utils.type import (
     JobPredictions,
     JsonResponseSemanticT,
     KiliSemanticAnnotation,
+    ModelNameT,
     NormalizedVertice,
     NormalizedVertices,
     ProjectIdT,
@@ -56,8 +57,8 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         model_repository="detectron2",
         possible_ml_backend=["pytorch"],
         advised_model_names=[
-            "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml",
-            "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml",
+            ModelNameT("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml"),
+            ModelNameT("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"),
         ],
         input_type="IMAGE",
         content_input="radio",

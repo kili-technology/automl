@@ -38,6 +38,7 @@ from kiliautoml.utils.type import (
     JsonResponseBboxT,
     KiliBBoxAnnotation,
     MLBackendT,
+    ModelNameT,
     ProjectIdT,
 )
 
@@ -75,16 +76,16 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         model_repository="ultralytics",
         possible_ml_backend=["pytorch"],
         advised_model_names=[
-            "yolov5n",
-            "yolov5s",
-            "yolov5m",
-            "yolov5l",
-            "yolov5x",
-            "yolov5n6",  # n6 : double resolution
-            "yolov5s6",
-            "yolov5m6",
-            "yolov5l6",
-            "yolov5x6",
+            ModelNameT("yolov5n"),
+            ModelNameT("yolov5s"),
+            ModelNameT("yolov5m"),
+            ModelNameT("yolov5l"),
+            ModelNameT("yolov5x"),
+            ModelNameT("yolov5n6"),  # n6 : double resolution
+            ModelNameT("yolov5s6"),
+            ModelNameT("yolov5m6"),
+            ModelNameT("yolov5l6"),
+            ModelNameT("yolov5x6"),
         ],
         input_type="IMAGE",
         content_input="radio",

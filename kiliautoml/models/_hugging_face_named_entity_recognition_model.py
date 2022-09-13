@@ -45,9 +45,9 @@ class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, Ki
         model_repository="huggingface",
         possible_ml_backend=["pytorch", "tensorflow"],
         advised_model_names=[
-            "bert-base-cased",
-            "bert-base-multilingual-cased",
-            "distilbert-base-cased",
+            ModelNameT("bert-base-cased"),
+            ModelNameT("bert-base-multilingual-cased"),
+            ModelNameT("distilbert-base-cased"),
         ],
         input_type="TEXT",
         content_input="radio",
