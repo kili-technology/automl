@@ -29,3 +29,4 @@ pydantic
 pytest-mock
 backoff
 loguru
+BeautifulSoup4
