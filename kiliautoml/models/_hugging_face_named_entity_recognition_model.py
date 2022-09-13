@@ -19,6 +19,7 @@ from kiliautoml.models._base_model import (
     ModelConditions,
     ModelTrainArgs,
 )
+from kiliautoml.models._hugging_face_model import HuggingFaceModel
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir
 from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathHF
@@ -39,7 +40,9 @@ from kiliautoml.utils.type import (
 )
 
 
-class HuggingFaceNamedEntityRecognitionModel(KiliBaseModel, HuggingFaceMixin, KiliTextProjectMixin):
+class HuggingFaceNamedEntityRecognitionModel(
+    HuggingFaceModel, HuggingFaceMixin, KiliTextProjectMixin
+):
     model_conditions = ModelConditions(
         ml_task="NAMED_ENTITIES_RECOGNITION",
         model_repository="huggingface",

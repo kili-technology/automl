@@ -166,14 +166,6 @@ class KiliBaseModel:
             self.model_conditions.model_repository,
         )
 
-        if "huggingface" not in self.model_repository_dir:
-            self.model_name = set_default(
-                base_init_args["model_name"],
-                self.model_conditions.advised_model_names[0],
-                "model_name",
-                self.model_conditions.advised_model_names,
-            )
-
         self.ml_backend: MLBackendT = set_default(
             base_init_args["ml_backend"],
             self.model_conditions.possible_ml_backend[0],
@@ -183,6 +175,16 @@ class KiliBaseModel:
         self.api_key = base_init_args["api_key"]
         self.api_endpoint = base_init_args["api_endpoint"]
         self.title = base_init_args["title"]
+
+        self.fill_model_name(base_init_args=base_init_args)
+
+    def fill_model_name(self, base_init_args: BaseInitArgs) -> None:
+        self.model_name = set_default(
+            base_init_args["model_name"],
+            self.model_conditions.advised_model_names[0],
+            "model_name",
+            self.model_conditions.advised_model_names,
+        )
 
     def train(
         self,
