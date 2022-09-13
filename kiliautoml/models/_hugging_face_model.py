@@ -1,14 +1,14 @@
-import requests
-from bs4 import BeautifulSoup
 from typing import Optional
 
-from kiliautoml.utils.logging import logger
+import requests
+from bs4 import BeautifulSoup
+
 from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelConditions
+from kiliautoml.utils.logging import logger
 from kiliautoml.utils.type import ModelNameT
 
 
 class HuggingFaceModelConditions(ModelConditions):
-
     def _check_compatible_model(self, model_name: Optional[ModelNameT]) -> None:
         if model_name and model_name not in self.advised_model_names:
             # check if the model is a fill-mask model
