@@ -1,13 +1,10 @@
 from dataclasses import dataclass
 from typing import List, Optional, TypeVar
 
-import requests
-from bs4 import BeautifulSoup
 from typing_extensions import TypedDict
 
 from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.helpers import set_default
-from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
@@ -109,22 +106,7 @@ class ModelConditions:
             )
 
     def _check_compatible_model(self, model_name: Optional[ModelNameT]) -> None:
-        if self.model_repository == "huggingface":
-            if model_name and model_name not in self.advised_model_names:
-                # check if the model is a fill-mask model
-                html = requests.get(f"https://huggingface.co/{model_name}").text
-                soup = BeautifulSoup(html, "html.parser")
-                if not (len([x for x in soup.find_all("span") if "Fill-Mask" in x]) > 1):
-                    raise ValueError(
-                        f"Wrong model requested {model_name}. Try one of these models: \n "
-                        f"{str(self.advised_model_names)} or any HuggingFace Fill-Mask model."
-                    )
-                else:
-                    logger.warning(
-                        f"{model_name} is not one of the advised models {self.advised_model_names}"
-                    )
-        else:
-            self._check_compatible(model_name, self.advised_model_names, "model_name")
+        self._check_compatible(model_name, self.advised_model_names, "model_name")
 
     def is_compatible(self, cdt_requested: ModelConditionsRequested) -> bool:
         strict_conditions = (

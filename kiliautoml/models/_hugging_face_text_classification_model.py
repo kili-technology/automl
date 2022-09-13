@@ -17,10 +17,9 @@ from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import (
     BaseInitArgs,
     KiliBaseModel,
-    ModelConditions,
     ModelTrainArgs,
 )
-from kiliautoml.models._hugging_face_model import HuggingFaceModel
+from kiliautoml.models._hugging_face_model import HuggingFaceModel, HuggingFaceModelConditions
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir
 from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathHF
@@ -36,7 +35,7 @@ from kiliautoml.utils.type import (
 
 class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    model_conditions = ModelConditions(
+    model_conditions = HuggingFaceModelConditions(
         ml_task="CLASSIFICATION",
         model_repository="huggingface",
         possible_ml_backend=["pytorch"],
