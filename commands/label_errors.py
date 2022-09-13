@@ -16,7 +16,7 @@ from kiliautoml.models._base_model import (
     BaseLabelErrorsArgs,
     ModelConditionsRequested,
 )
-from kiliautoml.models.kili_auto_model import KiliAutoModel
+from kiliautoml.models.kili_auto_model import KiliAutoModel, get_appropriate_model
 from kiliautoml.utils.helper_label_error import (
     ErrorRecap,
     LabelingError,
@@ -290,9 +290,8 @@ def main(
             id_array=[a.id for a in assets],
             errors_by_asset=[[] for _ in assets],
         )
-        model = KiliAutoModel(
-            base_init_args=base_init_args, condition_requested=condition_requested
-        )
+        appropriate_model = get_appropriate_model(condition_requested)
+        model = KiliAutoModel(base_init_args=base_init_args, model_type=appropriate_model)
         found_errors = (
             model.find_errors(base_label_errors_args=base_label_errors_args)
             if not erase_error_metadata

@@ -9,7 +9,7 @@ from kiliautoml.models._base_model import (
     BasePredictArgs,
     ModelConditionsRequested,
 )
-from kiliautoml.models.kili_auto_model import KiliAutoModel
+from kiliautoml.models.kili_auto_model import KiliAutoModel, get_appropriate_model
 from kiliautoml.utils.helpers import (
     curated_job,
     dry_run_security,
@@ -124,9 +124,8 @@ def main(
             model_repository=model_repository,
             tools=tools,
         )
-        model = KiliAutoModel(
-            condition_requested=condition_requested, base_init_args=base_init_args
-        )
+        appropriate_model = get_appropriate_model(condition_requested)
+        model = KiliAutoModel(base_init_args=base_init_args, model_type=appropriate_model)
         job_predictions = model.predict(base_predict_args=predict_args)
 
         if not dry_run and job_predictions and job_predictions.external_id_array:

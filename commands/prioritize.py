@@ -19,7 +19,7 @@ from kiliautoml.models._base_model import (
     BasePredictArgs,
     ModelConditionsRequested,
 )
-from kiliautoml.models.kili_auto_model import KiliAutoModel
+from kiliautoml.models.kili_auto_model import KiliAutoModel, get_appropriate_model
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
     curated_job,
@@ -454,7 +454,8 @@ def main(
         tools=tools,
     )
 
-    model = KiliAutoModel(condition_requested=condition_requested, base_init_args=base_init_args)
+    appropriate_model = get_appropriate_model(condition_requested)
+    model = KiliAutoModel(base_init_args=base_init_args, model_type=appropriate_model)
     job_predictions = model.predict(base_predict_args=predict_args)
 
     if input_type == "IMAGE":

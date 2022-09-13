@@ -36,12 +36,9 @@ def get_appropriate_model(condition_requested: ModelConditionsRequested) -> Type
 
 
 class KiliAutoModel:
-    def __init__(
-        self, *, condition_requested: ModelConditionsRequested, base_init_args: BaseInitArgs
-    ) -> None:
+    def __init__(self, *, model_type: Type[KiliBaseModel], base_init_args: BaseInitArgs) -> None:
 
-        Model = get_appropriate_model(condition_requested)
-        self.model = Model(base_init_args=base_init_args)
+        self.model = model_type(base_init_args=base_init_args)
 
     def train(
         self,
