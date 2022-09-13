@@ -65,8 +65,8 @@ def create_mocked__throttled_request(path_dir):
 
 
 def create_mocked_iter_refreshed_asset(path):
-    def mocked_iter_refreshed_asset(kili):
-        _ = kili
+    def mocked_iter_refreshed_asset(kili, project_id):
+        _ = kili, project_id
         assets = create_mock__get_asset_memoized(path)()
         for asset in assets:
             yield AssetT.construct(**asset)
