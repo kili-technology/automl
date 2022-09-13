@@ -13,8 +13,8 @@ from kiliautoml.models._base_model import (
     BasePredictArgs,
     BaseTrainArgs,
     KiliBaseModel,
-    ModalTrainArgs,
     ModelConditionsRequested,
+    ModelTrainArgs,
 )
 from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.type import DictTrainingInfosT, JobPredictions
@@ -47,9 +47,9 @@ class KiliAutoModel:
         self,
         *,
         base_train_args: BaseTrainArgs,
-        modal_train_args: ModalTrainArgs,
+        model_train_args: ModelTrainArgs,
     ) -> DictTrainingInfosT:
-        return self.model.train(**base_train_args, modal_train_args=modal_train_args)
+        return self.model.train(**base_train_args, model_train_args=model_train_args)
 
     def predict(self, *, base_predict_args: BasePredictArgs) -> JobPredictions:
         return self.model.predict(**base_predict_args)

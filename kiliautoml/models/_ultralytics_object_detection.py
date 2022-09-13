@@ -18,8 +18,8 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from kiliautoml.models._base_model import (
     BaseInitArgs,
     KiliBaseModel,
-    ModalTrainArgs,
     ModelConditions,
+    ModelTrainArgs,
 )
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import find_all_label_errors
@@ -107,7 +107,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        modal_train_args: ModalTrainArgs,
+        model_train_args: ModelTrainArgs,
     ):
         model_repository_dir = Path.model_repository_dir(
             self.project_id, self.job_name, self.model_conditions.model_repository
@@ -145,7 +145,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
                     number_classes=len(class_names),
                 )
             )
-        additional_train_args_yolo = modal_train_args["additional_train_args_yolo"]
+        additional_train_args_yolo = model_train_args["additional_train_args_yolo"]
         if not additional_train_args_yolo:
             additional_train_args_yolo = {}
         additional_train_args_yolo["epochs"] = epochs

@@ -17,8 +17,8 @@ from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
 from kiliautoml.models._base_model import (
     BaseInitArgs,
     KiliBaseModel,
-    ModalTrainArgs,
     ModelConditions,
+    ModelTrainArgs,
 )
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir
 from kiliautoml.utils.logging import logger
@@ -65,7 +65,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         batch_size: int,
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
-        modal_train_args: ModalTrainArgs,
+        model_train_args: ModelTrainArgs,
     ):
         nltk.download("punkt")
 
@@ -115,7 +115,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
             disable_wandb=disable_wandb,
             epochs=epochs,
             batch_size=batch_size,
-            additional_train_args_hg=modal_train_args["additional_train_args_hg"],
+            additional_train_args_hg=model_train_args["additional_train_args_hg"],
         )
 
         trainer = Trainer(

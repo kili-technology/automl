@@ -7,8 +7,8 @@ from commands.common_args import Options, TrainOptions
 from kiliautoml.models._base_model import (
     BaseInitArgs,
     BaseTrainArgs,
-    ModalTrainArgs,
     ModelConditionsRequested,
+    ModelTrainArgs,
 )
 from kiliautoml.models.kili_auto_model import KiliAutoModel
 from kiliautoml.utils.helpers import (

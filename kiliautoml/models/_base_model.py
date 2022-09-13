@@ -50,7 +50,7 @@ class BaseTrainArgs(TypedDict):
     disable_wandb: bool
 
 
-class ModalTrainArgs(TypedDict):
+class ModelTrainArgs(TypedDict):
     """Used only for some modalities"""
 
     additional_train_args_hg: AdditionalTrainingArgsT
@@ -192,7 +192,7 @@ class KiliBaseModel:
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        modal_train_args: ModalTrainArgs,
+        model_train_args: ModelTrainArgs,
     ) -> DictTrainingInfosT:
         ...
 
