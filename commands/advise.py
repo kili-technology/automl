@@ -44,20 +44,13 @@ def main(
     ignore_job: List[JobNameT],
     verbose: VerboseLevelT,
 ):
-    """Train a model and then save the model in the cache.
-
-
-    If there are multiple jobs in your projects, a model will be trained on each job.
-    KiliAutoML will automatically select the model types that match your Kili project's
-    labeling tasks (image classification, text classification, image segmentation).
-    Once the model is trained, the model is stored in the cache.
-    The model is then available for use by other commands such as `predict` and `label_errors`.
-    """
+    """Show models advised for each job of the project."""
     set_kili_logging(verbose)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, _ = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
 
+    logger.info("Here are the advised models for your project:")
     for _, job in jobs.items():
 
         ml_task = job.get("mlTask")
@@ -77,13 +70,14 @@ def main(
         AppropriateModel = auto_get_model_class(condition_requested)
 
         advised_model_names = AppropriateModel.model_conditions.advised_model_names
-        logger.info(f"Here are the advised models for your project: \n{str(advised_model_names)}")
-        logger.info(
-            "For NLP tasks, you can also use any Fill-Mask model from Hugging Face. "
-            "But be aware that some additional install might be necessary."
-        )
-        logger.info(
-            "You can use the following command to train any compatible model:\n"
-            "kiliautoml train --api-key $KILI_API_KEY --project-id $KILI_PROJECT_ID "
-            "--model-name desired-model-name"
-        )
+        logger.info(f"For {ml_task} on {input_type}: {str(advised_model_names)}")
+
+    logger.info(
+        "For NLP tasks, you can also use any Fill-Mask model from Hugging Face. "
+        "But be aware that some additional install might be necessary."
+    )
+    logger.info(
+        "You can use the following command to train any of these compatible model:\n"
+        "kiliautoml train --api-key $KILI_API_KEY --project-id $KILI_PROJECT_ID "
+        "--model-name desired-model-name"
+    )
