@@ -10,7 +10,7 @@ from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetsLazyList,
     ContentInputT,
-    DictInfosT,
+    EvaluationDictInfosT,
     InputTypeT,
     JobNameT,
     JobPredictions,
@@ -60,6 +60,7 @@ class BaseEvaluateArgs(TypedDict):
     assets: AssetsLazyList
     batch_size: int
     clear_dataset_cache: bool
+    model_path: Optional[str]
 
 
 class ModelEvaluateArgs(TypedDict):
@@ -191,7 +192,7 @@ class KiliBaseModel:
         clear_dataset_cache: bool,
         disable_wandb: bool,
         model_train_args: ModelTrainArgs,
-    ) -> DictInfosT:
+    ) -> EvaluationDictInfosT:
         ...
 
     def evaluate(
@@ -200,8 +201,8 @@ class KiliBaseModel:
         assets: AssetsLazyList,
         batch_size: int,
         clear_dataset_cache: bool,
-        model_train_args: ModelEvaluateArgs,
-    ) -> DictInfosT:
+        model_path: Optional[str],
+    ) -> EvaluationDictInfosT:
         ...
 
     def predict(

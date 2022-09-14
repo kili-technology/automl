@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import click
 from kili.client import Kili
@@ -7,9 +7,9 @@ from commands.common_args import Options, EvaluateOptions
 from kiliautoml.models._base_model import (
     BaseInitArgs,
     BaseEvaluateArgs,
-    ModelEvaluateArgs,
     ModelConditionsRequested,
 )
+from kiliautoml.models.auto_get_model import auto_get_instantiated_model
 from kiliautoml.utils.helpers import (
     curated_job,
     get_assets,
@@ -18,18 +18,13 @@ from kiliautoml.utils.helpers import (
     print_evaluation,
 )
 from kiliautoml.utils.logging import logger, set_kili_logging
-from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
-    AdditionalTrainingArgsT,
     AssetStatusT,
     JobNameT,
-    LabelMergeStrategyT,
     MLBackendT,
     ModelNameT,
     ModelRepositoryT,
-    ParityFilterT,
     ProjectIdT,
-    ToolT,
     VerboseLevelT,
 )
 
@@ -47,65 +42,50 @@ from kiliautoml.utils.type import (
 @Options.clear_dataset_cache
 @Options.batch_size
 @Options.verbose
-@Options.label_merge_strategy
-@Options.parity_filter
 @EvaluateOptions.asset_status_in
-@EvaluateOptions.additionalTrainArgsHuggingFace
+@EvaluateOptions.model_path
 def main(
+    project_id: ProjectIdT,
     api_endpoint: str,
     api_key: str,
     ml_backend: MLBackendT,
-    model_name: ModelNameT,
-    model_repository: ModelRepositoryT,
-    project_id: ProjectIdT,
-    asset_status_in: List[AssetStatusT],
-    label_merge_strategy: LabelMergeStrategyT,
+    model_name: Optional[ModelNameT],
+    model_repository: Optional[ModelRepositoryT],
     target_job: List[JobNameT],
     ignore_job: List[JobNameT],
-    max_assets: int,
+    max_assets: Optional[int],
     clear_dataset_cache: bool,
-    verbose: VerboseLevelT,
     batch_size: int,
-    parity_filter: ParityFilterT,
-    additional_train_args_hg: AdditionalTrainingArgsT,
+    verbose: VerboseLevelT,
+    asset_status_in: List[AssetStatusT],
+    model_path: Optional[str],
 ):
-    """Evaluate trained model.
+    """Compute predictions and upload them to Kili.
 
-    If there are multiple jobs in your projects, it will evaluate each job independently.
-    The model is then available for use by other commands such as `predict` and `label_errors`.
+    In order to use this command, you must first use the `train` command.
+    This command reuses the model that is stored at the end of the training.
+    We advise you to use this command once in `--dry-run` mode to preview the predictions.
+    Then, once you have validated the quality of the predictions, you can use this command without
+    the `--dry-run` mode, which will directly upload the predictions to the online kili project.
     """
     set_kili_logging(verbose)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
+    model_evaluations = {}
 
-    model_evaluations = []
+    assets = get_assets(
+        kili,
+        project_id,
+        asset_status_in,
+        max_assets=max_assets,
+    )
 
     for job_name, job in jobs.items():
-        logger.info(f"Training on job: {job_name}")
-
-        ml_task = job.get("mlTask")
-        assets = get_assets(
-            kili,
-            project_id=project_id,
-            status_in=asset_status_in,
-            max_assets=max_assets,
-            strategy=label_merge_strategy,
-            job_name=job_name,
-            parity_filter=parity_filter,
-        )
-
-        if clear_dataset_cache:
-            clear_command_cache(
-                command="evaluate",
-                project_id=project_id,
-                job_name=job_name,
-                ml_backend=ml_backend,
-                model_repository=model_repository,
-            )
+        logger.info(f"Predicting annotations for job: {job_name}")
         content_input = get_content_input_from_job(job)
-        tools: List[ToolT] = job.get("tools")
-        model_evaluation = {}
+        ml_task = job.get("mlTask")
+        tools = job.get("tools")
 
         base_init_args = BaseInitArgs(
             job=job,
@@ -117,15 +97,11 @@ def main(
             api_endpoint=api_endpoint,
             title=title,
         )
-
-        base_train_args = BaseEvaluateArgs(
+        evaluate_args = BaseEvaluateArgs(
             assets=assets,
+            model_path=model_path,
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
-        )
-
-        model_train_args = ModelEvaluateArgs(
-            additional_train_args_hg=additional_train_args_hg,
         )
         condition_requested = ModelConditionsRequested(
             input_type=input_type,
@@ -137,18 +113,12 @@ def main(
             tools=tools,
         )
         model = auto_get_instantiated_model(
-            condition_requested=condition_requested,
-            base_init_args=base_init_args,
+            condition_requested=condition_requested, base_init_args=base_init_args
         )
-        model_evaluation = model.evaluate(
-            base_train_args=base_train_args, model_train_args=model_train_args
-        )
-
-        model_evaluations.append((job_name, model_evaluation))
+        model_evaluations = model.evaluate(**evaluate_args)
 
     logger.info("Summary of training:")
     for job_name, evaluation in model_evaluations:
-        if evaluation is not None:
-            print_evaluation(job_name, evaluation)
+        print_evaluation(job_name, evaluation)
 
-    logger.success("train command finished successfully!")
+    logger.success("Evaluate command finished successfully!")

@@ -165,9 +165,7 @@ def main(
             condition_requested=condition_requested,
             base_init_args=base_init_args,
         )
-        model_evaluation = model.train(
-            base_train_args=base_train_args, model_train_args=model_train_args
-        )
+        model_evaluation = model.train(**base_train_args, model_train_args=model_train_args)
 
         if wandb_run is not None:
             wandb_run.finish()

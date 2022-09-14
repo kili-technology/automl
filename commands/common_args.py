@@ -183,18 +183,23 @@ class TrainOptions:
 class EvaluateOptions:
 
     asset_status_in = asset_status_in(["LABELED", "TO_REVIEW", "REVIEWED"])
-
-    json_string_hg = '{"logging_strategy": "epoch"}'
-    additionalTrainArgsHuggingFace = click.option(
-        "--additional-train-args-hg",
-        default=json_string_hg,
-        callback=lambda _, __, x: json.loads(x),
-        help=(
-            "args passed to huggingface TrainingArguments constructor. "
-            "See https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments"  # noqa
-            "Ex:  --additional-train-args-hg " + json_string_hg
-        ),
+    model_path = click.option(
+        "--model-path",
+        default=None,
+        help="Runs the predictions using a specified model path",
     )
+
+    # json_string_hg = '{"logging_strategy": "epoch"}'
+    # additionalTrainArgsHuggingFace = click.option(
+    #     "--additional-train-args-hg",
+    #     default=json_string_hg,
+    #     callback=lambda _, __, x: json.loads(x),
+    #     help=(
+    #         "args passed to huggingface TrainingArguments constructor. "
+    #         "See https://huggingface.co/docs/transformers/main_classes/trainer#transformers.TrainingArguments"  # noqa
+    #         "Ex:  --additional-train-args-hg " + json_string_hg
+    #     ),
+    # )
 
 
 class PredictOptions:
@@ -216,7 +221,6 @@ class PredictOptions:
         type=str,
         help=(
             "Use a model trained of a different project to predict on project_id."
-            "This argument is ignored if --from-model is used."
         ),
     )
 

@@ -4,12 +4,14 @@ import os
 from typing import Any, Dict, Optional
 
 import datasets
+from evaluate import evaluator
 import evaluate  # type: ignore
 import nltk
 import numpy as np
 from kili.client import Kili
 from tqdm.autonotebook import tqdm
 from transformers import Trainer
+import transformers
 
 from commands.common_args import DEFAULT_BATCH_SIZE
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
@@ -28,6 +30,7 @@ from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AssetsLazyList,
+    EvaluationDictInfosT,
     JobPredictions,
     JsonResponseClassification,
     ModelMetricT,
@@ -120,7 +123,7 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
             batch_size=batch_size,
             additional_train_args_hg=model_train_args["additional_train_args_hg"],
         )
-
+        print("")
         trainer = Trainer(
             model=model,
             args=training_arguments,
@@ -135,49 +138,53 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         logger.info(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
-    
+
     def evaluate(
         self,
         *,
         assets: AssetsLazyList,
         batch_size: int,
         clear_dataset_cache: bool = False,
-        disable_wandb: bool = False,
-        model_train_args: ModelTrainArgs,
-    ) -> JobPredictions:
+        model_path: Optional[str],
+    ) -> EvaluationDictInfosT:
+
         if batch_size != DEFAULT_BATCH_SIZE:
             logger.warning("This model does not support custom batch_size ", batch_size)
         _ = clear_dataset_cache
 
-        model_path_res, _, self.ml_backend = self._extract_model_info(
-            self.job_name, self.project_id, model_path, from_project
+        model_repository_dir = Path.model_repository_dir(
+            self.project_id, self.job_name, self.model_repository
         )
 
-        predictions = []
-        proba_assets = []
+        path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
+        job_categories = categories_from_job(self.job)
+        dataset = datasets.load_dataset(  # type: ignore
+            "json",
+            data_files=path_dataset,
+            features=datasets.features.features.Features(  # type: ignore
+                {
+                    "label": datasets.ClassLabel(names=job_categories),  # type: ignore
+                    "text": datasets.Value(dtype="string"),  # type: ignore
+                }
+            ),
+        )[
+            "train"
+        ]
+        model_path_res, _, self.ml_backend = self._extract_model_info(
+            self.job_name, self.project_id, model_path, from_project=None
+        )
 
         tokenizer, model = self._get_tokenizer_and_model(
             self.ml_backend, model_path_res, self.model_conditions.ml_task
-        ))
-
-        training_arguments = self._get_training_args(
-            path_model,
-            model_name,
-            disable_wandb=disable_wandb,
-            epochs=epochs,
-            batch_size=batch_size,
-            additional_train_args_hg=model_train_args["additional_train_args_hg"],
         )
-
         trainer = Trainer(
             model=model,
-            args=training_arguments,
             tokenizer=tokenizer,
-            train_dataset=train_dataset,  # type: ignore
-            eval_dataset=eval_dataset,  # type: ignore
+            train_dataset=dataset,  # type: ignore
             compute_metrics=self.compute_metrics,  # type: ignore
         )
         model_evaluation = self.model_evaluation(trainer, job_categories)
+        return dict(sorted(model_evaluation.items()))
 
     def predict(
         self,
@@ -280,7 +287,12 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
 
         return {"categories": [{"name": predicted_label, "confidence": int(probas * 100)}]}
 
-    def compute_metrics(self, eval_pred):
+    def compute_metrics(self, eval_pred: transformers.trainer_utils.EvalPrediction):
+        logger.info("======================================")
+        logger.info("======================================")
+        logger.info(f"eval_pred {eval_pred}")
+        logger.info("======================================")
+        logger.info("======================================")
         metrics = ["accuracy", "precision", "recall", "f1"]
         metric = {}
         for met in metrics:

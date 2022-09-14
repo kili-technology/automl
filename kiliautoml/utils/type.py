@@ -217,6 +217,7 @@ class JobPredictions:
 
 AdditionalTrainingArgsT = Dict[str, Any]
 DictInfosT = Dict[str, Any]
+EvaluationDictInfosT = Dict[JobNameT, DictInfosT]
 
 
 class ModelMetricT(TypedDict):
