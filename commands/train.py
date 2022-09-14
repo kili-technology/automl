@@ -10,7 +10,7 @@ from kiliautoml.models._base_model import (
     ModelConditionsRequested,
     ModelTrainArgs,
 )
-from kiliautoml.models.auto_get_model import auto_get_model_class
+from kiliautoml.models.auto_get_model import auto_get_instantiated_model
 from kiliautoml.utils.helpers import (
     curated_job,
     get_assets,
@@ -44,7 +44,6 @@ from wandb.sdk.wandb_run import Run  # isort:skip
 @Options.api_key
 @Options.ml_backend
 @Options.model_name
-@Options.advised_models
 @Options.model_repository
 @Options.target_job
 @Options.ignore_job
@@ -65,7 +64,6 @@ def main(
     api_key: str,
     ml_backend: MLBackendT,
     model_name: ModelNameT,
-    advised_models: bool,
     model_repository: ModelRepositoryT,
     project_id: ProjectIdT,
     epochs: int,
@@ -116,74 +114,65 @@ def main(
             tools=tools,
         )
 
-        AppropriateModel = auto_get_model_class(condition_requested)
+        logger.info(f"Training on job: {job_name}")
+        assets = get_assets(
+            kili,
+            project_id=project_id,
+            status_in=asset_status_in,
+            max_assets=max_assets,
+            randomize=randomize_assets,
+            strategy=label_merge_strategy,
+            job_name=job_name,
+            parity_filter=parity_filter,
+        )
 
-        if advised_models:
-            advised_model_names = AppropriateModel.model_conditions.advised_model_names
-            logger.info(
-                f"Here are the advised models for your project: \n{str(advised_model_names)}"
-            )
-
-        else:
-            logger.info(f"Training on job: {job_name}")
-            assets = get_assets(
-                kili,
+        if clear_dataset_cache:
+            clear_command_cache(
+                command="train",
                 project_id=project_id,
-                status_in=asset_status_in,
-                max_assets=max_assets,
-                randomize=randomize_assets,
-                strategy=label_merge_strategy,
                 job_name=job_name,
-                parity_filter=parity_filter,
-            )
-
-            if clear_dataset_cache:
-                clear_command_cache(
-                    command="train",
-                    project_id=project_id,
-                    job_name=job_name,
-                    ml_backend=ml_backend,
-                    model_repository=model_repository,
-                )
-
-            wandb_run: Optional[Run] = None
-            if not disable_wandb:
-                wandb_run = cast(Run, wandb.init(project=title + "_" + job_name, reinit=True))
-            base_init_args = BaseInitArgs(
-                job=job,
-                job_name=job_name,
-                model_name=model_name,
-                project_id=project_id,
                 ml_backend=ml_backend,
-                api_key=api_key,
-                api_endpoint=api_endpoint,
-                title=title,
+                model_repository=model_repository,
             )
 
-            base_train_args = BaseTrainArgs(
-                assets=assets,
-                epochs=epochs,
-                batch_size=batch_size,
-                clear_dataset_cache=clear_dataset_cache,
-                disable_wandb=disable_wandb,
-            )
+        wandb_run: Optional[Run] = None
+        if not disable_wandb:
+            wandb_run = cast(Run, wandb.init(project=title + "_" + job_name, reinit=True))
+        base_init_args = BaseInitArgs(
+            job=job,
+            job_name=job_name,
+            model_name=model_name,
+            project_id=project_id,
+            ml_backend=ml_backend,
+            api_key=api_key,
+            api_endpoint=api_endpoint,
+            title=title,
+        )
 
-            model_train_args = ModelTrainArgs(
-                additional_train_args_yolo=additional_train_args_yolo,
-                additional_train_args_hg=additional_train_args_hg,
-            )
-            model = AppropriateModel(
-                base_init_args=base_init_args,
-            )
-            model_evaluation = model.train(**base_train_args, model_train_args=model_train_args)
+        base_train_args = BaseTrainArgs(
+            assets=assets,
+            epochs=epochs,
+            batch_size=batch_size,
+            clear_dataset_cache=clear_dataset_cache,
+            disable_wandb=disable_wandb,
+        )
 
-            if wandb_run is not None:
-                wandb_run.finish()
-            model_evaluations.append((job_name, model_evaluation))
+        model_train_args = ModelTrainArgs(
+            additional_train_args_yolo=additional_train_args_yolo,
+            additional_train_args_hg=additional_train_args_hg,
+        )
+        model = auto_get_instantiated_model(
+            condition_requested=condition_requested,
+            base_init_args=base_init_args,
+        )
+        model_evaluation = model.train(**base_train_args, model_train_args=model_train_args)
 
-    if model_evaluations:
-        logger.info("Summary of training:")
-        for job_name, evaluation in model_evaluations:
-            print_evaluation(job_name, evaluation)
+        if wandb_run is not None:
+            wandb_run.finish()
+        model_evaluations.append((job_name, model_evaluation))
 
-        logger.success("train command finished successfully!")
+    logger.info("Summary of training:")
+    for job_name, evaluation in model_evaluations:
+        print_evaluation(job_name, evaluation)
+
+    logger.success("train command finished successfully!")

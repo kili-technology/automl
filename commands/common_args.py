@@ -40,13 +40,6 @@ class Options:
         type=str,
     )
 
-    advised_models = click.option(
-        "--advised-models",
-        default=False,
-        is_flag=True,
-        help="Show advised models",
-    )
-
     model_repository = click.option(
         "--model-repository", default=None, help="Model repository (eg. huggingface)"
     )
