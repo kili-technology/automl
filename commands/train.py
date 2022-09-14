@@ -10,7 +10,7 @@ from kiliautoml.models._base_model import (
     ModelConditionsRequested,
     ModelTrainArgs,
 )
-from kiliautoml.models.kili_auto_model import KiliAutoModel, get_appropriate_model
+from kiliautoml.models.auto_get_model import auto_get_model_class
 from kiliautoml.utils.helpers import (
     curated_job,
     get_assets,
@@ -116,7 +116,7 @@ def main(
             tools=tools,
         )
 
-        AppropriateModel = get_appropriate_model(condition_requested)
+        AppropriateModel = auto_get_model_class(condition_requested)
 
         if advised_models:
             advised_model_names = AppropriateModel.model_conditions.advised_model_names
@@ -172,13 +172,10 @@ def main(
                 additional_train_args_yolo=additional_train_args_yolo,
                 additional_train_args_hg=additional_train_args_hg,
             )
-            model = KiliAutoModel(
+            model = AppropriateModel(
                 base_init_args=base_init_args,
-                model_type=AppropriateModel,
             )
-            model_evaluation = model.train(
-                base_train_args=base_train_args, model_train_args=model_train_args
-            )
+            model_evaluation = model.train(**base_train_args, model_train_args=model_train_args)
 
             if wandb_run is not None:
                 wandb_run.finish()
