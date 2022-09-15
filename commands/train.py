@@ -7,10 +7,10 @@ from commands.common_args import Options, TrainOptions
 from kiliautoml.models._base_model import (
     BaseInitArgs,
     BaseTrainArgs,
-    ModalTrainArgs,
     ModelConditionsRequested,
+    ModelTrainArgs,
 )
-from kiliautoml.models.kili_auto_model import KiliAutoModel
+from kiliautoml.models.auto_get_model import auto_get_instantiated_model
 from kiliautoml.utils.helpers import (
     curated_job,
     get_assets,
@@ -98,9 +98,23 @@ def main(
     model_evaluations = []
 
     for job_name, job in jobs.items():
-        logger.info(f"Training on job: {job_name}")
 
         ml_task = job.get("mlTask")
+        content_input = get_content_input_from_job(job)
+        tools: List[ToolT] = job.get("tools")
+        model_evaluation = {}
+
+        condition_requested = ModelConditionsRequested(
+            input_type=input_type,
+            ml_task=ml_task,
+            content_input=content_input,
+            ml_backend=ml_backend,
+            model_name=model_name,
+            model_repository=model_repository,
+            tools=tools,
+        )
+
+        logger.info(f"Training on job: {job_name}")
         assets = get_assets(
             kili,
             project_id=project_id,
@@ -112,10 +126,6 @@ def main(
             parity_filter=parity_filter,
         )
 
-        wandb_run: Optional[Run] = None
-        if not disable_wandb:
-            wandb_run = cast(Run, wandb.init(project=title + "_" + job_name, reinit=True))
-
         if clear_dataset_cache:
             clear_command_cache(
                 command="train",
@@ -124,10 +134,10 @@ def main(
                 ml_backend=ml_backend,
                 model_repository=model_repository,
             )
-        content_input = get_content_input_from_job(job)
-        tools: List[ToolT] = job.get("tools")
-        model_evaluation = {}
 
+        wandb_run: Optional[Run] = None
+        if not disable_wandb:
+            wandb_run = cast(Run, wandb.init(project=title + "_" + job_name, reinit=True))
         base_init_args = BaseInitArgs(
             job=job,
             job_name=job_name,
@@ -147,26 +157,15 @@ def main(
             disable_wandb=disable_wandb,
         )
 
-        modal_train_args = ModalTrainArgs(
+        model_train_args = ModelTrainArgs(
             additional_train_args_yolo=additional_train_args_yolo,
             additional_train_args_hg=additional_train_args_hg,
         )
-        condition_requested = ModelConditionsRequested(
-            input_type=input_type,
-            ml_task=ml_task,
-            content_input=content_input,
-            ml_backend=ml_backend,
-            model_name=model_name,
-            model_repository=model_repository,
-            tools=tools,
-        )
-        model = KiliAutoModel(
-            base_init_args=base_init_args,
+        model = auto_get_instantiated_model(
             condition_requested=condition_requested,
+            base_init_args=base_init_args,
         )
-        model_evaluation = model.train(
-            base_train_args=base_train_args, modal_train_args=modal_train_args
-        )
+        model_evaluation = model.train(**base_train_args, model_train_args=model_train_args)
 
         if wandb_run is not None:
             wandb_run.finish()

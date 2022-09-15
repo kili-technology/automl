@@ -18,8 +18,8 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from kiliautoml.models._base_model import (
     BaseInitArgs,
     KiliBaseModel,
-    ModalTrainArgs,
     ModelConditions,
+    ModelTrainArgs,
 )
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helper_label_error import find_all_label_errors
@@ -38,6 +38,7 @@ from kiliautoml.utils.type import (
     JsonResponseBboxT,
     KiliBBoxAnnotation,
     MLBackendT,
+    ModelNameT,
     ProjectIdT,
 )
 
@@ -75,16 +76,16 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         model_repository="ultralytics",
         possible_ml_backend=["pytorch"],
         advised_model_names=[
-            "yolov5n",
-            "yolov5s",
-            "yolov5m",
-            "yolov5l",
-            "yolov5x",
-            "yolov5n6",  # n6 : double resolution
-            "yolov5s6",
-            "yolov5m6",
-            "yolov5l6",
-            "yolov5x6",
+            ModelNameT("yolov5n"),
+            ModelNameT("yolov5s"),
+            ModelNameT("yolov5m"),
+            ModelNameT("yolov5l"),
+            ModelNameT("yolov5x"),
+            ModelNameT("yolov5n6"),  # n6 : double resolution
+            ModelNameT("yolov5s6"),
+            ModelNameT("yolov5m6"),
+            ModelNameT("yolov5l6"),
+            ModelNameT("yolov5x6"),
         ],
         input_type="IMAGE",
         content_input="radio",
@@ -106,7 +107,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        modal_train_args: ModalTrainArgs,
+        model_train_args: ModelTrainArgs,
     ):
         model_repository_dir = Path.model_repository_dir(
             self.project_id, self.job_name, self.model_conditions.model_repository
@@ -144,7 +145,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
                     number_classes=len(class_names),
                 )
             )
-        additional_train_args_yolo = modal_train_args["additional_train_args_yolo"]
+        additional_train_args_yolo = model_train_args["additional_train_args_yolo"]
         if not additional_train_args_yolo:
             additional_train_args_yolo = {}
         additional_train_args_yolo["epochs"] = epochs

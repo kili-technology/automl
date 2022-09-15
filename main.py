@@ -21,6 +21,7 @@ from IPython.core import ultratb
 
 sys.excepthook = ultratb.FormattedTB(mode="Verbose", color_scheme="Linux", call_pdb=False)
 
+from commands.advise import main as advise
 from commands.label_errors import main as label_errors
 from commands.predict import main as predict
 from commands.prioritize import main as prioritize
@@ -32,6 +33,7 @@ def kiliautoml():
     pass
 
 
+kiliautoml.add_command(advise, name="advise")
 kiliautoml.add_command(train, name="train")
 kiliautoml.add_command(predict, name="predict")
 kiliautoml.add_command(label_errors, name="label_errors")

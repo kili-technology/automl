@@ -19,7 +19,7 @@ from kiliautoml.models._base_model import (
     BasePredictArgs,
     ModelConditionsRequested,
 )
-from kiliautoml.models.kili_auto_model import KiliAutoModel
+from kiliautoml.models.auto_get_model import auto_get_instantiated_model
 from kiliautoml.utils.download_assets import download_project_images
 from kiliautoml.utils.helpers import (
     curated_job,
@@ -454,9 +454,10 @@ def main(
         tools=tools,
     )
 
-    model = KiliAutoModel(condition_requested=condition_requested, base_init_args=base_init_args)
-    job_predictions = model.predict(base_predict_args=predict_args)
-
+    model = auto_get_instantiated_model(
+        condition_requested=condition_requested, base_init_args=base_init_args
+    )
+    job_predictions = model.predict(**predict_args)
     if input_type == "IMAGE":
         downloaded_images = download_project_images(
             api_key,

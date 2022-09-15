@@ -5,13 +5,7 @@ from typing import List
 import click
 from typing_extensions import get_args
 
-from kiliautoml.utils.type import (
-    AssetStatusT,
-    MLBackendT,
-    ModelNameT,
-    ParityFilterT,
-    VerboseLevelT,
-)
+from kiliautoml.utils.type import AssetStatusT, MLBackendT, ParityFilterT, VerboseLevelT
 
 DEFAULT_BATCH_SIZE = 8
 
@@ -38,11 +32,12 @@ class Options:
         help="ml-backend (eg. pytorch, tensorflow)",
         type=click.Choice(get_args(MLBackendT)),
     )
+
     model_name = click.option(
         "--model-name",
         default=None,
         help="Model name (eg. bert-base-cased)",
-        type=click.Choice(get_args(ModelNameT)),
+        type=str,
     )
 
     model_repository = click.option(

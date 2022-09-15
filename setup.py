@@ -44,6 +44,7 @@ setup(
         "torch>=1.7.0",
         "torchvision>=0.8.1",
         "tqdm>=4.41.0",
+        "BeautifulSoup4",
         # Logging -------------------------------------
         "tensorboard>=2.4.1",
         # wandb

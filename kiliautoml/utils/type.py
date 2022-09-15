@@ -16,27 +16,7 @@ ParityFilterT = Literal["none", "keep-even", "keep-uneven"]
 ModelRepositoryT = Literal["huggingface", "ultralytics", "torchvision", "detectron2"]
 MLTaskT = Literal["CLASSIFICATION", "NAMED_ENTITIES_RECOGNITION", "OBJECT_DETECTION"]
 ToolT = Literal["rectangle", "semantic", "polygon"]
-ModelNameT = Literal[
-    "bert-base-cased",
-    "bert-base-multilingual-cased",
-    "distilbert-base-uncased",
-    "distilbert-base-cased",
-    "efficientnet_b0",
-    "resnet50",
-    "ultralytics/yolov5",
-    "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_1x.yaml",
-    "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml",
-    "yolov5n",
-    "yolov5s",
-    "yolov5m",
-    "yolov5l",
-    "yolov5x",
-    "yolov5n6",  # n6 : double resolution
-    "yolov5s6",
-    "yolov5m6",
-    "yolov5l6",
-    "yolov5x6",
-]
+VerboseLevelT = Literal["DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
 
 
 CategoryNameT = NewType("CategoryNameT", str)
@@ -45,7 +25,7 @@ JobNameT = NewType("JobNameT", str)
 ProjectIdT = NewType("ProjectIdT", str)
 AssetExternalIdT = NewType("AssetExternalIdT", str)
 AssetIdT = NewType("AssetIdT", str)
-VerboseLevelT = Literal["DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
+ModelNameT = NewType("ModelNameT", str)
 
 
 class CategoryT(TypedDict):

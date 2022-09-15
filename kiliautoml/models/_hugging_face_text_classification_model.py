@@ -14,11 +14,10 @@ from transformers import Trainer
 from commands.common_args import DEFAULT_BATCH_SIZE
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
-from kiliautoml.models._base_model import (
-    BaseInitArgs,
-    KiliBaseModel,
-    ModalTrainArgs,
-    ModelConditions,
+from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelTrainArgs
+from kiliautoml.models._hugging_face_model import (
+    HuggingFaceModel,
+    HuggingFaceModelConditions,
 )
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir
 from kiliautoml.utils.logging import logger
@@ -33,16 +32,16 @@ from kiliautoml.utils.type import (
 )
 
 
-class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTextProjectMixin):
+class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, KiliTextProjectMixin):
 
-    model_conditions = ModelConditions(
+    model_conditions = HuggingFaceModelConditions(
         ml_task="CLASSIFICATION",
         model_repository="huggingface",
         possible_ml_backend=["pytorch"],
         advised_model_names=[
-            "bert-base-multilingual-cased",
-            "distilbert-base-cased",
-            "distilbert-base-uncased",
+            ModelNameT("bert-base-multilingual-cased"),
+            ModelNameT("distilbert-base-cased"),
+            ModelNameT("distilbert-base-uncased"),
         ],
         input_type="TEXT",
         content_input="radio",
@@ -65,7 +64,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
         batch_size: int,
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
-        modal_train_args: ModalTrainArgs,
+        model_train_args: ModelTrainArgs,
     ):
         nltk.download("punkt")
 
@@ -115,7 +114,7 @@ class HuggingFaceTextClassificationModel(KiliBaseModel, HuggingFaceMixin, KiliTe
             disable_wandb=disable_wandb,
             epochs=epochs,
             batch_size=batch_size,
-            additional_train_args_hg=modal_train_args["additional_train_args_hg"],
+            additional_train_args_hg=model_train_args["additional_train_args_hg"],
         )
 
         trainer = Trainer(

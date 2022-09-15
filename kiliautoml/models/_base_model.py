@@ -47,7 +47,7 @@ class BaseTrainArgs(TypedDict):
     disable_wandb: bool
 
 
-class ModalTrainArgs(TypedDict):
+class ModelTrainArgs(TypedDict):
     """Used only for some modalities"""
 
     additional_train_args_hg: AdditionalTrainingArgsT
@@ -105,6 +105,9 @@ class ModelConditions:
                 f"You requested {param_name} {request} but only {list_ok} is available."
             )
 
+    def _check_compatible_model(self, model_name: Optional[ModelNameT]) -> None:
+        self._check_compatible(model_name, self.advised_model_names, "model_name")
+
     def is_compatible(self, cdt_requested: ModelConditionsRequested) -> bool:
         strict_conditions = (
             self.input_type == cdt_requested.input_type
@@ -119,7 +122,7 @@ class ModelConditions:
         if strict_conditions and tools_ok:
             # We then check the loose conditions
             self._check_compatible(cdt_requested.ml_backend, self.possible_ml_backend, "ml_backend")
-            self._check_compatible(cdt_requested.model_name, self.advised_model_names, "model_name")
+            self._check_compatible_model(cdt_requested.model_name)
             self._check_compatible(
                 cdt_requested.model_repository, [self.model_repository], "model_repository"
             )
@@ -145,12 +148,6 @@ class KiliBaseModel:
             self.model_conditions.model_repository,
         )
 
-        self.model_name = set_default(
-            base_init_args["model_name"],
-            self.model_conditions.advised_model_names[0],
-            "model_name",
-            self.model_conditions.advised_model_names,
-        )
         self.ml_backend: MLBackendT = set_default(
             base_init_args["ml_backend"],
             self.model_conditions.possible_ml_backend[0],
@@ -161,6 +158,16 @@ class KiliBaseModel:
         self.api_endpoint = base_init_args["api_endpoint"]
         self.title = base_init_args["title"]
 
+        self.fill_model_name(base_init_args=base_init_args)
+
+    def fill_model_name(self, base_init_args: BaseInitArgs) -> None:
+        self.model_name = set_default(
+            base_init_args["model_name"],
+            self.model_conditions.advised_model_names[0],
+            "model_name",
+            self.model_conditions.advised_model_names,
+        )
+
     def train(
         self,
         *,
@@ -169,7 +176,7 @@ class KiliBaseModel:
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
-        modal_train_args: ModalTrainArgs,
+        model_train_args: ModelTrainArgs,
     ) -> DictTrainingInfosT:
         ...
 
