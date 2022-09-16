@@ -143,6 +143,12 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "--asset-status-in",
             "LABELED,TO_REVIEW,REVIEWED",  # we generate the mocks with train command
         ]
+    elif command == "advise":
+        args = [
+            command,
+            "--project-id",
+            project_id,
+        ]
     else:
         raise NotImplementedError
 
