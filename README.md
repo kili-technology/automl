@@ -70,12 +70,7 @@ Kili automl training does the following:
 * Finetunes the model on the input data.
 * Outputs the model loss.
 
-Here are the supported ML backends and the tasks they are used for:
-
-- Hugging Face (NER, Text Classification)
-- YOLOv5 (Object Detection)
-- Detectron2 (Semantic Segmentation)
-- spaCy (coming soon)
+You can check the supported ML backends and the tasks they are used for [here](./docs/supported_models.md).
 
 Compute model loss to infer when you can stop labeling.
 
