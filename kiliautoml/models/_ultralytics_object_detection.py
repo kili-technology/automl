@@ -219,7 +219,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         }
         return model_evaluation
 
-    def evaluate(
+    def eval(
         self,
         *,
         assets: AssetsLazyList,

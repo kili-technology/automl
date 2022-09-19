@@ -195,7 +195,7 @@ class KiliBaseModel:
     ) -> DictInfosT:
         ...
 
-    def evaluate(
+    def eval(
         self,
         *,
         assets: AssetsLazyList,

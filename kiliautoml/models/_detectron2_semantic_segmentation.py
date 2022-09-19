@@ -204,7 +204,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             )
         return eval_res
 
-    def evaluate(
+    def eval(
         self,
         *,
         assets: AssetsLazyList,

@@ -4,25 +4,21 @@ import os
 from typing import Any, Dict, Optional
 
 import datasets
-import evaluate  # type: ignore
+import evaluate
 import nltk
 import numpy as np
+import transformers
 from kili.client import Kili
 from tqdm.autonotebook import tqdm
 from transformers import Trainer, TrainingArguments
-import transformers
 
 from commands.common_args import DEFAULT_BATCH_SIZE
 from kiliautoml.mixins._hugging_face_mixin import HuggingFaceMixin
 from kiliautoml.mixins._kili_text_project_mixin import KiliTextProjectMixin
+from kiliautoml.models._base_model import BaseInitArgs, KiliBaseModel, ModelTrainArgs
 from kiliautoml.models._hugging_face_model import (
     HuggingFaceModel,
     HuggingFaceModelConditions,
-)
-from kiliautoml.models._base_model import (
-    BaseInitArgs,
-    KiliBaseModel,
-    ModelTrainArgs,
 )
 from kiliautoml.utils.helpers import categories_from_job, ensure_dir
 from kiliautoml.utils.logging import logger
@@ -122,7 +118,6 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
             batch_size=batch_size,
             additional_train_args_hg=model_train_args["additional_train_args_hg"],
         )
-        print("")
         trainer = Trainer(
             model=model,
             args=training_arguments,
@@ -138,7 +133,7 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
 
-    def evaluate(
+    def eval(
         self,
         *,
         assets: AssetsLazyList,
@@ -303,10 +298,7 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         metrics = ["accuracy", "precision", "recall", "f1"]
         metric = {}
         for met in metrics:
-            if met == "accuracy":
-                metric[met] = datasets.load_metric(met)
-            else:
-                metric[met] = evaluate.load(met)
+            metric[met] = evaluate.load(met)
         logits, labels = eval_pred
         predictions = np.argmax(logits, axis=-1)
         metric_res = {}

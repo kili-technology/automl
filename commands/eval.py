@@ -3,10 +3,10 @@ from typing import List, Optional
 import click
 from kili.client import Kili
 
-from commands.common_args import Options, EvaluateOptions
+from commands.common_args import EvaluateOptions, Options
 from kiliautoml.models._base_model import (
-    BaseInitArgs,
     BaseEvaluateArgs,
+    BaseInitArgs,
     ModelConditionsRequested,
 )
 from kiliautoml.models.auto_get_model import auto_get_instantiated_model
@@ -97,7 +97,7 @@ def main(
             api_endpoint=api_endpoint,
             title=title,
         )
-        evaluate_args = BaseEvaluateArgs(
+        evaluation_args = BaseEvaluateArgs(
             assets=assets,
             model_path=model_path,
             batch_size=batch_size,
@@ -115,7 +115,7 @@ def main(
         model = auto_get_instantiated_model(
             condition_requested=condition_requested, base_init_args=base_init_args
         )
-        model_evaluation = model.evaluate(**evaluate_args)
+        model_evaluation = model.eval(**evaluation_args)
         model_evaluations.append((job_name, model_evaluation))
 
     logger.info("Summary of evaluation:")
