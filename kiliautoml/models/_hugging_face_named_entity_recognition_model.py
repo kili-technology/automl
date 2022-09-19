@@ -28,6 +28,7 @@ from kiliautoml.utils.type import (
     CategoriesT,
     CategoryIdT,
     CategoryT,
+    DictInfosT,
     JobNameT,
     JobPredictions,
     JobT,
@@ -192,6 +193,16 @@ class HuggingFaceNamedEntityRecognitionModel(
         logger.info(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))  # type: ignore
         return dict(sorted(model_evaluation.items()))
+
+    def evaluate(
+        self,
+        *,
+        assets: AssetsLazyList,
+        batch_size: int,
+        clear_dataset_cache: bool = False,
+        model_path: Optional[str],
+    ) -> DictInfosT:
+        raise NotImplementedError("Evalution is not implemented for NER yet.")
 
     def predict(
         self,

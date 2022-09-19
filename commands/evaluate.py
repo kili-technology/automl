@@ -72,7 +72,7 @@ def main(
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
-    model_evaluations = {}
+    model_evaluations = []
 
     assets = get_assets(
         kili,
@@ -115,9 +115,10 @@ def main(
         model = auto_get_instantiated_model(
             condition_requested=condition_requested, base_init_args=base_init_args
         )
-        model_evaluations = model.evaluate(**evaluate_args)
+        model_evaluation = model.evaluate(**evaluate_args)
+        model_evaluations.append((job_name, model_evaluation))
 
-    logger.info("Summary of training:")
+    logger.info("Summary of evaluation:")
     for job_name, evaluation in model_evaluations:
         print_evaluation(job_name, evaluation)
 

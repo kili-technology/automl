@@ -219,9 +219,7 @@ class PredictOptions:
         "--from-project",
         default=None,
         type=str,
-        help=(
-            "Use a model trained of a different project to predict on project_id."
-        ),
+        help=("Use a model trained of a different project to predict on project_id."),
     )
 
     asset_status_in = asset_status_in(["TODO", "ONGOING"])

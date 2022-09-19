@@ -204,6 +204,16 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             )
         return eval_res
 
+    def evaluate(
+        self,
+        *,
+        assets: AssetsLazyList,
+        batch_size: int,
+        clear_dataset_cache: bool = False,
+        model_path: Optional[str],
+    ):
+        raise NotImplementedError("Evalution is not implemented for Image Segmentation yet.")
+
     def _get_cfg_kili(
         self,
         assets: AssetsLazyList,
