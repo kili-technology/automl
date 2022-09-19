@@ -9,7 +9,7 @@ import nltk
 import numpy as np
 from kili.client import Kili
 from tqdm.autonotebook import tqdm
-from transformers import Trainer
+from transformers import Trainer, TrainingArguments
 import transformers
 
 from commands.common_args import DEFAULT_BATCH_SIZE
@@ -172,7 +172,7 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         model_path_res, _, self.ml_backend = self._extract_model_info(
             self.job_name, self.project_id, model_path, from_project=None
         )
-
+        path_model = PathHF.append_model_folder(model_repository_dir, self.ml_backend)
         tokenizer, model = self._get_tokenizer_and_model(
             self.ml_backend, model_path_res, self.model_conditions.ml_task
         )
@@ -181,9 +181,16 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
             return tokenizer(examples["text"], padding="max_length", truncation=True)
 
         dataset = dataset.map(tokenize_function, batched=True)
+        eval_arguments = TrainingArguments(
+            PathHF.append_training_args_dir(path_model),
+            per_device_train_batch_size=batch_size,
+            per_device_eval_batch_size=batch_size,
+            report_to=["none"],
+        )
         trainer = Trainer(
             model=model,
             tokenizer=tokenizer,
+            args=eval_arguments,
             train_dataset=dataset["train"],  # type: ignore
             eval_dataset=dataset["train"],  # type: ignore
             compute_metrics=self.compute_metrics,  # type: ignore
