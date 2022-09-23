@@ -28,7 +28,7 @@ from kiliautoml.utils.type import (
     CategoriesT,
     CategoryIdT,
     CategoryT,
-    DictInfosT,
+    EvalResultsT,
     JobNameT,
     JobPredictions,
     JobT,
@@ -201,8 +201,8 @@ class HuggingFaceNamedEntityRecognitionModel(
         batch_size: int,
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
-    ) -> DictInfosT:
-        raise NotImplementedError("Evalution is not implemented for NER yet.")
+    ) -> EvalResultsT:
+        raise NotImplementedError("Evaluation is not implemented for NER yet.")
 
     def predict(
         self,

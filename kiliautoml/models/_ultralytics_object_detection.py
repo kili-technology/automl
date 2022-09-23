@@ -227,7 +227,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
     ):
-        raise NotImplementedError("Evalution is not implemented for Object Detection yet.")
+        raise NotImplementedError("Evaluation is not implemented for Object Detection yet.")
 
     @staticmethod
     def _yaml_preparation(

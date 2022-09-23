@@ -139,7 +139,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
     ):
-        raise NotImplementedError("Evalution is not implemented for Image Classification yet.")
+        raise NotImplementedError("Evaluation is not implemented for Image Classification yet.")
 
     def predict(
         self,

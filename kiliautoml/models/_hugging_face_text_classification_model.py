@@ -25,7 +25,7 @@ from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AssetsLazyList,
-    DictInfosT,
+    EvalResultsT,
     JobPredictions,
     JsonResponseClassification,
     ModelMetricT,
@@ -140,10 +140,8 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         batch_size: int,
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
-    ) -> DictInfosT:
+    ) -> EvalResultsT:
 
-        if batch_size != DEFAULT_BATCH_SIZE:
-            logger.warning("This model does not support custom batch_size ", batch_size)
         _ = clear_dataset_cache
 
         model_repository_dir = Path.model_repository_dir(

@@ -212,7 +212,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
     ):
-        raise NotImplementedError("Evalution is not implemented for Image Segmentation yet.")
+        raise NotImplementedError("Evaluation is not implemented for Image Segmentation yet.")
 
     def _get_cfg_kili(
         self,
