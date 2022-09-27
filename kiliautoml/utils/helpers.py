@@ -24,7 +24,7 @@ from kiliautoml.utils.type import (
     AssetT,
     CategoryIdT,
     CategoryNameT,
-    DictTrainingInfosT,
+    EvalResultsT,
     InputTypeT,
     JobNameT,
     JobsT,
@@ -311,7 +311,7 @@ def get_mapping_category_name_cat_kili_id(job: JobT):
     return mapping_category_name_category_ids
 
 
-def print_evaluation(job_name: JobNameT, evaluation: DictTrainingInfosT):
+def print_evaluation(job_name: JobNameT, evaluation: EvalResultsT):
     def get_keys(my_dict):
         keys = list(my_dict.keys())
         keys_int = []

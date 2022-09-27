@@ -149,6 +149,12 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             "--project-id",
             project_id,
         ]
+    elif command == "eval":
+        args = [
+            command,
+            "--project-id",
+            project_id,
+        ]
     else:
         raise NotImplementedError
 

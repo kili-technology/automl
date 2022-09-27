@@ -28,6 +28,7 @@ from kiliautoml.utils.type import (
     CategoriesT,
     CategoryIdT,
     CategoryT,
+    EvalResultsT,
     JobNameT,
     JobPredictions,
     JobT,
@@ -188,10 +189,20 @@ class HuggingFaceNamedEntityRecognitionModel(
             compute_metrics=compute_metrics,  # type: ignore
         )
         trainer.train()  # type: ignore
-        model_evaluation = self.evaluation(trainer)
+        model_evaluations = self.model_evaluation(trainer)
         logger.info(f"Saving model to {path_model}")
         trainer.save_model(ensure_dir(path_model))  # type: ignore
-        return dict(sorted(model_evaluation.items()))
+        return dict(sorted(model_evaluations.items()))
+
+    def eval(
+        self,
+        *,
+        assets: AssetsLazyList,
+        batch_size: int,
+        clear_dataset_cache: bool = False,
+        model_path: Optional[str],
+    ) -> EvalResultsT:
+        raise NotImplementedError("Evaluation is not implemented for NER yet.")
 
     def predict(
         self,
@@ -494,39 +505,39 @@ class HuggingFaceNamedEntityRecognitionModel(
             text, pp_labels, predicted_probas, tokens, null_category, offset_in_text
         )
 
-    def evaluation(self, trainer):
+    def model_evaluation(self, trainer):
         train_metrics = trainer.evaluate(trainer.train_dataset)
         val_metrics = trainer.evaluate(trainer.eval_dataset)
-        model_evaluation = {}
+        model_evaluations = {}
         nb_train_ent = 0
         nb_val_ent = 0
         for label in categories_from_job(self.job):
             if "eval_" + label in train_metrics:
-                model_evaluation["train_" + label] = train_metrics["eval_" + label]
+                model_evaluations["train_" + label] = train_metrics["eval_" + label]
                 nb_train_ent += train_metrics["eval_" + label]["number"]  # type: ignore
             else:
-                model_evaluation["train_" + label] = {"number": 0}
+                model_evaluations["train_" + label] = {"number": 0}
             if "eval_" + label in val_metrics:
-                model_evaluation["val_" + label] = val_metrics["eval_" + label]
+                model_evaluations["val_" + label] = val_metrics["eval_" + label]
                 nb_val_ent += val_metrics["eval_" + label]["number"]  # type: ignore
             else:
-                model_evaluation["val_" + label] = {"number": 0}
+                model_evaluations["val_" + label] = {"number": 0}
 
-        model_evaluation["train__overall"] = {
+        model_evaluations["train__overall"] = {
             "loss": train_metrics["eval_loss"],
             "precision": train_metrics["eval_overall_precision"],
             "recall": train_metrics["eval_overall_recall"],
             "f1": train_metrics["eval_overall_f1"],
             "number": nb_train_ent,
         }
-        model_evaluation["val__overall"] = {
+        model_evaluations["val__overall"] = {
             "loss": val_metrics["eval_loss"],
             "precision": val_metrics["eval_overall_precision"],
             "recall": val_metrics["eval_overall_recall"],
             "f1": val_metrics["eval_overall_f1"],
             "number": nb_val_ent,
         }
-        return model_evaluation
+        return model_evaluations
 
     def find_errors(
         self,

@@ -180,6 +180,16 @@ class TrainOptions:
     )
 
 
+class EvaluateOptions:
+
+    asset_status_in = asset_status_in(["LABELED", "TO_REVIEW", "REVIEWED"])
+    model_path = click.option(
+        "--model-path",
+        default=None,
+        help="Runs the predictions using a specified model path",
+    )
+
+
 class PredictOptions:
 
     dry_run = click.option(
@@ -197,10 +207,7 @@ class PredictOptions:
         "--from-project",
         default=None,
         type=str,
-        help=(
-            "Use a model trained of a different project to predict on project_id."
-            "This argument is ignored if --from-model is used."
-        ),
+        help=("Use a model trained of a different project to predict on project_id."),
     )
 
     asset_status_in = asset_status_in(["TODO", "ONGOING"])

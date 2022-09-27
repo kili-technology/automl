@@ -131,6 +131,16 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         )
         return model_evaluation
 
+    def eval(
+        self,
+        *,
+        assets: AssetsLazyList,
+        batch_size: int,
+        clear_dataset_cache: bool = False,
+        model_path: Optional[str],
+    ):
+        raise NotImplementedError("Evaluation is not implemented for Image Classification yet.")
+
     def predict(
         self,
         *,
