@@ -211,6 +211,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
+        from_project: Optional[ProjectIdT],
     ):
         raise NotImplementedError("Evaluation is not implemented for Image Segmentation yet.")
 

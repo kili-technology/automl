@@ -188,6 +188,12 @@ class EvaluateOptions:
         default=None,
         help="Runs the predictions using a specified model path",
     )
+    from_project = click.option(
+        "--from-project",
+        default=None,
+        type=str,
+        help=("Use a model trained on a different project to predict on project_id."),
+    )
 
 
 class PredictOptions:
@@ -207,7 +213,7 @@ class PredictOptions:
         "--from-project",
         default=None,
         type=str,
-        help=("Use a model trained of a different project to predict on project_id."),
+        help=("Use a model trained on a different project to predict on project_id."),
     )
 
     asset_status_in = asset_status_in(["TODO", "ONGOING"])

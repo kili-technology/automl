@@ -44,6 +44,7 @@ from kiliautoml.utils.type import (
 @Options.verbose
 @EvaluateOptions.asset_status_in
 @EvaluateOptions.model_path
+@EvaluateOptions.from_project
 def main(
     project_id: ProjectIdT,
     api_endpoint: str,
@@ -59,6 +60,7 @@ def main(
     verbose: VerboseLevelT,
     asset_status_in: List[AssetStatusT],
     model_path: Optional[str],
+    from_project: Optional[ProjectIdT],
 ):
     """Compute predictions and upload them to Kili.
 
@@ -102,6 +104,7 @@ def main(
             model_path=model_path,
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
+            from_project=from_project,
         )
         condition_requested = ModelConditionsRequested(
             input_type=input_type,
