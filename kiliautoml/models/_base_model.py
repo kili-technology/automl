@@ -62,6 +62,7 @@ class BaseEvaluateArgs(TypedDict):
     clear_dataset_cache: bool
     model_path: Optional[str]
     from_project: Optional[ProjectIdT]
+    results_filename: Optional[str]
 
 
 class ModelEvaluateArgs(TypedDict):
@@ -204,6 +205,7 @@ class KiliBaseModel:
         clear_dataset_cache: bool,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
+        results_filename: Optional[str],
     ) -> EvalResultsT:
         ...
 

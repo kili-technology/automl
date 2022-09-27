@@ -194,6 +194,12 @@ class EvaluateOptions:
         type=str,
         help=("Use a model trained on a different project to predict on project_id."),
     )
+    results_filename = click.option(
+        "--results-filename",
+        default=None,
+        type=str,
+        help=("Output file name of the results."),
+    )
 
 
 class PredictOptions:

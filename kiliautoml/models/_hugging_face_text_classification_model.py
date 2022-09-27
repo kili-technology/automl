@@ -141,6 +141,7 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
+        results_filename: Optional[str],
     ) -> EvalResultsT:
 
         _ = clear_dataset_cache
