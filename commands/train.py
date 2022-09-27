@@ -16,7 +16,7 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
-    print_evaluation,
+    print_and_save_evaluation,
 )
 from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
@@ -173,6 +173,6 @@ def main(
 
     logger.info("Summary of training:")
     for job_name, evaluation in model_evaluations:
-        print_evaluation(job_name, evaluation)
+        print_and_save_evaluation(job_name, evaluation)
 
     logger.success("train command finished successfully!")

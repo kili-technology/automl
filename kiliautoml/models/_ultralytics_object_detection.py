@@ -227,7 +227,6 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
-        results_filename: Optional[str],
     ):
         raise NotImplementedError("Evaluation is not implemented for Object Detection yet.")
 

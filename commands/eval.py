@@ -15,7 +15,7 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
-    print_evaluation,
+    print_and_save_evaluation,
 )
 from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.type import (
@@ -45,7 +45,7 @@ from kiliautoml.utils.type import (
 @EvaluateOptions.asset_status_in
 @EvaluateOptions.model_path
 @EvaluateOptions.from_project
-@EvaluateOptions.results_filename
+@EvaluateOptions.results_dir
 def main(
     project_id: ProjectIdT,
     api_endpoint: str,
@@ -62,7 +62,7 @@ def main(
     asset_status_in: List[AssetStatusT],
     model_path: Optional[str],
     from_project: Optional[ProjectIdT],
-    results_filename: Optional[str],
+    results_dir: Optional[str],
 ):
     """Compute evaluation and show it in command line or file.
 
@@ -105,7 +105,6 @@ def main(
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
             from_project=from_project,
-            results_filename=results_filename,
         )
         condition_requested = ModelConditionsRequested(
             input_type=input_type,
@@ -124,6 +123,6 @@ def main(
 
     logger.info("Summary of evaluation:")
     for job_name, evaluation in model_evaluations:
-        print_evaluation(job_name, evaluation)
+        print_and_save_evaluation(job_name, evaluation, results_dir)
 
     logger.success("Evaluate command finished successfully!")
