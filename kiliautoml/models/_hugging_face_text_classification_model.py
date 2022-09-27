@@ -140,6 +140,7 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         batch_size: int,
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
+        from_project: Optional[ProjectIdT],
     ) -> EvalResultsT:
 
         _ = clear_dataset_cache
@@ -163,7 +164,7 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
             ),
         )
         model_path_res, _, self.ml_backend = self._extract_model_info(
-            self.job_name, self.project_id, model_path, from_project=None
+            self.job_name, self.project_id, model_path, from_project
         )
         path_model = PathHF.append_model_folder(model_repository_dir, self.ml_backend)
         tokenizer, model = self._get_tokenizer_and_model(
