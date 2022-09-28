@@ -59,6 +59,7 @@ from wandb.sdk.wandb_run import Run  # isort:skip
 @TrainOptions.disable_wandb
 @TrainOptions.additionalTrainArgsHuggingFace
 @TrainOptions.additionalTrainArgsYolo
+@TrainOptions.results_dir
 def main(
     api_endpoint: str,
     api_key: str,
@@ -80,6 +81,7 @@ def main(
     parity_filter: ParityFilterT,
     additional_train_args_hg: AdditionalTrainingArgsT,
     additional_train_args_yolo: AdditionalTrainingArgsT,
+    results_dir: Optional[str],
 ):
     """Train a model and then save the model in the cache.
 
@@ -173,6 +175,6 @@ def main(
 
     logger.info("Summary of training:")
     for job_name, evaluation in model_evaluations:
-        print_and_save_evaluation(job_name, evaluation)
+        print_and_save_evaluation(job_name, evaluation, results_dir)
 
     logger.success("train command finished successfully!")
