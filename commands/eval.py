@@ -15,7 +15,7 @@ from kiliautoml.utils.helpers import (
     get_assets,
     get_content_input_from_job,
     get_project,
-    print_evaluation,
+    print_and_save_evaluation,
 )
 from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.type import (
@@ -45,6 +45,7 @@ from kiliautoml.utils.type import (
 @EvaluateOptions.asset_status_in
 @EvaluateOptions.model_path
 @EvaluateOptions.from_project
+@EvaluateOptions.results_dir
 def main(
     project_id: ProjectIdT,
     api_endpoint: str,
@@ -61,14 +62,13 @@ def main(
     asset_status_in: List[AssetStatusT],
     model_path: Optional[str],
     from_project: Optional[ProjectIdT],
+    results_dir: Optional[str],
 ):
-    """Compute predictions and upload them to Kili.
+    """Compute evaluation and show it in command line or file.
+
 
     In order to use this command, you must first use the `train` command.
     This command reuses the model that is stored at the end of the training.
-    We advise you to use this command once in `--dry-run` mode to preview the predictions.
-    Then, once you have validated the quality of the predictions, you can use this command without
-    the `--dry-run` mode, which will directly upload the predictions to the online kili project.
     """
     set_kili_logging(verbose)
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
@@ -123,6 +123,6 @@ def main(
 
     logger.info("Summary of evaluation:")
     for job_name, evaluation in model_evaluations:
-        print_evaluation(job_name, evaluation)
+        print_and_save_evaluation(job_name, evaluation, results_dir)
 
     logger.success("Evaluate command finished successfully!")

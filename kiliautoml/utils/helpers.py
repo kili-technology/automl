@@ -1,3 +1,4 @@
+import csv
 import json
 import os
 import random
@@ -311,7 +312,7 @@ def get_mapping_category_name_cat_kili_id(job: JobT):
     return mapping_category_name_category_ids
 
 
-def print_evaluation(job_name: JobNameT, evaluation: EvalResultsT):
+def create_table(job_name: JobNameT, evaluation: EvalResultsT):
     def get_keys(my_dict):
         keys = list(my_dict.keys())
         keys_int = []
@@ -334,7 +335,26 @@ def print_evaluation(job_name: JobNameT, evaluation: EvalResultsT):
                 table_int.append("nan")
         table.append(table_int)
         table_int = []
-    print(tabulate(table, headers=[job_name] + keys))
+    headers = [job_name] + keys
+    return headers, table
+
+
+def print_and_save_evaluation(
+    job_name: JobNameT, evaluation: EvalResultsT, results_folder: Optional[str] = None
+):
+    headers, table = create_table(job_name, evaluation)
+    print(tabulate(table, headers=headers))
+
+    if results_folder is not None:
+        if not (os.path.exists(results_folder)):
+            os.makedirs(results_folder)
+
+        rows_list = [headers] + table
+        with open(
+            os.path.join(results_folder, f"{job_name}_results.csv"), "w", newline=""
+        ) as eval_file:
+            writer = csv.writer(eval_file)
+            writer.writerows(rows_list)
 
 
 def is_contours_detection(input_type, ml_task, content_input, tools):

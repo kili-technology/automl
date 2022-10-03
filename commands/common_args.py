@@ -194,6 +194,12 @@ class EvaluateOptions:
         type=str,
         help=("Use a model trained on a different project to predict on project_id."),
     )
+    results_dir = click.option(
+        "--results-dir",
+        default=None,
+        type=str,
+        help=("Output directory name of the evaluation results."),
+    )
 
 
 class PredictOptions:
