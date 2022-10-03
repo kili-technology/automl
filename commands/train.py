@@ -3,7 +3,7 @@ from typing import List, Optional, cast
 import click
 from kili.client import Kili
 
-from commands.common_args import Options, TrainOptions
+from commands.common_args import EvaluateOptions, Options, TrainOptions
 from kiliautoml.models._base_model import (
     BaseInitArgs,
     BaseTrainArgs,
@@ -59,7 +59,7 @@ from wandb.sdk.wandb_run import Run  # isort:skip
 @TrainOptions.disable_wandb
 @TrainOptions.additionalTrainArgsHuggingFace
 @TrainOptions.additionalTrainArgsYolo
-@TrainOptions.results_dir
+@EvaluateOptions.results_dir
 def main(
     api_endpoint: str,
     api_key: str,

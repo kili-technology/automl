@@ -178,12 +178,6 @@ class TrainOptions:
             "Ex:  --additional-train-args-yolo " + json_string_yolo
         ),
     )
-    results_dir = click.option(
-        "--results-dir",
-        default=None,
-        type=str,
-        help=("Output directory name of the results."),
-    )
 
 
 class EvaluateOptions:
@@ -204,7 +198,7 @@ class EvaluateOptions:
         "--results-dir",
         default=None,
         type=str,
-        help=("Output directory name of the results."),
+        help=("Output directory name of the evaluation results."),
     )
 
 
