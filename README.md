@@ -5,7 +5,7 @@
 
 # Kili AutoML
 
-AutoML is a lightweight library to create ML models in a data-centric AI way:
+Kili AutoML is a lightweight library to create ML models in a data-centric AI way:
 
 1. Label on [Kili](https://www.kili-technology.com)
 2. **Train** a model with AutoML and evaluate its performance in one line of code
@@ -50,7 +50,7 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 ## Usage
 
-We made AutoML very simple to use. The following sections detail how to call the main methods.
+We made Kili AutoML very simple to use. The following sections detail how to call the main methods.
 
 ### Train a model
 
@@ -63,12 +63,12 @@ kiliautoml train \
 ```
 
 By default, the library uses [Weights and Biases](https://wandb.ai/site) to track the training and the quality of the predictions.
-The model is then stored in the cache of the AutoML library (default location: `HOME/.cache/kili/automl`, but you can choose the location with the env variable `KILIAUTOML_CACHE`)
+The model is then stored in the cache of the AutoML library (default location: `HOME/.cache/kili/automl`, but you can choose the location with the env variable `KILIAUTOML_CACHE`).
 Kili automl training does the following:
 * Selects the models related to the tasks declared in the project ontology.
 * Retrieve Kili's asset data and convert it into the input format for each model.
-* Finetunes the model on the input data.
-* Outputs the model loss.
+* Fine-tunes the model on the input data.
+* Outputs the model metrics.
 
 You can check the supported ML backends and the tasks they are used for [here](./docs/supported_models.md).
 
@@ -114,7 +114,7 @@ To do this, AutoML uses a mix between diversity sampling and uncertainty samplin
 ### Label errors on Kili
 Note: for image classification, object detection and image segmentation projects only.
 
-The error is human, fortunately there are methods to detect potential annotation problems. `label_errors.py` allows to identify potential problems and create a 'potential_label_error' filter on the project's asset exploration view:
+Labeling mistakes happen. Fortunately, we provide methods to detect potential annotation problems. `label_errors.py` allows to identify potential problems and create a 'potential_label_error' filter on the project's asset exploration view:
 
 ```bash
 kiliautoml label_errors \
