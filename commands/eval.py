@@ -39,6 +39,7 @@ from kiliautoml.utils.type import (
 @Options.target_job
 @Options.ignore_job
 @Options.max_assets
+@Options.randomize_assets
 @Options.clear_dataset_cache
 @Options.batch_size
 @Options.verbose
@@ -56,6 +57,7 @@ def main(
     target_job: List[JobNameT],
     ignore_job: List[JobNameT],
     max_assets: Optional[int],
+    randomize_assets: bool,
     clear_dataset_cache: bool,
     batch_size: int,
     verbose: VerboseLevelT,
@@ -81,6 +83,7 @@ def main(
         project_id,
         asset_status_in,
         max_assets=max_assets,
+        randomize=randomize_assets,
     )
 
     for job_name, job in jobs.items():
@@ -105,6 +108,7 @@ def main(
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
             from_project=from_project,
+            max_assets=max_assets,
         )
         condition_requested = ModelConditionsRequested(
             input_type=input_type,
