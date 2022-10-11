@@ -10,6 +10,15 @@ from kiliautoml.utils.type import AssetStatusT, MLBackendT, ParityFilterT, Verbo
 DEFAULT_BATCH_SIZE = 8
 
 
+def asset_filter_loader(a, b, json_string):
+    if json_string is not None:
+        try:
+            with open(json_string, "r") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return json.loads(json_string)
+
+
 class Options:
 
     project_id = click.option("--project-id", required=True, help="Kili project ID")
@@ -119,6 +128,18 @@ class Options:
             "Experimental feature. "
             "This can be used to train on even hash assets names, and test on uneven ones. "
             "This can be usefull if you want to do some tests on a project entirely labelled."
+        ),
+    )
+
+    example_json_string = '{"metadata_where": {"dataset_type": "training"}}'
+    asset_filter = click.option(
+        "--asset-filter",
+        default=None,
+        callback=asset_filter_loader,
+        help=(
+            "args assets SDK function to filter assets."
+            "See https://python-sdk-docs.kili-technology.com/latest/asset/"  # noqa
+            "Ex:  --asset-filter " + example_json_string
         ),
     )
 

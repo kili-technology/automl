@@ -20,6 +20,7 @@ from kiliautoml.utils.logging import logger
 from kiliautoml.utils.memoization import kili_project_memoizer
 from kiliautoml.utils.path import AUTOML_CACHE
 from kiliautoml.utils.type import (
+    AssetFilterArgsT,
     AssetsLazyList,
     AssetStatusT,
     AssetT,
@@ -78,8 +79,35 @@ def get_asset_memoized(
     total: Optional[int],
     skip: int,
     status_in: Optional[List[AssetStatusT]] = None,
+    asset_filter: Optional[AssetFilterArgsT] = None,
 ) -> List[Any]:
     kili.assets = backoff.on_exception(backoff.expo, exception=Exception, max_tries=3)(kili.assets)
+
+    additional_filtering_arguments = {}
+    if asset_filter is not None:
+        additional_filtering_arguments = {}
+        for argument in asset_filter.keys():
+            if argument in [
+                "asset_id_in",
+                "consensus_mark_gt",
+                "consensus_mark_lt",
+                "external_id_contains",
+                "honeypot_mark_gt",
+                "honeypot_mark_lt",
+                "label_author_in",
+                "label_created_at",
+                "label_created_at_gt",
+                "label_created_at_lt",
+                "label_category_search",
+                "label_type_in",
+                "metadata_where",
+                "updated_at_gte",
+                "updated_at_lte",
+            ]:
+                additional_filtering_arguments[argument] = asset_filter[argument]
+            else:
+                logger.warning(f"You can not filter on this field {argument}")
+
     assets = kili.assets(
         project_id=project_id,
         first=total,
@@ -94,6 +122,7 @@ def get_asset_memoized(
         ],
         status_in=status_in,
         as_generator=False,
+        **additional_filtering_arguments,
     )
 
     if GENERATE_MOCK:
@@ -111,6 +140,7 @@ def get_assets(
     strategy: LabelMergeStrategyT = "last",
     job_name: Optional[JobNameT] = None,
     parity_filter: ParityFilterT = "none",
+    asset_filter: Optional[AssetFilterArgsT] = None,
 ) -> AssetsLazyList:
     """
     job_name is used if status_in does not have only unlabeled statuses
@@ -134,6 +164,7 @@ def get_assets(
             total=None,
             skip=0,
             status_in=status_in,
+            asset_filter=asset_filter,
         )
         random.shuffle(assets)
         assets = assets[:max_assets]
@@ -145,6 +176,7 @@ def get_assets(
             total=max_assets,
             skip=0,
             status_in=status_in,
+            asset_filter=asset_filter,
         )
 
     assets = [AssetT.construct(**asset) for asset in assets]

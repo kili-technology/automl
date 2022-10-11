@@ -216,6 +216,7 @@ class JobPredictions:
 
 
 AdditionalTrainingArgsT = Dict[str, Any]
+AssetFilterArgsT = Dict[str, Any]
 EvalResultsT = Dict[str, Any]
 
 
