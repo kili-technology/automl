@@ -78,6 +78,11 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
 
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
         logger.info(f"Downloading data to {path_dataset}")
+        if not clear_dataset_cache:
+            logger.warning(
+                "If you are using filter on assets, consider using --clear-dataset-cache, "
+                "to make sure that the right assets are used."
+            )
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
         job_categories = categories_from_job(self.job)
