@@ -10,7 +10,7 @@ from kiliautoml.utils.type import AssetStatusT, MLBackendT, ParityFilterT, Verbo
 DEFAULT_BATCH_SIZE = 8
 
 
-def asset_filter_loader(a, b, json_string):
+def asset_filter_loader(json_string):
     if json_string is not None:
         try:
             with open(json_string, "r") as f:
@@ -135,11 +135,11 @@ class Options:
     asset_filter = click.option(
         "--asset-filter",
         default=None,
-        callback=asset_filter_loader,
+        callback=lambda _, __, x: asset_filter_loader(x),
         help=(
-            "args assets SDK function to filter assets."
-            "See https://python-sdk-docs.kili-technology.com/latest/asset/"  # noqa
-            "Ex:  --asset-filter " + example_json_string
+            "args assets SDK function to filter assets. "
+            "See https://python-sdk-docs.kili-technology.com/latest/asset/ "  # noqa
+            "Ex:  --asset-filter " + f"'{example_json_string}"
         ),
     )
 
@@ -152,7 +152,7 @@ def asset_status_in(default: List[AssetStatusT]):
         callback=lambda _, __, x: x.upper().split(",") if x else None,
         help=(
             "Comma separated (without space) list of Kili asset status to select "
-            "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED'"
+            "among: 'TODO', 'ONGOING', 'LABELED', 'TO_REVIEW', 'REVIEWED' "
             "Example: python train.py --asset-status-in TO_REVIEW,REVIEWED "
         ),
     )

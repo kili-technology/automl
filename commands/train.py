@@ -22,6 +22,7 @@ from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
+    AssetFilterArgsT,
     AssetStatusT,
     JobNameT,
     LabelMergeStrategyT,
@@ -54,6 +55,7 @@ from wandb.sdk.wandb_run import Run  # isort:skip
 @Options.verbose
 @Options.label_merge_strategy
 @Options.parity_filter
+@Options.asset_filter
 @TrainOptions.asset_status_in
 @TrainOptions.epochs
 @TrainOptions.disable_wandb
@@ -79,6 +81,7 @@ def main(
     verbose: VerboseLevelT,
     batch_size: int,
     parity_filter: ParityFilterT,
+    asset_filter: AssetFilterArgsT,
     additional_train_args_hg: AdditionalTrainingArgsT,
     additional_train_args_yolo: AdditionalTrainingArgsT,
     results_dir: Optional[str],
@@ -126,6 +129,7 @@ def main(
             strategy=label_merge_strategy,
             job_name=job_name,
             parity_filter=parity_filter,
+            asset_filter=asset_filter,
         )
 
         if clear_dataset_cache:

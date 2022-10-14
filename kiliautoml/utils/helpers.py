@@ -83,7 +83,7 @@ def get_asset_memoized(
 ) -> List[Any]:
     kili.assets = backoff.on_exception(backoff.expo, exception=Exception, max_tries=3)(kili.assets)
 
-    additional_filtering_arguments = {}
+    additional_filtering_arguments: Dict[str, Any] = {}
     if asset_filter is not None:
         additional_filtering_arguments = {}
         for argument in asset_filter.keys():
@@ -107,7 +107,6 @@ def get_asset_memoized(
                 additional_filtering_arguments[argument] = asset_filter[argument]
             else:
                 logger.warning(f"You can not filter on this field {argument}")
-
     assets = kili.assets(
         project_id=project_id,
         first=total,
