@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List
+from typing import List, Optional
 
 import click
 from typing_extensions import get_args
@@ -10,7 +10,7 @@ from kiliautoml.utils.type import AssetStatusT, MLBackendT, ParityFilterT, Verbo
 DEFAULT_BATCH_SIZE = 8
 
 
-def asset_filter_loader(json_string):
+def asset_filter_loader(json_string: Optional[str]):
     if json_string is not None:
         try:
             with open(json_string, "r") as f:
