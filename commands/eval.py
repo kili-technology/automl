@@ -19,6 +19,7 @@ from kiliautoml.utils.helpers import (
 )
 from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.type import (
+    AssetFilterArgsT,
     AssetStatusT,
     JobNameT,
     MLBackendT,
@@ -39,6 +40,8 @@ from kiliautoml.utils.type import (
 @Options.target_job
 @Options.ignore_job
 @Options.max_assets
+@Options.randomize_assets
+@Options.asset_filter
 @Options.clear_dataset_cache
 @Options.batch_size
 @Options.verbose
@@ -56,6 +59,8 @@ def main(
     target_job: List[JobNameT],
     ignore_job: List[JobNameT],
     max_assets: Optional[int],
+    randomize_assets: bool,
+    asset_filter: AssetFilterArgsT,
     clear_dataset_cache: bool,
     batch_size: int,
     verbose: VerboseLevelT,
@@ -81,6 +86,8 @@ def main(
         project_id,
         asset_status_in,
         max_assets=max_assets,
+        randomize=randomize_assets,
+        asset_filter=asset_filter,
     )
 
     for job_name, job in jobs.items():

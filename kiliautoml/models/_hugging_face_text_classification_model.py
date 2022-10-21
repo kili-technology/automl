@@ -78,6 +78,11 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
 
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
         logger.info(f"Downloading data to {path_dataset}")
+        if not clear_dataset_cache:
+            logger.warning(
+                "If you are using filter on assets, consider using --clear-dataset-cache, "
+                "to make sure that the right assets are used."
+            )
         if os.path.exists(path_dataset) and clear_dataset_cache:
             os.remove(path_dataset)
         job_categories = categories_from_job(self.job)
@@ -143,14 +148,14 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         from_project: Optional[ProjectIdT],
     ) -> EvalResultsT:
 
-        _ = clear_dataset_cache
-
         model_repository_dir = Path.model_repository_dir(
             self.project_id, self.job_name, self.model_repository
         )
 
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
         job_categories = categories_from_job(self.job)
+        if os.path.exists(path_dataset) and clear_dataset_cache:
+            os.remove(path_dataset)
         if not os.path.exists(path_dataset):
             self._write_dataset(assets, self.job_name, path_dataset, job_categories)
         dataset = datasets.load_dataset(  # type: ignore

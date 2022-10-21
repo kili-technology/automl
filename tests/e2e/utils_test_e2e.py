@@ -154,6 +154,9 @@ def create_arguments_test(command: CommandT, project_id, target_job=""):
             command,
             "--project-id",
             project_id,
+            "--asset-filter",
+            '{"label_created_at_gt": "2021-07-28T15:12:17.329Z"}',
+            "--clear-dataset-cache",
         ]
     else:
         raise NotImplementedError
