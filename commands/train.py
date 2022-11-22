@@ -20,6 +20,7 @@ from kiliautoml.utils.helpers import (
 )
 from kiliautoml.utils.logging import logger, set_kili_logging
 from kiliautoml.utils.memoization import clear_command_cache
+from kiliautoml.utils.path import Path
 from kiliautoml.utils.type import (
     AdditionalTrainingArgsT,
     AssetFilterArgsT,
@@ -143,7 +144,14 @@ def main(
 
         wandb_run: Optional[Run] = None
         if not disable_wandb:
-            wandb_run = cast(Run, wandb.init(project=title + "_" + job_name, reinit=True))
+            wandb_run = cast(
+                Run,
+                wandb.init(
+                    project=title + "_" + job_name,
+                    reinit=True,
+                    dir=Path.wandb_dir(project_id, job_name),
+                ),
+            )
         base_init_args = BaseInitArgs(
             job=job,
             job_name=job_name,
