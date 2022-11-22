@@ -127,6 +127,12 @@ def get_trained_model_image_classif(
     if save_model_path is not None:
         torch.save(model.state_dict(), save_model_path)
 
+        if not disable_wandb:
+            artifact = wandb.Artifact("model", type="model")
+            artifact.add_file(save_model_path)
+            wandb.log_artifact(artifact)
+            wandb.join()
+
     return model, model_evaluation
 
 
