@@ -45,6 +45,7 @@ JobDirT = str
 ModelRepositoryDirT = str
 ModelDirT = str
 ModelPathT = str
+WandbDirT = str
 
 
 class Path:
@@ -57,9 +58,11 @@ class Path:
     ├── cl0wihlop3rwc0mtj9np28ti2 # project_id
     │   └── DETECTION # job_name
     │       └── ultralytics # model_repository
-    │           ├── inference
-    │           └── model
-    │               └── pytorch
+    │       │   ├── inference
+    │       │   └── model
+    │       │       └── pytorch
+    │       └── wandb
+    │
     └── joblib
         ├── kiliautoml
         │   └── utils
@@ -86,6 +89,11 @@ class Path:
         project_id: ProjectIdT, job_name: JobNameT, model_repository: ModelRepositoryT
     ) -> ModelRepositoryDirT:
         return os.path.join(Path.job_dir(project_id, job_name), model_repository)
+
+    @staticmethod
+    @makedirs_exist_ok
+    def wandb_dir(project_id: ProjectIdT, job_name: JobNameT) -> WandbDirT:
+        return os.path.join(Path.job_dir(project_id, job_name))
 
 
 """
