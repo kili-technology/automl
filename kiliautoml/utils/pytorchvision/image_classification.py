@@ -4,6 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.utils.data as torch_Data
+import wandb
 from torch.utils.data import Dataset
 from torchvision import models, transforms
 
@@ -102,6 +103,7 @@ def get_trained_model_image_classif(
     category_ids: List[CategoryIdT],
     image_datasets: dict,  # type: ignore
     save_model_path: Optional[ModelPathT] = None,
+    disable_wandb: bool = False,
 ):
     dataloaders = {
         x: torch_Data.DataLoader(
@@ -111,16 +113,25 @@ def get_trained_model_image_classif(
     }
 
     model = initialize_model_img_class(model_name, category_ids)
+    if not disable_wandb:
+        wandb.watch(model)
 
     model, model_evaluation = train_model_pytorch(
         model=model,
         dataloaders=dataloaders,
         epochs=epochs,
         class_names=category_ids,
+        disable_wandb=disable_wandb,
     )
 
     if save_model_path is not None:
         torch.save(model.state_dict(), save_model_path)
+
+        if not disable_wandb:
+            artifact = wandb.Artifact("model", type="model")
+            artifact.add_file(save_model_path)
+            wandb.log_artifact(artifact)
+            wandb.join()
 
     return model, model_evaluation
 

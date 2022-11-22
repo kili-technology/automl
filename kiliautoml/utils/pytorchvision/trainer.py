@@ -1,5 +1,4 @@
 import copy
-import os
 import time
 from typing import Any, Dict, Tuple
 
@@ -7,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import wandb
 from loguru import logger
 from sklearn.metrics import f1_score, precision_score, recall_score
 from torch.optim import lr_scheduler
@@ -15,7 +15,7 @@ from tqdm.autonotebook import trange
 from kiliautoml.utils.type import ModelMetricT
 
 # Necessary on mac for train and predict.
-os.environ["OMP_NUM_THREADS"] = "1"
+# os.environ["OMP_NUM_THREADS"] = "1"
 
 
 def train_model_pytorch(
@@ -24,6 +24,7 @@ def train_model_pytorch(
     dataloaders,
     epochs,
     class_names,
+    disable_wandb: bool,
 ) -> Tuple[nn.Module, Dict[str, Any]]:
     """
     Method that trains the given model and return the best one found in the given epochs
@@ -83,6 +84,10 @@ def train_model_pytorch(
                 epoch_train_loss = epoch_train_evaluation["loss"]["overall"]
                 epoch_train_acc = epoch_train_evaluation["acc"]["overall"]
                 logger.debug(f"{phase} Loss: {epoch_train_loss:.4f} Acc: {epoch_train_acc:.4f}")
+                if not disable_wandb:
+                    wandb.log(
+                        {"epoch_train_loss": epoch_train_loss, "epoch_train_acc": epoch_train_acc}
+                    )
             if phase == "val":
                 epoch_val_evaluation = evaluate(
                     running_loss,
@@ -93,6 +98,8 @@ def train_model_pytorch(
                 epoch_val_loss = epoch_val_evaluation["loss"]["overall"]
                 epoch_val_acc = epoch_val_evaluation["acc"]["overall"]
                 logger.debug(f"{phase} Loss: {epoch_val_loss:.4f} Acc: {epoch_val_acc:.4f}")
+                if not disable_wandb:
+                    wandb.log({"epoch_val_loss": epoch_val_loss, "epoch_val_acc": epoch_val_acc})
                 # deep copy the model
                 if epoch_val_loss < best_val_metrics["loss"]["overall"]:
                     best_val_metrics = epoch_val_evaluation
