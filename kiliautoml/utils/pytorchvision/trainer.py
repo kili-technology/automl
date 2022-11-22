@@ -6,12 +6,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import wandb
 from loguru import logger
 from sklearn.metrics import f1_score, precision_score, recall_score
 from torch.optim import lr_scheduler
 from tqdm.autonotebook import trange
 
-import wandb
 from kiliautoml.utils.type import ModelMetricT
 
 # Necessary on mac for train and predict.

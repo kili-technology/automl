@@ -4,10 +4,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.utils.data as torch_Data
+import wandb
 from torch.utils.data import Dataset
 from torchvision import models, transforms
 
-import wandb
 from kiliautoml.utils.download_assets import DownloadedImage
 from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import ModelPathT
