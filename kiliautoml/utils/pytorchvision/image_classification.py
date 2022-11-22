@@ -128,7 +128,7 @@ def get_trained_model_image_classif(
 def initialize_model_img_class(model_name: ModelNameT, class_names):
     logger.info("Initialization of the model with N={} classes".format(len(class_names)))
     if model_name == "efficientnet_b0":
-        model = models.efficientnet_b0(pretrained=True)
+        model = models.efficientnet_b0(weights=models.EfficientNet_B0_Weights.DEFAULT)
         num_ftrs = model.classifier[1].in_features
         model.classifier[1] = nn.Linear(num_ftrs, len(class_names))  # type:ignore
     elif model_name == "resnet50":
