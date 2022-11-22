@@ -1,5 +1,4 @@
 import os
-import warnings
 from typing import Optional
 
 import numpy as np
@@ -87,9 +86,6 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
     ):
         _ = clear_dataset_cache, model_train_args
 
-        if disable_wandb is False:
-            warnings.warn("Wandb is not supported for this model.")
-
         images = download_project_images(
             api_key=api_key, assets=assets, output_folder=self.data_dir
         )
@@ -128,6 +124,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
             category_ids=self.class_names,
             image_datasets=image_datasets,
             save_model_path=self.model_path,
+            disable_wandb=disable_wandb,
         )
         return model_evaluation
 
