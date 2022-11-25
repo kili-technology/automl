@@ -265,6 +265,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
                 epochs=epochs,
                 image_datasets=image_datasets,
                 save_model_path=None,
+                disable_wandb=True,
             )
 
             holdout_loader = torch_Data.DataLoader(
