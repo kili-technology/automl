@@ -13,7 +13,7 @@ import numpy as np
 import torch
 from kili.client import Kili
 from tabulate import tabulate
-from typing_extensions import get_args
+from typing_extensions import Literal, get_args
 
 from kiliautoml.utils.helper_mock import GENERATE_MOCK, jsonify_mock_data
 from kiliautoml.utils.logging import logger
@@ -422,14 +422,14 @@ def curated_job(jobs: JobsT, target_job: List[JobNameT], ignore_job: List[JobNam
     return new_job
 
 
-def dry_run_security(dry_run):
+def dry_run_security(dry_run: bool, entity_to_upload: Literal["predictions", "label errors"]):
     if dry_run is True:
         return dry_run
-    logger.info("Are you sure You want to send the predictions to Kili? Y/N")
+    logger.info(f"Are you sure You want to send the {entity_to_upload} to Kili? Y/N")
     validation = input()
     if validation in ["N", "n", "No", "NO", "no"]:
         dry_run = True
-        logger.info("OK, We won't send the predictions to Kili!")
+        logger.info(f"OK, We won't send the {entity_to_upload} to Kili!")
     else:
-        logger.info("OK, We will send the predictions to Kili!")
+        logger.info(f"OK, We will send the {entity_to_upload} to Kili!")
     return dry_run

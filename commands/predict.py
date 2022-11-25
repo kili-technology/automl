@@ -78,7 +78,7 @@ def main(
     the `--dry-run` mode, which will directly upload the predictions to the online kili project.
     """
     set_kili_logging(verbose)
-    dry_run = dry_run_security(dry_run)
+    dry_run = dry_run_security(dry_run, "predictions")
     kili = Kili(api_key=api_key, api_endpoint=api_endpoint)
     input_type, jobs, title = get_project(kili, project_id)
     jobs = curated_job(jobs, target_job, ignore_job)
