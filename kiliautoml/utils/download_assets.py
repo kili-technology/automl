@@ -1,10 +1,11 @@
-import os
 import time
 from dataclasses import dataclass
 from io import BytesIO
+from pathlib import Path
 from typing import List
 
 import requests
+from kili.queries.asset.helpers import get_file_extension_from_headers
 from loguru import logger
 from PIL import Image
 from PIL.Image import Image as PILImage
@@ -142,26 +143,30 @@ def download_project_images(
     assets: AssetsLazyList,
     output_folder: str,
 ) -> List[DownloadedImage]:
-    logger.info("Downloading images to folder {}".format(output_folder))
+    logger.info(f"Downloading images to folder {output_folder}")
     downloaded_images = []
 
     for asset in tqdm(assets, desc="Downloading images"):
-        image = download_image(api_key, asset.content)
-        format = str(image.format or "")
-        filepath = ""
-        if output_folder:
-            filepath = os.path.join(output_folder, asset.id + "." + format.lower())
-            os.makedirs(output_folder, exist_ok=True)
-            with open(filepath, "wb") as fp:
-                image.save(fp, format)  # type: ignore
-        downloaded_images.append(
-            DownloadedImage(
-                id=asset.id,
-                externalId=asset.externalId,
-                filepath=filepath or "",
-            )
-        )
+        downloaded_images.append(download_and_save_image(api_key, asset, Path(output_folder)))
     return downloaded_images
+
+
+def download_and_save_image(api_key: str, asset: AssetT, output_folder: Path) -> DownloadedImage:
+    extension = get_file_extension_from_headers(asset.content)
+    assert extension
+    filepath = output_folder / (asset.id + "." + extension)
+    if not filepath.exists():
+        image = download_image(api_key, asset.content)
+        assert image.format
+        output_folder.mkdir(parents=True, exist_ok=True)
+        with filepath.open("wb") as f_p:
+            image.save(f_p, image.format)
+
+    return DownloadedImage(
+        id=asset.id,
+        externalId=asset.externalId,
+        filepath=str(filepath),
+    )
 
 
 def download_project_text(
