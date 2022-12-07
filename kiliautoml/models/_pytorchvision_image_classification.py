@@ -81,13 +81,13 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         self,
         *,
         assets: AssetsLazyList,
-        local_dataset_dir: Optional[pathlib.Path],
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
         disable_wandb: bool,
         api_key: str = "",
         model_train_args: ModelTrainArgs,
+        local_dataset_dir: Optional[pathlib.Path],
     ):
         _ = clear_dataset_cache, model_train_args
         if local_dataset_dir is None:
@@ -143,6 +143,7 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
+        local_dataset_dir: Optional[pathlib.Path],
     ):
         raise NotImplementedError("Evaluation is not implemented for Image Classification yet.")
 
@@ -155,12 +156,16 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         api_key: str = "",
+        local_dataset_dir: Optional[pathlib.Path],
     ):
         _ = clear_dataset_cache
 
-        images = download_project_images(
-            api_key=api_key, assets=assets, output_folder=self.data_dir
-        )
+        if local_dataset_dir is None:
+            images = download_project_images(
+                api_key=api_key, assets=assets, output_folder=self.data_dir
+            )
+        else:
+            images = get_images_from_local_dataset(local_dataset_dir, assets.assets)
 
         dataset = ClassificationPredictDataset(images, data_transforms["val"])
 

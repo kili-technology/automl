@@ -60,6 +60,7 @@ class BaseEvaluateArgs(TypedDict):
     """Common to all modalities"""
 
     assets: AssetsLazyList
+    local_dataset_dir: Optional[pathlib.Path]
     batch_size: int
     clear_dataset_cache: bool
     model_path: Optional[str]
@@ -76,6 +77,7 @@ class BasePredictArgs(TypedDict):
     """Common to all modalities"""
 
     assets: AssetsLazyList
+    local_dataset_dir: Optional[pathlib.Path]
     model_path: Optional[str]
     from_project: Optional[ProjectIdT]
     batch_size: int
@@ -203,6 +205,7 @@ class KiliBaseModel:
         self,
         *,
         assets: AssetsLazyList,
+        local_dataset_dir: Optional[pathlib.Path],
         batch_size: int,
         clear_dataset_cache: bool,
         model_path: Optional[str],
@@ -214,6 +217,7 @@ class KiliBaseModel:
         self,
         *,
         assets: AssetsLazyList,
+        local_dataset_dir: Optional[pathlib.Path],
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
         batch_size: int,

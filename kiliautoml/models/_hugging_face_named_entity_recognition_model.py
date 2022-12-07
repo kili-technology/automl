@@ -204,6 +204,7 @@ class HuggingFaceNamedEntityRecognitionModel(
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
+        local_dataset_dir: Optional[pathlib.Path],
     ) -> EvalResultsT:
         raise NotImplementedError("Evaluation is not implemented for NER yet.")
 
@@ -215,8 +216,9 @@ class HuggingFaceNamedEntityRecognitionModel(
         from_project: Optional[ProjectIdT],
         batch_size: int,
         clear_dataset_cache: bool,
+        local_dataset_dir: Optional[pathlib.Path],
     ) -> JobPredictions:
-        _ = clear_dataset_cache
+        _ = clear_dataset_cache, local_dataset_dir
         warnings.warn("Warning, this method does not support custom batch_size")
         _ = batch_size
         model_path_res, _, self.ml_backend = self._extract_model_info(
@@ -390,7 +392,6 @@ class HuggingFaceNamedEntityRecognitionModel(
 
     @classmethod
     def _post_process_labels(cls, predicted_labels: List[str], tokens: List[str], null_category):
-
         post_processed_labels: List[str] = []
         prev_category: Optional[str] = None
         category: Optional[str] = None
@@ -438,7 +439,6 @@ class HuggingFaceNamedEntityRecognitionModel(
         null_category: str,
         offset_in_text: int,
     ) -> List[KiliNerAnnotation]:
-
         offset_in_sentence: int = 0
         kili_annotations: List[KiliNerAnnotation] = []
 
@@ -462,7 +462,6 @@ class HuggingFaceNamedEntityRecognitionModel(
             str_between_tokens = text_remaining[:ind_in_remaining_text]
 
             if label != null_category:
-
                 categories: CategoriesT = [
                     CategoryT(name=CategoryIdT(label[2:]), confidence=int(proba * 100))
                 ]

@@ -214,6 +214,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
+        local_dataset_dir: Optional[pathlib.Path],
     ):
         raise NotImplementedError("Evaluation is not implemented for Image Segmentation yet.")
 
@@ -260,7 +261,9 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         from_project: Optional[ProjectIdT],
         batch_size: int,
         clear_dataset_cache: bool,
+        local_dataset_dir: Optional[pathlib.Path],
     ):
+        _ = local_dataset_dir
         if from_project:
             project_id = from_project
         else:
@@ -446,6 +449,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             from_project=None,
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
+            local_dataset_dir=pathlib.Path(""),
         )
 
         return find_all_label_errors(

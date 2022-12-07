@@ -2,6 +2,7 @@ from typing import List, Optional
 
 import click
 from kili.client import Kili
+import pathlib
 
 from commands.common_args import Options, PredictOptions
 from kiliautoml.models._base_model import (
@@ -45,6 +46,7 @@ from kiliautoml.utils.type import (
 @Options.batch_size
 @Options.parity_filter
 @Options.verbose
+@Options.local_dataset_dir
 @PredictOptions.asset_status_in
 @PredictOptions.model_path
 @PredictOptions.from_project
@@ -68,6 +70,7 @@ def main(
     ml_backend: MLBackendT,
     batch_size: int,
     clear_dataset_cache: bool,
+    local_dataset_dir: Optional[str],
 ):
     """Compute predictions and upload them to Kili.
 
@@ -90,6 +93,7 @@ def main(
         max_assets=max_assets,
         randomize=randomize_assets,
         parity_filter=parity_filter,
+        query_content=local_dataset_dir is None,
     )
 
     for job_name, job in jobs.items():
@@ -110,6 +114,7 @@ def main(
         )
         predict_args = BasePredictArgs(
             assets=assets,
+            local_dataset_dir=pathlib.Path(local_dataset_dir) if local_dataset_dir else None,
             model_path=model_path,
             from_project=from_project,
             batch_size=batch_size,

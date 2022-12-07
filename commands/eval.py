@@ -2,6 +2,7 @@ from typing import List, Optional
 
 import click
 from kili.client import Kili
+import pathlib
 
 from commands.common_args import EvaluateOptions, Options
 from kiliautoml.models._base_model import (
@@ -45,6 +46,7 @@ from kiliautoml.utils.type import (
 @Options.clear_dataset_cache
 @Options.batch_size
 @Options.verbose
+@Options.local_dataset_dir
 @EvaluateOptions.asset_status_in
 @EvaluateOptions.model_path
 @EvaluateOptions.from_project
@@ -68,6 +70,7 @@ def main(
     model_path: Optional[str],
     from_project: Optional[ProjectIdT],
     results_dir: Optional[str],
+    local_dataset_dir: Optional[str],
 ):
     """Compute evaluation and show it in command line or file.
 
@@ -88,6 +91,7 @@ def main(
         max_assets=max_assets,
         randomize=randomize_assets,
         asset_filter=asset_filter,
+        query_content=local_dataset_dir is None,
     )
 
     for job_name, job in jobs.items():
@@ -108,6 +112,7 @@ def main(
         )
         evaluation_args = BaseEvaluateArgs(
             assets=assets,
+            local_dataset_dir=pathlib.Path(local_dataset_dir) if local_dataset_dir else None,
             model_path=model_path,
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
