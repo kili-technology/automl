@@ -152,9 +152,9 @@ def get_assets(
                     f" {get_args(AssetStatusT)}"
                 )
     if status_in is not None:
-        logger.info(f"Downloading assets with status in {status_in} from Kili project")
+        logger.info(f"Fetching assets with status in {status_in} from Kili project")
     else:
-        logger.info("Downloading assets from Kili project")
+        logger.info("Fetching assets from Kili project")
 
     if randomize:
         assets = get_asset_memoized(
