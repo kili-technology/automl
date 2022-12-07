@@ -133,6 +133,7 @@ def main(
             job_name=job_name,
             parity_filter=parity_filter,
             asset_filter=asset_filter,
+            query_content=local_dataset_dir is None,
         )
 
         if clear_dataset_cache:
