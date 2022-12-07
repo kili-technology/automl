@@ -90,7 +90,8 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
         model_train_args: ModelTrainArgs,
     ):
         _ = clear_dataset_cache, model_train_args
-
+        logger.debug(f"local_dataset_dir {local_dataset_dir}")
+        print("local_dataset_dir", local_dataset_dir)
         if local_dataset_dir is None:
             images = download_project_images(
                 api_key=api_key, assets=assets, output_folder=self.data_dir
