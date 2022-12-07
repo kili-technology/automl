@@ -2,6 +2,7 @@ from typing import List, Optional, cast
 
 import click
 from kili.client import Kili
+import pathlib
 
 from commands.common_args import EvaluateOptions, Options, TrainOptions
 from kiliautoml.models._base_model import (
@@ -50,6 +51,7 @@ from wandb.sdk.wandb_run import Run  # isort:skip
 @Options.target_job
 @Options.ignore_job
 @Options.max_assets
+@Options.local_dataset_dir
 @Options.randomize_assets
 @Options.clear_dataset_cache
 @Options.batch_size
@@ -86,6 +88,7 @@ def main(
     additional_train_args_hg: AdditionalTrainingArgsT,
     additional_train_args_yolo: AdditionalTrainingArgsT,
     results_dir: Optional[str],
+    local_dataset_dir: Optional[str],
 ):
     """Train a model and then save the model in the cache.
 
@@ -104,7 +107,6 @@ def main(
     model_evaluations = []
 
     for job_name, job in jobs.items():
-
         ml_task = job.get("mlTask")
         content_input = get_content_input_from_job(job)
         tools: List[ToolT] = job.get("tools")
@@ -165,6 +167,7 @@ def main(
 
         base_train_args = BaseTrainArgs(
             assets=assets,
+            local_dataset_dir=pathlib.Path(local_dataset_dir) if local_dataset_dir else None,
             epochs=epochs,
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,

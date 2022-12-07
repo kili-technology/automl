@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
 from typing import List
+import os
 
 import requests
 from kili.queries.asset.helpers import get_file_extension_from_headers
@@ -40,7 +41,6 @@ DELAY = 60 / 250  # 250 calls per minutes
 
 
 class AssetsDownloader:
-
     use_header = True
 
     @sleep_and_retry
@@ -185,3 +185,22 @@ def download_project_text(
             )
         )
     return downloaded_text
+
+
+def get_images_from_local_dataset(
+    local_dataset_dir: Path, assets: List[AssetT]
+) -> List[DownloadedImage]:
+    images = []
+    for asset in assets:
+        external_id = asset.externalId
+        file_path = local_dataset_dir / external_id
+        if os.path.isfile(file_path):
+            images.append(
+                DownloadedImage(id=asset.id, externalId=external_id, filepath=str(file_path))
+            )
+    if len(images) == 0:
+        raise ValueError(
+            f"No files match the external ids of the assets in the directory {local_dataset_dir}"
+        )
+
+    return images

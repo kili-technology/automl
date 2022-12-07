@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import List, Optional, TypeVar
 
 from typing_extensions import TypedDict
-
+import pathlib
 from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.helpers import set_default
 from kiliautoml.utils.path import Path
@@ -41,6 +41,7 @@ class BaseTrainArgs(TypedDict):
     """Common to all modalities"""
 
     assets: AssetsLazyList
+    local_dataset_dir: Optional[pathlib.Path]
     epochs: int
     batch_size: int
     clear_dataset_cache: bool
@@ -188,6 +189,7 @@ class KiliBaseModel:
         self,
         *,
         assets: AssetsLazyList,
+        local_dataset_dir: Optional[pathlib.Path],
         epochs: int,
         batch_size: int,
         clear_dataset_cache: bool,
