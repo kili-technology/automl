@@ -1,8 +1,8 @@
+import pathlib
 from typing import List, Optional, cast
 
 import click
 from kili.client import Kili
-import pathlib
 
 from commands.common_args import EvaluateOptions, Options, TrainOptions
 from kiliautoml.models._base_model import (

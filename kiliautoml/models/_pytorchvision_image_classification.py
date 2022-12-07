@@ -1,9 +1,9 @@
 import os
+import pathlib
 from typing import Optional
 
 import numpy as np
 import torch
-import pathlib
 import torch.backends.cudnn as cudnn
 import torch.utils.data as torch_Data
 from cleanlab.filter import find_label_issues
@@ -16,7 +16,10 @@ from kiliautoml.models._base_model import (
     ModelConditions,
     ModelTrainArgs,
 )
-from kiliautoml.utils.download_assets import download_project_images, get_images_from_local_dataset
+from kiliautoml.utils.download_assets import (
+    download_project_images,
+    get_images_from_local_dataset,
+)
 from kiliautoml.utils.helper_label_error import ErrorRecap, LabelingError
 from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathPytorchVision

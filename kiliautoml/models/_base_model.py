@@ -1,8 +1,9 @@
+import pathlib
 from dataclasses import dataclass
 from typing import List, Optional, TypeVar
 
 from typing_extensions import TypedDict
-import pathlib
+
 from kiliautoml.utils.helper_label_error import ErrorRecap
 from kiliautoml.utils.helpers import set_default
 from kiliautoml.utils.path import Path

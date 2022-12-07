@@ -86,7 +86,8 @@ class Options:
         "--local-dataset-dir",
         default=None,
         type=str,
-        help="Path to the local dataset directory. If not given, it will download assets from the project.",
+        help="Path to the local dataset directory. If not given, "
+        "it will download assets from the project.",
     )
 
     clear_dataset_cache = click.option(
