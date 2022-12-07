@@ -1,5 +1,6 @@
 import json
 import os
+import pathlib
 import shutil
 from typing import Dict, List, Optional, Tuple
 
@@ -128,9 +129,10 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         clear_dataset_cache: bool,
         disable_wandb: bool,
         model_train_args: ModelTrainArgs,
+        local_dataset_dir: Optional[pathlib.Path],
     ):
         """Download Kili assets, convert to coco format, then to detectron2 format, train model."""
-        _ = model_train_args
+        _ = model_train_args, local_dataset_dir
         if not disable_wandb:
             logger.warning(
                 "Wandb is not yet available on Detectron2. But tensorboard is available."

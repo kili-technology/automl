@@ -1,6 +1,7 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
+import pathlib
 from typing import Any, Dict, Optional
 
 import datasets
@@ -67,7 +68,9 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
         model_train_args: ModelTrainArgs,
+        local_dataset_dir: Optional[pathlib.Path],
     ):
+        _ = local_dataset_dir
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(

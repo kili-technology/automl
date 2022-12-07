@@ -2,6 +2,7 @@
 import csv
 import math
 import os
+import pathlib
 import re
 import shutil
 import subprocess
@@ -108,7 +109,9 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         clear_dataset_cache: bool,
         disable_wandb: bool,
         model_train_args: ModelTrainArgs,
+        local_dataset_dir: Optional[pathlib.Path],
     ):
+        _ = local_dataset_dir
         model_repository_dir = Path.model_repository_dir(
             self.project_id, self.job_name, self.model_conditions.model_repository
         )

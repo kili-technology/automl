@@ -1,6 +1,7 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
+import pathlib
 import warnings
 from typing import List, Optional
 
@@ -74,6 +75,7 @@ class HuggingFaceNamedEntityRecognitionModel(
         disable_wandb: bool,
         additional_train_args_hg: AdditionalTrainingArgsT = {},
         model_train_args: ModelTrainArgs,
+        local_dataset_dir: Optional[pathlib.Path],
     ):
         """
         Sources:
@@ -81,7 +83,7 @@ class HuggingFaceNamedEntityRecognitionModel(
         - https://github.com/huggingface/transformers/blob/master/examples/pytorch/token-classification/run_ner.py # noqa
         - https://colab.research.google.com/github/huggingface/notebooks/blob/master/examples/token_classification.ipynb#scrollTo=okwWVFwfYKy1  # noqa
         """
-        _ = model_train_args
+        _ = model_train_args, local_dataset_dir
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(
