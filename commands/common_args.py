@@ -115,9 +115,9 @@ class Options:
 
     randomize_assets = click.option(
         "--randomize-assets",
-        default=True,
+        default=False,
         type=bool,
-        help="Whether or not to shuffle Kili assets",
+        help="Whether or not to shuffle Kili assets.",
     )
 
     label_merge_strategy = click.option(
