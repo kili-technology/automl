@@ -185,18 +185,18 @@ class PyTorchVisionImageClassificationModel(KiliBaseModel):
             external_id_array=[asset.externalId for asset in assets],
             model_name_array=[self.model_name] * len(assets),
             json_response_array=[
-                {self.job_name: self.create_categories(prob_array)} for prob_array in prob_arrays
+                {self.job_name: self._create_categories(prob_array)} for prob_array in prob_arrays
             ],
             predictions_probability=np.max(np.array(prob_arrays), axis=1).tolist(),
         )
         return job_predictions
 
-    def create_categories(self, prob_array) -> JsonResponseClassification:
+    def _create_categories(self, prob_array) -> JsonResponseClassification:
         return {
             "categories": [
                 {
                     "name": list(self.class_name_to_idx.keys())[np.argmax(prob_array)],
-                    "confidence": np.max(prob_array),
+                    "confidence": int(np.max(prob_array) * 100),
                 }
             ]
         }
