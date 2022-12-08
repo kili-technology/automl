@@ -462,7 +462,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
             api_key=api_key,
-            local_dataset_dir=pathlib.Path("")
+            local_dataset_dir=pathlib.Path(""),
         )
         find_all_label_errors(
             assets=assets,

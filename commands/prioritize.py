@@ -1,3 +1,4 @@
+import pathlib
 from typing import List, Optional
 
 import click
@@ -12,7 +13,6 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from tqdm.autonotebook import tqdm
-import pathlib
 
 from commands.common_args import Options, PredictOptions, PrioritizeOptions
 from kiliautoml.models._base_model import (
