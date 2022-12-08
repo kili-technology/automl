@@ -1,5 +1,6 @@
 import json
 import os
+import pathlib
 import shutil
 from typing import Dict, List, Optional, Tuple
 
@@ -128,9 +129,10 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         clear_dataset_cache: bool,
         disable_wandb: bool,
         model_train_args: ModelTrainArgs,
+        local_dataset_dir: Optional[pathlib.Path],
     ):
         """Download Kili assets, convert to coco format, then to detectron2 format, train model."""
-        _ = model_train_args
+        _ = model_train_args, local_dataset_dir
         if not disable_wandb:
             logger.warning(
                 "Wandb is not yet available on Detectron2. But tensorboard is available."
@@ -212,6 +214,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
+        local_dataset_dir: Optional[pathlib.Path],
     ):
         raise NotImplementedError("Evaluation is not implemented for Image Segmentation yet.")
 
@@ -258,7 +261,9 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
         from_project: Optional[ProjectIdT],
         batch_size: int,
         clear_dataset_cache: bool,
+        local_dataset_dir: Optional[pathlib.Path],
     ):
+        _ = local_dataset_dir
         if from_project:
             project_id = from_project
         else:
@@ -444,6 +449,7 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
             from_project=None,
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
+            local_dataset_dir=pathlib.Path(""),
         )
 
         return find_all_label_errors(

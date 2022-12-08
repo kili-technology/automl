@@ -1,3 +1,4 @@
+import pathlib
 from typing import List, Optional
 
 import click
@@ -57,7 +58,6 @@ class PriorityQueue:
     """
 
     def __init__(self, priorities: Priorities):
-
         self.queue = list(np.argsort(priorities)[::-1].tolist())
         # example queue[0] is the index of the highest priority asset
         self.check_queue_validity()
@@ -346,6 +346,7 @@ def embedding_text(
 @Options.batch_size
 @Options.verbose
 @Options.parity_filter
+@Options.local_dataset_dir
 @PredictOptions.model_path
 @PredictOptions.from_project
 @PredictOptions.dry_run
@@ -373,6 +374,7 @@ def main(
     parity_filter: ParityFilterT,
     ml_backend: MLBackendT,
     batch_size: int,
+    local_dataset_dir: Optional[str],
 ):
     """
     Prioritize assets in a Kili project.
@@ -424,6 +426,7 @@ def main(
         max_assets=max_assets,
         randomize=randomize_assets,
         parity_filter=parity_filter,
+        query_content=local_dataset_dir is None,
     )
     assert len(unlabeled_assets) > 1, "There is not enough assets. No need to prioritize."
 
@@ -439,6 +442,7 @@ def main(
     )
     predict_args = BasePredictArgs(
         assets=unlabeled_assets,
+        local_dataset_dir=pathlib.Path(local_dataset_dir) if local_dataset_dir else None,
         model_path=model_path,
         from_project=from_project,
         batch_size=batch_size,

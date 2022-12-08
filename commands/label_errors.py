@@ -254,6 +254,7 @@ def main(
             strategy=label_merge_strategy,
             job_name=job_name,
             parity_filter=parity_filter,
+            query_content=True,
         )
 
         base_init_args = BaseInitArgs(

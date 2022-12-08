@@ -1,3 +1,5 @@
+import itertools
+import mimetypes
 import time
 from dataclasses import dataclass
 from io import BytesIO
@@ -40,7 +42,6 @@ DELAY = 60 / 250  # 250 calls per minutes
 
 
 class AssetsDownloader:
-
     use_header = True
 
     @sleep_and_retry
@@ -185,3 +186,36 @@ def download_project_text(
             )
         )
     return downloaded_text
+
+
+def get_images_from_local_dataset(
+    local_dataset_dir: Path, assets: List[AssetT]
+) -> List[DownloadedImage]:
+    images = []
+    logger.info(f"Loading images from local folder {local_dataset_dir}")
+    for asset in assets:
+        external_id = asset.externalId
+        asset_id = asset.id
+        candidate_file_names = itertools.product(
+            [external_id, asset_id], _get_extensions_for_type("image")
+        )
+        for candidate_file_name in candidate_file_names:
+            file_path = local_dataset_dir / (candidate_file_name[0] + candidate_file_name[1])
+            if file_path.is_file():
+                images.append(
+                    DownloadedImage(id=asset.id, externalId=external_id, filepath=str(file_path))
+                )
+                break
+    if len(images) == 0:
+        raise ValueError(
+            f"No files match the external ids of the assets in the directory {local_dataset_dir}"
+        )
+
+    return images
+
+
+def _get_extensions_for_type(general_type):
+    for ext in mimetypes.types_map:
+        if mimetypes.types_map[ext].split("/")[0] == general_type:
+            yield ext
+    yield ""

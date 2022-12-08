@@ -80,6 +80,7 @@ def get_asset_memoized(
     skip: int,
     status_in: Optional[List[AssetStatusT]] = None,
     asset_filter: Optional[AssetFilterArgsT] = None,
+    query_content: bool,
 ) -> List[Any]:
     kili.assets = backoff.on_exception(backoff.expo, exception=Exception, max_tries=3)(kili.assets)
 
@@ -107,18 +108,20 @@ def get_asset_memoized(
                 additional_filtering_arguments[argument] = asset_filter[argument]
             else:
                 logger.warning(f"You can not filter on this field {argument}")
+    fields = [
+        "id",
+        "externalId",
+        "labels.createdAt",
+        "labels.jsonResponse",
+        "labels.labelType",
+    ]
+    if query_content:
+        fields.append("content")
     assets = kili.assets(
         project_id=project_id,
         first=total,
         skip=skip,
-        fields=[
-            "id",
-            "externalId",
-            "content",
-            "labels.createdAt",
-            "labels.jsonResponse",
-            "labels.labelType",
-        ],
+        fields=fields,
         status_in=status_in,
         as_generator=False,
         **additional_filtering_arguments,
@@ -140,6 +143,7 @@ def get_assets(
     job_name: Optional[JobNameT] = None,
     parity_filter: ParityFilterT = "none",
     asset_filter: Optional[AssetFilterArgsT] = None,
+    query_content: bool = True,
 ) -> AssetsLazyList:
     """
     job_name is used if status_in does not have only unlabeled statuses
@@ -152,9 +156,9 @@ def get_assets(
                     f" {get_args(AssetStatusT)}"
                 )
     if status_in is not None:
-        logger.info(f"Downloading assets with status in {status_in} from Kili project")
+        logger.info(f"Fetching assets with status in {status_in} from Kili project")
     else:
-        logger.info("Downloading assets from Kili project")
+        logger.info("Fetching assets from Kili project")
 
     if randomize:
         assets = get_asset_memoized(
@@ -164,6 +168,7 @@ def get_assets(
             skip=0,
             status_in=status_in,
             asset_filter=asset_filter,
+            query_content=query_content,
         )
         random.shuffle(assets)
         assets = assets[:max_assets]
@@ -176,6 +181,7 @@ def get_assets(
             skip=0,
             status_in=status_in,
             asset_filter=asset_filter,
+            query_content=query_content,
         )
 
     assets = [AssetT.construct(**asset) for asset in assets]

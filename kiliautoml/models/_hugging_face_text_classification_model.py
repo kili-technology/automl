@@ -1,6 +1,7 @@
 # pyright: reportPrivateImportUsage=false, reportOptionalCall=false
 import json
 import os
+import pathlib
 from typing import Any, Dict, Optional
 
 import datasets
@@ -35,7 +36,6 @@ from kiliautoml.utils.type import (
 
 
 class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, KiliTextProjectMixin):
-
     model_conditions = HuggingFaceModelConditions(
         ml_task="CLASSIFICATION",
         model_repository="huggingface",
@@ -67,7 +67,9 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         clear_dataset_cache: bool = False,
         disable_wandb: bool = False,
         model_train_args: ModelTrainArgs,
+        local_dataset_dir: Optional[pathlib.Path],
     ):
+        _ = local_dataset_dir
         nltk.download("punkt")
 
         model_repository_dir = Path.model_repository_dir(
@@ -146,12 +148,12 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
+        local_dataset_dir: Optional[pathlib.Path],
     ) -> EvalResultsT:
-
+        _ = local_dataset_dir
         model_repository_dir = Path.model_repository_dir(
             self.project_id, self.job_name, self.model_repository
         )
-
         path_dataset = os.path.join(PathHF.dataset_dir(model_repository_dir), "data.json")
         job_categories = categories_from_job(self.job)
         if os.path.exists(path_dataset) and clear_dataset_cache:
@@ -205,10 +207,11 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         from_project: Optional[ProjectIdT],
         batch_size: int,
         clear_dataset_cache: bool,
+        local_dataset_dir: Optional[pathlib.Path],
     ) -> JobPredictions:
         if batch_size != DEFAULT_BATCH_SIZE:
             logger.warning("This model does not support custom batch_size ", batch_size)
-        _ = clear_dataset_cache
+        _ = clear_dataset_cache, local_dataset_dir
 
         model_path_res, _, self.ml_backend = self._extract_model_info(
             self.job_name, self.project_id, model_path, from_project

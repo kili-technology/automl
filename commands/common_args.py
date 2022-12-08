@@ -82,6 +82,17 @@ class Options:
         help="Maximum number of assets to consider",
     )
 
+    local_dataset_dir = click.option(
+        "--local-dataset-dir",
+        default=None,
+        type=str,
+        help="Path to the local dataset directory. The assets will be matched by filename: "
+        "if there is a file that has the same name as the asset Id or external Id, with or without "
+        "an image file extension, it will be matched to the asset. If not given, "
+        "the asset files will be directly downloaded from the project's media storage and "
+        "saved into a local cache directory.",
+    )
+
     clear_dataset_cache = click.option(
         "--clear-dataset-cache",
         default=False,

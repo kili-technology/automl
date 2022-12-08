@@ -2,6 +2,7 @@
 import csv
 import math
 import os
+import pathlib
 import re
 import shutil
 import subprocess
@@ -70,7 +71,6 @@ def inspect(e):
 
 
 class UltralyticsObjectDetectionModel(KiliBaseModel):
-
     model_conditions = ModelConditions(
         ml_task="OBJECT_DETECTION",
         model_repository="ultralytics",
@@ -108,7 +108,9 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         clear_dataset_cache: bool,
         disable_wandb: bool,
         model_train_args: ModelTrainArgs,
+        local_dataset_dir: Optional[pathlib.Path],
     ):
+        _ = local_dataset_dir
         model_repository_dir = Path.model_repository_dir(
             self.project_id, self.job_name, self.model_conditions.model_repository
         )
@@ -227,6 +229,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         clear_dataset_cache: bool = False,
         model_path: Optional[str],
         from_project: Optional[ProjectIdT],
+        local_dataset_dir: Optional[pathlib.Path],
     ):
         raise NotImplementedError("Evaluation is not implemented for Object Detection yet.")
 
@@ -238,7 +241,6 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         kili_api_key: str,
         assets: AssetsLazyList,
     ):
-
         logger.info("Downloading datasets from Kili")
         train_val_proportions = [0.8, 0.2]
         path = data_path
@@ -304,8 +306,9 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
         batch_size: int,
         clear_dataset_cache: bool,
         api_key: str = "",
+        local_dataset_dir: Optional[pathlib.Path],
     ):
-        _ = clear_dataset_cache
+        _ = clear_dataset_cache, local_dataset_dir
 
         project_id = from_project if from_project else self.project_id
 
@@ -459,6 +462,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
             batch_size=batch_size,
             clear_dataset_cache=clear_dataset_cache,
             api_key=api_key,
+            local_dataset_dir=pathlib.Path(""),
         )
         find_all_label_errors(
             assets=assets,
