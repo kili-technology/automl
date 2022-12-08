@@ -86,8 +86,11 @@ class Options:
         "--local-dataset-dir",
         default=None,
         type=str,
-        help="Path to the local dataset directory. If not given, "
-        "it will download assets from the project.",
+        help="Path to the local dataset directory. The assets will be matched by filename: "
+        "if there is a file that has the same name as the asset Id or external Id, with or without "
+        "an image file extension, it will be matched to the asset. If not given, "
+        "the asset files will be directly downloaded from the project's media storage and "
+        "saved into a local cache directory.",
     )
 
     clear_dataset_cache = click.option(
