@@ -28,7 +28,7 @@ setup(
         "ratelimit",
         "opencv-python",
         "detectron2 @ git+https://github.com/facebookresearch/detectron2.git",
-        "shapely",
+        "shapely<2.0.0",
         "pydantic",
         "pytest-mock",
         "backoff",
