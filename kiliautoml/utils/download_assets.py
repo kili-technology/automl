@@ -153,7 +153,12 @@ def download_project_images(
 
 
 def download_and_save_image(api_key: str, asset: AssetT, output_folder: Path) -> DownloadedImage:
-    extension = get_file_extension_from_headers(asset.content)
+    extension = None
+    try:
+        extension = get_file_extension_from_headers(asset.content)
+    except KeyError:
+        extension = "jpg"
+
     assert extension
     filepath = output_folder / (asset.id + "." + extension)
     if not filepath.exists():
