@@ -7,7 +7,6 @@ project_id = MOCK_DIR.split("_")[0]
 
 
 def test(mocker):
-
     prepare_mocker(mocker, MOCK_DIR)
 
     runner = CliRunner()

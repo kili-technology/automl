@@ -2,7 +2,7 @@
 import json
 import os
 import pathlib
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import datasets
 import evaluate
@@ -26,6 +26,7 @@ from kiliautoml.utils.logging import logger
 from kiliautoml.utils.path import Path, PathHF
 from kiliautoml.utils.type import (
     AssetsLazyList,
+    CategoryIdT,
     EvalResultsT,
     JobPredictions,
     JsonResponseClassification,
@@ -247,7 +248,7 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
         job_predictions = JobPredictions(
             job_name=self.job_name,
             external_id_array=[a.externalId for a in assets],
-            json_response_array=predictions,
+            json_response_array=predictions,  # type: ignore[arg-type]
             model_name_array=["Kili AutoML"] * len(assets),
             predictions_probability=proba_assets,
         )
@@ -341,7 +342,9 @@ class HuggingFaceTextClassificationModel(HuggingFaceModel, HuggingFaceMixin, Kil
                 )
         return metric_res
 
-    def model_evaluation(self, trainer, job_categories, eval_only=False):
+    def model_evaluation(
+        self, trainer: Trainer, job_categories: List[CategoryIdT], eval_only: bool = False
+    ):
         val_metrics = trainer.evaluate(trainer.eval_dataset)
         metrics_to_consider = [val_metrics]
         dataset_names = ["val"]

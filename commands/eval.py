@@ -97,8 +97,8 @@ def main(
     for job_name, job in jobs.items():
         logger.info(f"Predicting annotations for job: {job_name}")
         content_input = get_content_input_from_job(job)
-        ml_task = job.get("mlTask")
-        tools = job.get("tools")
+        ml_task = job["mlTask"]
+        tools = job.get("tools", [])
 
         base_init_args = BaseInitArgs(
             job=job,

@@ -107,9 +107,9 @@ def main(
     model_evaluations = []
 
     for job_name, job in jobs.items():
-        ml_task = job.get("mlTask")
+        ml_task = job["mlTask"]
         content_input = get_content_input_from_job(job)
-        tools: List[ToolT] = job.get("tools")
+        tools: List[ToolT] = job.get("tools", [])
         model_evaluation = {}
 
         condition_requested = ModelConditionsRequested(
@@ -149,7 +149,7 @@ def main(
         if not disable_wandb:
             wandb_run = cast(
                 Run,
-                wandb.init(
+                wandb.init(  # type: ignore[attr-defined]
                     project=title + "_" + job_name,
                     reinit=True,
                     dir=Path.wandb_dir(project_id, job_name),

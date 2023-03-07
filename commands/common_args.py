@@ -20,7 +20,6 @@ def asset_filter_loader(json_string: Optional[str]):
 
 
 class Options:
-
     project_id = click.option("--project-id", required=True, help="Kili project ID")
 
     api_endpoint = click.option(
@@ -213,7 +212,6 @@ class TrainOptions:
 
 
 class EvaluateOptions:
-
     asset_status_in = asset_status_in(["LABELED", "TO_REVIEW", "REVIEWED"])
     model_path = click.option(
         "--model-path",
@@ -235,7 +233,6 @@ class EvaluateOptions:
 
 
 class PredictOptions:
-
     dry_run = click.option(
         "--dry-run",
         default=False,
@@ -258,7 +255,6 @@ class PredictOptions:
 
 
 class LabelErrorOptions:
-
     cv_folds = click.option(
         "--cv-folds", default=4, type=int, show_default=True, help="Number of CV folds to use"
     )
@@ -283,7 +279,6 @@ class LabelErrorOptions:
 
 
 class PrioritizeOptions:
-
     diversity_sampling = click.option(
         "--diversity-sampling",
         default=0.3,

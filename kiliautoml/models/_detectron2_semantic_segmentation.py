@@ -106,12 +106,12 @@ class Detectron2SemanticSegmentationModel(KiliBaseModel):
                 px = annotations["segmentation"][0][::2]
                 py = annotations["segmentation"][0][1::2]
                 poly = [(x + 0.5, y + 0.5) for x, y in zip(px, py)]
-                poly = [p for x in poly for p in x]
+                poly_flat = [p for x in poly for p in x]
 
                 obj = {
                     "bbox": [np.min(px), np.min(py), np.max(px), np.max(py)],
                     "bbox_mode": BoxMode.XYXY_ABS,
-                    "segmentation": [poly],
+                    "segmentation": [poly_flat],
                     "category_id": annotations["category_id"],
                 }
                 objs.append(obj)

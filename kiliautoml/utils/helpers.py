@@ -253,7 +253,7 @@ def filter_labeled_assets(
         label = _get_label(asset, job_name, strategy)
         if label is None:
             asset_id = asset.id
-            warnings.warn(f"${asset_id} removed because no labels where available")
+            warnings.warn(f"${asset_id} removed because no labels where available", stacklevel=3)
             asset_id_to_remove.add(asset_id)
         else:
             asset.labels = [label]

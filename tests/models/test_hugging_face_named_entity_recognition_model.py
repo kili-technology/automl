@@ -330,9 +330,7 @@ TEST_CASES = [
 
 class TestHuggingFaceNamedEntityRecognitionModel:
     def test_predicted_tokens_to_kili_annotations(self):
-
         for test_case in TEST_CASES:
-
             kili_annotations = (
                 HuggingFaceNamedEntityRecognitionModel._predicted_tokens_to_kili_annotations(
                     test_case["text"],

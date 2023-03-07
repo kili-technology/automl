@@ -85,7 +85,7 @@ def train_model_pytorch(
                 epoch_train_acc = epoch_train_evaluation["acc"]["overall"]
                 logger.debug(f"{phase} Loss: {epoch_train_loss:.4f} Acc: {epoch_train_acc:.4f}")
                 if not disable_wandb:
-                    wandb.log(
+                    wandb.log(  # type: ignore[attr-defined]
                         {"epoch_train_loss": epoch_train_loss, "epoch_train_acc": epoch_train_acc}
                     )
             if phase == "val":
@@ -99,7 +99,9 @@ def train_model_pytorch(
                 epoch_val_acc = epoch_val_evaluation["acc"]["overall"]
                 logger.debug(f"{phase} Loss: {epoch_val_loss:.4f} Acc: {epoch_val_acc:.4f}")
                 if not disable_wandb:
-                    wandb.log({"epoch_val_loss": epoch_val_loss, "epoch_val_acc": epoch_val_acc})
+                    wandb.log(  # type: ignore[attr-defined]
+                        {"epoch_val_loss": epoch_val_loss, "epoch_val_acc": epoch_val_acc}
+                    )
                 # deep copy the model
                 if epoch_val_loss < best_val_metrics["loss"]["overall"]:
                     best_val_metrics = epoch_val_evaluation
@@ -128,9 +130,15 @@ def train_model_pytorch(
         model_eval["train_" + label]["precision"] = train_metrics["precision"]["by_category"][i]
         model_eval["train_" + label]["recall"] = train_metrics["recall"]["by_category"][i]
         model_eval["train_" + label]["f1"] = train_metrics["f1"]["by_category"][i]
-        model_eval["val_" + label]["precision"] = best_val_metrics["precision"]["by_category"][i]
-        model_eval["val_" + label]["recall"] = best_val_metrics["recall"]["by_category"][i]
-        model_eval["val_" + label]["f1"] = best_val_metrics["f1"]["by_category"][i]
+        model_eval["val_" + label]["precision"] = best_val_metrics["precision"]["by_category"][
+            i
+        ]  # type: ignore[index]
+        model_eval["val_" + label]["recall"] = best_val_metrics["recall"]["by_category"][
+            i
+        ]  # type: ignore[index]
+        model_eval["val_" + label]["f1"] = best_val_metrics["f1"]["by_category"][
+            i
+        ]  # type: ignore[index]
 
     model_eval["train__overall"] = {
         "loss": train_metrics["loss"]["overall"],

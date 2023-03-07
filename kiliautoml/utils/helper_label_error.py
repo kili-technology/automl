@@ -161,7 +161,8 @@ class AnnotationStandardizedBboxT(AnnotationStandardizedT, BaseModel):
 class AnnotationStandardizedNERT(AnnotationStandardizedT, BaseModel):
     position: NERPositionT
 
-    def iou(self, position: BBoxPositionT) -> float:
+    @abstractmethod
+    def iou(self, position: BBoxPositionT) -> float:  # type: ignore[empty-body]
         ...
 
     @classmethod
@@ -303,7 +304,6 @@ def add_error(
 def create_normalized_annotation(
     json_response: JsonResponseBaseT, ml_task: MLTaskT, tool: ToolT
 ) -> List[AnnotationStandardizedT]:
-
     res = []
     for annotation in json_response["annotations"]:  # type:ignore
         try:
@@ -332,7 +332,6 @@ def find_all_label_errors(
     errors_by_asset: List[List[LabelingError]] = []
 
     for json_response, asset in zip(json_response_array, assets):
-
         json_response_base = asset._get_annotations(job_name)
 
         predicted_annotations = create_normalized_annotation(json_response[job_name], ml_task, tool)
