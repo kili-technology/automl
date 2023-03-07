@@ -4,10 +4,9 @@ import time
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import requests
-from kili.queries.asset.helpers import get_file_extension_from_headers
 from loguru import logger
 from PIL import Image
 from PIL.Image import Image as PILImage
@@ -152,13 +151,34 @@ def download_project_images(
     return downloaded_images
 
 
+def _get_file_extension_from_headers(url) -> Optional[str]:
+    """guess the extension of a file with the url response headers"""
+    with requests.head(url, timeout=20) as header_response:
+        if header_response.status_code == 200:
+            headers = header_response.headers
+        else:
+            with requests.get(url, timeout=20) as response:
+                response.raise_for_status()
+                headers = response.headers
+        if "content-type" in headers:
+            content_type = headers["content-type"]
+            return mimetypes.guess_extension(content_type)
+    return None
+
+
 def download_and_save_image(api_key: str, asset: AssetT, output_folder: Path) -> DownloadedImage:
     extension = None
     try:
-        extension = get_file_extension_from_headers(asset.content)
+        extension = _get_file_extension_from_headers(asset.content)
     except KeyError:
         extension = "jpg"
 
+    if extension is None:
+        extension = Path(asset.externalId).suffix
+        if extension.startswith("."):
+            extension = extension.split(".")[-1]
+        else:
+            extension = None
     assert extension
     filepath = output_folder / (asset.id + "." + extension)
     if not filepath.exists():
