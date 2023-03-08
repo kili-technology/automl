@@ -6,7 +6,7 @@ datasets<=2.2
 kili>=2.115
 jinja2
 nltk>=3.3
-numpy
+numpy<1.24
 requests
 scikit-learn
 evaluate

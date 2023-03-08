@@ -141,9 +141,11 @@ class ModelConditions:
         )
         if strict_conditions and tools_ok:
             # We then check the loose conditions
-            self._check_compatible(cdt_requested.ml_backend, self.possible_ml_backend, "ml_backend")
-            self._check_compatible_model(cdt_requested.model_name)
             self._check_compatible(
+                cdt_requested.ml_backend, self.possible_ml_backend, "ml_backend"
+            )  # type: ignore[misc]
+            self._check_compatible_model(cdt_requested.model_name)
+            self._check_compatible(  # type: ignore[misc]
                 cdt_requested.model_repository, [self.model_repository], "model_repository"
             )
             return True
@@ -188,7 +190,7 @@ class KiliBaseModel:
             self.model_conditions.advised_model_names,
         )
 
-    def train(
+    def train(  # type: ignore[empty-body]
         self,
         *,
         assets: AssetsLazyList,
@@ -201,7 +203,7 @@ class KiliBaseModel:
     ) -> EvalResultsT:
         ...
 
-    def eval(
+    def eval(  # type: ignore[empty-body]
         self,
         *,
         assets: AssetsLazyList,
@@ -213,7 +215,7 @@ class KiliBaseModel:
     ) -> EvalResultsT:
         ...
 
-    def predict(
+    def predict(  # type: ignore[empty-body]
         self,
         *,
         assets: AssetsLazyList,
@@ -225,7 +227,7 @@ class KiliBaseModel:
     ) -> JobPredictions:
         ...
 
-    def find_errors(
+    def find_errors(  # type: ignore[empty-body]
         self,
         *,
         assets: AssetsLazyList,

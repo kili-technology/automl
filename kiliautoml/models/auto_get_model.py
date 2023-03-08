@@ -17,7 +17,6 @@ from kiliautoml.models._base_model import (
 def auto_get_model_class(
     condition_requested: ModelConditionsRequested,
 ) -> Type[KiliBaseModel]:
-
     models: List[Type[KiliBaseModel]] = [
         Detectron2SemanticSegmentationModel,
         HuggingFaceNamedEntityRecognitionModel,

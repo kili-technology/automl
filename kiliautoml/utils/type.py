@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, NewType, Optional
+from typing import Any, Dict, Iterable, List, NewType, Optional, Sequence
 
 from kili.client import Kili
 from more_itertools import chunked
@@ -186,7 +186,7 @@ class JobPredictions:
         external_id_array: List[AssetExternalIdT],
         json_response_array: List[Dict[JobNameT, JsonResponseBaseT]],
         model_name_array: List[str],
-        predictions_probability: List[float],
+        predictions_probability: Sequence[float],
     ):
         self.job_name = job_name
         self.external_id_array = external_id_array

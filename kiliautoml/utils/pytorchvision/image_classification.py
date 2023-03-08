@@ -114,7 +114,7 @@ def get_trained_model_image_classif(
 
     model = initialize_model_img_class(model_name, category_ids)
     if not disable_wandb:
-        wandb.watch(model)
+        wandb.watch(model)  # type: ignore[attr-defined]
 
     model, model_evaluation = train_model_pytorch(
         model=model,
@@ -128,10 +128,10 @@ def get_trained_model_image_classif(
         torch.save(model.state_dict(), save_model_path)
 
         if not disable_wandb:
-            artifact = wandb.Artifact("model", type="model")
+            artifact = wandb.Artifact("model", type="model")  # type: ignore[attr-defined]
             artifact.add_file(save_model_path)
-            wandb.log_artifact(artifact)
-            wandb.join()
+            wandb.log_artifact(artifact)  # type: ignore[attr-defined]
+            wandb.join()  # type: ignore[attr-defined]
 
     return model, model_evaluation
 

@@ -1,5 +1,5 @@
 import pathlib
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import click
 import numpy as np
@@ -119,7 +119,7 @@ class Prioritizer:
     def __init__(
         self,
         embeddings: np.ndarray,  # type: ignore
-        predictions_probability: List[float] = [],
+        predictions_probability: Sequence[float] = [],
     ):
         """Initialize Prioritizer class.
 
@@ -411,8 +411,8 @@ def main(
 
     job_name, job = jobs_item[0]
     content_input = get_content_input_from_job(job)
-    ml_task: MLTaskT = job.get("mlTask")
-    tools: List[ToolT] = job.get("tools")
+    ml_task: MLTaskT = job["mlTask"]
+    tools: List[ToolT] = job.get("tools", [])
 
     if clear_dataset_cache:
         clear_command_cache(

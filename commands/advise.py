@@ -52,10 +52,9 @@ def main(
 
     logger.info("Here are the advised models for your project:")
     for _, job in jobs.items():
-
-        ml_task = job.get("mlTask")
+        ml_task = job["mlTask"]
         content_input = get_content_input_from_job(job)
-        tools: List[ToolT] = job.get("tools")
+        tools: List[ToolT] = job.get("tools", [])
 
         condition_requested = ModelConditionsRequested(
             input_type=input_type,

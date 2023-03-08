@@ -25,7 +25,6 @@ def mocked__get_asset_memoized(**kwargs):
 
 
 def test_hugging_face_text_classification(mocker):
-
     mocker.patch("kili.client.Kili.__init__", return_value=None)
     mocker.patch(
         "kiliautoml.utils.helpers.get_asset_memoized", side_effect=mocked__get_asset_memoized

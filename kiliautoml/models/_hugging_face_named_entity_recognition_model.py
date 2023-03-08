@@ -219,7 +219,7 @@ class HuggingFaceNamedEntityRecognitionModel(
         local_dataset_dir: Optional[pathlib.Path],
     ) -> JobPredictions:
         _ = clear_dataset_cache, local_dataset_dir
-        warnings.warn("Warning, this method does not support custom batch_size")
+        warnings.warn("Warning, this method does not support custom batch_size", stacklevel=2)
         _ = batch_size
         model_path_res, _, self.ml_backend = self._extract_model_info(
             self.job_name,
@@ -271,7 +271,7 @@ class HuggingFaceNamedEntityRecognitionModel(
         job_predictions = JobPredictions(
             job_name=self.job_name,
             external_id_array=[a.externalId for a in assets],  # type:ignore
-            json_response_array=predictions,
+            json_response_array=predictions,  # type: ignore[arg-type]
             model_name_array=["Kili AutoML"] * len(assets),
             predictions_probability=proba_assets,
         )

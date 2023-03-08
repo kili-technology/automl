@@ -338,7 +338,7 @@ class UltralyticsObjectDetectionModel(KiliBaseModel):
     ) -> JobPredictions:
         _ = batch_size
 
-        warnings.warn("This function does not support custom batch_size")
+        warnings.warn("This function does not support custom batch_size", stacklevel=2)
 
         if ml_backend == "pytorch":
             filename_weights = "best.pt"
